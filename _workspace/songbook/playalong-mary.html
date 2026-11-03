@@ -26,8 +26,10 @@ h1{font-family:"Playfair Display",Georgia,serif;font-size:30px;margin:2px 0 0;te
 <div class="wrap">
   <div><div class="kick">Level 0 · Lesson 5 · Play along</div><h1>Mary had a little lamb</h1></div>
   <div class="card"><div class="lab">Speed</div><div class="seg" id="speed"></div></div>
+  <div class="card"><div class="lab">The band</div><div class="seg" id="style"></div>
+    <p class="note" id="styleNote"></p></div>
   <div class="card"><div class="lab">What plays with you</div><div class="seg" id="parts"></div>
-    <p class="note">Play your Way at the piano; the page plays the rest. Turn the tune off once you know it.</p></div>
+    <p class="note">Play your Way at the piano; the page plays the rest. Turn the tune off once you know it, and play it yourself with the band.</p></div>
   <button class="go" id="go">▶ Play (count-in 1 2 3 4)</button>
   <div class="count" id="count"></div>
   <div class="bars" id="bars"></div>
@@ -37,8 +39,12 @@ const S = {"title": "Mary had a little lamb", "bars": [[["e4", "c", "Ma", "i"], 
 ;
 const LEN = { c: 1, m: 2, s: 4, q: 0.5 };
 const SPEEDS = [['Slow', 60], ['Medium', 80], ['Fast', 100]];
-const PARTS = [['tune', 'The tune'], ['teacher', 'Teacher duet'], ['way2', 'Way 2'], ['way3', 'Way 3'], ['way4', 'Way 4']];
-let bpm = 60, on = { tune: true, teacher: true, way2: false, way3: false, way4: false };
+const PARTS = [['tune', 'The tune'], ['band', 'The band'], ['way2', 'Way 2'], ['way3', 'Way 3'], ['way4', 'Way 4']];
+const STYLES = { musicbox: ['Music box', 'A music box over soft strings, a low bass and a shaker.'],
+  country: ['Boom-chick', 'Bass on 1 and 3, a guitar strum on 2 and 4, a light drum.'],
+  ballad: ['Ballad', 'Strings, a rolling piano and a slow drum.'] };
+let style = 'musicbox';
+let bpm = 60, on = { tune: true, band: true, way2: false, way3: false, way4: false };
 const $ = (id) => document.getElementById(id);
 function seg(el, items, isOn, set) {
   el.innerHTML = ''; items.forEach(([k, label]) => { const b = document.createElement('button'); b.textContent = label;
@@ -47,6 +53,8 @@ function seg(el, items, isOn, set) {
 seg($('speed'), SPEEDS.map(([l, v]) => [v, l + ' ' + v]), (v) => v === bpm, (v) => { bpm = v; });
 // the left-hand ways are one at a time: picking one switches the others off
 seg($('parts'), PARTS, (k) => on[k], (k) => { const nv = !on[k]; if (k.startsWith('way') && nv) ['way2', 'way3', 'way4'].forEach(w => on[w] = false); on[k] = nv; });
+seg($('style'), Object.entries(STYLES).map(([k, v]) => [k, v[0]]), (k) => k === style, (k) => { style = k; $('styleNote').textContent = STYLES[k][1]; });
+$('styleNote').textContent = STYLES[style][1];
 $('bars').innerHTML = S.bars.map((b, i) => `<div class="bar" id="b${i}"><b>${S.chords[i]}</b><div class="beats">${'<i></i>'.repeat(4)}</div></div>`).join('');
 
 const midi = (p) => { const n = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[p[0]]; return 12 * (+p.slice(1) + 1) + n; };
@@ -61,6 +69,46 @@ function tone(t, m, dur, vol) {   // a soft piano-like note: two partials, quick
   g.gain.exponentialRampToValueAtTime(vol * 0.35, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0008, t + Math.max(0.3, dur) + 0.35);
   o1.start(t); o2.start(t); o1.stop(t + dur + 0.5); o2.stop(t + dur + 0.5);
 }
+let noiseBuf;
+function noise(t, dur, hp, vol) { if (!noiseBuf) { noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); n.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = hp;
+  n.connect(f); f.connect(g); g.connect(master); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur); n.start(t); n.stop(t + dur + 0.02); }
+function kick(t, vol) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+  o.connect(g); g.connect(master); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22); o.start(t); o.stop(t + 0.25); }
+function inst(kind, t, m, dur, vol) {   // the band's voices: one oscillator recipe each
+  const o = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter(); o.frequency.value = hz(m); f.type = 'lowpass';
+  o.connect(f); f.connect(g); g.connect(master);
+  if (kind === 'bell') { o.type = 'sine'; f.frequency.value = 6000; const o2 = ctx.createOscillator(), g2 = ctx.createGain(); o2.frequency.value = hz(m) * 4.02; g2.gain.value = 0.18; o2.connect(g2); g2.connect(g); o2.start(t); o2.stop(t + 1.4);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + 1.3); o.start(t); o.stop(t + 1.4); return; }
+  if (kind === 'pad') { o.type = 'sawtooth'; f.frequency.value = 900; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.35); g.gain.setValueAtTime(vol, t + dur); g.gain.linearRampToValueAtTime(0, t + dur + 0.4); o.start(t); o.stop(t + dur + 0.45); return; }
+  if (kind === 'bass') { o.type = 'triangle'; f.frequency.value = 600; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(vol * 0.4, t + 0.3); g.gain.exponentialRampToValueAtTime(0.0008, t + dur + 0.1); o.start(t); o.stop(t + dur + 0.15); return; }
+  if (kind === 'pluck') { o.type = 'square'; f.frequency.setValueAtTime(3000, t); f.frequency.exponentialRampToValueAtTime(500, t + 0.25); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.35); o.start(t); o.stop(t + 0.4); return; }
+}
+const triad = (sym) => { const r = { C: 48, D: 50, E: 52, F: 53, G: 55, A: 57, B: 59 }[sym[0]], minor = /m$/.test(sym); return [r, r + (minor ? 3 : 4), r + 7]; };
+function band(start, spb) {   // [time, fn] for the band, in the chosen style, bar by bar; the last bar one rolled chord
+  const last = S.bars.length - 1, out = [];
+  S.chords.forEach((ch, b) => { const [r, t3, f5] = triad(ch), T = start + b * 4 * spb, nb = S.chords[b + 1];
+    if (b === last) { [r - 12, r, t3, f5, r + 12, t3 + 12, f5 + 12, r + 24].forEach((m, k) => out.push(() => inst(k < 1 ? 'bass' : style === 'musicbox' ? 'bell' : 'pluck', T + k * 0.06, m + (style === 'musicbox' && k ? 12 : 0), 3 * spb, k ? 0.07 : 0.22)));
+      out.push(() => inst('pad', T, r + 12, 3.5 * spb, 0.035)); out.push(() => inst('pad', T, t3 + 12, 3.5 * spb, 0.03)); if (style !== 'musicbox') out.push(() => kick(T, 0.5)); return; }
+    if (style === 'musicbox') {
+      [r, t3, f5, t3, r + 12, f5, t3, f5].forEach((m, k) => out.push(() => inst('bell', T + k * spb / 2, m + 24, spb, 0.06)));
+      [r, t3, f5].forEach(m => out.push(() => inst('pad', T, m + 12, 4 * spb * 0.95, 0.022)));
+      out.push(() => inst('bass', T, r - 12, 2 * spb, 0.2)); out.push(() => inst('bass', T + 2 * spb, f5 - 24, 2 * spb, 0.16));
+      for (let k = 0; k < 8; k++) out.push(() => noise(T + k * spb / 2, 0.04, 7000, k % 2 ? 0.03 : 0.05));
+    } else if (style === 'country') {
+      out.push(() => inst('bass', T, r - 12, spb, 0.26)); out.push(() => inst('bass', T + 2 * spb, f5 - 24, spb, 0.22));
+      [1, 3].forEach(k => [r, t3, f5].forEach((m, i) => out.push(() => inst('pluck', T + k * spb + i * 0.012, m + 12, spb / 2, 0.05))));
+      [0, 2].forEach(k => out.push(() => kick(T + k * spb, 0.45))); [1, 3].forEach(k => out.push(() => noise(T + k * spb, 0.12, 1800, 0.12)));
+      for (let k = 0; k < 8; k++) out.push(() => noise(T + k * spb / 2, 0.03, 8000, 0.03));
+      if (nb && nb !== ch) out.push(() => inst('bass', T + 3.5 * spb, triad(nb)[0] - 13, spb / 2, 0.18));   // a pickup note into the new chord
+    } else {
+      [r, t3, f5].forEach(m => out.push(() => inst('pad', T, m + 12, 4 * spb * 0.95, 0.03)));
+      [r, f5, t3 + 12, f5].forEach((m, k) => out.push(() => inst('bell', T + k * spb, m, spb * 1.5, 0.05)));
+      out.push(() => inst('bass', T, r - 12, 4 * spb, 0.22));
+      out.push(() => kick(T, 0.4)); out.push(() => noise(T + 2 * spb, 0.18, 1500, 0.1)); [1, 3].forEach(k => out.push(() => noise(T + k * spb, 0.05, 7000, 0.04)));
+    } });
+  return out;
+}
 function click(t, hi) { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = hi ? 1500 : 1000; o.connect(g); g.connect(master);
   g.gain.setValueAtTime(0.3, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.06); o.start(t); o.stop(t + 0.08); }
 function events() {   // [beat, midi, beats, volume] for every part switched on
@@ -69,9 +117,6 @@ function events() {   // [beat, midi, beats, volume] for every part switched on
     if (on.tune) bar.forEach(([p, d]) => { ev.push([beat, midi(p), LEN[d], 0.30]); beat += LEN[d]; });
     ['way2', 'way3', 'way4'].forEach(w => { if (!on[w]) return; const pat = (b === last && S.lh[w].end) || S.lh[w][S.chords[b]]; let x = b0;
       pat.forEach(([ps, d]) => { ps.forEach(p => ev.push([x, midi(p), LEN[d], 0.26])); x += LEN[d]; }); });
-    if (on.teacher) { const D = S.duet, ch = S.chords[b];   // the teacher an octave higher than written
-      if (b === last) { D.end.rh.concat(D.end.lh).forEach(p => ev.push([b0, midi(p) + 12, 4, 0.13])); }
-      else { D.rh[ch].forEach((p, k) => ev.push([b0 + k, midi(p) + 12, 1, 0.14])); [0, 2].forEach(k => D.lh[ch].forEach(p => ev.push([b0 + k, midi(p) + 12, 2, 0.11]))); } }
   });
   return ev;
 }
@@ -81,11 +126,12 @@ function stop() { playing = false; timers.forEach(clearTimeout); timers = []; if
 $('go').onclick = () => {
   if (playing) return stop();
   ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume();
-  master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+  const comp = ctx.createDynamicsCompressor(); comp.connect(ctx.destination); master = ctx.createGain(); master.gain.value = 0.9; master.connect(comp);
   playing = true; $('go').textContent = '■ Stop';
   const spb = 60 / bpm, t0 = ctx.currentTime + 0.15, start = t0 + 4 * spb;
   for (let k = 0; k < 4; k++) { click(t0 + k * spb, k === 0); timers.push(setTimeout(() => { $('count').textContent = 'Count in: ' + (k + 1); }, (0.15 + k * spb) * 1000)); }
   events().forEach(([beat, m, len, vol]) => tone(start + beat * spb, m, len * spb * 0.95, vol));
+  if (on.band) band(start, spb).forEach(fn => fn());
   const total = S.bars.length * 4;
   for (let k = 0; k < total; k++) timers.push(setTimeout(() => {
     $('count').textContent = 'Bar ' + (Math.floor(k / 4) + 1) + ' · beat ' + (k % 4 + 1);
