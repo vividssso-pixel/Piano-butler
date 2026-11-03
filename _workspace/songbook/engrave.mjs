@@ -39,6 +39,17 @@ function mei(b0, b1, o) {
     : `<staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/>`;
   return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef>${o.rhythm || !o.lh ? `<staffGrp>${sd}</staffGrp>` : sd}</scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
 }
+// the teacher's duet: two treble staves (played an octave higher), the right hand a pattern on the chord's notes a beat each,
+// the left hand two notes a half bar; the last bar one chord in each hand
+function duetMei(b0, b1, o) {
+  const D = S.duet; let ms = '';
+  for (let b = b0; b < b1; b++) { const last = b === S.bars.length - 1, ch = S.chords[b];
+    const rh = last ? chordXml(D.end.rh, 's')[1] : D.rh[ch].map(p => noteXml(p, 'c')[1]).join('');
+    const lh = last ? chordXml(D.end.lh, 's')[1] : [0, 1].map(() => chordXml(D.lh[ch], 'm')[1]).join('');
+    ms += `<measure n="${b + 1}"${last ? ' right="end"' : ''}><staff n="1"><layer n="1">${rh}</layer></staff><staff n="2"><layer n="1">${lh}</layer></staff>${o.chords ? `<harm staff="1" tstamp="1" place="above">${ch}</harm>` : ''}</measure>`; }
+  const met = o.meter ? ` meter.count="4" meter.unit="4"` : '';
+  return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef><staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="G" clef.line="2"${met}/></staffGrp></scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
+}
 let INFO = {};
 // counts under the rhythm line: the beat a note starts on (coral), the beats it is held (grey, joined by a dash)
 const ON = '#e4572e', HELD = '#9a9cc4';
@@ -105,10 +116,11 @@ function addRows(svg, ways, b0, pic) {
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${lab}`);
 }
 const JOBS = {
-  sing1: [0, 4, { words: 1, meter: 1, boxes: 1 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1 }],
+  sing1: [0, 4, { words: 1, meter: 1, boxes: 1, pw: 1500 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1, pw: 1500 }],
   rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350 }],   // bigger: the first thing a child reads
   play1: [0, 4, { fing: 1, chords: 1, meter: 1, rows: ['way2', 'way3', 'way4'] }],   // the tune once, every way under it
   play2: [4, 8, { fing: 1, chords: 1, rows: ['way2', 'way3', 'way4'] }],
+  duet1: [0, 4, { duet: 1, meter: 1, pw: 2300 }], duet2: [4, 8, { duet: 1, pw: 2300 }],   // small: the teacher reads it
   g1: [0, 4, { fing: 1, chords: 1, meter: 1, tr: 4, key: '1s' }], g2: [4, 8, { fing: 1, chords: 1, tr: 4, key: '1s' }],   // Move it: bars 1 to 4 in G, one sharp, the same fingers
 };
 const out = {};
@@ -116,7 +128,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   INFO = {}; id = 0;
   tk.setOptions({ pageWidth: o.pw || 1750, adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
     pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20, breaks: 'none', spacingLinear: 0.25, spacingNonLinear: 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5, lyricWordSpace: 2.6, fingeringScale: 0.9 });
-  tk.loadData(mei(b0, b1, o)); let svg = tk.renderToSVG(1);
+  tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); let svg = tk.renderToSVG(1);
   // fingers above the staff: Verovio clears the staff but not a stem that rises past it (G's, A's), so set them all on one
   // line, clear of the highest stem
   if (o.fing) { const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
