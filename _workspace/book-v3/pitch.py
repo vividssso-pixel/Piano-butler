@@ -38,7 +38,6 @@ P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music 
 {two(px('ledger', 64, 'Treble: A, B, C below; A, B, C above.'), px('ledger_b', 64, 'Bass: E, D, C below; C, D, E above.'))}
 {h3('Octave signs')}
 {tbl(['Sign', 'Meaning', 'First met'], [['<b>8va</b>', 'play an octave higher than written, as far as the dotted line goes', 'Level ½'], ['<b>8vb</b>', 'play an octave lower', 'Level ½'], ['<b>15ma</b>', 'play two octaves higher', 'Level 4'], ['<b>loco</b>', 'back where it is written', 'Level ½']], ['16%', '64%', '20%'])}
-{remember([('C D E sit around two black keys, F G A B around three.', '22')])}
 {foot('Reading the notes p. 24 · The staff and the keyboard p. 25', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 23)
 
 rhy = [['Treble lines', 'E G B D F', '<i>Every Good Boy Deserves Fun</i>'], ['Treble spaces', 'F A C E', 'spells <i>FACE</i>'], ['Bass lines', 'G B D F A', '<i>Great Big Dragon Flies Away</i>'], ['Bass spaces', 'A C E G', '<i>All Cows Eat Grass</i>']]
@@ -50,14 +49,12 @@ P24 = ppage(f"""{head('Part I · Pitch · 3', 'Reading the notes', 'Each line an
 <p>Find these first; every other note is a <b>step</b> (line to the next space, or space to the next line) or a <b>skip</b> (line to line, space to space) away.</p>
 <div class="lmr"><div><b>Treble clef</b><br>Middle C on its ledger line below; the G the clef curls round (line 2); the C in the third space.</div>{px('lm_t', 70)}</div>
 <div class="lmr"><div><b>Bass clef</b><br>The C in the second space; the F between the clef’s dots (line 4); middle C on its ledger line above.</div>{px('lm_b', 70)}</div>
-{howto('read a note you are not sure of', ['Check the clef first.', 'Find the nearest landmark note.', 'Step or skip from it, saying the letters: a skip jumps one letter (G, B), a step goes to the next (G, A).'])}
-{remember([('Count lines and spaces from the bottom.', '23'), ('The treble clef marks G (line 2), the bass clef F (line 4).', '23')])}""", 24)
+{howto('read a note you are not sure of', ['Check the clef first.', 'Find the nearest landmark note.', 'Step or skip from it, saying the letters: a skip jumps one letter (G, B), a step goes to the next (G, A).'])}""", 24)
 
 P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Every line and space of the grand staff is one white key. Read from left to right, the notes climb the staff exactly as the keys climb the keyboard: two octaves from C3 to C5, with middle C in coral where the two staves meet.')}
 <figure class="vx px mapf"><div class="vs">{P['map'].replace('<svg ', '<svg style="max-height:520px" ', 1)}</div></figure>
 {two(h3('What the map shows') + '<p>Each step up the staff (line to space, space to line) is the next <b>white</b> key. The black keys have no line or space of their own: they are written with a sharp or a flat on a white key’s line or space (p. 26).</p>',
      h3('Two ways to write one key') + '<p>Middle C can sit on a ledger line below the treble staff or above the bass staff. Both mean the same key; the music chooses the staff of the hand that plays it.</p>')}
-{remember([('Middle C is C4.', '22'), ('Treble lines E G B D F, spaces F A C E.', '24')])}
 {foot('The keyboard p. 22 · Reading the notes p. 24', 'Workbook Pitch 1–2 · Online: Library › Staff and clefs')}""", 25)
 
 acc = [[gsym('♯', 28), 'sharp', 'raises a note by a semitone', 'Level 0'], [gsym('♭', 28), 'flat', 'lowers a note by a semitone', 'Level 0'], [gsym('♮', 28), 'natural', 'cancels a sharp or flat', 'Level ½'], [gsym('𝄪', 16), 'double sharp', 'raises by two semitones', 'Level 4'], [gsym('𝄫', 28), 'double flat', 'lowers by two semitones', 'Level 4']]
@@ -68,7 +65,6 @@ P26 = ppage(f"""{head('Part I · Pitch · 5', 'Sharps, flats and naturals', 'An 
 <div class="rules"><div><b>Only that line or space.</b> A sharp on the F in the first space does not change the F an octave higher.</div><div><b>A tie carries it on.</b> A note tied across the bar line keeps its accidental.</div><div><b>Reminders.</b> A courtesy accidental, sometimes in brackets, just reminds you after a bar line.</div></div>
 {h3('One key, two names')}
 {two('<p>Every black key has two names: the key between F and G is both <b>F♯</b> and <b>G♭</b>. Notes that sound the same but are written differently are <b>enharmonic</b>. White keys can have sharp or flat names too: <b>E♯</b> is F, <b>C♭</b> is B.</p>', kbx('C', 7, 46, 150, label=True, marks=[f'<text x="{(i + 1) * 46}" y="{y}" text-anchor="middle" font-family="AH,Arial" font-size="10.5" font-weight="700" fill="#fff">{t}</text>' for i, (s1, f1) in zip((0, 1, 3, 4, 5), (('C♯', 'D♭'), ('D♯', 'E♭'), ('F♯', 'G♭'), ('G♯', 'A♭'), ('A♯', 'B♭'))) for y, t in ((62, s1), (77, f1))], scale=1.0), '1fr 1fr')}
-{remember([('A semitone is the very next key, black or white.', '22'), ('Every line and space is one white key.', '25')])}
 {foot('Keys and key signatures p. 30', 'Workbook Pitch 3 · Online: Library › Signs')}""", 26)
 
 def semis(start, n, hi=(), W=36):   # numbered semitones from a key: 0 on the start, 1, 2 … on every key in turn
@@ -89,7 +85,6 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'An <b>inter
 {h3('Interval numbers from C')}
 {px('intv', 104)}
 {howto('name an interval’s number', ['Say the lower note’s letter as 1.', 'Count up the letters to the higher note: line, space, line …', 'The last number is the interval: the same note is a unison (1), 3 letters a 3rd, 5 letters a 5th, 8 letters an octave. Sharps and flats do not change the number.'])}
-{remember([('The letters run A to G, then start again.', '22'), ('A step goes from a line to the next space.', '24')])}
 {foot('Major, minor and perfect p. 28 · Scales p. 29', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 27)
 
 iv = [['unison', '0', '', '', 'Level 1'], ['2nd', '1 (minor)', '2 (major)', '', 'Level 1'], ['3rd', '3 (minor)', '4 (major)', '', 'Level ½'], ['4th', '', '5 (perfect)', '6 (augmented)', 'Level 1'], ['5th', '6 (diminished)', '7 (perfect)', '', 'Level 1'], ['6th', '8 (minor)', '9 (major)', '', 'Level 2'], ['7th', '10 (minor)', '11 (major)', '', 'Level 2'], ['octave', '', '12 (perfect)', '', 'Level 1']]
@@ -100,7 +95,6 @@ P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'Two i
 {tbl(['Number', 'Smaller', 'Main', 'Wider', 'First met'], iv, ['16%', '22%', '22%', '22%', '18%'])}
 <div class="ladder"><div><b>2nds, 3rds, 6ths, 7ths</b><span>diminished ‹ <b>minor</b> ‹ <b>major</b> › augmented</span></div><div><b>unisons, 4ths, 5ths, octaves</b><span>diminished ‹ <b>perfect</b> › augmented</span></div></div>
 <p class="sm">Each step on the ladder is one semitone. Six semitones (an augmented 4th or diminished 5th) is the tritone. Turned upside down, an interval’s numbers add to 9 and major and minor swap: a major 3rd becomes a minor 6th.</p>
-{remember([('Count every key, black and white.', '22'), ('An interval’s number comes from counting letters.', '27')])}
 {foot('Counting intervals p. 27 · Chords p. 50', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 28)
 
 forms = [['major', 'T T S T T T S', 'Level ½'], ['natural minor', 'T S T T S T T', 'Level ½'], ['harmonic minor', 'T S T T S T+S S', 'Level ½'], ['melodic minor (up)', 'T S T T T T S; down as the natural minor', 'Level 2'], ['chromatic', 'every semitone', 'Level 2'], ['pentatonic (black keys)', 'T T T+S T T+S', 'Level 0']]
@@ -113,8 +107,7 @@ P29 = ppage(f"""{head('Part I · Pitch · 8', 'Scales', 'A <b>scale</b> is a lad
 {px('a_har', 40, 'Harmonic: the 7th raised a semitone (G♯).')}
 {px('a_mel', 40, 'Melodic: 6th and 7th raised going up, lowered coming down.')}
 {two(h3('Degree names') + '<p class="degs">' + ' · '.join(f'<b>{a}</b> {b}' for a, b in deg) + '</p>', h3('Minor partners') + '<p><b>Relative</b>: same signature, 3 semitones lower (C major, A minor). <b>Parallel</b>: same key note (C major, C minor).</p>')}
-{howto('build any major scale', ['Write the eight letters from the key note up, every letter once.', 'Check each step against T T S T T T S on the keyboard; add a sharp or flat where a step is wrong. G major: G A B C D E F♯ G.'])}
-{remember([('A tone is two semitones.', '22'), ('A sharp raises, a flat lowers.', '26')])}""", 29)
+{howto('build any major scale', ['Write the eight letters from the key note up, every letter once.', 'Check each step against T T S T T T S on the keyboard; add a sharp or flat where a step is wrong. G major: G A B C D E F♯ G.'])}""", 29)
 
 keys = [['C major', 'A minor', '—', 'Level ½'], ['G major', 'E minor', '1♯', 'Level ½'], ['D major', 'B minor', '2♯', 'Level 1'], ['A major', 'F♯ minor', '3♯', 'Level 3'], ['E major', 'C♯ minor', '4♯', 'Level 4'], ['B major', 'G♯ minor', '5♯', 'Level 4'], ['F major', 'D minor', '1♭', 'Level ½'], ['B♭ major', 'G minor', '2♭', 'Level 1'], ['E♭ major', 'C minor', '3♭', 'Level 3'], ['A♭ major', 'F minor', '4♭', 'Level 4'], ['D♭ major', 'B♭ minor', '5♭', 'Level 4']]
 P30 = ppage(f"""{head('Part I · Pitch · 9', 'Keys and key signatures', 'A <b>key signature</b> at the start of each line lists the sharps or flats the piece uses throughout, so they do not have to be written before every note. They always appear in the same order.')}
@@ -123,7 +116,6 @@ P30 = ppage(f"""{head('Part I · Pitch · 9', 'Keys and key signatures', 'A <b>k
 {tbl(['Major', 'Relative minor', 'Signature', 'First met'], keys, ['28%', '28%', '20%', '24%'])}
 <p class="sm">Six and seven sharps or flats (F♯, C♯, G♭, C♭ major and their minors) come at Levels 4–6.</p>
 {howto('find the key of a piece', ['Read the key signature: it gives two keys, a major and its relative minor.', 'Look at the last bass note: it is usually the key note.', 'Look for the raised 7th of the minor (G♯ in A minor): if it keeps appearing, the piece is minor.'])}
-{remember([('Major scale: T T S T T T S.', '29'), ('The relative minor is three semitones lower.', '29')])}
 {foot('Scales p. 29 · The circle of fifths p. 31', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 30)
 
 def circle():
@@ -142,7 +134,6 @@ def circle():
 P31 = ppage(f"""{head('Part I · Pitch · 10', 'The circle of fifths', 'All the keys on one clock face. Going round clockwise, each key is a <b>5th higher</b> than the last and has <b>one more sharp</b> (or one fewer flat). Anticlockwise, each is a 4th higher, a 5th lower, with one more flat.')}
 {two(circle(), h3('Reading the circle') + '<p><b>Outer ring:</b> major keys. <b>Middle ring:</b> their relative minors (small letters). <b>Inner ring:</b> the key signature.</p>' + h3('Neighbours are close') + '<p>Keys next to each other share all but one note, so music moves between them easily: from C major to G major or F major, or to the relative minor. These are the <b>related keys</b>.</p>' + h3('At the bottom') + '<p>Six sharps and six flats meet: F♯ major and G♭ major are the same keys on the piano, written two ways.</p>', '1.1fr 1fr')}
 {howto('use the circle', ['To find a key signature: count the steps from C, clockwise for sharps, anticlockwise for flats.', 'To find related keys: look one step either side, and straight in for the relative minor.', 'To practise scales in a smart order: go round the circle, one new sharp or flat at a time.'])}
-{remember([('A 5th is five letters, seven semitones.', '27–28'), ('Sharps in order: F C G D A E B.', '30')])}
 {foot('Keys and key signatures p. 30 · Chords p. 50', 'Workbook Pitch 5 · Online: Scale finder, Library › Related keys')}""", 31)
 
 css += '''
