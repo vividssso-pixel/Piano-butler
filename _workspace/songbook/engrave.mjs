@@ -76,14 +76,14 @@ function addCounts(svg) {
     beat += L; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
-function addBoxes(svg, ex, names, boxSize) {   // names: every box filled in (before the staff the place can't tell the note)
+function addBoxes(svg, ex, names, boxSize, pre) {   // names: every box filled in (before the staff the place can't tell the note)
   const ev = []; let m; const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use xlink:href="#[^"]+" transform="translate\((\d+), (\d+)\)/g;
   while ((m = re.exec(svg))) ev.push(+m[2] + 106);
   // the boxes sit in a row of their own: below middle C's ledger line (top line + 4 spaces + a ledger + a head), or below
   // the words when the line has them
   const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
   const sylY = [...svg.matchAll(/class="syl">\s*<text x="[\d.]+" y="(\d+)"/g)].map(m => +m[1]);
-  const T = sylY.length ? Math.max(...sylY) + 160 : sy + 1110; let out = '';
+  const T = sylY.length ? Math.max(...sylY) + 160 : pre ? sy + 620 : sy + 1110; let out = '';   // before the staff: boxes just under the lowest head
   // each box as wide as its own room allows: a note close to its neighbours gets a narrower box, never touching them
   const room = (k) => Math.min(k ? ev[k] - ev[k - 1] : 1e9, k < ev.length - 1 ? ev[k + 1] - ev[k] : 1e9);
   const minRoom = Math.min(...ev.map((x, k) => room(k)));
@@ -156,8 +156,9 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen) {
   return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
 }
 const JOBS = S.jobs || {
-  sing1: [0, 4, { words: 1, meter: 1, boxes: 1, pw: 1500 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1, pw: 1500 }],
-  rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350 }],   // bigger: the first thing a child reads
+  sing1: [0, 4, { words: 1, meter: 1, pw: 1500 }], sing2: [4, 8, { words: 1, pw: 1500 }],   // page 1: the whole song (her 4 Nov 13:13)
+  name1: [0, 4, { meter: 1, boxes: 1, pw: 1500 }], name2: [4, 8, { boxes: 1, noEx: 1, pw: 1500 }],   // page 2: its letter names to write
+  rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350, sl: 0.4 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350, sl: 0.4 }],   // bigger: the first thing a child reads
   play1: [0, 4, { fing: 1, chords: 1, meter: 1, rows: ['way2', 'way3', 'way4'] }],   // the tune once, every way under it
   play2: [4, 8, { fing: 1, chords: 1, rows: ['way2', 'way3', 'way4'] }],
   duet1: [0, 4, { duet: 1, meter: 1, pw: 2300 }], duet2: [4, 8, { duet: 1, pw: 2300 }],   // small: the teacher reads it
@@ -193,7 +194,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
-  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
+  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box, o.pre); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
   if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix);
   // a left-hand line before the staff (her 12:18): the line and the ledgers mean the treble's places, so they go; the notes
   // keep their high and low, the bar lines stay
