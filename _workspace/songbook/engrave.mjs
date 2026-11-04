@@ -130,12 +130,12 @@ function addRows(svg, ways, b0, pic, pre) {
 }
 // Before the staff the letter goes inside the note (her 4 Nov 12:07): a bigger head with its name in it, joined to its stem;
 // filled for a crotchet or quaver (white letter), open for a minim or longer (navy letter). The small engraved head goes.
-function addLetterHeads(svg, pitches, hs, hm, keepLen) {
+function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff) {
   // heads about twice the size, so the places are twice as far apart too (S.pre: E on the line, D hanging just under it, C
   // on a ledger of its own); Verovio's ledger lines go, and the song's ledger notes (S.ledger) get one through their middle.
   // A head never touches its neighbour: where notes are close (quavers) it shrinks to fit.
-  const RX0 = 250, RY0 = 195, FS0 = 290;
-  svg = svg.replace(/<g[^>]*class="ledgerLines[^"]*"[^>]*>[\s\S]*?<\/g>/g, '');
+  const RX0 = 250, RY0 = 195, FS0 = 290, STEM = 950;
+  if (!onStaff) svg = svg.replace(/<g[^>]*class="ledgerLines[^"]*"[^>]*>[\s\S]*?<\/g>/g, '');   // on the staff the ledgers stay
   const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use [^>]*transform="translate\((\d+), (\d+)\)[^>]*\/>\s*<\/g>(\s*<g id="[^"]+" class="stem">\s*<path d="M(\d+) (\d+) L\d+ (\d+)")?/g;
   const at = [...svg.matchAll(re)].map(m => +m[2] + 108), room = (k) => Math.min(k ? at[k] - at[k - 1] : 1e9, k < at.length - 1 ? at[k + 1] - at[k] : 1e9);
   const lineY = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
@@ -146,10 +146,13 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen) {
     const L = INFO[id].len, open = L >= 2, p = pitches[k++], name = hm ? S[hm][p] : p[0].toUpperCase(); let cx = +x + 108;
     // S.place: steps of half a head, as on a real staff (E on the line, D touching it from below, C a step further on its
     // ledger); the stem's head end moves with the head, its tip (and any beam) stays
-    if (S.place && p in S.place) { const ny = lineY - S.place[p] * RY; if (st) { const down = +y2 > +y1, beamed = beams.some(([a, b]) => +sx >= a - 30 && +sx <= b + 30);
-      // a stem not on a beam keeps a full length from its moved head (her 4 Nov 13:32: not too short); a beamed one stays on its beam
-      const tip = beamed ? +y2 : down ? Math.max(+y2, ny + 700) : Math.min(+y2, ny - 700);
-      m = m.replace(`M${sx} ${y1} L${sx} ${y2}`, `M${sx} ${ny} L${sx} ${tip}`); } y = ny; }
+    if (!onStaff) { const ny = S.place && p in S.place ? lineY - S.place[p] * RY : +y;
+      // before the staff every stem not on a beam is one long length from its head (her 4 Nov 13:32 and 15:15: not short,
+      // all the same, the long one); a beamed one stays on its beam
+      if (st) { const down = +y2 > +y1, beamed = beams.some(([a, b]) => +sx >= a - 30 && +sx <= b + 30);
+        const tip = beamed ? +y2 : down ? ny + STEM : ny - STEM;
+        m = m.replace(`M${sx} ${y1} L${sx} ${y2}`, `M${sx} ${ny} L${sx} ${tip}`); }
+      y = ny; }
     if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
     const ledger = (S.ledger || []).includes(p) ? `<line x1="${cx - RX - 110}" x2="${cx + RX + 110}" y1="${y}" y2="${y}" stroke="#000" stroke-width="22" class="lledger"/>` : '';
     // drawn where the head was, so it sits over the line and under its own stem
@@ -195,7 +198,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   const sy0 = +(svg.match(/class="staff">\s*<path d="M\d+ (\d+)/) || svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];   // the line's height, read before anything moves
  if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box, o.pre);   // the boxes read the engraved heads, so before the lettered heads replace them
   if (o.rows) svg = addRows(svg, o.rows, b0, o.pic, o.pre);   // the rows read the engraved notes and the line, so before the lettered heads too
-  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix);   // first, so the fingers clear the stems as they end up
+  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix, !o.pre);   // first, so the fingers clear the stems as they end up
   if (o.lhfing) { const sy = sy0;
     const bots = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.max(+m[1], +m[2]));
     const base = Math.max(sy, ...bots) + 330;
