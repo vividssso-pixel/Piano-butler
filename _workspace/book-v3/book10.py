@@ -37,7 +37,7 @@ def bars(kind, h=34):
         out = ''.join(f'<rect x="{dx + x}" y="0" width="{w}" height="60" fill="{N}"/>' for x, w in sw[k])
         if dots: out += ''.join(f'<circle cx="{dx + dots}" cy="{cy}" r="3.4" fill="{N}"/>' for cy in (22, 38))
         return out
-    if kind == 'repeat': inner, W = one('rep', 0, 25) + one('rep2', 46, -0.5 + 40), 64
+    if kind == 'repeat': inner, W = one('rep', 0, 25) + one('rep2', 84, -12), 99   # start repeat |:  and end repeat :|, a clear gap between them (her 4 Nov: the end repeat needs its dots)
     else: inner, W = one({'bar': 'bar', 'dbl': 'dbl', 'fin': 'fin'}[kind]), 20
     return f'<svg viewBox="-2 -2 {W + 4} 64" style="height:{h}px;width:auto;display:block">{inner}</svg>'
 def gl(ch, size=34): return f'<span class="gl2" style="font-size:{size}px">{ch}</span>'

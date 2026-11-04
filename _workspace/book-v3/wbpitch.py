@@ -17,7 +17,7 @@ def wpx(k, h=70, spx=None):
 def pc(k, lab, h=70): return f'<div class="fc">{wpx(k, 84, 30)}<div class="add">{lab.replace(BOX, WL)}</div></div>'
 def wpage2(inner, n, hb):
     return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{'PITCH · HANDBOOK P. ' + str(22 + 2 * (hb - 22)) if hb else 'PITCH'}</span></div><div class="rule"></div><div class="body">{inner}</div>
-<div class="sign"><span>Date <i></i></span><span>Practised <i class="s"></i> times</span><span>Checked <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
+<div class="sign"><span style="flex:0 0 240px">Date <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
 def tq(kind, topic, title, rule, inner, n, hb):
     return wpage2(f'<div class="kick">Pitch · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
 def kbd(start, n, W, H, extra_h=0, **kw):
