@@ -9,7 +9,7 @@ def b64(p): return base64.b64encode(open(p, 'rb').read()).decode()
 FF = (f"@font-face{{font-family:'AH';font-weight:400;src:url(data:font/woff2;base64,{b64(FD + 'atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2')}) format('woff2')}}"
       f"@font-face{{font-family:'AH';font-weight:700;src:url(data:font/woff2;base64,{b64(FD + 'atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2')}) format('woff2')}}"
       f"@font-face{{font-family:'PF';font-weight:700;src:url(data:font/woff2;base64,{b64(FD + 'playfair-display/files/playfair-display-latin-700-normal.woff2')}) format('woff2')}}")
-LESSON, LEVEL = 5, 'Level 0'
+LESSON, LEVEL = SONG.get('lesson', 5), 'Level 0'
 ROOM = SONG.get('room', 'note-values')   # the drills room this lesson goes with (the QR opens it; drills needs ?room=)
 import qrcode, qrcode.image.svg
 def qr(url):   # a plain navy QR, drawn as one SVG path
@@ -18,7 +18,9 @@ def qr(url):   # a plain navy QR, drawn as one SVG path
     return f'<svg viewBox="0 0 {n} {n}" style="width:96px;height:96px;display:block" shape-rendering="crispEdges"><path d="{d}" fill="{N}"/></svg>'
 URL = 'https://thepianobutler.com/drills.html?room=' + ROOM
 def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>LESSON {LESSON} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
-def mus(k, cls=''): return f'<div class="mus {cls}" data-snip="{k}">{V[k]}</div>'
+def mus(k, cls=''):   # a shorter last line keeps the same size of note: its width in proportion to its bars
+    w = SONG.get('widths', {}).get(k); st = f' style="max-width:{w * 100:.1f}%"' if w else ''
+    return f'<div class="mus {cls}" data-snip="{k}"{st}>{V[k]}</div>'
 def part(n, t, how): return f'<div class="ph"><span class="pn">{n}</span><h2>{t}</h2></div><p class="how">{how}</p>'
 def ticks(items, h=False): return f'<div class="ticks{" h" if h else ""}">' + ''.join(f'<span class="tk"><span class="bx"></span>{t}</span>' for t in items) + '</div>'
 def way(n, t, stars, how, a, b):
@@ -30,14 +32,15 @@ L7 = 'cdefgab'
 def trp(p, k): i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p[1:]) + i // 7)
 # a keyboard from middle C: the five white keys under the right hand (from `start`), the song's notes lit, the fingers on
 # them; `sharp` marks the key's black key in coral, named above it
-def kb(start=0, tr=0, sharp=None, width=380):
+def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
     used = {trp(p, tr)[0] for bar in SONG['bars'] for p, *_ in bar}; W, H, w = 420, 150, 42
     whites = ['c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd', 'e']; out = ''; top = 24 if sharp is not None else 0
     for i, l in enumerate(whites):
         inpos = start <= i < start + 5; lit = inpos and l in used
         out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="3" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.5"/>'
         out += f'<text x="{i * w + w / 2}" y="{H - 12}" text-anchor="middle" font-family="AH" font-weight="700" font-size="17" fill="{N}">{l.upper()}</text>'
-        if inpos: f = i - start + 1; out += f'<circle cx="{i * w + w / 2}" cy="{H - 48}" r="13" fill="{C if lit else "#fff"}" stroke="{C}" stroke-width="1.8"/><text x="{i * w + w / 2}" y="{H - 42.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{"#fff" if lit else C}">{f}</text>'
+        if fmap is not None: inpos = i < 5 and l in fmap; lit = inpos
+        if inpos: f = fmap[l] if fmap else i - start + 1; out += f'<circle cx="{i * w + w / 2}" cy="{H - 48}" r="13" fill="{C if lit else "#fff"}" stroke="{C}" stroke-width="1.8"/><text x="{i * w + w / 2}" y="{H - 42.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{"#fff" if lit else C}">{f}</text>'
     for i in (0, 1, 3, 4, 5, 7, 8):
         out += f'<rect x="{(i + 1) * w - 13}" y="0" width="26" height="{H * 0.6}" rx="2" fill="{C if i == sharp else N}"/>'
         if i == sharp: out += f'<text x="{(i + 1) * w}" y="-8" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{C}">F♯</text>'
@@ -58,7 +61,8 @@ def lhkb(way, ch, both=False):
     for i in (0, 1, 3): out += f'<rect x="{(i + 1) * w - 8}" y="0" width="16" height="{H * 0.56}" rx="2" fill="{N}"/>'
     return f'<div class="lk"><svg viewBox="-1 -1 {W + 2} {H + 2}" style="width:150px;display:block">{out}</svg><span class="lkc">roots: C 5, G 1</span></div>'
 
-chips = ''.join(f'<span class="chip">{t}</span>' for t in ['4/4', 'crotchet, minim, semibreve', 'C position', 'steps and a skip', 'chords C and G'])
+LEAD = SONG.get('lead', 'A rhyme by Sarah Josepha Hale, first printed in Boston in 1830, about a lamb that followed a girl to school. We sing it to the tune of <i>Merrily we roll along</i>.')
+chips = ''.join(f'<span class="chip">{t}</span>' for t in SONG.get('chips', ['4/4', 'crotchet, minim, semibreve', 'C position', 'steps and a skip', 'chords C and G']))
 WAYS = [(1, 'The tune', 'Right hand alone. The numbers above the notes are your fingers.'),
         (2, 'Hold the root', 'Left hand, row 2. A chord is named after its root: C with finger 5, G with finger 1. Hold it all bar.'),
         (3, 'Root on 1 and 3', 'Row 3: the same root, played on beats 1 and 3.'),
@@ -71,25 +75,33 @@ def note(kind, s=1.0):
     stem = '' if kind == 's' else f'<line x1="22.3" y1="38" x2="22.3" y2="6" stroke="{N}" stroke-width="2.2"/>'
     return f'<svg viewBox="0 0 30 50" style="width:{24 * s}px;height:{40 * s}px">{head}{stem}</svg>'
 def beats(n): return '<span class="bd">' + '<i></i>' * n + '</span>'
-vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{beats(n)}</div></div>' for k, nm, n in [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)])
-tsig = f"""<div class="ts"><div class="tsn"><span>4</span><span>4</span></div><div class="tsx"><p><b>Top 4:</b> four beats in every bar.</p><p><b>Bottom 4:</b> a crotchet is one beat.</p></div></div>"""
+vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{beats(n)}</div></div>' for k, nm, n in [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)] if k in SONG.get('values', 'cms'))
+TIME = SONG.get("time_html", "<p><b>Top 4:</b> four beats in every bar.</p><p><b>Bottom 4:</b> a crotchet is one beat.</p>")
+TSN = '<div class="tsn"><span>4</span><span>4</span></div>' if SONG.get("time_label", "The time") == "The time" else ''
+tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 
+POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
+  '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G. In which bar? <span class="ib"></span></p></div></div>')
+if 'pos' in SONG: POS = '<div class="pos"><div>' + kb(width=340, fmap=SONG.get('fmap')) + '</div><div>' + SONG['pos'] + '</div></div>'
+P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
+LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
-<p class="lead">A rhyme by Sarah Josepha Hale, first printed in Boston in 1830, about a lamb that followed a girl to school. We sing it to the tune of <i>Merrily we roll along</i>.</p>
+<p class="lead">{LEAD}</p>
 <div class="chips"><span class="cl">In this song</span>{chips}</div>
 <div class="sp"></div>{part(1, 'Say and clap', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
-<div class="mat"><div class="mh">The time</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
-<div class="sp"></div>{mus('rhy1')}<div class="sp"></div>{mus('rhy2')}<div class="sp"></div>
+<div class="mat"><div class="mh">{SONG.get("time_label", "The time")}</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
+<div class="sp"></div>{LINES('rhy')}
 <div class="end">{ticks(['Said it in time', 'Clapped and counted', 'Found every minim (2 beats)'], True)}</div>''', 1)
 
 P2 = page(f'''{part(2, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter name of every note in the boxes; the first one is done.')}
-<div class="pos"><div>{kb(width=340)}</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>
-<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G. In which bar? <span class="ib"></span></p></div></div>
-<div class="sp"></div>{mus('sing1')}<div class="sp"></div>{mus('sing2')}<div class="sp"></div>
+{POS}
+<div class="sp"></div>{LINES('sing')}
 
-<div class="row2 end"><div>{ticks(['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'], True)}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>''', 2)
+<div class="row2 end"><div>{ticks(P2T, True)}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>''', 2)
 
-P3 = page(f'''{part(3, 'Play it four ways', 'Each way adds a little more for the left hand. Your teacher tells you which is yours this week.')}
+exec(open('early.py').read())
+if 'basics' in SONG: P3 = basics_page()
+else: P3 = page(f'''{part(3, 'Play it four ways', 'Each way adds a little more for the left hand. Your teacher tells you which is yours this week.')}
 <div class="lg"><div class="lgl">{legend}</div><div class="lks"><span class="lkh">Left hand</span>{lhkb('way2', 'C', both=True)}</div></div>
 <div class="sp"></div>{mus('play1')}<div class="sp"></div>{mus('play2')}<div class="sp"></div>
 <div class="tog"><span class="tgh">Play together</span><span>Two players, one song: one plays Way 1, the other a left-hand row. Then swap.</span></div>
@@ -117,6 +129,6 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .chk{{border:1.5px solid {N};margin-top:8px;padding:12px 16px}} .ch{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-bottom:4px}} .cgrid{{display:grid;grid-template-columns:1fr 1.25fr;gap:20px}} .chk .ticks.h{{gap:12px}} .chk .tk{{white-space:nowrap}}
 .mv{{display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;margin:4px 0 2px}} .cap2{{font-size:15px;line-height:1.5;margin:0}} .gl{{max-width:91%;margin:0 auto}} .wrow{{display:flex;align-items:center;gap:10px;margin:6px 0}} .wk{{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{C};width:38px;flex:none}} .wrow .ticks{{margin:0}} .ck2{{font-size:15.5px;font-weight:700;margin:8px 0 2px}}
 .tch{{display:flex;align-items:center;gap:16px;margin-top:12px;padding-top:10px;border-top:1px dashed #c9cbe0}} .tch>span:first-child{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{MUTE}}}
-@media print {{ body{{background:#fff}} .pg{{margin:0}} }}'''
+@media print {{ body{{background:#fff}} .pg{{margin:0}} }}''' + EARLY_CSS
 html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{P1}{P2}{P3}</body></html>'
 open(sys.argv[3], 'w').write(html); print('ok', len(html))

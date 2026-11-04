@@ -22,7 +22,7 @@ const { chromium } = require('playwright');
     });
     // what must be there: the counts under the rhythm lines, the answer boxes under the reading line
     const need = { rhy1: '.cnt', rhy2: '.cnt', sing1: 'rect.wbox', play1: '.when', play2: '.when' };
-    for (const [k, sel] of Object.entries(need)) { const el = document.querySelector('.mus[data-snip="' + k + '"]'); if (!el || !el.querySelectorAll(sel).length) bad.push([k, 'missing', sel]); }
+    for (const [k, sel] of Object.entries(need)) { const el = document.querySelector('.mus[data-snip="' + k + '"]'); if (el && !el.querySelectorAll(sel).length) bad.push([k, 'missing', sel]); }
     return { n: document.querySelectorAll('.mus').length, bad };
   });
   console.log(r.n, 'snippets;', r.bad.length, 'clashes'); r.bad.slice(0, 30).forEach(x => console.log(' ', x.join(' | ')));
