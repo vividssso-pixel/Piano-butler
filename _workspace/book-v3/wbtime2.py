@@ -25,15 +25,15 @@ def grid(cells, cols=3, cls=''): return f'<div class="fills {cls}" style="grid-t
 WL = '<span class="wl"></span>'   # centred writing line (her 4 Nov)
 def cell(k, lab, h=70): return f'<div class="fc">{wx(k, max(h, 78))}<div class="add">{lab.replace(BOX, WL)}</div></div>'
 import math as _m
-def pizza(n, fill=0, R=34):   # a circle cut into n equal slices; the first `fill` slices coloured red
-    cx = cy = R + 3; s = f'<svg viewBox="0 0 {2 * R + 6} {2 * R + 6}" style="width:{2 * R + 6}px;height:{2 * R + 6}px;display:block;margin:0 auto">'
+def pizza(n, fill=0, R=34, rest=False):   # a circle cut into n equal slices; the first `fill` slices red (a rest: shaded with lines)
+    cx = cy = R + 3; s = f'<svg viewBox="0 0 {2 * R + 6} {2 * R + 6}" style="width:{2 * R + 6}px;height:{2 * R + 6}px;display:block;margin:0 auto"><defs><pattern id="hz" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="#fff"/><line x1="0" y1="0" x2="0" y2="5" stroke="{N_}" stroke-width="1.4"/></pattern></defs>'; FC = 'url(#hz)' if rest else C
     if n == 1:
-        s += f'<circle cx="{cx}" cy="{cy}" r="{R}" fill="{C if fill else "#fff"}" fill-opacity="{0.85 if fill else 1}" stroke="{N_}" stroke-width="2"/>'
+        s += f'<circle cx="{cx}" cy="{cy}" r="{R}" fill="{FC if fill else "#fff"}" fill-opacity="{0.85 if fill and not rest else 1}" stroke="{N_}" stroke-width="2"/>'
     else:
         for i in range(n):
             a0, a1 = -_m.pi / 2 + 2 * _m.pi * i / n, -_m.pi / 2 + 2 * _m.pi * (i + 1) / n
             x0, y0, x1, y1 = cx + R * _m.cos(a0), cy + R * _m.sin(a0), cx + R * _m.cos(a1), cy + R * _m.sin(a1)
-            s += f'<path d="M{cx},{cy} L{x0:.1f},{y0:.1f} A{R},{R} 0 0 1 {x1:.1f},{y1:.1f} Z" fill="{C if i < fill else "#fff"}" fill-opacity="0.85" stroke="{N_}" stroke-width="1.6"/>'
+            s += f'<path d="M{cx},{cy} L{x0:.1f},{y0:.1f} A{R},{R} 0 0 1 {x1:.1f},{y1:.1f} Z" fill="{FC if i < fill else "#fff"}" fill-opacity="{1 if rest else 0.85}" stroke="{N_}" stroke-width="1.6"/>'
     return s + '</svg>'
 def tfrows(items): return ''.join(f'<div class="row">{t}<span class="tf">T &nbsp; F</span></div>' for t in items)
 def piece(rows): return tbl(['Find in a piece you are learning', 'Piece', 'Bar'], [[r, LINE, BOX] for r in rows], ['46%', '38%', '16%'])
@@ -61,11 +61,12 @@ A2 = tp('Learn', 'Notes and rests', 'Notes and rests', 'Each plain note lasts ha
 {ex(2, 'Draw it', 2, 'Draw one note for each length (crotchet = 1 beat).', '<div class="mm4">' + ''.join(f'<div><span class="drw"></span><span class="mmk">{t}</span></div>' for t in ('2 beats', '½ beat', '3 beats', '4 beats')) + '</div>')}
 {PIZZA}''', 3, 38)
 heads = [(70, 62), (130, 50), (190, 26), (250, 32), (310, 56), (370, 20), (430, 68), (490, 38), (550, 44)]
+RESTPZ = ex(4, 'Rests are empty slices', 1, 'A rest is silence that lasts as long as its note. Shade each rest’s share of the pizzas with lines, then write its beats. The first is done.', '<div class="pzr">' + ''.join(f'<div class="pzrow"><span class="pzn">{gin("r", k)} {nm}</span><span class="pzs">{"".join(pizza(cut, (cut if i < full else 0) if d else 0, 15, True) for i in range(4))}</span><span class="pzl">{("<b class=done2>" + bt + "</b>") if d else WL + " beats"}</span><span></span></div>' for k, nm, cut, full, bt, d in (('sb', 'semibreve rest', 1, 4, '4 beats', True), ('m', 'minim rest', 1, 2, '', False), ('c', 'crotchet rest', 1, 1, '', False), ('q', 'quaver rest', 2, 0, '', False))) + '</div>')
 B2 = tp('Use', 'Notes and rests', 'Notes and rests', 'Below the middle line, stems go up on the right; above it, down on the left.', f'''
 {ex(1, 'Rests on the staff', 1, 'Draw a semibreve rest in the first bar (it hangs below the fourth line) and a minim rest in the second (it sits on the middle line).', staff('', 2))}
 {ex(2, 'Draw the stems', 2, 'Turn every head into a crotchet: add a stem going the right way. The first is done.', staff('', 1, heads=heads, stems=[0]))}
 {ex(3, 'Finish with a rest', 2, 'Each bar is short. Complete it with one rest.', grid([cell(k, 'rest ' + BOX, 64) for k in ('wra', 'wrb', 'wrc', 'wrd')], 4))}
-{ex(4, 'Which did you hear?', 2, 'Someone claps one rhythm from each row (or play it in the online Library). Circle A, B or C.', opts(('wa1', 'wa2', 'wa3')) + opts(('wa4', 'wa5', 'wa6')))}''', 4, 38)
+{RESTPZ}''', 4, 38)
 
 # ---------- 3 How long ----------
 sums = [(['m', 'c'], '3'), (['c', 'q'], ''), (['dm', 'c'], ''), (['sb', 'm'], ''), (['dc', 'q'], ''), (['q', 'q', 'q', 'q'], '')]
@@ -147,7 +148,7 @@ PR = wpage(f'''<div class="kick">Time · Progress</div><h1>My progress</h1><p cl
 ans = [('p. 1', 'Slow to fast: 60, 76, 92, 120. Strong beats on 1; in 4/4 medium on 3. Signs: bar line, double bar line, final bar line, repeat signs. Count: 1 2 3 · 1–2 3 · 1–2–3. How fast does it feel: any answer; slower to faster is usual.'),
        ('p. 2', 'Mistake: bar 3 has 4 beats.'),
        ('p. 3', 'Draw it: minim, quaver, dotted minim, semibreve. Table: crotchet 1, minim 2, quaver ½, dotted minim 3, semiquaver ¼. Pizza: minim = half note, 2 beats; crotchet = quarter note, 1 beat; quaver = eighth note, ½ beat.'),
-       ('p. 4', 'Stems: up on the right below the middle line, down on the left above it, either on it. Rests: minim, crotchet, minim, crotchet.'),
+       ('p. 4', 'Stems: up on the right below the middle line, down on the left above it, either on it. Rests: minim, crotchet, minim, crotchet. Rests: minim rest 2 beats (2 pizzas), crotchet rest 1 beat (1 pizza), quaver rest ½ beat (half a pizza).'),
        ('p. 5', 'Sums: 1½, 4, 6, 2, 2. Complete: crotchet, crotchet, crotchet, quaver, quaver, quaver.'),
        ('p. 6', 'Tie or dot: dotted minim, dotted crotchet, dotted semibreve. Mistake: bar 2 has 5 beats.'),
        ('p. 7', 'Time signatures: 3/4, 2/4, 6/8, 4/4, 5/4, 9/8. Compound: 6/8, 9/8, 12/8, 6/4 (beats 2, 3, 4, 2). Simple: 3/4 (3), 2/2 (2), 4/4 (4), 3/8 (3). 3/4: 3 crotchet beats; 6/8: 2 dotted-crotchet beats; C = 4/4, ¢ = 2/2.'),
