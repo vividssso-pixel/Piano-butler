@@ -25,7 +25,7 @@ function mei(b0, b1, o) {
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, lh: o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L') });
+    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, lh: !o.staff5 && (o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L')) });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
       if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${(o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
@@ -39,7 +39,8 @@ function mei(b0, b1, o) {
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff>${st2}${ctrl.splice(0).join('')}</measure>`;
   }
   const met = (o.key ? ` keysig="${o.key}"` : '') + (o.meter ? ` meter.count="4" meter.unit="4"` : '');
-  const sd = o.rhythm || o.pre ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
+  const sd = o.staff5 ? `<staffDef n="1" lines="1" clef.shape="G" clef.line="1"${met}/>`   // a staff drawn to the lettered heads (her 4 Nov 18:11): Verovio gives the clef, we draw the lines
+    : o.rhythm || o.pre ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
     : o.lh ? `<staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp>`
     : `<staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/>`;
   return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef>${o.rhythm || !o.lh ? `<staffGrp>${sd}</staffGrp>` : sd}</scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
@@ -151,36 +152,52 @@ function fitBeams(svg, L) {
   }
   return out;
 }
-function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff) {
+
+// a five-line staff spaced to the lettered heads (her 4 Nov 18:11): a line every head-height, E4 on the bottom line
+let SP5 = 0;
+const STAFF_PLACE = { c4: -2, d4: -1, e4: 0, f4: 1, g4: 2, a4: 3, b4: 4, c5: 5, d5: 6, e5: 7, f5: 8, g5: 9 };
+function drawStaff5(svg, lineY, RY) {
+  const sp = 2 * RY, k = sp / 180; SP5 = sp;
+  svg = svg.replace(/(<g id="[^"]+" class="staff">\s*)<path d="M(\d+) (\d+) L(\d+) (\d+)" stroke-width="13" \/>/g, (m, a, x1, y1, x2) =>
+    a + [0, 1, 2, 3, 4].map(i => `<path d="M${x1} ${lineY - i * sp} L${x2} ${lineY - i * sp}" stroke-width="13" class="s5"/>`).join(''));
+  svg = svg.replace(/class="barLine">[\s\S]*?<\/g>/g, g => g.replace(/<path d="M(\d+) (-?[\d.]+) L(\d+) (-?[\d.]+)"/g, (m, x, ya, x2) => `<path d="M${x} ${lineY - 4 * sp} L${x2} ${lineY}"`));
+  svg = svg.replace(/(class="clef">\s*<use [^>]*transform=")translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)/, (m, a, x, y, sx) => `${a}translate(${+x - 40}, ${lineY - sp}) scale(${sx * k * 0.72}, ${sx * k * 0.72})`);
+  let mi = 0; const mid = lineY - 2 * sp;
+  svg = svg.replace(/(class="meterSig">)([\s\S]*?)(<\/g>)/, (m, a, body, c) => a + body.replace(/transform="translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)"/g, (mm, x, y, sx) => `transform="translate(${+x + 60}, ${mi++ ? mid + sp : mid - sp}) scale(${sx * k}, ${sx * k})"`) + c);
+  return svg;
+}
+function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5) {
+  const PL = staff5 ? STAFF_PLACE : (S.place || {});   // on a staff of our own every note has its line or space
   // heads about twice the size, so the places are twice as far apart too (S.pre: E on the line, D hanging just under it, C
   // on a ledger of its own); Verovio's ledger lines go, and the song's ledger notes (S.ledger) get one through their middle.
   // A head never touches its neighbour: where notes are close (quavers) it shrinks to fit.
-  const RX0 = 250, RY0 = 195, FS0 = 290, STEM = 700;
+  const RX0 = 250, RY0 = 195, FS0 = 290;
   if (!onStaff) svg = svg.replace(/<g[^>]*class="ledgerLines[^"]*"[^>]*>[\s\S]*?<\/g>/g, '');   // on the staff the ledgers stay
   const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use [^>]*transform="translate\((\d+), (\d+)\)[^>]*\/>\s*<\/g>(\s*<g id="[^"]+" class="stem">\s*<path d="M(\d+) (\d+) L\d+ (\d+)")?/g;
   const at = [...svg.matchAll(re)].map(m => +m[2] + 108), room = (k) => Math.min(k ? at[k] - at[k - 1] : 1e9, k < at.length - 1 ? at[k + 1] - at[k] : 1e9);
   const lineY = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
   let k = 0; const s = hs || Math.min(1, Math.min(...at.map((x, i) => room(i))) / 2 / RX0 - 0.12);   // one size on the line (or the song's)
-  const RX = RX0 * s, RY = RY0 * s, FS = FS0 * s;
+  const RX = RX0 * s, RY = RY0 * s, FS = FS0 * s, STEM = staff5 ? Math.round(7 * RY) : 700;   // on our own staff a stem is three and a half spaces
   const beams = [...svg.matchAll(/class="beam">\s*<polygon points="([^"]+)"/g)].map(m => { const xs = m[1].trim().split(/\s+/).map(p => +p.split(',')[0]); return [Math.min(...xs), Math.max(...xs)]; });
   svg = svg.replace(re, (m, id, x, y, st, sx, y1, y2) => {
     const L = INFO[id].len, open = L >= 2, p = pitches[k++], name = hm ? S[hm][p] : p[0].toUpperCase(); let cx = +x + 108;
     // S.place: steps of half a head, as on a real staff (E on the line, D touching it from below, C a step further on its
     // ledger); the stem's head end moves with the head, its tip (and any beam) stays
-    if (!onStaff) { const ny = S.place && p in S.place ? lineY - S.place[p] * RY : +y;
+    if (!onStaff) { const ny = p in PL ? lineY - PL[p] * RY : +y;
       // before the staff every stem not on a beam is one long length from its head (her 4 Nov 13:32 and 15:15: not short,
       // all the same, the long one); a beamed one stays on its beam
       if (st) { const down = +y2 > +y1, beamed = beams.some(([a, b]) => +sx >= a - 30 && +sx <= b + 30);
-        const tip = beamed ? +y2 : S.place && p in S.place ? (down ? Math.max(+y2, ny + STEM) : Math.min(+y2, ny - STEM)) : +y2;
+        const tip = beamed ? +y2 : p in PL ? (down ? Math.max(+y2, ny + STEM) : Math.min(+y2, ny - STEM)) : +y2;
         m = m.replace(`M${sx} ${y1} L${sx} ${y2}`, `M${sx} ${ny} L${sx} ${tip}`); }
       y = ny; }
     if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
-    const ledger = (S.ledger || []).includes(p) ? `<line x1="${cx - RX - 110}" x2="${cx + RX + 110}" y1="${y}" y2="${y}" stroke="#000" stroke-width="22" class="lledger"/>` : '';
+    const ledger = (staff5 ? (PL[p] <= -2 || PL[p] >= 10) : (S.ledger || []).includes(p)) ? `<line x1="${cx - RX - 110}" x2="${cx + RX + 110}" y1="${y}" y2="${y}" stroke="#000" stroke-width="22" class="lledger"/>` : '';
     // drawn where the head was, so it sits over the line and under its own stem
     const head = ledger + `<ellipse cx="${cx}" cy="${y}" rx="${RX}" ry="${RY}" fill="${open ? '#fff' : '#26296b'}" stroke="#26296b" stroke-width="${open ? 26 : 0}" class="lhead"/>`
       + `<text x="${cx}" y="${+y + FS * 0.36}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${open ? '#26296b' : '#fff'}" class="cnt lname">${name}</text>`;
     return m.replace(/<use [^>]*\/>/, head);
   });
+  if (staff5) svg = drawStaff5(svg, lineY, RY);
   // beamed quavers: their stems as long as a crotchet's (her 4 Nov 15:19), so the beam moves to sit that far from the heads
   if (!onStaff) svg = fitBeams(svg, STEM);
   return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
@@ -221,15 +238,15 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   const sy0 = +(svg.match(/class="staff">\s*<path d="M\d+ (\d+)/) || svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];   // the line's height, read before anything moves
  if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box, o.pre);   // the boxes read the engraved heads, so before the lettered heads replace them
   if (o.rows) svg = addRows(svg, o.rows, b0, o.pic, o.pre);   // the rows read the engraved notes and the line, so before the lettered heads too
-  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix, !o.pre);   // first, so the fingers clear the stems as they end up
+  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix, !o.pre, o.staff5);   // first, so the fingers clear the stems as they end up
   if (o.lhfing) { const sy = sy0;
     const bots = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.max(+m[1], +m[2]));
-    const base = Math.max(sy, ...bots) + 330 + (o.letters && !o.pre ? 220 : 0);   // on the staff a lettered head hangs below its stem
+    const base = Math.max(sy, ...bots) + 330 + (o.letters && (!o.pre || o.staff5) ? 220 : 0);   // on the staff a lettered head hangs below its stem
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y > sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m); }
-  if (o.fing) { const sy = sy0;
+  if (o.fing) { const sy = o.staff5 ? sy0 - 4 * SP5 : sy0;
     const tops = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.min(+m[1], +m[2]));
     const base = Math.min(sy, ...tops) - 130;
-    svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
+    svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy0 ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
   if (o.counts) svg = addCounts(svg);
@@ -237,9 +254,9 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   // keep their high and low, the bar lines stay
   // her 12:22: and the right hand's too -- before the staff no line at all, only the notes' high and low and the bar lines;
   // the staff comes in whole, later
-  if (o.pre) svg = svg.replace(/(<g id="[^"]+" class="staff">\s*)<path d="M\d+ \d+ L\d+ \d+" stroke-width="13" \/>/g, '$1').replace(/<line [^>]*class="lledger"\/>/g, '');
+  if (o.pre && !o.staff5) svg = svg.replace(/(<g id="[^"]+" class="staff">\s*)<path d="M\d+ \d+ L\d+ \d+" stroke-width="13" \/>/g, '$1').replace(/<line [^>]*class="lledger"\/>/g, '');
   // before the staff the bar lines reach as far as the notes do (the one-line staff draws them a space each way)
-  if (o.pre) svg = svg.replace(/class="barLine">[\s\S]*?<\/g>/g, g => g.replace(/<path d="M(\d+) (\d+) L(\d+) (\d+)"/g, (m, x, ya, x2, yb) => `<path d="M${x} ${+ya - 260} L${x2} ${+yb + 260}"`));   // the end bar's thick stroke as tall as its thin one (her 4 Nov 12:41)
+  if (o.pre && !o.staff5) svg = svg.replace(/class="barLine">[\s\S]*?<\/g>/g, g => g.replace(/<path d="M(\d+) (\d+) L(\d+) (\d+)"/g, (m, x, ya, x2, yb) => `<path d="M${x} ${+ya - 260} L${x2} ${+yb + 260}"`));   // the end bar's thick stroke as tall as its thin one (her 4 Nov 12:41)
   // bar numbers lifted clear of the notes
   svg = svg.replace(/class="mNum autogenerated">/g, 'class="mNum autogenerated" transform="translate(-60,-260)">');
   if (o.rows && o.pre) {   // room on the left for the row numbers
