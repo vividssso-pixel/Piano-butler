@@ -33,10 +33,10 @@ def basics_page():
 <div class="sp"></div><div class="bas"><div>{groups()}</div><div><h3>Black keys come in twos and threes</h3><p class="cap2">Play every group of two black keys, low to high, then every group of three. C is the white key just left of each two.</p>{ticks(['Found the twos and threes', 'Found every C'])}</div></div>
 <div class="sp"></div><div class="bas one"><h3>Sit like a pianist</h3><p class="cap2">Sit on the front half of the bench, feet flat. Elbows a little in front of you, level with the keys. Round hands, as if holding a small ball.</p></div>
 <div class="sp"></div>{part(4, 'Play it', B['play'])}
-<div class="wtag">Right hand</div>{mus('p1')}<div class="wtag">Left hand</div>{mus('p2')}
+{''.join(f'<div class="wtag">{lab}</div>{mus(k)}' for k, lab in B.get('lines', [['p1', 'Right hand'], ['p2', 'Left hand']]))}
 <div class="chk end"><div class="ch">5 · Check</div><div class="cgrid">
 <div>{ticks(['I can say and clap it', 'I can sing it with the words', 'I can name its notes'])}</div>
-<div><div class="ck2">I can play it:</div><div class="ticks h"><span class="tk"><span class="bx"></span>Right hand</span><span class="tk"><span class="bx"></span>Left hand</span></div>
+<div><div class="ck2">I can play it:</div><div class="ticks h">{''.join(f'<span class="tk"><span class="bx"></span>{c}</span>' for c in B.get('checks', ['Right hand', 'Left hand']))}</div>
 <div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 3)
 
 EARLY_CSS = f'''.bas{{display:grid;grid-template-columns:280px minmax(0,1fr);gap:22px;align-items:center}} .bas.one{{display:block}}

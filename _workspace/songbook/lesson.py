@@ -18,7 +18,9 @@ def qr(url):   # a plain navy QR, drawn as one SVG path
     return f'<svg viewBox="0 0 {n} {n}" style="width:96px;height:96px;display:block" shape-rendering="crispEdges"><path d="{d}" fill="{N}"/></svg>'
 URL = 'https://thepianobutler.com/drills.html?room=' + ROOM
 def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>LESSON {LESSON} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
-def mus(k, cls=''): return f'<div class="mus {cls}" data-snip="{k}">{V[k]}</div>'
+def mus(k, cls=''):   # a shorter last line keeps the same size of note: its width in proportion to its bars
+    w = SONG.get('widths', {}).get(k); st = f' style="max-width:{w * 100:.1f}%"' if w else ''
+    return f'<div class="mus {cls}" data-snip="{k}"{st}>{V[k]}</div>'
 def part(n, t, how): return f'<div class="ph"><span class="pn">{n}</span><h2>{t}</h2></div><p class="how">{how}</p>'
 def ticks(items, h=False): return f'<div class="ticks{" h" if h else ""}">' + ''.join(f'<span class="tk"><span class="bx"></span>{t}</span>' for t in items) + '</div>'
 def way(n, t, stars, how, a, b):
@@ -75,23 +77,25 @@ def note(kind, s=1.0):
 def beats(n): return '<span class="bd">' + '<i></i>' * n + '</span>'
 vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{beats(n)}</div></div>' for k, nm, n in [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)] if k in SONG.get('values', 'cms'))
 TIME = SONG.get("time_html", "<p><b>Top 4:</b> four beats in every bar.</p><p><b>Bottom 4:</b> a crotchet is one beat.</p>")
-tsig = f"""<div class="ts"><div class="tsn"><span>4</span><span>4</span></div><div class="tsx">{TIME}</div></div>"""
+TSN = '<div class="tsn"><span>4</span><span>4</span></div>' if SONG.get("time_label", "The time") == "The time" else ''
+tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
   '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G. In which bar? <span class="ib"></span></p></div></div>')
 if 'pos' in SONG: POS = '<div class="pos"><div>' + kb(width=340, fmap=SONG.get('fmap')) + '</div><div>' + SONG['pos'] + '</div></div>'
 P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
+LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <p class="lead">{LEAD}</p>
 <div class="chips"><span class="cl">In this song</span>{chips}</div>
 <div class="sp"></div>{part(1, 'Say and clap', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
-<div class="mat"><div class="mh">The time</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
-<div class="sp"></div>{mus('rhy1')}<div class="sp"></div>{mus('rhy2') + '<div class="sp"></div>' if 'rhy2' in V else ''}
+<div class="mat"><div class="mh">{SONG.get("time_label", "The time")}</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
+<div class="sp"></div>{LINES('rhy')}
 <div class="end">{ticks(['Said it in time', 'Clapped and counted', 'Found every minim (2 beats)'], True)}</div>''', 1)
 
 P2 = page(f'''{part(2, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter name of every note in the boxes; the first one is done.')}
 {POS}
-<div class="sp"></div>{mus('sing1')}<div class="sp"></div>{mus('sing2') + '<div class="sp"></div>' if 'sing2' in V else ''}
+<div class="sp"></div>{LINES('sing')}
 
 <div class="row2 end"><div>{ticks(P2T, True)}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>''', 2)
 
