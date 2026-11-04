@@ -103,8 +103,13 @@ P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <div class="sp"></div>{LINES('sing')}
 <div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
 
-NAMES = LINES('name')
+NAMES = LINES('name') if not SONG.get('names_row') else '<div class="trow">' + ''.join(mus(k) for k in sorted(k for k in V if k.startswith('name') and k[4:].isdigit())) + '</div>'
+# New in this song: one picture, one line, and where the Handbook takes it further (her 4 Nov 22:08)
+NW = SONG.get('new')
+NEW = (f'<div class="nws"><div class="nws-p">{NW["pic"]}</div><div class="nws-t"><div class="nws-h">New in this song</div><p>{NW["text"]}</p>'
+       + f'<p class="nws-b">More in the Handbook: {NW["hb"]}</p></div></div>') if NW else ''
 P2 = page(f'''{part(2, 'Take it apart', 'The same song, one piece at a time: first its rhythm, then its notes.')}
+{NEW}
 {SUB('The rhythm', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
 <div class="mat"><div class="mh">{SONG.get("time_label", "The time")}</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
 <div class="sp"></div>{LINES('rhy')}
@@ -137,6 +142,8 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .on{{display:flex;flex-direction:column;align-items:center;gap:8px}} .obx{{width:34px;height:34px;border:2px solid {N};border-radius:8px;display:block}}
 .mus.ghost .lhead, .mus.ghost .lname, .mus.ghost g.stem, .mus.ghost g.beam, .mus.ghost .lledger, .mus.ghost g.fing, .mus.ghost g.dots{{opacity:0}}
 .trow{{display:flex;gap:28px;align-items:flex-end}} .trow>.mus{{flex:1 1 0;min-width:0;max-width:none!important}}
+.nws-p{{flex:0 0 auto}} .nws-t{{flex:1 1 0;min-width:0}} .nws{{display:flex;gap:18px;align-items:center;border:1.5px solid rgba(38,41,107,.22);border-radius:10px;padding:10px 16px;margin:8px 0 2px}} .nws-p svg{{display:block}}
+.nws-h{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-bottom:3px}} .nws-t p{{margin:0;font-size:15px;line-height:1.45}} .nws-t p.nws-b{{margin-top:4px;font-size:13px;color:{MUTE}}}
 .chips{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}} .cl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-right:4px}} .chip{{border:1.2px solid {N};border-radius:14px;padding:3px 12px;font-size:14px;font-weight:700}}
 .ph{{display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:10px;margin-top:10px}} .pn{{width:30px;height:30px;background:{N};color:#fff;display:inline-flex;align-items:center;justify-content:center;font:700 16px 'AH'}} h2{{font-family:'PF',Georgia,serif;font-size:25px;margin:0}}
 .how{{font-size:15.5px;color:#3d4080;margin:6px 0 6px}}
