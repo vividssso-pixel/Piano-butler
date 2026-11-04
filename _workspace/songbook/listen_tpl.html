@@ -163,27 +163,37 @@ async function play() {
   if ($('count').checked || $('me').checked) { for (let i = 0; i < per; i++) click(t + i * beat, i === 0); t += per * beat; }
   startAt = t; events = []; let k = 0;
   const J = ACC && acc === 'band' ? ACC : null, P = ACC && acc === 'piano' ? ACC : null, ME = $('me').checked;
-  const sw = J && J.swing ? 2 / 3 : 0.5;   // swing: the 'and' comes late, two thirds into the beat
+  const sw = J && J.swing ? 2 / 3 : 0.5;   // only the swung band styles   // swing: the 'and' comes late, two thirds into the beat
   const at = pos => { const b = Math.floor(pos + 1e-6), f = pos - b; return t + (b + (Math.abs(f - 0.5) < 1e-6 ? sw : f)) * beat; };
   let pos = 0;
   song.tunes[tune].b.forEach(bar => bar.forEach(([p, d]) => { const t0 = at(pos), t1 = at(pos + LEN[d]); const f = FREQ(p) * (ACC ? 2 : 1);
     if (!ME) pianoNote(f, t0, t1 - t0, ACC ? 0.5 : 0.42); events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
-  // the accompaniment: each bar a list of [chord, beats]; the bass note comes from the chord's name
+  // every song its own groove (her 5 Nov 01:54: 'all different'): A.style picks the pattern
+  const STY = {
+    // the teacher's piano
+    alberti: (r, v, s, len) => { pianoNote(r, at(s), len * beat, 0.28); const p = [v[0], v[2], v[1], v[2]]; for (let h = 0; h < len * 2; h++) pianoNote(p[h % 4], at(s + h / 2), 0.5 * beat, 0.16); },
+    march: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) pianoNote(x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.6 * beat, 0.3); else v.forEach(f => pianoNote(f, at(s + x), 0.3 * beat, 0.13)); } },
+    lullaby: (r, v, s, len) => { const up = [r, r * 1.5, r * 2, v[1] * 2, v[2] * 2, r * 2]; for (let h = 0; h < len * 2; h++) pianoNote(up[h % 6], at(s + h / 2), 1.2 * beat, h % 6 ? 0.13 : 0.24); },
+    stride: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) pianoNote(x % 4 === 2 ? r * 1.5 / 2 : r / 2, at(s + x), 0.5 * beat, 0.32); else v.forEach(f => pianoNote(f, at(s + x), 0.4 * beat, 0.14)); } },
+    hymn: (r, v, s, len) => { for (let x = 0; x < len; x++) { pianoNote(x % 2 ? r * 1.5 : r, at(s + x), 0.95 * beat, 0.24); v.forEach(f => pianoNote(f, at(s + x), 0.95 * beat, 0.11)); } },
+    gallop: (r, v, s, len) => { for (let x = 0; x < len; x++) { pianoNote(x % 2 ? r * 1.5 : r, at(s + x), 0.45 * beat, 0.28); v.forEach(f => pianoNote(f, at(s + x + 0.5), 0.3 * beat, 0.12)); } },
+    drops: (r, v, s, len) => { pianoNote(r, at(s), len * beat, 0.26); const p = [v[2] * 2, v[1] * 2, v[2] * 2, v[0] * 2]; for (let h = 0; h < len * 2; h++) pianoNote(p[h % 4], at(s + h / 2), 0.4 * beat, 0.1); },
+    // the band
+    swing: (r, v, s, len) => { for (let x = 0; x < len; x++) bassNote(x % 2 ? r * 1.5 : r, at(s + x), 0.9 * beat); v.forEach(f => { pianoNote(f, at(s), 0.4 * beat, 0.14); pianoNote(f, at(s + len - 0.5), 0.35 * beat, 0.14); }); },
+    walking: (r, v, s, len) => { const w = [r, r * 1.26, r * 1.5, r * 1.68]; for (let x = 0; x < len; x++) bassNote(w[x % 4], at(s + x), 0.9 * beat); for (let x = 1; x < len; x += 2) v.forEach(f => pianoNote(f, at(s + x), 0.3 * beat, 0.13)); },
+    bossa: (r, v, s, len) => { for (let x = 0; x < len; x += 2) { bassNote(r, at(s + x), 1.4 * beat); bassNote(r * 1.5, at(s + x + 1.5), 0.45 * beat); }
+      [0, 1.5, 3, 3.5].filter(o => o < len).forEach(o => v.forEach(f => pianoNote(f, at(s + o), 0.4 * beat, 0.12))); },
+    funk: (r, v, s, len) => { for (let h = 0; h < len * 2; h++) bassNote(h % 4 === 3 ? r * 2 : r, at(s + h / 2), 0.35 * beat); for (let x = 1; x < len; x += 2) v.forEach(f => pianoNote(f, at(s + x), 0.25 * beat, 0.15)); },
+    gospel: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) bassNote(r, at(s + x), 1.6 * beat); v.forEach(f => { pianoNote(f, at(s + x), 0.3 * beat, 0.12); pianoNote(f, at(s + x + 0.5), 0.2 * beat, 0.08); }); } },
+    reggae: (r, v, s, len) => { bassNote(r, at(s), 0.9 * beat); bassNote(r * 1.5, at(s + Math.min(2, len - 0.5)), 0.9 * beat); for (let x = 0; x < len; x++) v.forEach(f => pianoNote(f, at(s + x + 0.5), 0.2 * beat, 0.14)); },
+  };
   const ROOT = name => name[0].toLowerCase() + (name[1] === 'b' ? 'f' : name[1] === '#' ? 's' : '') + '2';
   const voice = (A, name) => (A.voicing[name] || []).map(FREQ);
   const segs = A => { const out = []; let b = 0; A.chords.forEach((bar, bi) => { bar.forEach(([name, len]) => { out.push({ name, s: b, len, last: bi === A.chords.length - 1 }); b += len; }); }); return out; };
-  if (J) segs(J).forEach(({ name, s, len, last }) => {   // the band: a plucked bass on every beat (root, fifth), short chords on the beat and on the swung 'and'
-    const r = FREQ(ROOT(name)), v = voice(J, name);
-    if (last) { v.forEach(f => pianoNote(f, at(s), Math.max(len, 3) * beat, 0.15)); bassNote(r, at(s), Math.max(len, 3) * beat); return; }
-    for (let x = 0; x < len; x++) bassNote(x % 2 ? r * 1.5 : r, at(s + x), 0.9 * beat);
-    v.forEach(f => pianoNote(f, at(s), 0.4 * beat, 0.14));
-    v.forEach(f => pianoNote(f, at(s + len - 0.5), 0.35 * beat, 0.14)); });
-  if (P) segs(P).forEach(({ name, s, len, last }) => {   // the teacher's piano: a low root held, the chord broken in quavers
-    const r = FREQ(ROOT(name)), v = voice(P, name);
-    if (last) { v.forEach(f => pianoNote(f, at(s), Math.max(len, 3) * beat, 0.15)); pianoNote(r, at(s), Math.max(len, 3) * beat, 0.28); return; }
-    pianoNote(r, at(s), len * beat, 0.28);
-    const pat = [v[0], v[2], v[1], v[2]];
-    for (let h = 0; h < len * 2; h++) if (pat[h % 4]) pianoNote(pat[h % 4], at(s + h * 0.5), 0.5 * beat, 0.16); });
+  [[J, 'swing', true], [P, 'alberti', false]].forEach(([A, def, band]) => { if (!A) return;
+    segs(A).forEach(({ name, s, len, last }) => { const r = FREQ(ROOT(name)), v = voice(A, name);
+      if (last) { v.forEach(f => pianoNote(f, at(s), Math.max(len, 3) * beat, 0.15)); band ? bassNote(r, at(s), Math.max(len, 3) * beat) : pianoNote(r, at(s), Math.max(len, 3) * beat, 0.28); return; }
+      (STY[A.style] || STY[def])(r, v, s, len); }); });
   t = at(pos);
   playing = true; $('play').textContent = '■ Stop'; $('play').classList.add('stop');
   const endT = t; let last = -1;
@@ -216,7 +226,9 @@ function accData() { return tune === 0 && acc ? song[acc] : null; }
 function setAcc() {   // the sound: the tune alone, the teacher's piano, or the band (only what this song has)
   const has = a => !a || (tune === 0 && song[a]);
   if (!has(acc)) acc = song.band && tune === 0 ? 'band' : song.piano && tune === 0 ? 'piano' : '';
-  document.querySelectorAll('#acc button').forEach(b => { b.hidden = !has(b.dataset.a); b.classList.toggle('on', b.dataset.a === acc); });
+  const LBL = { march: 'March', lullaby: 'Lullaby', stride: 'Stride', hymn: 'Hymn', gallop: 'Gallop', drops: 'Raindrops', swing: 'Swing', walking: 'Walking jazz', bossa: 'Bossa nova', funk: 'Funk', gospel: 'Gospel', reggae: 'Reggae' };
+  document.querySelectorAll('#acc button').forEach(b => { const a = b.dataset.a; b.hidden = !has(a); b.classList.toggle('on', a === acc);
+    b.textContent = !a ? 'Tune' : (a === 'piano' ? 'Piano' : 'Band') + (song[a] && song[a].style ? ' · ' + LBL[song[a].style] : ''); });
   $('acc').hidden = !(tune === 0 && (song.band || song.piano)); $('mew').hidden = !acc;
   if (!acc) $('me').checked = false;
 }
