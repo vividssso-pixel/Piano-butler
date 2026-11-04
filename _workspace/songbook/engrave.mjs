@@ -15,6 +15,7 @@ function noteXml(p, d, o = {}) {
   const [pname, oct] = pn(p); const i = nid(); o.ids && o.ids.push(i);
   const syl = o.syl ? `<verse n="1"><syl${o.wp ? ` wordpos="${o.wp}" con="d"` : ''}>${o.syl}</syl></verse>` : '';
   const loc = o.loc != null ? ` loc="${o.loc}"` : '';
+  if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}">${syl}</note>`];
   return [i, o.rhythm ? `<note xml:id="${i}" dur="${DUR[d]}" loc="0" stem.dir="up">${syl}</note>` : `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${o.stem ? ` stem.dir="${o.stem}"` : ''}>${syl}</note>`];
 }
 function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b] = pn(p); return `<note pname="${a}" oct="${b}"/>`; }).join('') + '</chord>']; }
@@ -23,8 +24,9 @@ function mei(b0, b1, o) {
   let ms = '', ctrl = [];
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '';
-    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm }); l1 += x;
-      if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${S.rh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
+    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre }); l1 += x;
+      if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${S.rh_finger[p]}</fing>`);
+      if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
     let st2 = '';
     if (o.lh) { const ch = S.chords[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';
       pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d, 'up') : noteXml(ps[0], d, { stem: 'up' }); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
@@ -34,7 +36,7 @@ function mei(b0, b1, o) {
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff>${st2}${ctrl.splice(0).join('')}</measure>`;
   }
   const met = (o.key ? ` keysig="${o.key}"` : '') + (o.meter ? ` meter.count="4" meter.unit="4"` : '');
-  const sd = o.rhythm ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
+  const sd = o.rhythm || o.pre ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
     : o.lh ? `<staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp>`
     : `<staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/>`;
   return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef>${o.rhythm || !o.lh ? `<staffGrp>${sd}</staffGrp>` : sd}</scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
@@ -115,7 +117,7 @@ function addRows(svg, ways, b0, pic) {
     Y += tall ? 860 : 400; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${lab}`);
 }
-const JOBS = {
+const JOBS = S.jobs || {
   sing1: [0, 4, { words: 1, meter: 1, boxes: 1, pw: 1500 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1, pw: 1500 }],
   rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350 }],   // bigger: the first thing a child reads
   play1: [0, 4, { fing: 1, chords: 1, meter: 1, rows: ['way2', 'way3', 'way4'] }],   // the tune once, every way under it
@@ -127,7 +129,7 @@ const out = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   INFO = {}; id = 0;
   tk.setOptions({ pageWidth: o.pw || 1750, adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
-    pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20, breaks: 'none', spacingLinear: 0.25, spacingNonLinear: 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5, lyricWordSpace: 2.6, fingeringScale: 0.9 });
+    pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20, breaks: 'none', spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5, lyricWordSpace: 2.6, fingeringScale: 0.9 });
   tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); let svg = tk.renderToSVG(1);
   // fingers above the staff: Verovio clears the staff but not a stem that rises past it (G's, A's), so set them all on one
   // line, clear of the highest stem
