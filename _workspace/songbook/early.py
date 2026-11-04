@@ -63,12 +63,27 @@ def play_page():   # an early lesson's page 3: the song on the keys, step by ste
     B = SONG['basics']
     return page(f'''{part(3, 'Play it', B['play'])}
 <div class="sp"></div><div class="bas"><div>{blackkb(260) if B.get('blackpic') else kb(width=300, fmap=SONG.get('fmap')) if B.get('kb') else keys(1, True, True, 200)}</div><div><p class="cap2">{B.get('keys_note', '')}</p></div></div>
-{''.join((f'<div class="sp"></div><div class="wtag">{lab}</div>' if lab else '') + mus(k) for k, lab in B.get('lines', []))}
+{hand_panels(B.get('lines', []))}{('<div class="sp"></div>' + B['after']) if B.get('after') else ''}
 <div class="sp"></div>
 <div class="chk end"><div class="ch">4 · Check</div><div class="cgrid">
 <div>{ticks(B.get('can', ['I can say and clap it', 'I can sing it with the words', 'I can sing the letter names']))}</div>
 <div><div class="ck2">I can play it:</div><div class="ticks h">{''.join(f'<span class="tk"><span class="bx"></span>{c}</span>' for c in B.get('checks', ['Right hand', 'Left hand']))}</div>
 <div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 3)
+
+def hand_panels(lines):   # her 4 Nov 12:34: the right hand and the left hand each in a panel of its own, so the two never blur
+    groups = []
+    for k, lab in lines:
+        if lab or not groups: groups.append([lab, []])
+        groups[-1][1].append(k)
+    out = ''
+    for lab, ks in groups:
+        bits = [b.strip() for b in lab.split('·')]
+        name = next((b for b in bits if 'hand' in b.lower()), lab); rest = ' · '.join(b for b in bits[1:] if b != name) if len(bits) > 1 else ''
+        both = 'both' in name.lower(); left = not both and 'left' in name.lower()
+        tag = '<span class="hb lb">L</span><span class="hb">R</span>' if both else f'<span class="hb">{"L" if left else "R"}</span>'
+        out += (f'<div class="sp"></div><div class="hp{" lh" if left else ""}"><div class="hh">{tag}<span class="hn">{name}</span>'
+                f'<span class="hf">{rest}</span></div>' + ''.join(mus(k) for k in ks) + '</div>')
+    return out
 
 basics_page = play_page
 
@@ -77,4 +92,7 @@ EARLY_CSS = f'''.bas{{display:grid;grid-template-columns:auto minmax(0,1fr);gap:
 .wtag{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin:6px 0 -6px}}
 .act{{font-size:16px;line-height:1.5;color:{N};margin:2px 0}} .act b{{font-weight:700}}
 .trace{{display:flex;justify-content:center}} .tbox{{width:100%;height:330px;border:2px dashed {C};border-radius:14px;display:flex;align-items:flex-end;justify-content:center;padding:12px}} .tbox span{{font-size:13px;color:{MUTE};font-weight:700}}
-.sit .ticks{{gap:10px}}'''
+.sit .ticks{{gap:10px}}
+.hp{{border:1.5px solid {N};border-radius:12px;padding:10px 14px 8px;display:flex;flex-direction:column;gap:6px}} .hp.lh{{border-color:{C}}}
+.hh{{display:flex;align-items:center;gap:10px}} .hb{{width:26px;height:26px;border-radius:50%;background:{N};color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}}
+.hp.lh .hb, .hb.lb{{background:{C}}} .hb.lb{{margin-right:-6px}} .hn{{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{N}}} .hp.lh .hn{{color:{C}}} .hf{{font-size:13px;color:{MUTE};font-weight:700}}'''
