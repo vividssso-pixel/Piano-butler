@@ -59,11 +59,10 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Keys to the <b>le
 {tbl(['Term', 'Meaning', 'First met'], [['pitch', 'how high or low a sound is', 'Level 0'], ['register', 'a part of the keyboard: low, middle or high', 'Level 0'], ['semitone', 'from one key to the very next key, black or white', 'Level 0'], ['tone', 'two semitones', 'Level 0'], ['octave', 'from one note to the next with the same name (8 white keys, 12 semitones)', 'Level 0']], ['20%', '60%', '20%'])}
 {inaction('Find G4 on the keyboard', kbx('C', 15, 28, 100, label=True, shade={7: '#fde6dd', 11: '#fde6dd'}, marks=[f'<circle cx="{(7 + i) * 28 + 14}" cy="73" r="9" fill="#e4572e"/><text x="{(7 + i) * 28 + 14}" y="77" text-anchor="middle" font-family="AH,Arial" font-size="11" font-weight="700" fill="#fff">{i + 1}</text>' for i in range(5)], scale=1.0), ['<b>Find middle C (C4):</b> the C just left of the two black keys nearest the middle.', '<b>Count up the letters</b>, one white key each: C D E F G is five keys.', '<b>Same octave</b>, so the number stays 4.'], 'The key: <b>G4</b>. One octave higher, the next G, is G5.')}
 <!--SPLIT-->
-{thinkt('The groups of two and three black keys are like the raised bumps on the F and J keys of a computer keyboard: your fingers find their place without looking.')}
 {realm('The keyboard in all music', [('Range', 'A full piano has 88 keys, from the lowest A to the highest C: wider than a whole orchestra.'), ('Other keyboards', 'Organ, harpsichord, synthesiser and accordion all share the same pattern of black and white keys.'), ('Low and high', 'Composers use the low end for thunder, giants and danger, the high end for birds, stars and sparkle.'), ('Black keys only', 'Play only the black keys and almost anything sounds good: the five-note pentatonic scale of folk songs worldwide.')], 'Play the lowest key and the highest key, then find middle C halfway between them.')}
-{drill('Eyes closed: find every C on the keyboard by feeling for the groups of two black keys. Then every F, by the groups of three.')}
 {inaction('Find F♯4', kbx('C', 8, 34, 100, label=True, shade={3: '#fde6dd', 4: '#fde6dd'}, marks=['<circle cx="136" cy="44" r="10" fill="#e4572e"/>'], scale=1.0), ['<b>Find F4:</b> the white key just left of the group of three black keys above middle C.', '<b>Sharp means up:</b> move one key to the right.', '<b>The very next key</b> is black: that is F♯.'], 'F♯4 is the <b>black key</b> just right of F4, the first of the group of three.')}
 {watch(['Counting octaves from the left end of the piano: octave numbers always change at C, not A.', 'Calling every black key a sharp: each one has a flat name too (p. 26).'])}
+{inaction('Find C3, C4 and C5', kbx('C', 15, 28, 100, label=True, shade={0: '#fde6dd', 7: '#fde6dd', 14: '#fde6dd'}, marks=[f'<circle cx="{i * 28 + 14}" cy="78" r="9" fill="#e4572e"/>' for i in (0, 7, 14)], scale=1.0), ['<b>Find middle C (C4):</b> just left of the two black keys in the middle.', '<b>Count seven white keys down:</b> C3.', '<b>Count seven white keys up:</b> C5.'], 'Every C sits just left of a group of <b>two</b> black keys, an octave apart.')}
 {foot('The staff p. 23 · Staff and keyboard p. 25', 'Workbook Pitch 1 · Online: Keyboard patterns')}""", 22)
 
 clefs = [[gsym('𝄞', 46), '<b>treble clef</b> (G clef)', 'curls round the line for G (line 2)', 'Level 0'], [gsym('𝄢', 30), '<b>bass clef</b> (F clef)', 'its two dots sit either side of the line for F (line 4)', 'Level 0']]
@@ -93,9 +92,7 @@ P24 = ppage(f"""{head('Part I · Pitch · 3', 'Reading the notes', 'Each line an
 <!--SPLIT-->
 {thinkt('Landmark notes are like lamp posts on a dark road: walk from one to the next and you are never lost.')}
 {realm('Reading in all music', [('Hymns and choir books', 'Four voices on two staves: read up and down as well as left to right.'), ('Pop sheet music', 'The melody on the treble staff with the words underneath.'), ('Fast music', 'Good readers see shapes, steps and skips, not every single letter.'), ('Very high and low notes', 'Ledger lines climb off the staff in showy Romantic pieces.')], 'Before you name the notes of a new piece, trace its shape aloud: “up a step, down a skip, same note”.')}
-{drill('Flash cards: one minute, as many notes as you can name. Write your score and beat it tomorrow.')}
 {watch(['Naming bass-clef notes with treble names: in the bass, the bottom line is G, not E.', 'Counting ledger lines from the wrong end: start from the staff and count outwards.'])}
-{drill('In a new piece, read only the landmark notes first, then fill in the notes between them.')}
 {inaction('Read a ledger-line note', px('ledger', 86), ['<b>Start at the staff edge:</b> the top line of the treble staff is F.', '<b>Step up</b> one note at a time: G (space), A (first ledger line).', '<b>Below the staff</b> count down the same way: D, C, B, A.'], 'Ledger lines are the staff carried on: count by steps from the nearest line.')}
 {foot('The staff and the clefs p. 23 · The staff and the keyboard p. 25', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 24)
 
@@ -107,9 +104,7 @@ P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Eve
 {inaction('From the page to the key', px('lm_b', 80), ['<b>Name the note on the staff:</b> line 4 of the bass staff, between the clef’s dots, is F.', '<b>Count down from middle C:</b> C B A G F, the fifth white key down.', '<b>Play it</b> with the left hand: that is F3.'], 'The bass-clef F is <b>F3</b>, five white keys below middle C.')}
 {thinkt('The staff is a ladder laid on its side beside the keyboard: each rung, a line or a space, is the next white key.')}
 {realm('The map in all music', [('Reading at the piano', 'Eyes stay on the music; the hands find the keys by distance, not by looking down.'), ('Every instrument', 'Higher on the page means higher in sound, for voices, violins and trumpets alike.'), ('The organ', 'The same map, with a third staff for the feet.'), ('Notation apps', 'Many show a keyboard under the staff, just like this map.')], 'Play C3 to C5 slowly while pointing to each note on the map.')}
-{drill('Close your eyes, say a note name and a staff, then find the key without looking.')}
 {watch(['Thinking the black keys have their own lines: they borrow a white key’s line or space with a sharp or flat.'])}
-{drill('Play every C on the keyboard, low to high, and point to each one on the map as you go.')}
 {thinkt('Reading music is like reading a map while driving: glance at the page, trust your hands to know the distances.')}
 {inaction('One note, two staves', px('landmarks', 92), ['<b>Find middle C</b> on the map: between the two staves.', '<b>Treble G</b> is five white keys above it.', '<b>Bass F</b> is five white keys below it.'], 'The landmarks sit at the same distance either side of middle C.')}
 {foot('The keyboard p. 22 · Reading the notes p. 24', 'Workbook Pitch 1–2 · Online: Library › Staff and clefs')}""", 25)
@@ -126,9 +121,7 @@ P26 = ppage(f"""{head('Part I · Pitch · 5', 'Sharps, flats and naturals', 'An 
 <!--SPLIT-->
 {inaction('One key, two names', px('enh', 80), ['<b>The first bar:</b> F♯, then G♭.', '<b>Find them:</b> both are the black key between F and G.', '<b>The last bar:</b> no black key sits above E, so E♯ is the white key F.'], 'Same key, different names: these are <b>enharmonic</b> notes.')}
 {realm('Sharps and flats in all music', [('Blues and jazz', '“Blue notes”: a flattened 3rd or 7th gives the blues its sound.'), ('Film music', 'One sudden sharp or flat can turn a happy tune into a worried one.'), ('Romantic piano', 'Chopin and Liszt are full of accidentals: they pass through other keys within a bar.'), ('Pop songs', 'The last chorus often moves up a semitone: every note rises together.')], 'Play C D E F G, then again with E♭: listen to the mood change.')}
-{drill('In your piece, circle every accidental, then say how long each one lasts.')}
 {watch(['Forgetting that an accidental lasts until the bar line.', 'Carrying an accidental into the next bar: after the bar line, the key signature rules again.'])}
-{drill('Play F, then F♯, then G♭: hear that the last two are the same key with two names.')}
 {inaction('How long does the sharp last?', px('acc_bar', 86), ['<b>The first note:</b> F♯.', '<b>Later in the bar:</b> F is still F♯.', '<b>After the bar line:</b> F is plain F again.'], 'An accidental lasts <b>until the bar line</b>, then the key signature rules again.')}
 {foot('Keys and key signatures p. 31', 'Workbook Pitch 3 · Online: Library › Signs')}""", 26)
 
@@ -153,7 +146,6 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'An <b>inter
 <p class="think"><span>Think of it</span>Put your thumb on C and your little finger on G: five fingers on five white keys, a 5th. Your hand measures intervals for you.</p>
 <!--SPLIT-->
 {realm('Intervals in all music', [('Melodies', 'Most tunes move by small steps (2nds), with a few leaps for drama.'), ('Harmony', 'Chords are built by stacking 3rds on top of each other.'), ('Bass lines', 'Rock and pop bass parts often jump by 5ths and octaves.'), ('Doorbells', 'Two-note doorbells usually ring a 3rd: ding-dong.')], 'Sing the first two notes of a song you know, then find that interval on the keyboard.')}
-{drill('Play C, then every interval above it up to the octave. Sing each one back before you play the next.')}
 {inaction('Name an interval on the keyboard', kbx('C', 8, 34, 100, label=True, shade={2: '#fde6dd', 7: '#fde6dd'}, marks=[], scale=1.0), ['<b>Find both notes:</b> E and the C above it.', '<b>Count the letters:</b> E F G A B C is six.', '<b>Both ends count:</b> so the interval is a 6th.'], 'E up to C is a <b>6th</b>.')}
 {watch(['Counting only the gaps, not the notes: always count both ends.', 'Letting a sharp or flat change the number: C to G♯ is still a 5th.'])}
 {inaction('Melodic or harmonic?', px('mel_harm', 86), ['<b>The first bar:</b> C then E, one after the other.', '<b>The second bar:</b> C and E together.', '<b>Count both:</b> C D E, a 3rd each time.'], 'The same 3rd: <b>melodic</b> when played one after the other, <b>harmonic</b> when played together.')}
@@ -217,9 +209,7 @@ P30 = ppage(f"""{head('Part I · Pitch · 10', 'Keys and key signatures', 'A <b>
 <!--SPLIT-->
 {inaction('Name the keys', ringks('ks_2s', -1, 92), ['<b>Count:</b> two sharps, F♯ and C♯.', '<b>The last sharp</b> is C♯; one semitone up is D.', '<b>The relative minor,</b> three semitones below D, is B.'], 'Two sharps: <b>D major</b> or <b>B minor</b>.')}
 {realm('Keys in all music', [('Guitar music', 'E, A, D and G major are favourites: the open strings ring in those keys.'), ('Songs', 'A song is often moved to a new key to suit each singer’s voice.'), ('Wind bands', 'B♭ and E♭ major: the keys brass and wind instruments love.'), ('Key colours', 'Some composers saw keys as colours: Scriabin heard C major as red.')], 'Look at five pieces you know: name each key signature and the key it gives.')}
-{drill('Each day, name the key of one piece from its signature and its last note.')}
 {watch(['Writing a key signature in the wrong order: sharps always F C G D A E B.', 'Forgetting that a signature names two keys: a major and its relative minor.'])}
-{drill('Write the order of sharps from memory, F C G D A E B, then the flats, B E A D G C F.')}
 {inaction('Read a flat key signature', ringks('ks_3f', -2, 92), ['<b>Count the flats:</b> three, B♭ E♭ A♭.', '<b>The second-last flat</b> is E♭: the key note.', '<b>Its relative minor,</b> three semitones down, is C minor.'], 'Three flats: <b>E♭ major</b> or <b>C minor</b>.')}
 {foot('Scales p. 29 · Finding the key p. 32 · The circle of fifths p. 33', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 31)
 
@@ -230,11 +220,10 @@ P31 = ppage(f"""{head('Part I · Pitch · 11', 'Finding the key', 'A key signatu
 {inaction('What key is this tune in?', px('ex_key', 92), ['<b>The key signature:</b> one sharp, so G major or its relative, E minor.', '<b>The clue notes:</b> D♯ keeps appearing. D♯ is the raised 7th of E minor; G major has no D♯.', '<b>The last note:</b> E, the key note of E minor.'], 'The key: <b>E minor</b>. Check it the same way with any piece you play.')}
 <!--SPLIT-->
 {realm('Finding the key in all music', [('Pop songs', 'Most end on the key note: listen for the chord that feels like home.'), ('Sonatas', 'They travel to new keys in the middle, then come home at the end.'), ('Minor clues', 'A raised 7th, written as an accidental, is the giveaway for a minor key.'), ('Jazz charts', 'The chord names often tell you the key before a note is played.')], 'Hum the last note of any song: it is usually the key note.')}
-{drill('Take three pieces and find each key in under a minute.')}
-{watch(['Deciding from the signature alone: always check the clue notes and the last note.'])}
 {h3('Minor keys and their clue notes')}
-{tbl(['Minor key', 'Signature', 'Clue note (raised 7th)'], [['A minor', 'none', '<b class="co">G♯</b>'], ['E minor', '1♯', '<b class="co">D♯</b>'], ['D minor', '1♭', '<b class="co">C♯</b>'], ['B minor', '2♯', '<b class="co">A♯</b>'], ['G minor', '2♭', '<b class="co">F♯</b>']], ['34%', '28%', '38%'])}
+{tbl(['Minor key', 'Signature', 'Clue note (raised 7th)'], [['A minor', 'none', '<b class="co">G♯</b>'], ['E minor', '1♯', '<b class="co">D♯</b>'], ['D minor', '1♭', '<b class="co">C♯</b>'], ['B minor', '2♯', '<b class="co">A♯</b>']], ['34%', '28%', '38%'])}
 {inaction('Major or minor? No sharps or flats', kbx('C', 8, 34, 100, label=True, shade={5: '#fde6dd'}, marks=['<circle cx="170" cy="44" r="10" fill="#e4572e"/>'], scale=1.0), ['<b>The signature:</b> none, so C major or A minor.', '<b>The clue notes:</b> G♯ appears. G♯ is the raised 7th of A minor.', '<b>The last note:</b> A.'], 'No sharps or flats, G♯ clues, ending on A: <b>A minor</b>.')}
+{inaction('Read a sharp key signature', ringks('ks_1s', -1, 80), ['<b>Count the sharps:</b> one, F♯.', '<b>The last sharp</b> is F♯; one semitone up is G.', '<b>Its relative minor,</b> three semitones below G, is E.'], 'One sharp: <b>G major</b> or <b>E minor</b>.')}
 {foot('Keys and key signatures p. 31 · The circle of fifths p. 33', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 32)
 
 
