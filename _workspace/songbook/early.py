@@ -29,7 +29,7 @@ def groups():   # two octaves from C: the black keys in twos (coral) and threes 
 def basics_page():
     B = SONG['basics']
     return page(f'''{part(3, 'Hello, piano', 'Three things every pianist knows. Read them with your teacher, then try each one.')}
-<div class="sp"></div><div class="bas"><div>{hands()}</div><div><h3>Your fingers have numbers</h3><p class="cap2">Thumbs are 1, little fingers are 5, in both hands. Hold your hands up and wiggle each number your teacher calls.</p>{ticks(['Wiggled 1 to 5, each hand'])}</div></div>
+<div class="sp"></div><div class="bas"><div>{hands()}</div><div><h3>Your fingers have numbers</h3><p class="cap2">Thumbs are 1, little fingers are 5, in both hands. Wiggle each number your teacher calls.</p>{ticks(['Wiggled 1 to 5, each hand'])}</div></div>
 <div class="sp"></div><div class="bas"><div>{groups()}</div><div><h3>Black keys come in twos and threes</h3><p class="cap2">Play every group of two black keys, low to high, then every group of three. C is the white key just left of each two.</p>{ticks(['Found the twos and threes', 'Found every C'])}</div></div>
 <div class="sp"></div><div class="bas one"><h3>Sit like a pianist</h3><p class="cap2">Sit on the front half of the bench, feet flat. Elbows a little in front of you, level with the keys. Round hands, as if holding a small ball.</p></div>
 <div class="sp"></div>{part(4, 'Play it', B['play'])}
@@ -40,5 +40,5 @@ def basics_page():
 <div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 3)
 
 EARLY_CSS = f'''.bas{{display:grid;grid-template-columns:280px minmax(0,1fr);gap:22px;align-items:center}} .bas.one{{display:block}}
-.bas h3{{font-family:'PF',Georgia,serif;font-size:19px;margin:0 0 4px}} .bas .ticks{{margin:6px 0 0}}
+.bas h3{{font-family:'PF',Georgia,serif;font-size:19px;margin:0 0 4px}} .bas svg{{max-height:140px;width:auto !important;max-width:100%}} .bas .ticks{{margin:6px 0 0}}
 .wtag{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin:6px 0 -6px}}'''

@@ -71,11 +71,16 @@ legend = ''.join(f'<div class="wl"><span class="wn">Way {n}</span><span class="s
 
 # note pictures for the values in the song (drawn, so no font is needed): a head, hollow from the minim, a stem below the semibreve
 def note(kind, s=1.0):
+    if kind == 'qq':   # two quavers on one beam
+        hd = lambda cx: f'<ellipse cx="{cx}" cy="40" rx="9" ry="6.3" transform="rotate(-22 {cx} 40)" fill="{N}"/>'
+        return (f'<svg viewBox="0 0 54 50" style="width:{43 * s}px;height:{40 * s}px">{hd(14)}{hd(40)}'
+                f'<line x1="22.3" y1="38" x2="22.3" y2="6" stroke="{N}" stroke-width="2.2"/><line x1="48.3" y1="38" x2="48.3" y2="6" stroke="{N}" stroke-width="2.2"/>'
+                f'<rect x="21.2" y="4" width="28.2" height="6" fill="{N}"/></svg>')
     head = f'<ellipse cx="14" cy="40" rx="9" ry="6.3" transform="rotate(-22 14 40)" fill="{N if kind == "c" else "#fff"}" stroke="{N}" stroke-width="{0 if kind == "c" else 2.6}"/>'
     stem = '' if kind == 's' else f'<line x1="22.3" y1="38" x2="22.3" y2="6" stroke="{N}" stroke-width="2.2"/>'
     return f'<svg viewBox="0 0 30 50" style="width:{24 * s}px;height:{40 * s}px">{head}{stem}</svg>'
 def beats(n): return '<span class="bd">' + '<i></i>' * n + '</span>'
-vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{beats(n)}</div></div>' for k, nm, n in [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)] if k in SONG.get('values', 'cms'))
+vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{beats(n)}</div></div>' for k, nm, n in SONG.get('value_names', [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)]) if k in SONG.get('values', 'cms'))
 TIME = SONG.get("time_html", "<p><b>Top 4:</b> four beats in every bar.</p><p><b>Bottom 4:</b> a crotchet is one beat.</p>")
 TSN = '<div class="tsn"><span>4</span><span>4</span></div>' if SONG.get("time_label", "The time") == "The time" else ''
 tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
@@ -91,7 +96,7 @@ P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <div class="sp"></div>{part(1, 'Say and clap', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
 <div class="mat"><div class="mh">{SONG.get("time_label", "The time")}</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
 <div class="sp"></div>{LINES('rhy')}
-<div class="end">{ticks(['Said it in time', 'Clapped and counted', 'Found every minim (2 beats)'], True)}</div>''', 1)
+<div class="end">{ticks(SONG.get('p1_ticks', ['Said it in time', 'Clapped and counted', 'Found every minim (2 beats)']), True)}</div>''', 1)
 
 P2 = page(f'''{part(2, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter name of every note in the boxes; the first one is done.')}
 {POS}

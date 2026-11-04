@@ -15,7 +15,7 @@ function noteXml(p, d, o = {}) {
   const [pname, oct] = pn(p); const i = nid(); o.ids && o.ids.push(i);
   const syl = o.syl ? `<verse n="1"><syl${o.wp ? ` wordpos="${o.wp}" con="d"` : ''}>${o.syl}</syl></verse>` : '';
   const loc = o.loc != null ? ` loc="${o.loc}"` : '';
-  if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}">${syl}</note>`];
+  if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}" stem.dir="${o.lh ? 'down' : 'up'}">${syl}</note>`];   // the right hand's stems up, the left hand's down
   return [i, o.rhythm ? `<note xml:id="${i}" dur="${DUR[d]}" loc="0" stem.dir="up">${syl}</note>` : `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${o.stem ? ` stem.dir="${o.stem}"` : ''}>${syl}</note>`];
 }
 function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b] = pn(p); return `<note pname="${a}" oct="${b}"/>`; }).join('') + '</chord>']; }
@@ -23,10 +23,13 @@ function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i
 function mei(b0, b1, o) {
   let ms = '', ctrl = [];
   for (let b = b0; b < b1; b++) {
-    const bar = S.bars[b]; let l1 = '';
-    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre }); l1 += x;
-      if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${S.rh_finger[p]}</fing>`);
+    const bar = S.bars[b]; let l1 = '', run = [];
+    const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
+    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, lh: o.lhfing });
+      if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
+      if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${(o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
+    flush();
     let st2 = '';
     if (o.lh) { const ch = S.chords[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';
       pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d, 'up') : noteXml(ps[0], d, { stem: 'up' }); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
@@ -65,6 +68,8 @@ function addCounts(svg) {
   const sylY = [...svg.matchAll(/class="syl">\s*<text x="[\d.]+" y="(\d+)"/g)].map(m => +m[1]); let out = '', beat = 0; const Y = (sylY.length ? Math.max(...sylY) : sy + 640) + 420, FS = 300;
   ev.forEach((e, ei) => { if (e.bar) { beat = 0; return; } const L = INFO[e.id].len, x0 = e.x + HW / 2;
     const nx = (ev[ei + 1] || { x: x0 + L * U }).x, step = L > 1 ? Math.min(U, (nx - 120 - x0) / (L - 0.5)) : U;
+    if (L < 1) {   // a quaver: the beat's number on the beat, '+' (and) between
+      out += `<text x="${x0.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${ON}" class="cnt">${Number.isInteger(beat) ? beat + 1 : '+'}</text>`; beat += L; return; }
     for (let k = 0; k < L; k++) { const x = x0 + k * step, held = k > 0;
       out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${held ? HELD : ON}" class="cnt">${beat + k + 1}</text>`;
       if (held) { const xa = x - step + 150, xb = x - 150; if (xb > xa) out += `<line x1="${xa.toFixed(0)}" x2="${xb.toFixed(0)}" y1="${Y - 95}" y2="${Y - 95}" stroke="${HELD}" stroke-width="26" stroke-linecap="round"/>`; } }
@@ -79,8 +84,10 @@ function addBoxes(svg, ex) {
   const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
   const sylY = [...svg.matchAll(/class="syl">\s*<text x="[\d.]+" y="(\d+)"/g)].map(m => +m[1]);
   const T = sylY.length ? Math.max(...sylY) + 160 : sy + 1110; let out = '';
-  ev.forEach((x, k) => { out += `<rect x="${x - 190}" y="${T}" width="380" height="380" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
-    if (k === 0 && ex) out += `<text x="${x}" y="${T + 295}" text-anchor="middle" font-size="290" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
+  // each box as wide as its own room allows: a note close to its neighbours gets a narrower box, never touching them
+  const room = (k) => Math.min(k ? ev[k] - ev[k - 1] : 1e9, k < ev.length - 1 ? ev[k + 1] - ev[k] : 1e9);
+  ev.forEach((x, k) => { const B = Math.max(130, Math.min(380, room(k) - 120)); out += `<rect x="${x - B / 2}" y="${T}" width="${B}" height="${Math.max(B, 300)}" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
+    if (k === 0 && ex) out += `<text x="${x}" y="${T + Math.max(B, 300) * 0.78}" text-anchor="middle" font-size="${B * 0.76}" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
 // A lead sheet's "when" row, under the staff: for each bar, the left hand's pattern for that bar's chord, placed on its beats.
