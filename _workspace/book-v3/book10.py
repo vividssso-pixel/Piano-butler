@@ -112,7 +112,7 @@ flow = ''.join(f'<div class="fl"><span class="fln">{i + 1}</span><b>{a}</b><span
 OPEN = f'''<section class="pg part2"><div class="pframe"><div class="pk">Part II · When, and for how long</div><div class="pt">Time</div><div class="pdv"></div>
 <p class="pl">Music moves through time. Underneath it runs a steady <b>pulse</b>; the pulse is grouped into <b>bars</b>; and every note and rest takes a measured share of it. This part goes from that big picture down to the length of a single note.</p>
 <div class="flow">{flow}</div>
-<div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p + 12}</span></div>' for x, p in (('Pulse, tempo and the bar', 36), ('Notes and rests', 38), ('How long is a note?', 40), ('Time signatures', 42), ('Compound and irregular time', 44), ('Rhythm: groups and upbeats', 46), ('Rhythm: off the beat', 48)))}</div></div></section>'''
+<div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p + 12}</span></div>' for x, p in (('Pulse, tempo and the bar', 36), ('Notes and rests', 38), ('How long is a note?', 40), ('Time signatures', 42), ('Compound and irregular time', 44), ('Rhythm: groups and upbeats', 46), ('Rhythm: off the beat', 48), ('Tips: when the rhythm slips', 50)))}</div></div></section>'''
 
 P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Under almost every piece runs a <b>pulse</b>: a steady beat, like a heartbeat or a clock. Its speed is the <b>tempo</b>. Beats are grouped into <b>bars</b>, and the first beat of every bar is the strongest.')}
 {two(h3('Tempo') + f'<p>Tempo is measured in beats per minute. A <b>metronome mark</b> at the top of the music shows it: <span class="mm">{gin("n", "c")} = 60</span> means 60 crotchet beats a minute, one beat a second. <span class="mm">{gin("n", "c")} = 120</span> is twice as fast. Tempo words such as <i>Andante</i> and <i>Allegro</i> come with Expression, later in the book.</p>',
@@ -292,6 +292,21 @@ for _old, _pg in zip(range(36, 43), (P36, P37, P38, P39, P40, P41, P42)):
 _secs = [_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{TBASE + i}</span></div>', x) for i, x in enumerate(_secs)]
 _body = ''.join(_secs)
 _body = _re.sub(r'(p\. |page )(3[6-9]|4[0-2])\b', lambda m: m.group(1) + str(_map[int(m.group(2))]), _body)
+# ---------- Part II ends with its own tips page (her 4 Nov: each part ends with its tips) ----------
+css += """
+.tip{border-left:3px solid #e4572e;background:#fdf6f2;padding:10px 16px 12px;margin:12px 0} .tip .bh{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e4572e} .tip .tt{display:block;font-size:16px;margin:2px 0 6px} .tip table{background:transparent} .tip td,.tip th{vertical-align:top}
+.fixes{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin:6px 0 10px} .fixes>div{position:relative;padding:10px 12px 10px 44px;border:1px solid #e2ddd0;display:flex;flex-direction:column;gap:2px;font-size:13.5px;line-height:1.45} .fixes b{font-size:14.5px} .fixes .rn{position:absolute;left:12px;top:12px;width:22px;height:22px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center}
+"""
+TT = page(f"""{head('Part II · Time · Tips', 'When the rhythm slips', 'A rhythm that slips is nearly always a beat that was not counted. Find which beat, count it out loud, and the rest of the bar usually falls into place.')}
+<div class="tip"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
+{tbl(['What you notice', 'Check', 'Turn to'], [['It speeds up or slows down', '<b class="co">the pulse</b>: count one bar aloud before you start', 'p. 48'], ['A rest gets skipped', '<b class="co">the rest</b>: it is counted just like a note', 'p. 50'], ['Long notes come out short', '<b class="co">the hold</b>: count every beat of a minim, dot or tie', 'p. 52'], ['The bar feels too long or too short', '<b class="co">the time signature</b>: how many counts, which note is one', 'p. 54'], ['6/8 sounds like 3/4', '<b class="co">the dotted beat</b>: two beats, each split in three', 'p. 56'], ['You lose your place in fast notes', '<b class="co">the beams</b>: each group is one beat', 'p. 58'], ['An off-beat note lands on the beat', '<b class="co">the “&”</b>: keep the beat in your foot and count it', 'p. 60']], ['38%', '50%', '12%'])}
+</div>
+{inact('Count the long notes', train([[('n', 2, 'm'), ('n', 1, 'c')], [('n', 3, 'dm')]], '3/4'), ['<b>Say 1 2 3</b> once through before you play, to feel the beat.', '<b>The minim books seats 1 and 2:</b> keep saying “2” while it sounds.', '<b>The dotted minim books all three:</b> let go on the next “1”, not before.'], 'Long notes are where counting slips: <b>say every seat</b> they book.')}
+{h3('Four ways to steady a rhythm')}
+<div class="fixes">{''.join(f'<div><span class="rn">{i + 1}</span><b>{a}</b><span>{b}</span></div>' for i, (a, b) in enumerate([('Count out loud', 'Say the counts while you play, not in your head: a slip you can hear is a slip you can fix.'), ('Tap, then play', 'Tap the rhythm on the lid and say the counts; play only when the tapping is steady.'), ('Walk the beat', 'Step the pulse while you clap the rhythm, so the beat lives in your feet.'), ('Split the beat', 'For dots and quavers, count “1 & 2 &”: the extra “&” shows exactly where each note goes.')]))}</div>
+{thinkt('Like a dance partner: the beat leads and the rhythm follows. Lose the beat and every step after it goes wrong.')}""", 62)
+
+_body += TT
 TIME_MAP = _map
 FLOWJS = '''<script>
 // Each topic fills its first page, then flows on to its second: blocks move between the two until the first is as full as it can be.
