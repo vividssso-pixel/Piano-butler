@@ -133,6 +133,8 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .listen{{display:flex;align-items:center;gap:16px;border:1.5px solid {C};border-radius:12px;padding:6px 16px;margin:2px 0}} .listen p{{margin:2px 0 0;font-size:14.5px;line-height:1.45}} .lh2{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}}
 .sub{{display:flex;align-items:center;gap:10px;margin:8px 0 0}} .sub span{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .sub::after{{content:'';flex:1;height:1px;background:rgba(38,41,107,.18)}}
 .bd.hv{{gap:3px}} .bd.hv i{{height:10px}} .bd.hv i:first-child{{border-radius:99px 0 0 99px;width:5px}} .bd.hv i:last-child{{border-radius:0 99px 99px 0;width:5px}}
+.own{{display:flex;border-left:2px solid {N};border-right:4px double {N};margin:0 4px}} .ob{{flex:1;display:flex;justify-content:space-around;align-items:flex-end;border-right:1.5px solid {N};padding:6px 4px 10px}} .ob:last-child{{border-right:0}}
+.on{{display:flex;flex-direction:column;align-items:center;gap:8px}} .obx{{width:40px;height:40px;border:2px solid {N};border-radius:8px;display:block}}
 .chips{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}} .cl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-right:4px}} .chip{{border:1.2px solid {N};border-radius:14px;padding:3px 12px;font-size:14px;font-weight:700}}
 .ph{{display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:10px;margin-top:10px}} .pn{{width:30px;height:30px;background:{N};color:#fff;display:inline-flex;align-items:center;justify-content:center;font:700 16px 'AH'}} h2{{font-family:'PF',Georgia,serif;font-size:25px;margin:0}}
 .how{{font-size:15.5px;color:#3d4080;margin:6px 0 6px}}
@@ -146,6 +148,22 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .mv{{display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;margin:4px 0 2px}} .cap2{{font-size:15px;line-height:1.5;margin:0}} .gl{{max-width:91%;margin:0 auto}} .wrow{{display:flex;align-items:center;gap:10px;margin:6px 0}} .wk{{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{C};width:38px;flex:none}} .wrow .ticks{{margin:0}} .ck2{{font-size:15.5px;font-weight:700;margin:8px 0 2px}}
 .tch{{display:flex;align-items:center;gap:16px;margin-top:12px;padding-top:10px;border-top:1px dashed #c9cbe0}} .tch>span:first-child{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{MUTE}}}
 @media print {{ body{{background:#fff}} .pg{{margin:0}} }}''' + EARLY_CSS
-BODY = ready_pages() if SONG.get('kind') == 'ready' else P1 + P2 + P3
+def own_tune(bars):   # her 4 Nov 15:00: make your own -- the rhythm given, a box under each note for its letter
+    cells = ''
+    for i, bar in enumerate(bars):
+        cells += '<div class="ob">' + ''.join(f'<div class="on">{note(k, 1.25)}<span class="obx"></span></div>' for k in bar) + '</div>'
+    return f'<div class="own">{cells}</div>'
+P4 = ''
+if SONG.get('more'):
+    M = SONG['more']
+    P4 = page(f'''{part('+', 'More to play', SONG.get('more_how', 'The same keys, the same fingers, the same note values: two new tunes. Then make your own.'))}
+<div class="sp"></div>{SUB(M[0]['title'], SONG.get('more_a', 'Sing it on the words, then play it.'))}
+<div class="sp"></div>{mus('moreA1')}{mus('moreA2')}
+<div class="sp"></div>{SUB(M[1]['title'], SONG.get('more_b', 'Say the words in rhythm first, then play it.'))}
+<div class="sp"></div>{mus('moreB1')}{mus('moreB2')}
+<div class="sp"></div>{SUB('Your own tune', SONG.get('more_own_how', 'Write a letter in each box, then play your tune. Give it a name:') + ' <span class="ib" style="width:180px"></span>')}
+<div class="sp"></div>{own_tune(SONG.get('more_own', []))}
+<div class="sp"></div><div class="end">{ticks(SONG.get('more_ticks', ['Played the first tune', 'Played the second tune', 'Played my own tune']), True)}</div>''', 4)
+BODY = ready_pages() if SONG.get('kind') == 'ready' else P1 + P2 + P3 + P4
 html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{BODY}</body></html>'
 open(sys.argv[3], 'w').write(html); print('ok', len(html))
