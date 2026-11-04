@@ -29,6 +29,8 @@ h1 { font-family:'Playfair Display', Georgia, serif; font-weight:800; font-size:
 .seg { display:flex; border:1.5px solid var(--line); border-radius:999px; overflow:hidden }
 .seg button { font:inherit; font-size:13px; font-weight:600; color:var(--navy); background:none; border:none; padding:8px 14px; cursor:pointer }
 .seg button.on { background:var(--navy); color:#fff }
+.tempo { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums }
+.tempo input { width:130px; accent-color:var(--coral) }
 .chk { display:flex; gap:6px; align-items:center; font-size:13px; font-weight:600; cursor:pointer; user-select:none }
 .chk input { accent-color:var(--navy); width:16px; height:16px }
 .sheet { margin-top:18px; display:grid; gap:14px }
@@ -57,20 +59,24 @@ h1 { font-family:'Playfair Display', Georgia, serif; font-weight:800; font-size:
   <div class="tunes" id="tunes"></div>
   <div class="bar">
     <button class="play" id="play">▶ Play</button>
-    <div class="seg" id="speed"><button data-s="0.7">Slow</button><button data-s="1" class="on">Normal</button></div>
+    <div class="seg" id="speed"><button data-s="0.6">Slow</button><button data-s="0.8">Steady</button><button data-s="1" class="on">Normal</button></div>
+    <label class="tempo"><input type="range" id="tempo" min="40" max="130" step="5" value="100"><span id="tval"></span></label>
     <label class="chk"><input type="checkbox" id="count" checked> Count in</label>
     <label class="chk"><input type="checkbox" id="loop"> Again and again</label>
+    <div class="seg" id="acc"><button data-a="">Tune</button><button data-a="piano">Piano</button><button data-a="band">Band</button></div>
+    <label class="chk" id="mew"><input type="checkbox" id="me"> I play the tune</label>
   </div>
   <div class="sheet" id="sheet"></div>
   <svg class="kb" id="kb" viewBox="0 0 294 110"></svg>
-  <p class="foot"><b>Listen first:</b> hear it once, then point to each note as it lights up. The second time, sing along. The open circles are the long notes: hold them.</p>
+  <p class="foot"><b>Listen first:</b> hear it once, then point to each note as it lights up. The second time, sing along. Then pick <b>Piano</b> or <b>Band</b>, tick <b>I play the tune</b>, and play your part with them. Slow it down with the slider until it feels easy, then speed it up.</p>
+  <p class="foot" style="font-size:11px">Piano sound: tonejs-instruments samples.</p>
 </div>
 <script>
 const SONGS = /*DATA*/[];
 const LEN = { s: 4, m: 2, c: 1, q: 0.5 };
 const FREQ = p => { const st = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[p[0]] + (p[1] === 's' ? 1 : 0); const oct = +p.replace(/[^0-9]/g, ''); return 261.63 * Math.pow(2, (st + 12 * (oct - 4)) / 12); };
 const $ = id => document.getElementById(id);
-let song = SONGS[0], tune = 0, speed = 1, ctx = null, playing = false, timer = null, events = [], startAt = 0;
+let OUT = null, acc = 'band', song = SONGS[0], tune = 0, speed = 1, ctx = null, playing = false, timer = null, events = [], startAt = 0;
 
 // the keyboard: middle C up to B, the lit key follows the tune
 const KEYS = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
@@ -100,33 +106,80 @@ function render() {
   }
   $('sheet').innerHTML = html;
   document.querySelectorAll('#tunes button').forEach(b => b.onclick = () => { stop(); tune = +b.dataset.t; render(); });
+  setAcc(); if ($('tval')) setSpeed(speed, true);
 }
 
-function pianoNote(f, t, dur) {   // a soft piano-like tone: a quick attack and a long fall
+// a real piano: recorded notes (every third semitone), each played a little faster or slower to reach its neighbours.
+// Until they have loaded (or if they can't) the soft synthesized tone below plays instead.
+const SAMPLES = ['C2', 'Fs2', 'C3', 'Fs3', 'C4', 'Ds4', 'Fs4', 'A4', 'C5', 'Ds5', 'Fs5', 'A5', 'C6'];
+const MIDI = n => ({ C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 })[n[0]] + (n[1] === 's' ? 1 : 0) + 12 * (+n.replace(/[^0-9]/g, '') + 1);
+let BUF = {}, bufCtx = null, rawSamples = null;
+async function loadSamples() {
+  try { if (!rawSamples) rawSamples = await Promise.all(SAMPLES.map(n => fetch('audio/piano/' + n + '.mp3').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })));
+    if (bufCtx === ctx) return; const c = ctx; const out = {};
+    await Promise.all(SAMPLES.map((n, i) => c.decodeAudioData(rawSamples[i].slice(0)).then(b => { out[MIDI(n)] = b; })));
+    if (c === ctx) { BUF = out; bufCtx = c; }
+  } catch (e) { BUF = {}; }
+}
+function sampled(f, t, dur, peak) {
+  const keys = Object.keys(BUF).map(Number); if (bufCtx !== ctx || !keys.length) return false;
+  const m = 69 + 12 * Math.log2(f / 440), k = keys.reduce((a, b) => Math.abs(b - m) < Math.abs(a - m) ? b : a);
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = BUF[k]; s.playbackRate.value = Math.pow(2, (m - k) / 12);
+  const end = t + Math.max(0.3, dur);
+  g.gain.setValueAtTime(peak * 2.2, t); g.gain.setValueAtTime(peak * 2.2, end); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.35);
+  s.connect(g); g.connect(OUT); s.start(t); s.stop(end + 0.4); return true;
+}
+function pianoNote(f, t, dur, peak = 0.42) {
+  if (sampled(f, t, dur, peak)) return;   // a soft piano-like tone: a quick attack and a long fall
   const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
   o1.type = 'triangle'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2;
   const g2 = ctx.createGain(); g2.gain.value = 0.18;
   lp.type = 'lowpass'; lp.frequency.value = 2400;
-  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(ctx.destination);
+  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(OUT);
   const end = t + Math.max(0.25, dur * 0.95);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.42, t + 0.012);
-  g.gain.exponentialRampToValueAtTime(0.16, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.15);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(peak * 0.38, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.15);
   o1.start(t); o2.start(t); o1.stop(end + 0.2); o2.stop(end + 0.2);
+}
+function bassNote(f, t, dur) {   // a plucked upright-bass tone, round and short
+  const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  o.type = 'sine'; o.frequency.value = f; o2.type = 'triangle'; o2.frequency.value = f * 2; lp.type = 'lowpass'; lp.frequency.value = 700;
+  const g2 = ctx.createGain(); g2.gain.value = 0.25; o.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(OUT);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.1);
+  o.start(t); o2.start(t); o.stop(t + dur + 0.15); o2.stop(t + dur + 0.15);
 }
 function click(t, hi) {
   const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'square'; o.frequency.value = hi ? 1500 : 1000;
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-  o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.06);
+  o.connect(g); g.connect(OUT); o.start(t); o.stop(t + 0.06);
 }
 
-function play() {
-  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+async function play() {
+  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); OUT = ctx.createDynamicsCompressor(); OUT.threshold.value = -14; OUT.ratio.value = 4; OUT.connect(ctx.destination); }
   if (ctx.state === 'suspended') ctx.resume();
-  const beat = 60 / (song.bpm * speed), per = +song.meter.split('/')[0];
+  $('play').textContent = '…'; await loadSamples();
+  const ACC = accData(), beat = 60 / ((ACC ? ACC.bpm : song.bpm) * speed), per = +song.meter.split('/')[0];
   let t = ctx.currentTime + 0.15;
-  if ($('count').checked) { for (let i = 0; i < per; i++) click(t + i * beat, i === 0); t += per * beat; }
+  if ($('count').checked || $('me').checked) { for (let i = 0; i < per; i++) click(t + i * beat, i === 0); t += per * beat; }
   startAt = t; events = []; let k = 0;
-  song.tunes[tune].b.forEach(bar => bar.forEach(([p, d]) => { const dur = LEN[d] * beat; pianoNote(FREQ(p), t, dur); events.push({ t, end: t + dur, k: k++, p }); t += dur; }));
+  const J = ACC && acc === 'band' ? ACC : null, P = ACC && acc === 'piano' ? ACC : null, ME = $('me').checked;
+  const sw = J && J.swing ? 2 / 3 : 0.5;   // swing: the 'and' comes late, two thirds into the beat
+  const at = pos => { const b = Math.floor(pos + 1e-6), f = pos - b; return t + (b + (Math.abs(f - 0.5) < 1e-6 ? sw : f)) * beat; };
+  let pos = 0;
+  song.tunes[tune].b.forEach(bar => bar.forEach(([p, d]) => { const t0 = at(pos), t1 = at(pos + LEN[d]); const f = FREQ(p) * (ACC ? 2 : 1);
+    if (!ME) pianoNote(f, t0, t1 - t0, ACC ? 0.5 : 0.42); events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
+  if (J) J.bars.forEach(([ch, bs], bi) => { const b0 = bi * per, last = bi === J.bars.length - 1;
+    const chord = (name, p0, len, g) => (J.voicing[name] || []).forEach(q => pianoNote(FREQ(q), at(p0), len * beat, g));
+    if (last) { chord(ch[0], b0, 3, 0.16); bassNote(FREQ(bs[0]), at(b0), 3 * beat); return; }
+    bassNote(FREQ(bs[0]), at(b0), 0.9 * beat); chord(ch[0], b0, 0.4, 0.15);
+    for (let x = 1; x < per; x++) bassNote(FREQ(bs[1] || bs[0]), at(b0 + x), 0.9 * beat);
+    chord(ch[1] || ch[0], b0 + per - 0.5, 0.35, 0.15); });
+  if (P) P.bars.forEach(([ch, bs], bi) => { const b0 = bi * per, last = bi === P.bars.length - 1;   // the teacher's part: a low root and broken chords
+    if (last) { (P.voicing[ch[0]] || []).forEach(q => pianoNote(FREQ(q), at(b0), 3 * beat, 0.16)); pianoNote(FREQ(bs[0]), at(b0), 3 * beat, 0.3); return; }
+    for (let x = 0; x < per; x++) { const c = P.voicing[(x < per / 2 ? ch[0] : ch[1] || ch[0])] || [];
+      if (x === 0 || (x === per / 2 && bs[1])) pianoNote(FREQ(bs[x ? 1 : 0]), at(b0 + x), (x ? per / 2 : per / 2) * beat, 0.3);
+      [c[0], c[2], c[1], c[2]].slice(0, 2).forEach((q, h) => q && pianoNote(FREQ(q), at(b0 + x + h * 0.5), 0.5 * beat, 0.17)); } });
+  t = at(pos);
   playing = true; $('play').textContent = '■ Stop'; $('play').classList.add('stop');
   const endT = t; let last = -1;
   const tick = () => {
@@ -148,7 +201,21 @@ function stop() {
   $('play').textContent = '▶ Play'; $('play').classList.remove('stop');
 }
 $('play').onclick = () => playing ? stop() : play();
-document.querySelectorAll('#speed button').forEach(b => b.onclick = () => { document.querySelectorAll('#speed button').forEach(x => x.classList.toggle('on', x === b)); speed = +b.dataset.s; if (playing) { stop(); play(); } });
+function setSpeed(s, fromSlider) { speed = s; if (!fromSlider) $('tempo').value = Math.round(s * 100);
+  document.querySelectorAll('#speed button').forEach(x => x.classList.toggle('on', Math.abs(+x.dataset.s - s) < 0.001));
+  const A = accData(); $('tval').textContent = '♩ = ' + Math.round((A ? A.bpm : song.bpm) * s); }
+document.querySelectorAll('#speed button').forEach(b => b.onclick = () => { setSpeed(+b.dataset.s); if (playing) { stop(); play(); } });
+$('tempo').oninput = () => setSpeed($('tempo').value / 100, true);
+$('tempo').onchange = () => { if (playing) { stop(); play(); } };
+function accData() { return tune === 0 && acc ? song[acc] : null; }
+function setAcc() {   // the sound: the tune alone, the teacher's piano, or the band (only what this song has)
+  const has = a => !a || (tune === 0 && song[a]);
+  if (!has(acc)) acc = song.band && tune === 0 ? 'band' : song.piano && tune === 0 ? 'piano' : '';
+  document.querySelectorAll('#acc button').forEach(b => { b.hidden = !has(b.dataset.a); b.classList.toggle('on', b.dataset.a === acc); });
+  $('acc').hidden = !(tune === 0 && (song.band || song.piano)); $('mew').hidden = !acc;
+  if (!acc) $('me').checked = false;
+}
+document.querySelectorAll('#acc button').forEach(b => b.onclick = () => { acc = b.dataset.a; setAcc(); setSpeed(speed, true); if (playing) { stop(); play(); } });
 function route() { const id = location.hash.slice(1); stop(); song = SONGS.find(s => s.id === id) || SONGS[0]; tune = 0; render(); }
 addEventListener('hashchange', route);
 drawKb(); route();
