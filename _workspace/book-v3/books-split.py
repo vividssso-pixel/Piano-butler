@@ -72,12 +72,12 @@ page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
 h1{{font-size:clamp(38px,6vw,60px);font-weight:900;line-height:1.02}} .lead{{font-size:17px;color:var(--navy-soft);margin:12px 0 0;max-width:40em}}
 .shelf{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;margin-top:30px;padding-bottom:16px;border-bottom:8px solid #b59a68;box-shadow:0 4px 0 rgba(38,41,107,.12)}}
 .book{{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:10px}} .book:focus-visible .cv{{outline:3px solid var(--coral);outline-offset:4px}}
-.cv{{display:block;aspect-ratio:210/297;background:var(--dk);border-radius:2px 6px 6px 2px;box-shadow:inset 6px 0 0 rgba(0,0,0,.25),0 8px 18px rgba(28,30,79,.25);transition:transform .2s;padding:9%}}
+.cv{{display:block;aspect-ratio:210/297;background:var(--dk);border-radius:2px 6px 6px 2px;box-shadow:inset 6px 0 0 rgba(0,0,0,.25),0 8px 18px rgba(28,30,79,.25);transition:transform .2s;padding:9%;container-type:inline-size}}
 .cv.wb{{background:linear-gradient(90deg,#efe6cf,#f8f1de 18%,#f3ead3);box-shadow:inset 6px 0 0 rgba(120,90,40,.18),0 8px 18px rgba(28,30,79,.18)}} .cv.wb .fr{{color:#26296b;border-color:rgba(38,41,107,.55);outline-color:rgba(38,41,107,.3)}} .cv.wb .dv{{border-color:#26296b}} .book:hover .cv,.book[aria-expanded=true] .cv{{transform:translateY(-8px)}} .book[aria-expanded=true] .cv{{outline:3px solid var(--coral);outline-offset:4px}}
 .fr{{display:flex;flex-direction:column;height:100%;border:1.5px solid rgba(255,253,247,.7);outline:.6px solid rgba(255,253,247,.4);outline-offset:-6px;padding:14% 10% 10%;color:#fffdf7}}
-.se{{font-size:clamp(8px,1vw,10.5px);letter-spacing:.14em;text-transform:uppercase;opacity:.85}} .ki{{font-size:clamp(9px,1.1vw,12px);font-weight:800;letter-spacing:.3em;text-transform:uppercase;margin-top:16%}}
-.ti{{font-family:'Playfair Display',serif;font-weight:800;font-size:clamp(26px,3.6vw,42px);line-height:1;margin-top:4px}} .dv{{width:40%;height:4px;border-top:1px solid #fffdf7;border-bottom:1px solid #fffdf7;opacity:.7;margin:10% 0}}
-.bl{{font-size:clamp(9px,1vw,12px);line-height:1.45;opacity:.9}} .bw{{margin-top:auto}}
+.se{{font-size:4.4cqw;letter-spacing:.14em;text-transform:uppercase;opacity:.85}} .ki{{font-size:4.8cqw;font-weight:800;letter-spacing:.3em;text-transform:uppercase;margin-top:16%}}
+.ti{{font-family:'Playfair Display',serif;font-weight:800;font-size:12.5cqw;line-height:1;margin-top:4px;white-space:nowrap}} .dv{{width:40%;height:4px;border-top:1px solid #fffdf7;border-bottom:1px solid #fffdf7;opacity:.7;margin:10% 0}}
+.bl{{font-size:5.4cqw;line-height:1.45;opacity:.9;min-height:4.35em}} .bw{{margin-top:auto}}
 .cap{{display:flex;flex-direction:column}} .cap b{{font-size:15px}} .cap span{{font-size:12.5px;color:var(--muted);font-weight:600}}
 .panel{{margin-top:34px}} .ph{{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1.5px solid var(--navy);padding-bottom:8px;margin-bottom:22px}} .ph h2{{font-size:clamp(24px,3.4vw,32px);font-weight:900}} .whole{{font-size:14px;font-weight:700;color:var(--navy-soft)}}
 .grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:24px 20px}} .card{{display:flex;flex-direction:column}}
