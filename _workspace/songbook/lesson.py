@@ -90,14 +90,14 @@ tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
   '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G.</p></div></div>')
 exec(open('early.py').read())
-if 'pos' in SONG: POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else kb(width=340, fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
+if 'pos' in SONG: POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else kb(width=300, fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
 P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
 LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
 SUB = lambda t, how: f'<div class="sub"><span>{t}</span></div><p class="how">{how}</p>'
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <p class="lead">{LEAD}</p>
 <div class="chips"><span class="cl">In this song</span>{chips}</div>
-<div class="listen">{qr(URL, 64)}<div><div class="lh2">Listen first</div><p>Hear the whole song before you take it apart: scan the code, listen once, then hum along the second time.</p></div></div>
+<div class="listen">{qr(URL, 52)}<div><div class="lh2">Listen first</div><p>Scan the code: listen to the whole song once, then hum along the second time.</p></div></div>
 <div class="sp"></div>{part(1, 'Listen and sing', SONG.get('sing_how', 'Listen, pointing to each note as it sounds. Then sing it with the words.'))}
 {POS}
 <div class="sp"></div>{LINES('sing')}
@@ -133,8 +133,8 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .listen{{display:flex;align-items:center;gap:16px;border:1.5px solid {C};border-radius:12px;padding:6px 16px;margin:2px 0}} .listen p{{margin:2px 0 0;font-size:14.5px;line-height:1.45}} .lh2{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}}
 .sub{{display:flex;align-items:center;gap:10px;margin:8px 0 0}} .sub span{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .sub::after{{content:'';flex:1;height:1px;background:rgba(38,41,107,.18)}}
 .bd.hv{{gap:3px}} .bd.hv i{{height:10px}} .bd.hv i:first-child{{border-radius:99px 0 0 99px;width:5px}} .bd.hv i:last-child{{border-radius:0 99px 99px 0;width:5px}}
-.own{{display:flex;border-left:2px solid {N};border-right:4px double {N};margin:0 4px}} .ob{{flex:1;display:flex;justify-content:space-around;align-items:flex-end;border-right:1.5px solid {N};padding:6px 4px 10px}} .ob:last-child{{border-right:0}}
-.on{{display:flex;flex-direction:column;align-items:center;gap:8px}} .obx{{width:40px;height:40px;border:2px solid {N};border-radius:8px;display:block}}
+.own{{display:flex;border-left:2px solid {N};border-right:4px double {N};margin:0 4px}} .ob{{flex:1;display:flex;justify-content:space-around;gap:6px;align-items:flex-end;border-right:1.5px solid {N};padding:6px 8px 10px}} .ob:last-child{{border-right:0}}
+.on{{display:flex;flex-direction:column;align-items:center;gap:8px}} .obx{{width:34px;height:34px;border:2px solid {N};border-radius:8px;display:block}}
 .chips{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}} .cl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-right:4px}} .chip{{border:1.2px solid {N};border-radius:14px;padding:3px 12px;font-size:14px;font-weight:700}}
 .ph{{display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:10px;margin-top:10px}} .pn{{width:30px;height:30px;background:{N};color:#fff;display:inline-flex;align-items:center;justify-content:center;font:700 16px 'AH'}} h2{{font-family:'PF',Georgia,serif;font-size:25px;margin:0}}
 .how{{font-size:15.5px;color:#3d4080;margin:6px 0 6px}}
@@ -151,15 +151,15 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 def own_tune(bars):   # her 4 Nov 15:00: make your own -- the rhythm given, a box under each note for its letter
     cells = ''
     for i, bar in enumerate(bars):
-        cells += '<div class="ob">' + ''.join(f'<div class="on">{note(k, 1.25)}<span class="obx"></span></div>' for k in bar) + '</div>'
+        cells += f'<div class="ob" style="flex:{len(bar) + 1}">' + ''.join(f'<div class="on">{note(k, 1.25)}<span class="obx"></span></div>' for k in bar) + '</div>'
     return f'<div class="own">{cells}</div>'
 P4 = ''
 if SONG.get('more'):
     M = SONG['more']
     P4 = page(f'''{part('+', 'More to play', SONG.get('more_how', 'The same keys, the same fingers, the same note values: two new tunes. Then make your own.'))}
-<div class="sp"></div>{SUB(M[0]['title'], SONG.get('more_a', 'Sing it on the words, then play it.'))}
+<div class="sp"></div>{SUB(M[0]['title'], M[0].get('how', 'Sing it on the words, then play it.'))}
 <div class="sp"></div>{mus('moreA1')}{mus('moreA2')}
-<div class="sp"></div>{SUB(M[1]['title'], SONG.get('more_b', 'Say the words in rhythm first, then play it.'))}
+<div class="sp"></div>{SUB(M[1]['title'], M[1].get('how', 'Say the words in rhythm first, then play it.'))}
 <div class="sp"></div>{mus('moreB1')}{mus('moreB2')}
 <div class="sp"></div>{SUB('Your own tune', SONG.get('more_own_how', 'Write a letter in each box, then play your tune. Give it a name:') + ' <span class="ib" style="width:180px"></span>')}
 <div class="sp"></div>{own_tune(SONG.get('more_own', []))}
