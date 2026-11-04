@@ -22,11 +22,11 @@ def apply(html, table):
                     acts = [(kind, val)] if kind != 'both' else val
                     for kd, vl in acts:
                         if kd == 'fill':
-                            body = re.sub(r'<span class="(?:wl|ab|al(?: inl)?)"></span>', f'<b class="done2">{vl}</b>', body, count=1)
+                            body = re.sub(r'<span class="(wl|ab|al(?: inl)?)"></span>', lambda mm: f'<span class="{mm.group(1)} hasdone"><b class="done2">{vl}</b></span>', body, count=1)   # the answer sits on its own line, so the cell keeps the same shape as the others
                         elif kd == 'ring':
                             body = body.replace(vl, f'<b class="done2 ringd">{vl}</b>', 1)
                     seg = head + body
                 pg = pg[:at] + seg + pg[end:]; start = at + len(seg)
         pages[pi] = pg
     return ''.join(pages)
-CSS = '.ringd{border:1.8px solid #e4572e;border-radius:50%;padding:0 6px}'
+CSS = '.ringd{border:1.8px solid #e4572e;border-radius:50%;padding:0 6px} .hasdone{position:relative} .hasdone>.done2{position:absolute;left:0;right:0;bottom:3px;text-align:center;line-height:1}'
