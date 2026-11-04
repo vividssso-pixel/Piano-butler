@@ -97,7 +97,7 @@ R = wpage(f'''<div class="kick">Time · Review</div><h1>Review</h1><p class="rem
 <div class="score">Score <span class="ab"></span> / 20</div>''', 11, 36)
 concepts = ['pulse, tempo and strong beats', 'bar lines and repeat signs', 'note and rest values', 'dots and ties', 'simple time signatures', 'compound time (6/8)', 'grouping with beams', 'upbeats', 'triplets', 'syncopation and swing']
 PR = wpage(f'''<div class="kick">Time · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
-{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (36, 36, 38, 40, 42, 44, 46, 46, 46, 48))], ['40%', '15%', '15%', '15%', '15%'], 'prog')}
+{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (48, 48, 50, 52, 54, 56, 58, 58, 58, 60))], ['40%', '15%', '15%', '15%', '15%'], 'prog')}
 <div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 12, 36)
 ans = [('p. 1', 'Slow to fast: 60, 76, 92, 120. Strong beats on 1; in 4/4 medium on 3. Signs: bar line, double bar line, final bar line, repeat signs. Count: 1 2 3 · 1–2 3 · 1–2–3.'),
        ('p. 2', 'Mistake: bar 3 has 4 beats.'),
