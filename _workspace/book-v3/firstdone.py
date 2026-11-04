@@ -29,4 +29,4 @@ def apply(html, table):
                 pg = pg[:at] + seg + pg[end:]; start = at + len(seg)
         pages[pi] = pg
     return ''.join(pages)
-CSS = '.ringd{border:1.8px solid #e4572e;border-radius:50%;padding:0 6px} .hasdone{position:relative} .hasdone>.done2{position:absolute;left:0;right:0;bottom:3px;text-align:center;line-height:1}'
+CSS = '.ringd{border:1.8px solid #e4572e;border-radius:50%;padding:0 6px} .wl.hasdone{display:inline-flex;align-items:flex-end;justify-content:center;width:auto;min-width:64px;padding:0 6px 3px;vertical-align:bottom} .hasdone>.done2{line-height:1;white-space:nowrap} .ab.hasdone{display:inline-flex;align-items:center;justify-content:center} .al.hasdone{display:inline-flex;align-items:flex-end;justify-content:center;padding-bottom:2px}'
