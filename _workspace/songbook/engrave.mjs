@@ -140,11 +140,14 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen) {
   const lineY = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
   let k = 0; const s = hs || Math.min(1, Math.min(...at.map((x, i) => room(i))) / 2 / RX0 - 0.12);   // one size on the line (or the song's)
   const RX = RX0 * s, RY = RY0 * s, FS = FS0 * s;
+  const beams = [...svg.matchAll(/class="beam">\s*<polygon points="([^"]+)"/g)].map(m => { const xs = m[1].trim().split(/\s+/).map(p => +p.split(',')[0]); return [Math.min(...xs), Math.max(...xs)]; });
   svg = svg.replace(re, (m, id, x, y, st, sx, y1, y2) => {
     const L = INFO[id].len, open = L >= 2, p = pitches[k++], name = hm ? S[hm][p] : p[0].toUpperCase(); let cx = +x + 108;
     // S.place: steps of half a head, as on a real staff (E on the line, D touching it from below, C a step further on its
     // ledger); the stem's head end moves with the head, its tip (and any beam) stays
-    if (S.place && p in S.place) { const ny = lineY - S.place[p] * RY; if (st) { const down = +y2 > +y1, tip = keepLen && down ? Math.max(+y2, ny + 3.6 * RY0) : +y2;   // hands mixed, no beams: a left-hand stem keeps a full length down
+    if (S.place && p in S.place) { const ny = lineY - S.place[p] * RY; if (st) { const down = +y2 > +y1, beamed = beams.some(([a, b]) => +sx >= a - 30 && +sx <= b + 30);
+      // a stem not on a beam keeps a full length from its moved head (her 4 Nov 13:32: not too short); a beamed one stays on its beam
+      const tip = beamed ? +y2 : down ? Math.max(+y2, ny + 700) : Math.min(+y2, ny - 700);
       m = m.replace(`M${sx} ${y1} L${sx} ${y2}`, `M${sx} ${ny} L${sx} ${tip}`); } y = ny; }
     if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
     const ledger = (S.ledger || []).includes(p) ? `<line x1="${cx - RX - 110}" x2="${cx + RX + 110}" y1="${y}" y2="${y}" stroke="#000" stroke-width="22" class="lledger"/>` : '';
@@ -156,7 +159,7 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen) {
   return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
 }
 const JOBS = S.jobs || {
-  sing1: [0, 4, { words: 1, meter: 1, pw: 1500 }], sing2: [4, 8, { words: 1, pw: 1500 }],   // page 1: the whole song (her 4 Nov 13:13)
+  sing1: [0, 4, { words: 1, meter: 1, fing: 1, pw: 1500 }], sing2: [4, 8, { words: 1, fing: 1, pw: 1500 }],   // page 1: the whole song (her 4 Nov 13:13)
   name1: [0, 4, { meter: 1, boxes: 1, pw: 1500 }], name2: [4, 8, { boxes: 1, noEx: 1, pw: 1500 }],   // page 2: its letter names to write
   rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350, sl: 0.4 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350, sl: 0.4 }],   // bigger: the first thing a child reads
   play1: [0, 4, { fing: 1, chords: 1, meter: 1, rows: ['way2', 'way3', 'way4'] }],   // the tune once, every way under it
@@ -186,18 +189,20 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   // fingers above the staff: Verovio clears the staff but not a stem that rises past it (G's, A's), so set them all on one
   // line, clear of the highest stem
   // left-hand fingers below a line whose stems go down: below the lowest stem
-  if (o.lhfing) { const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
-    const bots = [...svg.matchAll(/class="stem">\s*<path d="M\d+ (\d+) L\d+ (\d+)"/g)].map(m => Math.max(+m[1], +m[2]));
+  const sy0 = +(svg.match(/class="staff">\s*<path d="M\d+ (\d+)/) || svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];   // the line's height, read before anything moves
+ if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box, o.pre);   // the boxes read the engraved heads, so before the lettered heads replace them
+  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix);   // first, so the fingers clear the stems as they end up
+  if (o.lhfing) { const sy = sy0;
+    const bots = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.max(+m[1], +m[2]));
     const base = Math.max(sy, ...bots) + 330;
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y > sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m); }
-  if (o.fing) { const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
-    const tops = [...svg.matchAll(/class="stem">\s*<path d="M\d+ (\d+) L\d+ (\d+)"/g)].map(m => Math.min(+m[1], +m[2]));
+  if (o.fing) { const sy = sy0;
+    const tops = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.min(+m[1], +m[2]));
     const base = Math.min(sy, ...tops) - 130;
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
-  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box, o.pre); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
-  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix);
+  if (o.counts) svg = addCounts(svg); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
   // a left-hand line before the staff (her 12:18): the line and the ledgers mean the treble's places, so they go; the notes
   // keep their high and low, the bar lines stay
   // her 12:22: and the right hand's too -- before the staff no line at all, only the notes' high and low and the bar lines;
