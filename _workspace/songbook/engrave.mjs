@@ -15,7 +15,7 @@ function noteXml(p, d, o = {}) {
   const [pname, oct] = pn(p); const i = nid(); o.ids && o.ids.push(i);
   const syl = o.syl ? `<verse n="1"><syl${o.wp ? ` wordpos="${o.wp}" con="d"` : ''}>${o.syl}</syl></verse>` : '';
   const loc = o.loc != null ? ` loc="${o.loc}"` : '';
-  if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}">${syl}</note>`];
+  if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}" stem.dir="${o.lh ? 'down' : 'up'}">${syl}</note>`];   // the right hand's stems up, the left hand's down
   return [i, o.rhythm ? `<note xml:id="${i}" dur="${DUR[d]}" loc="0" stem.dir="up">${syl}</note>` : `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${o.stem ? ` stem.dir="${o.stem}"` : ''}>${syl}</note>`];
 }
 function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b] = pn(p); return `<note pname="${a}" oct="${b}"/>`; }).join('') + '</chord>']; }
@@ -25,7 +25,7 @@ function mei(b0, b1, o) {
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre });
+    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, lh: o.lhfing });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
       if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${(o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
