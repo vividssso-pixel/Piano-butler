@@ -18,7 +18,7 @@ CH = [
  ('Time', 6, 'Groups and upbeats', 'Beams, upbeats, triplets, duplets and semiquavers.', 'hbT', [12, 13], '58–59', 'wbT', [11, 12], '11–12'),
  ('Time', 7, 'Off the beat', 'Syncopation, swing, hemiola, polyrhythm and rubato.', 'hbT', [14, 15], '60–61', 'wbT', [13, 14], '13–14'),
 ]
-EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Tips', 'Tips', 'hbX', [1, 2], 'Everything one note tells you; when a passage won’t come right; five ways to fix a hard bar.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'),
+EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'), ('hb', 'Pitch', 'Tips: when a note sounds wrong', 'hbP', [26], 'The end of Part I: the usual slips, what to check, and where to turn (p. 46).'), ('hb', 'Time', 'Tips: when the rhythm slips', 'hbT', [16], 'The end of Part II: what to check when the rhythm slips, and four ways to steady it (p. 62).'), ('hb', 'Time', 'Putting it together', 'hbX', [1, 2], 'The closing pages, after the last part: everything one note tells you; when a passage won’t come right (pp. 63–64; they move to the end when Harmony is added).'),
          ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [13, 14, 15], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [15, 16, 17], 'A ten-minute review, the progress chart and every answer.')]
 R = {k: PdfReader(v) for k, v in SRC.items()}
 def slug(x): return ''.join(c if c.isalnum() else '-' for c in x.lower()).strip('-').replace('--', '-')
@@ -42,7 +42,7 @@ for kind, part, title, src, pages, blurb in EXTRA:
     f = (f'1 Handbook/{PARTN[part].replace(" · ", " ")}/handbook-{base}.pdf' if kind == 'hb' else f'2 Workbook/{part}/workbook-{base}.pdf')
     cut(src, pages, O + f); thumb(src, pages[0], O + f'_thumbs/{kind}-{base}.jpg')
     c = (part, title, blurb, f, f'_thumbs/{kind}-{base}.jpg', '', len(pages))
-    (cards[kind][part].insert(0, c) if kind == 'hb' else cards[kind][part].append(c))
+    (cards[kind][part].insert(0, c) if kind == 'hb' and 'opener' in title else cards[kind][part].append(c))
 E = lambda x: html.escape(x, quote=True)
 def card(c):
     lab, title, blurb, f, th, pp, n = c
@@ -51,8 +51,7 @@ def card(c):
 BOOKS = [('hbP', 'hb', 'Pitch', 'The Piano Butler Handbook', 'Part I', 'Pitch', 'The keyboard, the staff, accidentals, intervals, scales and keys', 'Whole books (later)/handbook-part1-pitch.pdf'),
          ('wbP', 'wb', 'Pitch', 'The Piano Butler Workbook', 'Workbook', 'Pitch', 'Learn and Use pages for every Pitch chapter, review and answers', 'Whole books (later)/workbook-pitch.pdf'),
          ('hbT', 'hb', 'Time', 'The Piano Butler Handbook', 'Part II', 'Time', 'Pulse, note values, time signatures and rhythm', 'Whole books (later)/handbook-part2-time.pdf'),
-         ('wbT', 'wb', 'Time', 'The Piano Butler Workbook', 'Workbook', 'Time', 'Learn and Use pages for every Time chapter, review and answers', 'Whole books (later)/workbook-time.pdf'),
-         ('hbX', 'hb', 'Tips', 'The Piano Butler Handbook', 'Handbook extra', 'Tips', 'Reading every note, fixing a hard passage, a first look at a new piece', 'Whole books (later)/handbook-tips.pdf')]
+         ('wbT', 'wb', 'Time', 'The Piano Butler Workbook', 'Workbook', 'Time', 'Learn and Use pages for every Time chapter, review and answers', 'Whole books (later)/workbook-time.pdf')]
 def cover(b):
     k, kind, part, series, kick, title, blurb, whole = b
     n = len(cards[kind][part]); acc = '#e4572e' if kind == 'wb' else '#f4a9bb'; ink = '#26296b' if kind == 'wb' else '#fffdf7'
