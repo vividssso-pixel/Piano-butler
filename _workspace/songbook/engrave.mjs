@@ -224,7 +224,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix, !o.pre);   // first, so the fingers clear the stems as they end up
   if (o.lhfing) { const sy = sy0;
     const bots = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.max(+m[1], +m[2]));
-    const base = Math.max(sy, ...bots) + 330;
+    const base = Math.max(sy, ...bots) + 330 + (o.letters && !o.pre ? 220 : 0);   // on the staff a lettered head hangs below its stem
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y > sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m); }
   if (o.fing) { const sy = sy0;
     const tops = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.min(+m[1], +m[2]));
