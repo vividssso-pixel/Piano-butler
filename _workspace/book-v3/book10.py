@@ -29,6 +29,27 @@ def pzc(cut, k, col, R=15, cols=None):   # one pizza cut in `cut`; the first k s
         o += f'<path d="M{cx},{cy} L{cx + R * _pm.cos(a0):.1f},{cy + R * _pm.sin(a0):.1f} A{R},{R} 0 0 1 {cx + R * _pm.cos(a1):.1f},{cy + R * _pm.sin(a1):.1f} Z" fill="{cols[i] if i < len(cols) else "#fff"}" stroke="{N}" stroke-width="1.4"/>'
     return o + '</svg>'
 def pizzas(cut, full, part=0, rest=False): return '<span class="pzs">' + ''.join(pizza(cut, cut if i < full else (part if i == full else 0), 13, 2.5 if cut > 1 else 0, rest) for i in range(4)) + '</span>'
+def carriage(seats, x0, label=''):   # one bar as a train carriage: seats = [(kind, n)] with kind 'n' (a passenger) or 'r' (a reserved, empty seat); each seat is one beat
+    W = 56; n_all = sum(t[1] for t in seats); w = n_all * W + 16
+    o = f'<rect x="{x0}" y="18" width="{w}" height="62" rx="10" fill="#fff" stroke="{N}" stroke-width="2"/>'
+    o += f'<circle cx="{x0 + 22}" cy="88" r="7" fill="{N}"/><circle cx="{x0 + w - 22}" cy="88" r="7" fill="{N}"/>'
+    x = x0 + 8
+    for kind, n, k in seats:
+        fill = '#f2b9a5' if kind == 'n' else 'url(#hz2)'
+        o += f'<rect x="{x + 3}" y="30" width="{n * W - 6}" height="40" rx="6" fill="{fill}" stroke="{N}" stroke-width="1.4"/>'
+        g = (NT if kind == 'n' else RS)[k]
+        o += f'<text x="{x + 18}" y="{60 if kind == "n" else 57}" font-family="NM" font-size="{26 if kind == "n" else 24}" fill="{N}" style="paint-order:stroke" stroke="#fff" stroke-width="{0 if kind == "n" else 5}">{g}</text>'
+        for j in range(1, n): o += f'<line x1="{x + j * W}" x2="{x + j * W}" y1="34" y2="66" stroke="{N}" stroke-width="1" stroke-dasharray="3 3" opacity=".45"/>'
+        x += n * W
+    o += ''.join(f'<text x="{x0 + 8 + j * W + W / 2}" y="12" text-anchor="middle" font-family="AH,Arial" font-size="12" font-weight="700" fill="{C}">{j + 1}</text>' for j in range(n_all))
+    return o, w
+def train(bars, ts_top):
+    o = '<defs><pattern id="hz2" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#fff"/><line x1="0" y1="0" x2="0" y2="6" stroke="#26296b" stroke-width="1.4"/></pattern></defs>'
+    x = 4
+    for i, b in enumerate(bars):
+        c, w = carriage(b, x); o += c; x += w
+        if i < len(bars) - 1: o += f'<line x1="{x}" x2="{x + 14}" y1="60" y2="60" stroke="{N}" stroke-width="3"/>'; x += 14
+    return f'<svg viewBox="0 0 {x + 4} 100" style="width:100%;max-width:{(x + 4)}px;height:auto;display:block;margin:0 auto">{o}</svg>'
 def drill(t): return '<p class="drill"><span>Two-minute drill</span><em>' + t + '</em></p>'
 def thinkt(t): return '<p class="think"><span>Think of it</span>' + t + '</p>'
 DK, N, C, CR, G, MUTE = '#1c1e4f', '#26296b', '#e4572e', '#fffdf7', '#2e8a6e', '#6d6f9c'
@@ -152,9 +173,11 @@ P38 = page(f'''{head('Part II · Time · 3', 'How long is a note?', 'Notes and r
 
 bottom = [['2', gcell('n', 'm', 34), 'minim', 'Level 3'], ['4', gcell('n', 'c', 34), 'crotchet', 'Level 0'], ['8', gcell('n', 'q', 34), 'quaver', 'Level 1'], ['16', gcell('n', 'sq', 34), 'semiquaver', lv('')]]
 simple = [[ts(2, 4), '2 crotchets', 'Level 0'], [ts(3, 4), '3 crotchets', 'Level 0'], [f'<span class="tsrow">{ts(4, 4)}{gsym("𝄴", 26)}</span>', '4 crotchets (the C sign: common time)', 'Level 0'], [f'<span class="tsrow">{ts(2, 2)}{gsym("𝄵", 30)}</span>', '2 minims (the cut C: cut common time)', 'Level 3'], [ts(3, 2), '3 minims', 'Level 3'], [ts(4, 2), '4 minims', lv('')], [ts(3, 8), '3 quavers', 'Level 3']]
+TRAIN = '<div class="pzbox"><b class="it">Think of a train</b><p class="sm" style="margin:2px 0 6px">In 3/4 every carriage (bar) has exactly <b>3 seats</b>; each seat is one crotchet beat. Notes book seats: a minim takes 2, a crotchet 1. A rest books a seat and leaves it <b>empty</b> (shaded). Every seat in every carriage must be booked.</p>' + train([[('n', 2, 'm'), ('n', 1, 'c')], [('n', 1, 'c'), ('r', 1, 'c'), ('n', 1, 'c')], [('n', 3, 'dm')]], 3) + '<p class="sm" style="margin:6px 0 0;text-align:center">minim + crotchet · crotchet, crotchet rest, crotchet · dotted minim: 3 seats each</p></div>'
 P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers at the start of the music. The <b>top number</b> says how many counts are in each bar; the <b>bottom number</b> says which note gets one count.')}
 {two(h3('The bottom number') + tbl(['Bottom', 'Note', 'One count is a', 'First met'], bottom, ['18%', '16%', '36%', '30%']),
      box('Simple or compound?', '<p>In <b>simple time</b> each beat divides into <b>two</b>. In <b>compound time</b> each beat is a dotted note and divides into <b>three</b>.</p><p><b>Quick test:</b> a top number of 6, 9 or 12 means compound. Divide it by 3 to find the beats: 6/8 has 2, 9/8 has 3, 12/8 has 4.</p>'))}
+{TRAIN}
 <!--SPLIT-->
 {h3('Simple time: each beat divides in two')}
 {tbl(['Time signature', 'Each bar holds', 'First met'], simple, ['26%', '50%', '24%'])}
@@ -164,8 +187,6 @@ P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers at 
 {inact('Read a time signature', vx('ia_ts', 74), ['<b>Top number 3:</b> three counts in each bar.', '<b>Bottom number 4:</b> a crotchet is one count.', '<b>Check a bar:</b> two quavers + crotchet + crotchet = 3.'], '3/4: <b>three crotchet beats</b> in every bar.')}
 {realm('Time signatures you already know', [('2/4 · polka', 'Two quick beats: hop, step.'), ('3/4 · waltz, minuet', 'Three beats: the dance of the ballroom.'), ('4/4 · common time', 'Most pop, rock, hymns and marches for the classroom.'), ('2/2 · cut time', 'Marches and fast pieces: felt in two big beats.'), ('6/8 · jigs, lullabies', 'Two swaying beats, each split in three.'), ('5/4 and 7/8', 'Take Five (Brubeck), Mars (Holst), Balkan folk dances.')])}
 {inact('Which time signature fits?', vx('ia_which', 74), ['<b>Find the strong beats</b> by clapping, accenting the first note of each bar.', '<b>Count each bar:</b> two crotchets, or one minim: 2 beats.', '<b>Each beat is a crotchet.</b>'], 'It is in <b>2/4</b>: two crotchet beats a bar.')}
-{thinkt('A time signature is a recipe: the top number says how many spoonfuls, the bottom number which spoon.')}
-{inact('Which time signature?', vx('cmp2', 64), ['<b>Find the beats:</b> each pair of quavers is one beat.', '<b>Count them:</b> two beats in the bar.', '<b>Each beat is a crotchet</b> (two quavers).'], 'Two crotchet beats: <b>2/4</b>.')}
 {foot('Pulse and the bar p. 36 · Compound time p. 40', 'Workbook Level 0 · Time signatures · Online: Library › Time signatures')}''', 39)
 
 compound = [[ts(6, 8), '2 dotted crotchets', 'Level 1'], [ts(9, 8), '3 dotted crotchets', 'Level 3'], [ts(12, 8), '4 dotted crotchets', 'Level 3'], [ts(6, 4), '2 dotted minims', 'Level 4']]

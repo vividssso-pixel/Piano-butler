@@ -83,11 +83,11 @@ function addBoxes(svg, ex, names, boxSize, pre) {   // names: every box filled i
   // the words when the line has them
   const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
   const sylY = [...svg.matchAll(/class="syl">\s*<text x="[\d.]+" y="(\d+)"/g)].map(m => +m[1]);
-  const T = sylY.length ? Math.max(...sylY) + 160 : pre ? sy + 620 : sy + 1110; let out = '';   // before the staff: boxes just under the lowest head
+  const T = sylY.length ? Math.max(...sylY) + 160 : pre ? sy + 560 : sy + 1110; let out = '';   // before the staff: boxes just under the lowest head
   // each box as wide as its own room allows: a note close to its neighbours gets a narrower box, never touching them
   const room = (k) => Math.min(k ? ev[k] - ev[k - 1] : 1e9, k < ev.length - 1 ? ev[k + 1] - ev[k] : 1e9);
   const minRoom = Math.min(...ev.map((x, k) => room(k)));
-  ev.forEach((x, k) => { const B = boxSize || Math.max(130, Math.min(380, minRoom - 120));   // one size for every box on the line
+  ev.forEach((x, k) => { const B = boxSize || Math.max(150, Math.min(440, minRoom - 50));   // as big as the space allows (her 4 Nov 15:21: too small)   // one size for every box on the line
     out += `<rect x="${x - B / 2}" y="${T}" width="${B}" height="${B}" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
     if (names) out += `<text x="${x}" y="${T + B * 0.76}" text-anchor="middle" font-size="${Math.min(B * 0.8, 260)}" font-weight="700" fill="#26296b" class="cnt">${names[k]}</text>`;
     else if (k === 0 && ex) out += `<text x="${x}" y="${T + B * 0.78}" text-anchor="middle" font-size="${B * 0.76}" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
