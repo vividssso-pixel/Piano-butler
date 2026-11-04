@@ -28,6 +28,18 @@ def keys(octaves=2, colour=True, names=True, maxw=320):   # from C: the twos cor
         for i in range(0, n, 7): out += f'<text x="{i * w + w / 2}" y="{H - 8}" text-anchor="middle" font-family="AH" font-weight="700" font-size="12" fill="{N}">C</text>'
     return f'<svg viewBox="-1 -1 {W + 2} {H + 2}" style="width:100%;max-width:{maxw}px;display:block">{out}</svg>'
 
+def blackkb(width=330, fing=None):   # F up to E: the three black keys side by side (A sharp, C sharp, D sharp) lit, with their fingers
+    fing = fing or {'as': '2', 'cs': '3', 'ds': '4'}
+    whites = 'fgabcde'; w, H = 46, 150; W = len(whites) * w; out = ''
+    for i, l in enumerate(whites):
+        out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="3" fill="#fff" stroke="{N}" stroke-width="1.5"/>'
+        out += f'<text x="{i * w + w / 2}" y="{H - 12}" text-anchor="middle" font-family="AH" font-weight="700" font-size="16" fill="{MUTE}">{l.upper()}</text>'
+    for i, name in [(0, 'fs'), (1, 'gs'), (2, 'as'), (4, 'cs'), (5, 'ds')]:
+        x = (i + 1) * w - 14; lit = name in fing
+        out += f'<rect x="{x}" y="0" width="28" height="{H * 0.6}" rx="2" fill="{C if lit else N}"/>'
+        if lit: out += f'<circle cx="{x + 14}" cy="{H * 0.6 - 18}" r="12" fill="#fff"/><text x="{x + 14}" y="{H * 0.6 - 13}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{C}">{fing[name]}</text>'
+    return f'<svg viewBox="-2 -2 {W + 4} {H + 4}" style="width:100%;max-width:{width}px;display:block;margin:0 auto">{out}</svg>'
+
 def ready_pages():   # the two pages before Lesson 1
     p1 = page(f'''<div class="kick">Before the songs</div><h1>Getting ready</h1>
 <p class="lead">Two pages to do before Lesson 1, at the piano and away from it: your hands, how to sit, and the keyboard’s own map.</p>
@@ -50,11 +62,11 @@ def ready_pages():   # the two pages before Lesson 1
 def play_page():   # an early lesson's page 3: the song on the keys, step by step
     B = SONG['basics']
     return page(f'''{part(3, 'Play it', B['play'])}
-<div class="sp"></div><div class="bas"><div>{keys(1, True, True, 200)}</div><div><p class="cap2">{B.get('keys_note', '')}</p></div></div>
+<div class="sp"></div><div class="bas"><div>{blackkb(260) if B.get('blackpic') else kb(width=300, fmap=SONG.get('fmap')) if B.get('kb') else keys(1, True, True, 200)}</div><div><p class="cap2">{B.get('keys_note', '')}</p></div></div>
 {''.join((f'<div class="sp"></div><div class="wtag">{lab}</div>' if lab else '') + mus(k) for k, lab in B.get('lines', []))}
 <div class="sp"></div>
 <div class="chk end"><div class="ch">4 · Check</div><div class="cgrid">
-<div>{ticks(['I can say and clap it', 'I can sing it with the words', 'I can sing the letter names'])}</div>
+<div>{ticks(B.get('can', ['I can say and clap it', 'I can sing it with the words', 'I can sing the letter names']))}</div>
 <div><div class="ck2">I can play it:</div><div class="ticks h">{''.join(f'<span class="tk"><span class="bx"></span>{c}</span>' for c in B.get('checks', ['Right hand', 'Left hand']))}</div>
 <div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 3)
 

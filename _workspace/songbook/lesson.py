@@ -29,7 +29,7 @@ def way(n, t, stars, how, a, b):
 
 # the keyboard in C position: five white keys under the right hand, the song's notes lit, the finger numbers on them
 L7 = 'cdefgab'
-def trp(p, k): i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p[1:]) + i // 7)
+def trp(p, k): i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p.lstrip('abcdefgs')) + i // 7)   # 'cs5' (a sharp) keeps its octave
 # a keyboard from middle C: the five white keys under the right hand (from `start`), the song's notes lit, the fingers on
 # them; `sharp` marks the key's black key in coral, named above it
 def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
@@ -87,7 +87,8 @@ tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
   '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G. In which bar? <span class="ib"></span></p></div></div>')
-if 'pos' in SONG: POS = '<div class="pos"><div>' + kb(width=340, fmap=SONG.get('fmap')) + '</div><div>' + SONG['pos'] + '</div></div>'
+exec(open('early.py').read())
+if 'pos' in SONG: POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else kb(width=340, fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
 P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
 LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>

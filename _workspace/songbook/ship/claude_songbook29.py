@@ -1,0 +1,7 @@
+import sys, io, re
+hist = sys.argv[1]
+h = io.open(hist, encoding='utf-8').read().split('\n')
+rows = [i for i, l in enumerate(h) if re.match(r'^\| \d+ \|', l)]
+n = max(int(h[i].split('|')[1]) for i in rows) + 1
+h.insert(rows[-1] + 1, f"| {n} | 2026-11-04 | **The song Lesson Book: Lesson 1 is Rain, Rain on the black keys; Hot Cross Buns is Lesson 2 (chat window, her 12:11 to 12:18).** Her 12:16 'good idea, the rain song': Rain, Rain, Go Away, the whole couplet with its la, on three black keys side by side (A sharp, C sharp, D sharp: mi, sol, la), fingers 2 3 4 (left hand 4 3 2); in 2/4, eight bars; the finger number inside each note (the names wait for the white keys); high, middle, low: sol on the line, mi hanging under it, la sitting on it (S.place, steps of half a head). Hot Cross Buns (now Lesson 2): her 12:17 'C is a bit far; D right against the line' -- D now touches the line from below and C sits one step further on its ledger, the stem's head end moved with the head (its tip and beam stay). Her 12:18 'the right hand makes sense, the left hand doesn't: drop the line, keep the bar lines?' -- yes: a left-hand line before the staff has no line and no ledger (they mean the treble's places), keeps its high and low and its bar lines; bar lines before the staff now reach as far as the notes. The order: Getting ready, 1 Rain, Rain (black keys), 2 Hot Cross Buns, 3 Au clair, 4 Going Home, 5 Mary on. |")
+io.open(hist, 'w', encoding='utf-8').write('\n'.join(h)); print('row', n)
