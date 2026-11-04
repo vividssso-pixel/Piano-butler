@@ -40,7 +40,7 @@ def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
         inpos = start <= i < start + 5; lit = inpos and l in used
         out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="3" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.5"/>'
         out += f'<text x="{i * w + w / 2}" y="{H - 12}" text-anchor="middle" font-family="AH" font-weight="700" font-size="17" fill="{N}">{l.upper()}</text>'
-        if fmap is not None: inpos = i < 5 and l in fmap; lit = inpos
+        if fmap is not None: inpos = i < len(fmap) and l in fmap; lit = i < 5   # a sixth key (a stretch) gets an open circle
         if inpos: f = fmap[l] if fmap else i - start + 1; out += f'<circle cx="{i * w + w / 2}" cy="{H + 19}" r="13" fill="{C if lit else "#fff"}" stroke="{C}" stroke-width="1.8"/><text x="{i * w + w / 2}" y="{H + 24.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{"#fff" if lit else C}">{f}</text>'
     for i in [i for i in (0, 1, 3, 4, 5, 7, 8) if i < len(whites) - 1]:
         out += f'<rect x="{(i + 1) * w - 13}" y="0" width="26" height="{H * 0.6}" rx="2" fill="{C if i == sharp else N}"/>'
@@ -90,7 +90,7 @@ tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
   '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G.</p></div></div>')
 exec(open('early.py').read())
-if 'pos' in SONG: POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else kb(width=300, fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
+if 'pos' in SONG: POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else kb(width=SONG.get('kb_w', 300), fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
 P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
 LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
 SUB = lambda t, how: f'<div class="sub"><span>{t}</span></div><p class="how">{how}</p>'
@@ -98,7 +98,7 @@ P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <p class="lead">{LEAD}</p>
 <div class="chips"><span class="cl">In this song</span>{chips}</div>
 <div class="listen">{qr(URL, 52)}<div><div class="lh2">Listen first</div><p>Scan the code: listen to the whole song once, then hum along the second time.</p></div></div>
-<div class="sp"></div>{part(1, 'Listen and sing', SONG.get('sing_how', 'Listen, pointing to each note as it sounds. Then sing it with the words.'))}
+<div class="sp"></div>{part(1, 'Meet the song', SONG.get('sing_how', 'Listen, pointing to each note as it sounds. Then sing it with the words.'))}
 {POS}
 <div class="sp"></div>{LINES('sing')}
 <div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
@@ -135,6 +135,8 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .bd.hv{{gap:3px}} .bd.hv i{{height:10px}} .bd.hv i:first-child{{border-radius:99px 0 0 99px;width:5px}} .bd.hv i:last-child{{border-radius:0 99px 99px 0;width:5px}}
 .own{{display:flex;border-left:2px solid {N};border-right:4px double {N};margin:0 4px}} .ob{{flex:1;display:flex;justify-content:space-around;gap:6px;align-items:flex-end;border-right:1.5px solid {N};padding:6px 8px 10px}} .ob:last-child{{border-right:0}}
 .on{{display:flex;flex-direction:column;align-items:center;gap:8px}} .obx{{width:34px;height:34px;border:2px solid {N};border-radius:8px;display:block}}
+.mus.ghost .lhead, .mus.ghost .lname, .mus.ghost g.stem, .mus.ghost g.beam, .mus.ghost .lledger, .mus.ghost g.fing, .mus.ghost g.dots{{opacity:0}}
+.trow{{display:flex;gap:28px;align-items:flex-end}} .trow>.mus{{flex:1 1 0;min-width:0;max-width:none!important}}
 .chips{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}} .cl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-right:4px}} .chip{{border:1.2px solid {N};border-radius:14px;padding:3px 12px;font-size:14px;font-weight:700}}
 .ph{{display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:10px;margin-top:10px}} .pn{{width:30px;height:30px;background:{N};color:#fff;display:inline-flex;align-items:center;justify-content:center;font:700 16px 'AH'}} h2{{font-family:'PF',Georgia,serif;font-size:25px;margin:0}}
 .how{{font-size:15.5px;color:#3d4080;margin:6px 0 6px}}
@@ -156,13 +158,15 @@ def own_tune(bars):   # her 4 Nov 15:00: make your own -- the rhythm given, a bo
 P4 = ''
 if SONG.get('more'):
     M = SONG['more']
+    T = SONG.get('more_task')   # her 4 Nov 21:25: make-your-own only in the first lessons; later another activity
+    TASK = (f'<div class="sp"></div>' + SUB(T['title'], T['how']) + '<div class="sp"></div>' + (lambda ms: f'<div class="trow">{ms}</div>' if T.get('row') else ms)(''.join(mus(k, 'ghost' if T.get('kind') == 'draw' else '') for k in T.get('jobs', ['task1'])))) if T else (
+        "<div class=\"sp\"></div>" + SUB('Your own tune', SONG.get('more_own_how', 'Write a letter in each box, then play your tune. Give it a name:') + ' <span class=\"ib\" style=\"width:180px\"></span>') + '<div class="sp"></div>' + own_tune(SONG.get('more_own', [])))
     P4 = page(f'''{part('+', 'More to play', SONG.get('more_how', 'The same keys, the same fingers, the same note values: two new tunes. Then make your own.'))}
 <div class="sp"></div>{SUB(M[0]['title'], M[0].get('how', 'Sing it on the words, then play it.'))}
 <div class="sp"></div>{mus('moreA1')}{mus('moreA2')}
 <div class="sp"></div>{SUB(M[1]['title'], M[1].get('how', 'Say the words in rhythm first, then play it.'))}
 <div class="sp"></div>{mus('moreB1')}{mus('moreB2')}
-<div class="sp"></div>{SUB('Your own tune', SONG.get('more_own_how', 'Write a letter in each box, then play your tune. Give it a name:') + ' <span class="ib" style="width:180px"></span>')}
-<div class="sp"></div>{own_tune(SONG.get('more_own', []))}
+{TASK}
 <div class="sp"></div><div class="end">{ticks(SONG.get('more_ticks', ['Played the first tune', 'Played the second tune', 'Played my own tune']), True)}</div>''', 4)
 BODY = ready_pages() if SONG.get('kind') == 'ready' else P1 + P2 + P3 + P4
 html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{BODY}</body></html>'
