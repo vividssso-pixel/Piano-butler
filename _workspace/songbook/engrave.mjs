@@ -275,7 +275,7 @@ function barsOf(svg) {
   const body = svg.slice(svg.indexOf('</defs>') > 0 ? svg.indexOf('</defs>') : 0);
   const bars = [...body.matchAll(/class="barLine">\s*<path d="M(-?[\d.]+) /g)].map(m => +m[1]);
   const heads = [...body.matchAll(/class="notehead">\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/g)].map(m => +(m[1] || m[2]));
-  return { bars, first: heads.length ? Math.min(...heads) : null };
+  return { bars, heads, first: heads.length ? Math.min(...heads) : null };
 }
 function mapX(svg, knotsOld, knotsNew) {
   const f = (x) => { x = +x; if (x <= knotsOld[0]) return x;
@@ -294,7 +294,7 @@ function mapX(svg, knotsOld, knotsNew) {
   body = body.replace(/@@R(\d+)@@/g, (m, i) => rects[+i]);
   return head + body;
 }
-const MIN_FIT = 0.9;
+const MIN_FIT = 0.9, EVEN = true, EVEN_K = +(process.env.EVEN_K || 0.6);   // how far toward even beats (1 = all the way)
 for (const g of new Set(Object.keys(out).map(group))) {
   const ks = Object.keys(out).filter(k => group(k) === g && !(JOBS[k][2].duet)); if (!ks.length) continue;
   const info = ks.map(k => barsOf(out[k])); if (info.some(i => i.first == null || !i.bars.length)) continue;
@@ -304,10 +304,24 @@ for (const g of new Set(Object.keys(out).map(group))) {
   const wid = info.map(i => i.bars.map((b, j) => b - (j ? i.bars[j - 1] : i.first - 260)));   // natural widths, as engraved
   const col = [...Array(n)].map((_, j) => same ? Math.max(...wid.map(w => w[j])) : 1), tot = col.reduce((a, b) => a + b, 0);
   const span0 = Math.min(...info.map(i => i.bars[i.bars.length - 1])) - s, fit = span0 / tot;
-  if (same && fit < MIN_FIT) { console.log('bars left as engraved in ' + g + ' (would squeeze to ' + fit.toFixed(2) + ')'); continue; }   // never crowd the words
+  const keep = same && fit < MIN_FIT;   // never crowd the words: the bars stay as engraved (only the beats evened inside them)
+  if (keep) console.log('bars left as engraved in ' + g + ' (would squeeze to ' + fit.toFixed(2) + ')');
   const E = Math.min(...info.map(i => i.bars[i.bars.length - 1]));   // one right edge for every line, so the last bar lines stand together too
   ks.forEach((k, j) => { const { bars, first } = info[j], a1 = first - 260, end = E;
-    const span = end - s; let x = s; const nw = [s, ...bars.map((b, i) => (x += span * (same ? col[i] / tot : 1 / bars.length)))];
-    out[k] = mapX(out[k], [a1, ...bars], nw); });
+    if (keep && JOBS[k][2].noEven) return;
+    const span = end - s; let x = s; const nw = keep ? [a1, ...bars] : [s, ...bars.map((b, i) => (x += span * (same ? col[i] / tot : 1 / bars.length)))];
+    const s0 = nw[0];
+    // and inside each bar the notes stand by the beat (her 5 Nov 00:11: the first bar's gaps): a crotchet is one even step,
+    // a minim two; the gap after the bar line keeps its share
+    const [b0, b1, oo] = JOBS[k], data = (oo.src != null ? S.more[oo.src].bars : S.bars).slice(b0, b1);
+    let ko = [a1], kn = [s0];
+    if (EVEN && !oo.noEven && !oo.rhythm && data.flat().length === info[j].heads.length && data.length === bars.length) {
+      let h = 0;
+      data.forEach((bar, bi) => { const os = bi ? bars[bi - 1] : a1, oe = bars[bi], ns = nw[bi], ne = nw[bi + 1];
+        const T = bar.reduce((a, n) => a + LEN[n[1]], 0), lead = (info[j].heads[h] - os) * (ne - ns) / (oe - os), u = (ne - ns - lead) / T; let t = 0;
+        bar.forEach(n => { const hx = info[j].heads[h++], ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + EVEN_K * (ns + lead + t * u - ox); if (hx > ko[ko.length - 1] && nx > kn[kn.length - 1]) { ko.push(hx); kn.push(nx); } t += LEN[n[1]]; });
+        ko.push(oe); kn.push(ne); });
+    } else { ko = [a1, ...bars]; kn = nw; }
+    out[k] = mapX(out[k], ko, kn); });
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
