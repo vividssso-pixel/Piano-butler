@@ -129,18 +129,26 @@ function addRows(svg, ways, b0, pic) {
 }
 // Before the staff the letter goes inside the note (her 4 Nov 12:07): a bigger head with its name in it, joined to its stem;
 // filled for a crotchet or quaver (white letter), open for a minim or longer (navy letter). The small engraved head goes.
-function addLetterHeads(svg, names) {
-  const RX = 235, RY = 185, FS = 265; let k = 0;
-  svg = svg.replace(/<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use [^>]*transform="translate\((\d+), (\d+)\)[^>]*\/>\s*<\/g>(\s*<g id="[^"]+" class="stem">\s*<path d="M(\d+) (\d+) L\d+ (\d+)")?/g,
-    (m, id, x, y, st, sx, y1, y2) => {
-      const L = INFO[id].len, open = L >= 2, name = names[k++]; let cx = +x + 108;
-      if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
-      // drawn where the head was, so it sits over the line and under its own stem
-      const head = `<ellipse cx="${cx}" cy="${y}" rx="${RX}" ry="${RY}" fill="${open ? '#fff' : '#26296b'}" stroke="#26296b" stroke-width="${open ? 26 : 0}" class="lhead"/>`
-           + `<text x="${cx}" y="${+y + FS * 0.36}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${open ? '#26296b' : '#fff'}" class="cnt lname">${name}</text>`;
-      return m.replace(/<use [^>]*\/>/, head);
-    });
-  return svg;
+function addLetterHeads(svg, pitches, hs) {
+  // heads about twice the size, so the places are twice as far apart too (S.pre: E on the line, D hanging just under it, C
+  // on a ledger of its own); Verovio's ledger lines go, and the song's ledger notes (S.ledger) get one through their middle.
+  // A head never touches its neighbour: where notes are close (quavers) it shrinks to fit.
+  const RX0 = 250, RY0 = 195, FS0 = 290;
+  svg = svg.replace(/<g id="[^"]+" class="ledgerLines[^"]*">[\s\S]*?<\/g>/g, '');
+  const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use [^>]*transform="translate\((\d+), (\d+)\)[^>]*\/>\s*<\/g>(\s*<g id="[^"]+" class="stem">\s*<path d="M(\d+) (\d+) L\d+ (\d+)")?/g;
+  const at = [...svg.matchAll(re)].map(m => +m[2] + 108), room = (k) => Math.min(k ? at[k] - at[k - 1] : 1e9, k < at.length - 1 ? at[k + 1] - at[k] : 1e9);
+  let k = 0; const s = hs || Math.min(1, Math.min(...at.map((x, i) => room(i))) / 2 / RX0 - 0.12);   // one size on the line (or the song's)
+  const RX = RX0 * s, RY = RY0 * s, FS = FS0 * s;
+  svg = svg.replace(re, (m, id, x, y, st, sx, y1, y2) => {
+    const L = INFO[id].len, open = L >= 2, p = pitches[k++], name = p[0].toUpperCase(); let cx = +x + 108;
+    if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
+    const ledger = (S.ledger || []).includes(p) ? `<line x1="${cx - RX - 110}" x2="${cx + RX + 110}" y1="${y}" y2="${y}" stroke="#000" stroke-width="22"/>` : '';
+    // drawn where the head was, so it sits over the line and under its own stem
+    const head = ledger + `<ellipse cx="${cx}" cy="${y}" rx="${RX}" ry="${RY}" fill="${open ? '#fff' : '#26296b'}" stroke="#26296b" stroke-width="${open ? 26 : 0}" class="lhead"/>`
+      + `<text x="${cx}" y="${+y + FS * 0.36}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${open ? '#26296b' : '#fff'}" class="cnt lname">${name}</text>`;
+    return m.replace(/<use [^>]*\/>/, head);
+  });
+  return svg.replace(/class="verse">/g, 'class="verse" transform="translate(0,150)">');   // the words below the bigger low notes
 }
 const JOBS = S.jobs || {
   sing1: [0, 4, { words: 1, meter: 1, boxes: 1, pw: 1500 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1, pw: 1500 }],
@@ -154,7 +162,7 @@ const JOBS = S.jobs || {
 // margin: first each line's natural width, then every line of the group justified to the group's widest.
 const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
   pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20,
-  spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5,
+  spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.ltm || (o.rhythm ? 2 : 5),
   lyricWordSpace: 2.6, fingeringScale: 0.9, ...extra });
 const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); };
 const group = (k) => k.replace(/\d+$/, ''), natural = {};
@@ -181,7 +189,9 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
   if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
-  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()));
+  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs);
+  // bar numbers lifted clear of the notes
+  svg = svg.replace(/class="mNum autogenerated">/g, 'class="mNum autogenerated" transform="translate(-60,-260)">');
   out[k] = svg;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
