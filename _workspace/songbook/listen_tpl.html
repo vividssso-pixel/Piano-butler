@@ -63,13 +63,13 @@ h1 { font-family:'Playfair Display', Georgia, serif; font-weight:800; font-size:
     <label class="tempo"><input type="range" id="tempo" min="40" max="130" step="5" value="100"><span id="tval"></span></label>
     <label class="chk"><input type="checkbox" id="count" checked> Count in</label>
     <label class="chk"><input type="checkbox" id="loop"> Again and again</label>
-    <div class="seg" id="acc"><button data-a="">Tune</button><button data-a="piano">Piano</button><button data-a="band">Band</button></div>
+    <div class="seg" id="acc"><button data-a="">Tune</button><button data-a="piano">Piano</button><button data-a="band">Band</button><button data-a="ens">Ensemble</button></div>
     <label class="chk" id="mew"><input type="checkbox" id="me"> I play the tune</label>
   </div>
   <div class="sheet" id="sheet"></div>
   <svg class="kb" id="kb" viewBox="0 0 294 110"></svg>
   <p class="foot"><b>Listen first:</b> hear it once, then point to each note as it lights up. The second time, sing along. Then pick <b>Piano</b> or <b>Band</b>, tick <b>I play the tune</b>, and play your part with them. Slow it down with the slider until it feels easy, then speed it up.</p>
-  <p class="foot" style="font-size:11px">Piano sound: tonejs-instruments samples.</p>
+  <p class="foot" style="font-size:11px">Instrument sounds: tonejs-instruments samples.</p>
 </div>
 <script>
 const SONGS = /*DATA*/[];
@@ -109,25 +109,45 @@ function render() {
   setAcc(); if ($('tval')) setSpeed(speed, true);
 }
 
-// a real piano: recorded notes (every third semitone), each played a little faster or slower to reach its neighbours.
-// Until they have loaded (or if they can't) the soft synthesized tone below plays instead.
-const SAMPLES = ['C2', 'Fs2', 'C3', 'Fs3', 'C4', 'Ds4', 'Fs4', 'A4', 'C5', 'Ds5', 'Fs5', 'A5', 'C6'];
+// real instruments: recorded notes (a few per instrument), each played a little faster or slower to reach its neighbours.
+// Until they have loaded (or if they can't) a soft synthesized tone plays instead.
+const INST = { piano: { dir: 'audio/piano/', notes: ['C2', 'Fs2', 'C3', 'Fs3', 'C4', 'Ds4', 'Fs4', 'A4', 'C5', 'Ds5', 'Fs5', 'A5', 'C6'] },
+  "violin": { dir: 'audio/ens/violin/', notes: ["G3", "C4", "E4", "A4", "C5", "E5", "A5", "C6"], sus: true },
+  "cello": { dir: 'audio/ens/cello/', notes: ["C2", "E2", "G2", "A2", "C3", "E3", "G3", "C4"], sus: true },
+  "contrabass": { dir: 'audio/ens/contrabass/', notes: ["G1", "C2", "E2", "A2", "E3"], sus: true },
+  "flute": { dir: 'audio/ens/flute/', notes: ["E4", "A4", "C5", "E5", "A5", "C6"], sus: true },
+  "clarinet": { dir: 'audio/ens/clarinet/', notes: ["D3", "F3", "As3", "D4", "F4", "As4", "D5"], sus: true },
+  "bassoon": { dir: 'audio/ens/bassoon/', notes: ["G2", "A2", "C3", "G3", "A3", "C4"], sus: true },
+  "french-horn": { dir: 'audio/ens/french-horn/', notes: ["G2", "D3", "F3", "A3", "C4", "D5"], sus: true },
+  "trumpet": { dir: 'audio/ens/trumpet/', notes: ["Ds4", "F4", "G4", "D5", "F5", "A5", "C6"], sus: true },
+  "tuba": { dir: 'audio/ens/tuba/', notes: ["As1", "Ds2", "F2", "As2", "D3", "F3"], sus: true },
+  "harp": { dir: 'audio/ens/harp/', notes: ["C3", "E3", "G3", "B3", "D4", "F4", "A4", "C5", "E5"], sus: false },
+  "xylophone": { dir: 'audio/ens/xylophone/', notes: ["G4", "C5", "G5", "C6"], sus: false },
+};
 const MIDI = n => ({ C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 })[n[0]] + (n[1] === 's' ? 1 : 0) + 12 * (+n.replace(/[^0-9]/g, '') + 1);
-let BUF = {}, bufCtx = null, rawSamples = null;
-async function loadSamples() {
-  try { if (!rawSamples) rawSamples = await Promise.all(SAMPLES.map(n => fetch('audio/piano/' + n + '.mp3').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })));
-    if (bufCtx === ctx) return; const c = ctx; const out = {};
-    await Promise.all(SAMPLES.map((n, i) => c.decodeAudioData(rawSamples[i].slice(0)).then(b => { out[MIDI(n)] = b; })));
-    if (c === ctx) { BUF = out; bufCtx = c; }
-  } catch (e) { BUF = {}; }
+const RAW = {}, BUFS = {}; let bufCtx = null;
+async function loadInst(names) {   // recorded notes, fetched once, decoded for this audio context
+  if (bufCtx !== ctx) { for (const k in BUFS) delete BUFS[k]; bufCtx = ctx; }
+  await Promise.all(names.map(async nm => { const I = INST[nm]; if (!I || BUFS[nm]) return;
+    try { if (!RAW[nm]) RAW[nm] = await Promise.all(I.notes.map(n => fetch(I.dir + n + '.mp3').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })));
+      const out = {}; await Promise.all(I.notes.map((n, i) => ctx.decodeAudioData(RAW[nm][i].slice(0)).then(b => { out[MIDI(n)] = b; }))); BUFS[nm] = out;
+    } catch (e) { BUFS[nm] = null; } }));
 }
-function sampled(f, t, dur, peak) {
-  const keys = Object.keys(BUF).map(Number); if (bufCtx !== ctx || !keys.length) return false;
+function inst(nm, f, t, dur, peak) {   // one note on a recorded instrument; false if it isn't loaded
+  const B = BUFS[nm]; if (!B || bufCtx !== ctx) return false; const keys = Object.keys(B).map(Number); if (!keys.length) return false;
   const m = 69 + 12 * Math.log2(f / 440), k = keys.reduce((a, b) => Math.abs(b - m) < Math.abs(a - m) ? b : a);
-  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = BUF[k]; s.playbackRate.value = Math.pow(2, (m - k) / 12);
-  const end = t + Math.max(0.3, dur);
-  g.gain.setValueAtTime(peak * 2.2, t); g.gain.setValueAtTime(peak * 2.2, end); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.35);
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = B[k]; s.playbackRate.value = Math.pow(2, (m - k) / 12);
+  const sus = INST[nm].sus, end = t + Math.max(0.15, dur), att = sus ? 0.05 : 0.002;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak * 2.2, t + att); g.gain.setValueAtTime(peak * 2.2, end);
+  g.gain.exponentialRampToValueAtTime(0.0001, end + (sus ? 0.25 : 0.35));
   s.connect(g); g.connect(OUT); s.start(t); s.stop(end + 0.4); return true;
+}
+const sampled = (f, t, dur, peak) => inst('piano', f, t, dur, peak);
+function bells(t) {   // a sleigh-bell shake: a burst of bright noise
+  const n = ctx.createBufferSource(), b = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+  const hp = ctx.createBiquadFilter(), g = ctx.createGain(); hp.type = 'highpass'; hp.frequency.value = 6500; g.gain.value = 0.18;
+  n.buffer = b; n.connect(hp); hp.connect(g); g.connect(OUT); n.start(t);
 }
 function pianoNote(f, t, dur, peak = 0.42) {
   if (sampled(f, t, dur, peak)) return;   // a soft piano-like tone: a quick attack and a long fall
@@ -157,17 +177,21 @@ function click(t, hi) {
 async function play() {
   if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); OUT = ctx.createDynamicsCompressor(); OUT.threshold.value = -14; OUT.ratio.value = 4; OUT.connect(ctx.destination); }
   if (ctx.state === 'suspended') ctx.resume();
-  $('play').textContent = '…'; await loadSamples();
+  const ENS_INST = { brass: ['trumpet', 'french-horn', 'tuba'], strings: ['violin', 'cello'], winds: ['flute', 'clarinet', 'bassoon'], orchestra: ['violin', 'french-horn', 'cello', 'contrabass'], winter: ['xylophone', 'violin', 'contrabass'], harp: ['flute', 'harp', 'cello'] };
+  const ENS_MEL = { brass: 'trumpet', strings: 'violin', winds: 'flute', orchestra: 'violin', winter: 'xylophone', harp: 'flute' };
+  const pre = accData(), E0 = pre && acc === 'ens' ? pre : null;
+  $('play').textContent = '…'; await loadInst(['piano', ...(E0 ? ENS_INST[E0.style] || [] : [])]);
   const ACC = accData(), beat = 60 / ((ACC ? ACC.bpm : song.tunes[tune].bpm || song.bpm) * speed), per = +song.meter.split('/')[0];
   let t = ctx.currentTime + 0.15;
   if ($('count').checked || $('me').checked) { for (let i = 0; i < per; i++) click(t + i * beat, i === 0); t += per * beat; }
   startAt = t; events = []; let k = 0;
-  const J = ACC && acc === 'band' ? ACC : null, P = ACC && acc === 'piano' ? ACC : null, ME = $('me').checked;
+  const J = ACC && acc === 'band' ? ACC : null, P = ACC && acc === 'piano' ? ACC : null, E = ACC && acc === 'ens' ? ACC : null, ME = $('me').checked;
+  const MEL = E ? ENS_MEL[E.style] : null;
   const sw = J && J.swing ? 2 / 3 : 0.5;   // only the swung band styles   // swing: the 'and' comes late, two thirds into the beat
   const at = pos => { const b = Math.floor(pos + 1e-6), f = pos - b; return t + (b + (Math.abs(f - 0.5) < 1e-6 ? sw : f)) * beat; };
   let pos = 0;
   song.tunes[tune].b.forEach(bar => bar.forEach(([p, d]) => { const t0 = at(pos), t1 = at(pos + LEN[d]); const f = FREQ(p) * (ACC ? 2 : 1);
-    if (!ME) pianoNote(f, t0, t1 - t0, ACC ? 0.5 : 0.42); events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
+    if (!ME) { if (!(MEL && inst(MEL, f, t0, (t1 - t0) * 0.92, 0.36))) pianoNote(f, t0, t1 - t0, ACC ? 0.5 : 0.42); } events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
   // every song its own groove (her 5 Nov 01:54: 'all different'): A.style picks the pattern
   const STY = {
     // the teacher's piano
@@ -194,6 +218,20 @@ async function play() {
     segs(A).forEach(({ name, s, len, last }) => { const r = FREQ(ROOT(name)), v = voice(A, name);
       if (last) { v.forEach(f => pianoNote(f, at(s), Math.max(len, 3) * beat, 0.15)); band ? bassNote(r, at(s), Math.max(len, 3) * beat) : pianoNote(r, at(s), Math.max(len, 3) * beat, 0.28); return; }
       (STY[A.style] || STY[def])(r, v, s, len); }); });
+  if (E) { const up = f => (f < 190 ? f * 2 : f), I = (nm, f, t0, d, g) => inst(nm, f, t0, d, g) || pianoNote(f, t0, d, g);
+    const ENS = {
+      brass: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) I('tuba', x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.7 * beat, 0.32); else v.forEach(f => I('french-horn', f, at(s + x), 0.45 * beat, 0.12)); } },
+      strings: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.26); v.slice(1).forEach(f => I('violin', up(f), at(s), len * beat, 0.09)); },
+      winds: (r, v, s, len) => { for (let x = 0; x < len; x += 2) I('bassoon', r * 2, at(s + x), 0.9 * beat, 0.26); const p = [v[0], v[1], v[2], v[1]]; for (let h = 0; h < len * 2; h++) I('clarinet', up(p[h % 4]), at(s + h / 2), 0.45 * beat, 0.1); },
+      orchestra: (r, v, s, len) => { I('contrabass', r, at(s), len * beat, 0.3); I('cello', r * 2, at(s), len * beat, 0.2); v.forEach(f => I('french-horn', f, at(s), len * beat, 0.1)); },
+      winter: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) I('contrabass', x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.5 * beat, 0.3); else v.forEach(f => I('violin', up(f), at(s + x), 0.18 * beat, 0.1)); }
+        for (let h = 0; h < len * 2; h++) bells(at(s + h / 2)); },
+      harp: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.22); const p = [r * 2, v[0], v[1], v[2], v[0] * 2, v[1] * 2, v[2] * 2, v[1] * 2]; for (let h = 0; h < len * 2; h++) I('harp', p[h % 8], at(s + h / 2), 1.2 * beat, 0.14); },
+    };
+    const FIN = { brass: ['tuba', 'french-horn'], strings: ['cello', 'violin'], winds: ['bassoon', 'clarinet'], orchestra: ['contrabass', 'french-horn'], winter: ['contrabass', 'violin'], harp: ['cello', 'harp'] }[E.style] || ['cello', 'violin'];
+    segs(E).forEach(({ name, s, len, last }) => { const r = FREQ(ROOT(name)), v = voice(E, name);
+      if (last) { I(FIN[0], FIN[0] === 'cello' || FIN[0] === 'bassoon' ? r * 2 : r, at(s), Math.max(len, 3) * beat, 0.3); v.forEach(f => I(FIN[1], up(f), at(s), Math.max(len, 3) * beat, 0.11)); if (E.style === 'winter') bells(at(s)); return; }
+      (ENS[E.style] || ENS.strings)(r, v, s, len); }); }
   t = at(pos);
   playing = true; $('play').textContent = '■ Stop'; $('play').classList.add('stop');
   const endT = t; let last = -1;
@@ -225,11 +263,11 @@ $('tempo').onchange = () => { if (playing) { stop(); play(); } };
 function accData() { return tune === 0 && acc ? song[acc] : null; }
 function setAcc() {   // the sound: the tune alone, the teacher's piano, or the band (only what this song has)
   const has = a => !a || (tune === 0 && song[a]);
-  if (!has(acc)) acc = song.band && tune === 0 ? 'band' : song.piano && tune === 0 ? 'piano' : '';
-  const LBL = { march: 'March', lullaby: 'Lullaby', stride: 'Stride', hymn: 'Hymn', gallop: 'Gallop', drops: 'Raindrops', swing: 'Swing', walking: 'Walking jazz', bossa: 'Bossa nova', funk: 'Funk', gospel: 'Gospel', reggae: 'Reggae' };
+  if (!has(acc)) acc = song.band && tune === 0 ? 'band' : song.piano && tune === 0 ? 'piano' : song.ens && tune === 0 ? 'ens' : '';
+  const LBL = { brass: 'Brass band', strings: 'String quartet', winds: 'Woodwinds', orchestra: 'Orchestra', winter: 'Winter ensemble', harp: 'Harp and strings', march: 'March', lullaby: 'Lullaby', stride: 'Stride', hymn: 'Hymn', gallop: 'Gallop', drops: 'Raindrops', swing: 'Swing', walking: 'Walking jazz', bossa: 'Bossa nova', funk: 'Funk', gospel: 'Gospel', reggae: 'Reggae' };
   document.querySelectorAll('#acc button').forEach(b => { const a = b.dataset.a; b.hidden = !has(a); b.classList.toggle('on', a === acc);
-    b.textContent = !a ? 'Tune' : (a === 'piano' ? 'Piano' : 'Band') + (song[a] && song[a].style ? ' · ' + LBL[song[a].style] : ''); });
-  $('acc').hidden = !(tune === 0 && (song.band || song.piano)); $('mew').hidden = !acc;
+    b.textContent = !a ? 'Tune' : ({ piano: 'Piano', band: 'Band', ens: 'Ensemble' })[a] + (song[a] && song[a].style ? ' · ' + LBL[song[a].style] : ''); });
+  $('acc').hidden = !(tune === 0 && (song.band || song.piano || song.ens)); $('mew').hidden = !acc;
   if (!acc) $('me').checked = false;
 }
 document.querySelectorAll('#acc button').forEach(b => b.onclick = () => { acc = b.dataset.a; setAcc(); setSpeed(speed, true); if (playing) { stop(); play(); } });
