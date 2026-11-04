@@ -35,6 +35,31 @@ def pizza(n, fill=0, R=34, rest=False):   # a circle cut into n equal slices; th
             x0, y0, x1, y1 = cx + R * _m.cos(a0), cy + R * _m.sin(a0), cx + R * _m.cos(a1), cy + R * _m.sin(a1)
             s += f'<path d="M{cx},{cy} L{x0:.1f},{y0:.1f} A{R},{R} 0 0 1 {x1:.1f},{y1:.1f} Z" fill="{FC if i < fill else "#fff"}" fill-opacity="{1 if rest else 0.85}" stroke="{N_}" stroke-width="1.6"/>'
     return s + '</svg>'
+def wcarriage(seats, x0):   # a bar as a carriage; seats = [(kind, n, key)]: 'n' booked note, 'r' booked rest, 'x' empty seats to book, 'd' booked as the worked example
+    W = 54; n_all = sum(t[1] for t in seats); w = n_all * W + 16
+    o = f'<rect x="{x0}" y="18" width="{w}" height="62" rx="10" fill="#fff" stroke="{N_}" stroke-width="2"/><circle cx="{x0 + 22}" cy="88" r="7" fill="{N_}"/><circle cx="{x0 + w - 22}" cy="88" r="7" fill="{N_}"/>'
+    x = x0 + 8
+    for kind, n, k in seats:
+        if kind == 'x':
+            o += f'<rect x="{x + 3}" y="30" width="{n * W - 6}" height="40" rx="6" fill="#fff" stroke="{N_}" stroke-width="1.4" stroke-dasharray="4 3"/>'
+        else:
+            fill = '#f2b9a5' if kind in 'nd' else 'url(#hz3)'
+            o += f'<rect x="{x + 3}" y="30" width="{n * W - 6}" height="40" rx="6" fill="{fill}" stroke="{C if kind == "d" else N_}" stroke-width="{2 if kind == "d" else 1.4}"/>'
+            g = (NT if kind in 'nd' else RS)[k]
+            o += f'<text x="{x + 18}" y="{60 if kind != "r" else 57}" font-family="NM" font-size="{26 if kind != "r" else 24}" fill="{C if kind == "d" else N_}">{g}</text>'
+        for j in range(1, n): o += f'<line x1="{x + j * W}" x2="{x + j * W}" y1="34" y2="66" stroke="{N_}" stroke-width="1" stroke-dasharray="3 3" opacity=".45"/>'
+        x += n * W
+    o += ''.join(f'<text x="{x0 + 8 + j * W + W / 2}" y="12" text-anchor="middle" font-family="AH,Arial" font-size="12" font-weight="700" fill="{C}">{j + 1}</text>' for j in range(n_all))
+    return o, w
+def wtrain(bars, ts='3/4'):
+    top, bot = ts.split('/')
+    o = '<defs><pattern id="hz3" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#fff"/><line x1="0" y1="0" x2="0" y2="6" stroke="#26296b" stroke-width="1.4"/></pattern></defs>'
+    o += f'<path d="M4,80 L4,30 Q4,18 16,18 L60,18 Q72,18 72,30 L72,80 Z" fill="{N_}"/><text x="38" y="47" text-anchor="middle" font-family="PF,serif" font-size="27" font-weight="700" fill="#fff">{top}</text><text x="38" y="73" text-anchor="middle" font-family="PF,serif" font-size="27" font-weight="700" fill="#fff">{bot}</text><circle cx="20" cy="88" r="7" fill="{N_}"/><circle cx="56" cy="88" r="7" fill="{N_}"/><line x1="72" x2="86" y1="60" y2="60" stroke="{N_}" stroke-width="3"/>'
+    x = 86
+    for i, b in enumerate(bars):
+        c, w = wcarriage(b, x); o += c; x += w
+        if i < len(bars) - 1: o += f'<line x1="{x}" x2="{x + 14}" y1="60" y2="60" stroke="{N_}" stroke-width="3"/>'; x += 14
+    return f'<svg viewBox="0 0 {x + 4} 100" style="width:100%;height:auto;display:block;margin:4px auto">{o}</svg>'
 def tfrows(items): return ''.join(f'<div class="row">{t}<span class="tf">T &nbsp; F</span></div>' for t in items)
 def piece(rows): return tbl(['Find in a piece you are learning', 'Piece', 'Bar'], [[r, LINE, BOX] for r in rows], ['46%', '38%', '16%'])
 
@@ -74,7 +99,7 @@ srows = ''.join('<div class="sum">' + ' <span class="pl">+</span> '.join(gin('n'
 A3 = tp('Learn', 'How long is a note?', 'How long is a note?', 'A dot adds half the note’s value; a tie joins two notes of the same pitch into one sound.', f'''
 {ex(1, 'Note sums', 1, 'Add up the beats (crotchet = 1 beat). The first one is done.', f'<div class="sums">{srows}</div>')}
 {ex(2, 'Complete the bar', 2, 'Each bar is one note short. Count the beats you have, then find what is missing. The first is done: 4/4 needs 4 beats; minim 2 + crotchet 1 = 3, so <b>1 beat</b> is missing: a crotchet.', grid([cell('wf1', 'one note <b class="done2">crotchet</b>', 64)] + [cell(k, 'one note ' + BOX, 64) for k in ('wf2', 'wf3', 'wf4', 'wf5', 'wf6')], 3))}
-{ex(3, 'Dots and ties: count it', 2, 'Write a count in every box.', wx('wc44', 84))}''', 5, 40)
+{ex(3, 'Dots and ties: count it', 2, 'Write a count in every box. The first is done.', wx('wc44', 84))}''', 5, 40)
 B3 = tp('Use', 'How long is a note?', 'How long is a note?', 'A tie can cross a bar line; a dot cannot.', f'''
 {ex(1, 'Tie or dot?', 2, 'Each tie makes one sound. Write the one dotted note that lasts the same.', grid([cell(k, 'dotted note ' + BOX, 60) for k in ('wti1', 'wti2', 'wti3')], 3))}
 {ex(2, 'Spot the mistake', 2, 'One bar does not add up to four beats. Circle it and correct it.', wx('wmis2', 70))}
@@ -88,10 +113,11 @@ A4 = tp('Learn', 'Time signatures', 'Time signatures', 'Top number: how many cou
 {ex(1, 'Which time signature?', 1, 'Each line is one full bar. Write a time signature that fits.', grid([cell(k, 'time signature ' + BOX, 60) for k in ('wt1', 'wt2', 'wt3', 'wt4', 'wt5', 'wt6')], 3))}
 {ex(2, 'Simple or compound?', 2, 'Circle simple or compound, then write how many beats are in each bar.', f'<div class="scg">{scrows}</div>')}
 {ex(3, 'What does it mean?', 1, 'Complete each sentence.', '<div class="sent"><p>In 3/4 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al inl') + '.</p><p>In 6/8 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al inl') + '.</p><p>C means the same as ' + BOX + ' ; ¢ means the same as ' + BOX + ' .</p></div>')}''', 7, 42)
+TRAINEX = ex(3, 'Book every seat', 2, 'Each carriage is one bar of the time signature on the engine. Draw one note or rest in the dashed seats so every seat is booked. The first is done.', wtrain([[('n', 2, 'm'), ('d', 1, 'c')], [('n', 1, 'c'), ('x', 2, '')], [('r', 1, 'c'), ('x', 2, '')]], '3/4') + wtrain([[('n', 2, 'm'), ('x', 2, '')], [('n', 1, 'c'), ('n', 1, 'c'), ('x', 2, '')]], '4/4'))
 B4 = tp('Use', 'Time signatures', 'Time signatures', 'In compound time each beat is a dotted note, divided into three.', f'''
-{ex(1, 'Add the bar lines', 2, 'Draw a bar line after every full bar, and a final bar line at the end.', wx('wb1', 50) + wx('wb2', 50) + wx('wb3', 50))}
+{ex(1, 'Add the bar lines', 2, 'Draw a bar line after every full bar, and a final bar line at the end.', wx('wb1', 50) + wx('wb2', 50))}
 {ex(2, 'Beam them', 3, 'The same six quavers in two time signatures. Join them with beams to show the beats: in twos for 3/4, in threes for 6/8.', grid([cell('wbm2', '3 beats', 64), cell('wbm1', '2 beats', 64)], 2))}
-{ex(3, 'Make your own', 3, 'Write one bar of 6/8 and one bar of 3/4 with six quavers each, beamed correctly. Clap both and feel the difference.', staff('6/8', 1) + staff('3/4', 1))}''', 8, 42)
+{TRAINEX}''', 8, 42)
 
 # ---------- 5 Compound and irregular time ----------
 A5 = tp('Learn', 'Compound and irregular time', 'Compound and irregular time', 'In 6/8 each beat is a dotted crotchet, split into three: count 1 2 3 4 5 6, feel two.', f'''
@@ -111,9 +137,9 @@ PZB = '<div class="pzr">' + ''.join(f'<div class="pzrow"><span class="pzn">{nm}<
 A6 = tp('Learn', 'Groups and upbeats', 'Groups and upbeats', 'Beams join the notes of one beat, so the beats stay visible.', f'''
 {ex(1, 'Good grouping?', 2, 'Circle ✓ if the grouping shows the beats, ✗ if it hides one.', grid([cell(k, '✓ &nbsp; ✗', 64) for k in ('wg1', 'wg2', 'wg3', 'wg4')], 2))}
 {ex(2, 'Cut the beat', 1, 'One beat is one pizza. Colour each one, then write how much of a beat each note gets and how you count it. The first is done.', PZB)}
-{ex(3, 'Count it', 2, 'Write a count in every box: a triplet (1 & a), then semiquavers (1 e & a).', '<div class="two" style="grid-template-columns:1fr 1.4fr">' + wx('wtr', 80) + wx('wsq', 80) + '</div>')}''', 11, 46)
+{ex(3, 'Count it', 2, 'Write a count in every box: a triplet (1 & a), then semiquavers (1 e & a). The first of each is done.', '<div class="two" style="grid-template-columns:1fr 1.4fr">' + wx('wtr', 80) + wx('wsq', 80) + '</div>')}''', 11, 46)
 B6 = tp('Use', 'Groups and upbeats', 'Groups and upbeats', 'An upbeat and the last bar together make one full bar.', f'''
-{ex(1, 'The upbeat', 2, 'This piece starts on beat 3. Write a count in every box. Then: how many beats does the last bar need?', wx('wan', 70) + f'<div class="add">beats in the last bar {BOX}</div>')}
+{ex(1, 'The upbeat', 2, 'This piece starts on beat 3 (done for you). Write a count in every other box. Then: how many beats does the last bar need?', wx('wan', 70) + f'<div class="add">beats in the last bar {BOX}</div>')}
 {ex(2, 'Clap the upbeat', 1, 'Clap the piece in exercise 1 with a metronome: count “1 2” silently, clap on 3. Tick a circle each time the last bar is exactly two beats.', ticks())}
 {ex(3, 'Clap and count', 2, 'Triplets and semiquavers: clap with a metronome while counting aloud. Tick a circle each day it is steady.', wx('wl3', 64) + ticks())}
 {ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['an upbeat (anacrusis)', 'a triplet', 'four semiquavers in one beat']))}''', 12, 46)
@@ -121,7 +147,7 @@ B6 = tp('Use', 'Groups and upbeats', 'Groups and upbeats', 'An upbeat and the la
 # ---------- 7 Off the beat ----------
 A7 = tp('Learn', 'Off the beat', 'Off the beat', 'Syncopation: a note that starts between the beats and is held across the next one.', f'''
 {ex(1, 'Find the off-beat notes', 2, 'Tap the beat. Circle every note that starts on an “&”, between the beats.', wx('woff', 76))}
-{ex(2, 'Count a syncopation', 2, 'Write a count in every box. Keep the beat in your foot.', wx('wsy', 80))}
+{ex(2, 'Count a syncopation', 2, 'Write a count in every box. Keep the beat in your foot. The first is done.', wx('wsy', 80))}
 {ex(3, 'Swing', 1, 'Which line shows how swung quavers are played? Circle A or B, then play both and hear the difference.', '<div class="op3" style="grid-template-columns:1fr 1fr">' + ''.join(f'<div class="opc"><span class="ol">{l}</span>{wx(k, 60)}</div>' for l, k in (('A', 'wsw1'), ('B', 'wsw2'))) + '</div>')}
 {ex(4, 'Foot and hands', 1, 'Tap the beat with your foot and clap only on the “&”s. Then swap: clap the beats, tap the “&”s. Tick a circle each time it holds together.', ticks())}
 {ex(5, 'True or false?', 1, 'Circle T or F.', tfrows(('A syncopated note starts between the beats.', 'Swing quavers are written long–short.', 'In syncopation the beat stops for a moment.')))}''', 13, 48)
@@ -152,7 +178,7 @@ ans = [('p. 1', 'Slow to fast: 60, 76, 92, 120. Strong beats on 1; in 4/4 medium
        ('p. 5', 'Sums: 1½, 4, 6, 2, 2. Complete: crotchet, crotchet, crotchet, quaver, quaver, quaver.'),
        ('p. 6', 'Tie or dot: dotted minim, dotted crotchet, dotted semibreve. Mistake: bar 2 has 5 beats.'),
        ('p. 7', 'Time signatures: 3/4, 2/4, 6/8, 4/4, 5/4, 9/8. Compound: 6/8, 9/8, 12/8, 6/4 (beats 2, 3, 4, 2). Simple: 3/4 (3), 2/2 (2), 4/4 (4), 3/8 (3). 3/4: 3 crotchet beats; 6/8: 2 dotted-crotchet beats; C = 4/4, ¢ = 2/2.'),
-       ('p. 8', 'Beams: 3/4 in three pairs; 6/8 in two groups of three.'),
+       ('p. 8', 'Beams: 3/4 in three pairs; 6/8 in two groups of three. Seats: 3/4 carriage 2 a minim (or two crotchets), carriage 3 a minim; 4/4 carriage 1 a minim, carriage 2 a minim.'),
        ('p. 9', '6/8: 1 2 3 4 5 6 · 1 4. Beams: 3/4 (pairs), 6/8 (threes). 5/4: 1 2 3 1 2. 7/8: 1 2 1 2 1 2 3. Compound beats: 6/8 2, 9/8 3, 12/8 4.'),
        ('p. 10', 'Bar lines: 9/8 after the 3rd and 8th notes; 5/4 after the 4th and 9th notes. 3 + 3 + 2: 1 2 3 1 2 3 1 2.'),
        ('p. 11', 'Grouping: ✓ ✗ ✓ ✗. Pizza: a triplet, a third of a beat each, 1 & a; four semiquavers, a quarter each, 1 e & a. Triplet: 1 & a 2. Semiquavers: 1 e & a 2 · 1 e & a 2.'),
@@ -177,5 +203,7 @@ css += f'''
 .fills>.fc{{display:flex;flex-direction:column}} .fills>.fc>.add{{margin-top:auto;justify-content:center;text-align:center;gap:6px}} .wl{{display:inline-block;width:64px;height:26px;border-bottom:1.6px solid #26296b}} .fills>.fc>figure.vx{{border:0;background:none;box-shadow:none;height:auto;flex:0 0 auto;padding:4px 0}} .fills>.fc>.add{{margin-top:6px !important}} .fills{{row-gap:18px}} .mm4+.mm4{{margin-top:0}} .ex2 .mm4 .ab{{height:24px}} .ex2>.tk,.ex2>.tk2{{justify-content:flex-end;margin-top:8px}} .pzr{{display:flex;flex-direction:column;gap:2px;margin-top:4px}} .pzrow{{display:grid;grid-template-columns:1.1fr 1.6fr 1fr 1fr;align-items:center;gap:12px;padding:1px 0;border-bottom:.6px solid #e2ddd0}} .pzs{{display:flex;gap:8px}} .pzs svg{{margin:0 !important}} .pz{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}} .pz>div{{display:flex;flex-direction:column;align-items:center;gap:6px}} .pzn{{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px}} .pzl{{display:flex;align-items:flex-end;gap:6px;font-size:13px;color:#6d6f9c;min-height:26px}} .fills{{align-items:stretch}} .fills>.fc>.add{{margin-top:auto !important}} .mm4 .drw{{width:96px;height:72px;border:1.4px dashed #b9bbd3;border-radius:6px}} .mm4.mm3{{grid-template-columns:repeat(3,1fr)}} .row .tk{{margin:0 0 0 auto}} .row b{{min-width:230px}} .feel{{display:flex;align-items:center;gap:6px;font-weight:700}} .ansT td{{font-size:13.5px;line-height:1.45;padding:6px 8px;vertical-align:top}} .ansT td:first-child{{font-weight:700;color:{C}}}
 '''
 pages = [A1, B1, A2, B2, A3, B3, A4, B4, A5, B5, A6, B6, A7, B7, R, PR, AN]
-open('/mnt/user-data/outputs/house-rooms/workbook-time2.html', 'w').write(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>')
+import sys as _s; _s.path.insert(0, '/tmp/claude-0/pk'); import importlib, firstdone; importlib.reload(firstdone)
+FIRST = {'Which time signature?': [('fill', '3/4')], 'Finish with a rest': [('fill', 'minim rest')], 'Tie or dot?': [('fill', 'dotted minim')], 'Simple or compound?': [('both', [('ring', 'simple'), ('fill', '3')])], '3/4 or 6/8?': [('fill', '3/4')], 'Beats in compound time': [('fill', '2')], 'Good grouping?': [('ring', '✓')], 'Slow to fast': [('fill', '4')]}
+open('/mnt/user-data/outputs/house-rooms/workbook-time2.html', 'w').write(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>', FIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1))
 print('ok', len(pages))
