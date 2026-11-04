@@ -179,11 +179,13 @@ const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, sc
 const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); };
 const group = (k) => k.replace(/\d+$/, ''), natural = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
+  const SB = S.bars; if (o.src != null) S.bars = S.more[o.src].bars;   // a More to play tune (S.more) engraved like the song
   tk.setOptions(opts(o, { pageWidth: o.pw || 1750, breaks: 'none' })); load(b0, b1, o);
-  const w = +tk.renderToSVG(1).match(/viewBox="[^"]+"/g)[1].split(' ')[2]; natural[group(k)] = Math.max(natural[group(k)] || 0, w);
+  const w = +tk.renderToSVG(1).match(/viewBox="[^"]+"/g)[1].split(' ')[2]; natural[group(k)] = Math.max(natural[group(k)] || 0, w); S.bars = SB;
 }
 const out = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
+  const SB = S.bars; if (o.src != null) S.bars = S.more[o.src].bars;   // a More to play tune (S.more) engraved like the song
   tk.setOptions(opts(o, { pageWidth: Math.ceil(natural[group(k)] / 10) + 8, breaks: 'auto', minLastJustification: 0 })); load(b0, b1, o);
   if (tk.getPageCount() > 1) console.log('warning: ' + k + ' broke over a page');
   let svg = tk.renderToSVG(1);
@@ -218,6 +220,6 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
     svg = svg.replace(/<svg viewBox="0 0 ([\d.]+) ([\d.]+)"/, (m, w, h) => `<svg viewBox="0 0 ${+w + 25} ${h}"`)
       .replace(/class="definition-scale"([^>]*)viewBox="0 0 ([\d.]+) ([\d.]+)"/, (m, a, w, h) => `class="definition-scale"${a}viewBox="-500 0 ${+w + 500} ${h}"`);
   }
-  out[k] = svg;
+  out[k] = svg; S.bars = SB;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
