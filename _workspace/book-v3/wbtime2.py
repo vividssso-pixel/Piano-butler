@@ -30,8 +30,8 @@ def pizza(n, fill=0, R=34, rest=False):   # a circle cut into n equal slices; th
     if n == 1:
         s += f'<circle cx="{cx}" cy="{cy}" r="{R}" fill="{FC if fill else "#fff"}" fill-opacity="{0.85 if fill and not rest else 1}" stroke="{N_}" stroke-width="2"/>'
     else:
-        for i in range(n):
-            a0, a1 = -_m.pi / 2 + 2 * _m.pi * i / n, -_m.pi / 2 + 2 * _m.pi * (i + 1) / n
+        sl = sorted([(-_m.pi / 2 + 2 * _m.pi * j / n, -_m.pi / 2 + 2 * _m.pi * (j + 1) / n) for j in range(n)], key=lambda a: (round(_m.cos((a[0] + a[1]) / 2), 3), round(_m.sin((a[0] + a[1]) / 2), 3)))   # left to right, like counting
+        for i, (a0, a1) in enumerate(sl):
             x0, y0, x1, y1 = cx + R * _m.cos(a0), cy + R * _m.sin(a0), cx + R * _m.cos(a1), cy + R * _m.sin(a1)
             s += f'<path d="M{cx},{cy} L{x0:.1f},{y0:.1f} A{R},{R} 0 0 1 {x1:.1f},{y1:.1f} Z" fill="{FC if i < fill else "#fff"}" fill-opacity="{1 if rest else 0.85}" stroke="{N_}" stroke-width="1.6"/>'
     return s + '</svg>'
