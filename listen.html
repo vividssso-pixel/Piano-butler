@@ -76,7 +76,7 @@ const SONGS = [{"id":"buns","n":1,"title":"Hot Cross Buns","meter":"2/4","bpm":1
 const LEN = { s: 4, m: 2, c: 1, q: 0.5 };
 const FREQ = p => { const st = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[p[0]] + (p[1] === 's' ? 1 : 0); const oct = +p.replace(/[^0-9]/g, ''); return 261.63 * Math.pow(2, (st + 12 * (oct - 4)) / 12); };
 const $ = id => document.getElementById(id);
-let OUT = null, acc = 'band', song = SONGS[0], tune = 0, speed = 1, ctx = null, playing = false, timer = null, events = [], startAt = 0;
+let OUT = null, BUS = null, ACCBUS = null, acc = 'band', song = SONGS[0], tune = 0, speed = 1, ctx = null, playing = false, timer = null, events = [], startAt = 0;
 
 // the keyboard: middle C up to B, the lit key follows the tune
 const KEYS = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
@@ -140,14 +140,14 @@ function inst(nm, f, t, dur, peak) {   // one note on a recorded instrument; fal
   const sus = INST[nm].sus, end = t + Math.max(0.15, dur), att = sus ? 0.05 : 0.002;
   g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak * 2.2, t + att); g.gain.setValueAtTime(peak * 2.2, end);
   g.gain.exponentialRampToValueAtTime(0.0001, end + (sus ? 0.25 : 0.35));
-  s.connect(g); g.connect(OUT); s.start(t); s.stop(end + 0.4); return true;
+  s.connect(g); g.connect(BUS || OUT); s.start(t); s.stop(end + 0.4); return true;
 }
 const sampled = (f, t, dur, peak) => inst('piano', f, t, dur, peak);
 function bells(t) {   // a sleigh-bell shake: a burst of bright noise
   const n = ctx.createBufferSource(), b = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate), d = b.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
   const hp = ctx.createBiquadFilter(), g = ctx.createGain(); hp.type = 'highpass'; hp.frequency.value = 6500; g.gain.value = 0.18;
-  n.buffer = b; n.connect(hp); hp.connect(g); g.connect(OUT); n.start(t);
+  n.buffer = b; n.connect(hp); hp.connect(g); g.connect(BUS || OUT); n.start(t);
 }
 function pianoNote(f, t, dur, peak = 0.42) {
   if (sampled(f, t, dur, peak)) return;   // a soft piano-like tone: a quick attack and a long fall
@@ -155,7 +155,7 @@ function pianoNote(f, t, dur, peak = 0.42) {
   o1.type = 'triangle'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2;
   const g2 = ctx.createGain(); g2.gain.value = 0.18;
   lp.type = 'lowpass'; lp.frequency.value = 2400;
-  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(OUT);
+  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(BUS || OUT);
   const end = t + Math.max(0.25, dur * 0.95);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.012);
   g.gain.exponentialRampToValueAtTime(peak * 0.38, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.15);
@@ -164,7 +164,7 @@ function pianoNote(f, t, dur, peak = 0.42) {
 function bassNote(f, t, dur) {   // a plucked upright-bass tone, round and short
   const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
   o.type = 'sine'; o.frequency.value = f; o2.type = 'triangle'; o2.frequency.value = f * 2; lp.type = 'lowpass'; lp.frequency.value = 700;
-  const g2 = ctx.createGain(); g2.gain.value = 0.25; o.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(OUT);
+  const g2 = ctx.createGain(); g2.gain.value = 0.25; o.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(BUS || OUT);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.1);
   o.start(t); o2.start(t); o.stop(t + dur + 0.15); o2.stop(t + dur + 0.15);
 }
@@ -175,9 +175,10 @@ function click(t, hi) {
 }
 
 async function play() {
-  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); OUT = ctx.createDynamicsCompressor(); OUT.threshold.value = -14; OUT.ratio.value = 4; OUT.connect(ctx.destination); }
+  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); OUT = ctx.createDynamicsCompressor(); OUT.threshold.value = -14; OUT.ratio.value = 4; OUT.connect(ctx.destination);
+    ACCBUS = ctx.createGain(); ACCBUS.gain.value = 0.45; ACCBUS.connect(OUT); }   // the accompaniment sits under the tune (her 5 Nov 10:46)
   if (ctx.state === 'suspended') ctx.resume();
-  const ENS_INST = { brass: ['trumpet', 'french-horn', 'tuba'], moon: ['clarinet', 'french-horn', 'cello'], winds: ['flute', 'clarinet', 'bassoon'], orchestra: ['french-horn', 'clarinet', 'bassoon', 'cello', 'contrabass'], winter: ['xylophone', 'harp', 'contrabass'], harp: ['flute', 'harp', 'cello'] };
+  const ENS_INST = { brass: ['trumpet', 'french-horn', 'tuba', 'flute', 'clarinet'], moon: ['clarinet', 'french-horn', 'cello', 'violin', 'harp'], winds: ['flute', 'clarinet', 'bassoon', 'violin', 'french-horn'], orchestra: ['french-horn', 'flute', 'violin', 'clarinet', 'bassoon', 'cello', 'contrabass'], winter: ['xylophone', 'harp', 'contrabass', 'flute', 'violin'], harp: ['flute', 'harp', 'cello', 'violin', 'clarinet'] };
   const ENS_MEL = { brass: 'trumpet', moon: 'clarinet', winds: 'flute', orchestra: 'french-horn', winter: 'xylophone', harp: 'flute' };
   const MEL_OCT = { orchestra: 1, moon: 1 };   // the horn and the clarinet sing the tune where it is written, warm and low
   const pre = accData(), E0 = pre && acc === 'ens' ? pre : null;
@@ -192,7 +193,7 @@ async function play() {
   const at = pos => { const b = Math.floor(pos + 1e-6), f = pos - b; return t + (b + (Math.abs(f - 0.5) < 1e-6 ? sw : f)) * beat; };
   let pos = 0;
   song.tunes[tune].b.forEach(bar => bar.forEach(([p, d]) => { const t0 = at(pos), t1 = at(pos + LEN[d]); const f = FREQ(p) * (ACC && !(E && MEL_OCT[E.style]) ? 2 : 1);
-    if (!ME) { if (!(MEL && inst(MEL, f, t0, (t1 - t0) * 0.92, 0.36))) pianoNote(f, t0, t1 - t0, ACC ? 0.5 : 0.42); } events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
+    if (!ME) { if (!(MEL && inst(MEL, f, t0, (t1 - t0) * 0.92, 0.36))) pianoNote(f, t0, t1 - t0, ACC ? 0.5 : 0.42); if (E && E.style === 'orchestra') inst('flute', f * 2, t0, (t1 - t0) * 0.92, 0.12); } events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
   // every song its own groove (her 5 Nov 01:54: 'all different'): A.style picks the pattern
   const STY = {
     // the teacher's piano
@@ -215,24 +216,31 @@ async function play() {
   const ROOT = name => name[0].toLowerCase() + (name[1] === 'b' ? 'f' : name[1] === '#' ? 's' : '') + '2';
   const voice = (A, name) => (A.voicing[name] || []).map(FREQ);
   const segs = A => { const out = []; let b = 0; A.chords.forEach((bar, bi) => { bar.forEach(([name, len]) => { out.push({ name, s: b, len, last: bi === A.chords.length - 1 }); b += len; }); }); return out; };
+  BUS = ACCBUS;   // from here on: the accompaniment
   [[J, 'swing', true], [P, 'alberti', false]].forEach(([A, def, band]) => { if (!A) return;
     segs(A).forEach(({ name, s, len, last }) => { const r = FREQ(ROOT(name)), v = voice(A, last && A.voicing[name + '_end'] ? name + '_end' : name);
       if (last) { v.forEach(f => pianoNote(f, at(s), Math.max(len, 3) * beat, 0.15)); band ? bassNote(r, at(s), Math.max(len, 3) * beat) : pianoNote(r, at(s), Math.max(len, 3) * beat, 0.28); return; }
       (STY[A.style] || STY[def])(r, v, s, len); }); });
   if (E) { const up = f => (f < 190 ? f * 2 : f), I = (nm, f, t0, d, g) => inst(nm, f, t0, d, g) || pianoNote(f, t0, d, g);
     const ENS = {
-      brass: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) I('tuba', x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.7 * beat, 0.32); else v.forEach(f => I('french-horn', f, at(s + x), 0.45 * beat, 0.12)); } },
-      moon: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.24); v.forEach(f => I('french-horn', f, at(s), len * beat, 0.06)); },
-      winds: (r, v, s, len) => { for (let x = 0; x < len; x += 2) I('bassoon', r * 2, at(s + x), 0.9 * beat, 0.26); const p = [v[0], v[1], v[2], v[1]]; for (let h = 0; h < len * 2; h++) I('clarinet', up(p[h % 4]), at(s + h / 2), 0.45 * beat, 0.1); },
-      orchestra: (r, v, s, len) => { I('contrabass', r, at(s), len * beat, 0.26); I('cello', r * 2, at(s), len * beat, 0.18); for (let x = 0; x < len; x++) v.forEach((f, i) => I(i % 2 ? 'clarinet' : 'bassoon', up(f), at(s + x), 0.9 * beat, 0.06)); },
-      winter: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) I('contrabass', x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.5 * beat, 0.3); else v.forEach(f => I('harp', up(f) * 2, at(s + x), 0.3 * beat, 0.1)); }
+      brass: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) I('tuba', x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.7 * beat, 0.32); else v.forEach(f => I('french-horn', f, at(s + x), 0.45 * beat, 0.12)); }
+        I('clarinet', up(v[1]), at(s), len * beat, 0.07); I('flute', up(v[2]) * 2, at(s), len * beat, 0.05); },
+      moon: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.24); v.forEach(f => I('french-horn', f, at(s), len * beat, 0.05)); I('violin', up(v[2]) * 2, at(s), len * beat, 0.05);
+        [r * 2, v[0], v[1], v[2]].forEach((f, h) => I('harp', up(f), at(s + h * 0.25), 1.5 * beat, 0.09)); },
+      winds: (r, v, s, len) => { for (let x = 0; x < len; x += 2) I('bassoon', r * 2, at(s + x), 0.9 * beat, 0.26); const p = [v[0], v[1], v[2], v[1]]; for (let h = 0; h < len * 2; h++) I('clarinet', up(p[h % 4]), at(s + h / 2), 0.45 * beat, 0.1);
+        I('french-horn', v[0], at(s), len * beat, 0.05); for (let x = 1; x < len; x += 2) I('violin', up(v[2]) * 2, at(s + x), 0.2 * beat, 0.06); },
+      orchestra: (r, v, s, len) => { I('contrabass', r, at(s), len * beat, 0.26); I('cello', r * 2, at(s), len * beat, 0.18); for (let x = 0; x < len; x++) v.forEach((f, i) => I(i % 2 ? 'clarinet' : 'bassoon', up(f), at(s + x), 0.9 * beat, 0.06));
+        v.forEach(f => I('violin', up(f) * 2, at(s), len * beat, 0.04)); I('flute', up(v[2]) * 2, at(s), len * beat, 0.04); },
+      winter: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) I('contrabass', x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.5 * beat, 0.3); else { v.forEach(f => I('harp', up(f) * 2, at(s + x), 0.3 * beat, 0.1)); I('violin', up(v[1]) * 2, at(s + x), 0.15 * beat, 0.05); } }
+        I('flute', up(v[2]) * 2, at(s), len * beat, 0.04);
         for (let h = 0; h < len * 2; h++) bells(at(s + h / 2)); },
-      harp: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.22); const p = [r * 2, v[0], v[1], v[2], v[0] * 2, v[1] * 2, v[2] * 2, v[1] * 2]; for (let h = 0; h < len * 2; h++) I('harp', p[h % 8], at(s + h / 2), 1.2 * beat, 0.14); },
+      harp: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.22); I('violin', up(v[1]) * 2, at(s), len * beat, 0.04); I('clarinet', up(v[0]), at(s), len * beat, 0.05); const p = [r * 2, v[0], v[1], v[2], v[0] * 2, v[1] * 2, v[2] * 2, v[1] * 2]; for (let h = 0; h < len * 2; h++) I('harp', p[h % 8], at(s + h / 2), 1.2 * beat, 0.14); },
     };
     const FIN = { brass: ['tuba', 'french-horn'], moon: ['cello', 'french-horn'], winds: ['bassoon', 'clarinet'], orchestra: ['contrabass', 'french-horn'], winter: ['contrabass', 'harp'], harp: ['cello', 'harp'] }[E.style] || ['cello', 'french-horn'];
     segs(E).forEach(({ name, s, len, last }) => { const r = FREQ(ROOT(name)), v = voice(E, last && E.voicing[name + '_end'] ? name + '_end' : name);
       if (last) { I(FIN[0], FIN[0] === 'cello' || FIN[0] === 'bassoon' ? r * 2 : r, at(s), Math.max(len, 3) * beat, 0.3); v.forEach(f => I(FIN[1], up(f), at(s), Math.max(len, 3) * beat, 0.11)); if (E.style === 'winter') bells(at(s)); return; }
       (ENS[E.style] || ENS.moon)(r, v, s, len); }); }
+  BUS = null;
   t = at(pos);
   playing = true; $('play').textContent = '■ Stop'; $('play').classList.add('stop');
   const endT = t; let last = -1;
@@ -265,7 +273,7 @@ function accData() { return tune === 0 && acc ? song[acc] : null; }
 function setAcc() {   // the sound: the tune alone, the teacher's piano, or the band (only what this song has)
   const has = a => !a || (tune === 0 && song[a]);
   if (!has(acc)) acc = song.band && tune === 0 ? 'band' : song.piano && tune === 0 ? 'piano' : song.ens && tune === 0 ? 'ens' : '';
-  const LBL = { brass: 'Brass band', moon: 'Moonlight trio', strings: 'String quartet', winds: 'Woodwinds', orchestra: 'Orchestra', winter: 'Winter ensemble', harp: 'Harp and flute', march: 'March', lullaby: 'Lullaby', stride: 'Stride', hymn: 'Hymn', gallop: 'Gallop', drops: 'Raindrops', swing: 'Swing', walking: 'Walking jazz', bossa: 'Bossa nova', funk: 'Funk', gospel: 'Gospel', reggae: 'Reggae' };
+  const LBL = { brass: 'Brass band', moon: 'Moonlight ensemble', strings: 'String quartet', winds: 'Woodwinds', orchestra: 'Orchestra', winter: 'Winter ensemble', harp: 'Harp and strings', march: 'March', lullaby: 'Lullaby', stride: 'Stride', hymn: 'Hymn', gallop: 'Gallop', drops: 'Raindrops', swing: 'Swing', walking: 'Walking jazz', bossa: 'Bossa nova', funk: 'Funk', gospel: 'Gospel', reggae: 'Reggae' };
   document.querySelectorAll('#acc button').forEach(b => { const a = b.dataset.a; b.hidden = !has(a); b.classList.toggle('on', a === acc);
     b.textContent = !a ? 'Tune' : ({ piano: 'Piano', band: 'Band', ens: 'Ensemble' })[a] + (song[a] && song[a].style ? ' · ' + LBL[song[a].style] : ''); });
   $('acc').hidden = !(tune === 0 && (song.band || song.piano || song.ens)); $('mew').hidden = !acc;
