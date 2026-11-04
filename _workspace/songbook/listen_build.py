@@ -8,6 +8,6 @@ for f in SONGS:
     j = json.load(open(f + '.json'))
     tunes = [{'t': 'The song', 'b': [[n[:4] for n in bar] for bar in j['bars']]}]
     for m in j.get('more', []): tunes.append({'t': m['title'], 'b': [[n[:4] + ([n[6]] if len(n) > 6 else []) for n in bar] for bar in m['bars']]})
-    data.append({'id': re.sub(r'\d', '', f), 'n': j.get('lesson'), 'title': j['title'], 'meter': j.get('meter', '4/4'), 'bpm': TEMPO.get(f, 100), 'tunes': tunes, 'jazz': j.get('jazz')})
+    data.append({'id': re.sub(r'\d', '', f), 'n': j.get('lesson'), 'title': j['title'], 'meter': j.get('meter', '4/4'), 'bpm': TEMPO.get(f, 100), 'tunes': tunes, 'band': j.get('band'), 'piano': j.get('piano')})
 page = open('listen_tpl.html').read().replace('/*DATA*/[]', json.dumps(data, ensure_ascii=False, separators=(',', ':')))
 open(sys.argv[1], 'w').write(page); print('ok', len(page))
