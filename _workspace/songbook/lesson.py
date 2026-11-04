@@ -80,7 +80,8 @@ def note(kind, s=1.0):
     stem = '' if kind == 's' else f'<line x1="22.3" y1="38" x2="22.3" y2="6" stroke="{N}" stroke-width="2.2"/>'
     return f'<svg viewBox="0 0 30 50" style="width:{24 * s}px;height:{40 * s}px">{head}{stem}</svg>'
 def beats(n): return '<span class="bd">' + '<i></i>' * n + '</span>'
-vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{beats(n)}</div></div>' for k, nm, n in SONG.get('value_names', [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)]) if k in SONG.get('values', 'cms'))
+def halves(): return '<span class="bd hv"><i></i><i></i></span>'   # two quavers: one beat's dot cut in half (her 4 Nov 13:23)
+vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{halves() if k == "qq" else beats(n)}</div></div>' for k, nm, n in SONG.get('value_names', [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)]) if k in SONG.get('values', 'cms'))
 TIME = SONG.get("time_html", "<p><b>Top 4:</b> four beats in every bar.</p><p><b>Bottom 4:</b> a crotchet is one beat.</p>")
 TSN = '<div class="tsn"><span>4</span><span>4</span></div>' if SONG.get("time_label", "The time") == "The time" else ''
 tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
@@ -130,6 +131,7 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .lead{{font-size:17px;line-height:1.5;margin:0 0 8px}} p{{font-size:16px;line-height:1.5;margin:4px 0 8px}}
 .listen{{display:flex;align-items:center;gap:16px;border:1.5px solid {C};border-radius:12px;padding:10px 16px;margin:2px 0}} .listen p{{margin:2px 0 0;font-size:14.5px;line-height:1.45}} .lh2{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}}
 .sub{{display:flex;align-items:center;gap:10px;margin:8px 0 0}} .sub span{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .sub::after{{content:'';flex:1;height:1px;background:rgba(38,41,107,.18)}}
+.bd.hv{{gap:3px}} .bd.hv i{{height:10px}} .bd.hv i:first-child{{border-radius:99px 0 0 99px;width:5px}} .bd.hv i:last-child{{border-radius:0 99px 99px 0;width:5px}}
 .chips{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}} .cl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-right:4px}} .chip{{border:1.2px solid {N};border-radius:14px;padding:3px 12px;font-size:14px;font-weight:700}}
 .ph{{display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:10px;margin-top:10px}} .pn{{width:30px;height:30px;background:{N};color:#fff;display:inline-flex;align-items:center;justify-content:center;font:700 16px 'AH'}} h2{{font-family:'PF',Georgia,serif;font-size:25px;margin:0}}
 .how{{font-size:15.5px;color:#3d4080;margin:6px 0 6px}}

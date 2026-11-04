@@ -169,7 +169,9 @@ const JOBS = S.jobs || {
 const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
   pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20,
   spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.ltm || (o.rhythm ? 2 : 5),
-  lyricWordSpace: 2.6, fingeringScale: 0.9, ...extra });
+  lyricWordSpace: o.lws || 2.6, lyricSize: o.lys || 4.0, fingeringScale: 0.9,
+  ...(o.letters ? { leftMarginNote: 2, rightMarginNote: 1.5, leftMarginBarLine: 1.5, rightMarginBarLine: 2 } : { leftMarginNote: 1, rightMarginNote: 0, leftMarginBarLine: 0, rightMarginBarLine: 0 }),   // set every time: the toolkit keeps options between jobs   // big lettered heads: room round each and off the bar lines (her 4 Nov 13:22)
+  ...extra });
 const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); };
 const group = (k) => k.replace(/\d+$/, ''), natural = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
