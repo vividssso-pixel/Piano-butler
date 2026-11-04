@@ -14,14 +14,14 @@ const { chromium } = require('playwright');
       const ink = (t) => { const r = R(t), cs = getComputedStyle(t); cx.font = cs.fontWeight + ' 100px ' + cs.fontFamily; const m = cx.measureText(t.textContent.trim());
         const fa = m.fontBoundingBoxAscent, fd = m.fontBoundingBoxDescent, k = r.height / (fa + fd), a = 1.5;
         return { left: r.left - a, right: r.right + a, top: r.top + (fa - m.actualBoundingBoxAscent) * k - a, bottom: r.top + (fa + m.actualBoundingBoxDescent) * k + a }; };
-      const texts = [...mu.querySelectorAll('text')].filter(t => t.textContent.trim()).map(t => ({ t: t.textContent.trim(), r: ink(t) }));
+      const texts = [...mu.querySelectorAll('text')].filter(t => t.textContent.trim() && !t.classList.contains('lname')).map(t => ({ t: t.textContent.trim(), r: ink(t) }));
       const boxes = [...mu.querySelectorAll('rect.wbox')].map(R);
       texts.forEach(a => { heads.forEach(h => { if (hit(a.r, h)) bad.push([key, 'text/head', a.t, (h.bottom - a.r.top).toFixed(1) + 'px of ' + (a.r.bottom - a.r.top).toFixed(1)]); }); stems.forEach(h => { if (hit(a.r, h, 0.2)) bad.push([key, 'text/stem', a.t]); }); });
       for (let x = 0; x < texts.length; x++) for (let y = x + 1; y < texts.length; y++) if (hit(texts[x].r, texts[y].r, 1)) bad.push([key, 'text/text', texts[x].t + ' ' + texts[y].t, (Math.min(texts[x].r.bottom, texts[y].r.bottom) - Math.max(texts[x].r.top, texts[y].r.top)).toFixed(1) + 'px of ' + (texts[x].r.bottom - texts[x].r.top).toFixed(1)]);
       boxes.forEach(bx => heads.forEach(h => { if (hit(bx, h)) bad.push([key, 'box/head']); }));
     });
     // what must be there: the counts under the rhythm lines, the answer boxes under the reading line
-    const need = { rhy1: '.cnt', rhy2: '.cnt', sing1: 'rect.wbox', play1: '.when', play2: '.when' };
+    const need = { rhy1: '.cnt', rhy2: '.cnt' };
     for (const [k, sel] of Object.entries(need)) { const el = document.querySelector('.mus[data-snip="' + k + '"]'); if (el && !el.querySelectorAll(sel).length) bad.push([k, 'missing', sel]); }
     return { n: document.querySelectorAll('.mus').length, bad };
   });

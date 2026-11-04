@@ -51,7 +51,7 @@ def play_page():   # an early lesson's page 3: the song on the keys, step by ste
     B = SONG['basics']
     return page(f'''{part(3, 'Play it', B['play'])}
 <div class="sp"></div><div class="bas"><div>{keys(1, True, True, 200)}</div><div><p class="cap2">{B.get('keys_note', '')}</p></div></div>
-{''.join(f'<div class="sp"></div><div class="wtag">{lab}</div>{mus(k)}' for k, lab in B.get('lines', []))}
+{''.join((f'<div class="sp"></div><div class="wtag">{lab}</div>' if lab else '') + mus(k) for k, lab in B.get('lines', []))}
 <div class="sp"></div>
 <div class="chk end"><div class="ch">4 · Check</div><div class="cgrid">
 <div>{ticks(['I can say and clap it', 'I can sing it with the words', 'I can sing the letter names'])}</div>

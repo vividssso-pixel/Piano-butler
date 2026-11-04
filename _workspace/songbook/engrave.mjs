@@ -127,6 +127,21 @@ function addRows(svg, ways, b0, pic) {
     Y += tall ? 860 : 400; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${lab}`);
 }
+// Before the staff the letter goes inside the note (her 4 Nov 12:07): a bigger head with its name in it, joined to its stem;
+// filled for a crotchet or quaver (white letter), open for a minim or longer (navy letter). The small engraved head goes.
+function addLetterHeads(svg, names) {
+  const RX = 235, RY = 185, FS = 265; let k = 0;
+  svg = svg.replace(/<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use [^>]*transform="translate\((\d+), (\d+)\)[^>]*\/>\s*<\/g>(\s*<g id="[^"]+" class="stem">\s*<path d="M(\d+) (\d+) L\d+ (\d+)")?/g,
+    (m, id, x, y, st, sx, y1, y2) => {
+      const L = INFO[id].len, open = L >= 2, name = names[k++]; let cx = +x + 108;
+      if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
+      // drawn where the head was, so it sits over the line and under its own stem
+      const head = `<ellipse cx="${cx}" cy="${y}" rx="${RX}" ry="${RY}" fill="${open ? '#fff' : '#26296b'}" stroke="#26296b" stroke-width="${open ? 26 : 0}" class="lhead"/>`
+           + `<text x="${cx}" y="${+y + FS * 0.36}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${open ? '#26296b' : '#fff'}" class="cnt lname">${name}</text>`;
+      return m.replace(/<use [^>]*\/>/, head);
+    });
+  return svg;
+}
 const JOBS = S.jobs || {
   sing1: [0, 4, { words: 1, meter: 1, boxes: 1, pw: 1500 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1, pw: 1500 }],
   rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350 }],   // bigger: the first thing a child reads
@@ -166,6 +181,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
   if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
+  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()));
   out[k] = svg;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
