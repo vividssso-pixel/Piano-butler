@@ -2,7 +2,7 @@
 import os, subprocess, html
 from pypdf import PdfReader, PdfWriter
 O = '/mnt/user-data/outputs/books-latest/'
-SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/user-data/outputs/handbook-part2-time.pdf', 'wbP': '/mnt/user-data/outputs/workbook-pitch.pdf', 'wbT': '/mnt/user-data/outputs/workbook-time.pdf', 'hbX': '/mnt/user-data/outputs/house-rooms/handbook-tips.pdf'}
+SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/user-data/outputs/handbook-part2-time.pdf', 'wbP': '/mnt/user-data/outputs/workbook-pitch.pdf', 'wbT': '/mnt/user-data/outputs/workbook-time.pdf', 'hbX': '/mnt/user-data/outputs/house-rooms/handbook-tips.pdf', 'hbH': '/mnt/user-data/outputs/handbook-part3-harmony.pdf', 'wbH': '/mnt/user-data/outputs/workbook-harmony.pdf'}
 # chapter: (part, n, title, blurb, handbook pages in its PDF (1-based), printed pp, workbook pages, workbook printed pp)
 CH = [
  ('Pitch', 1, 'The keyboard', 'High and low, white-key names, the groups of two and three black keys, octaves.', 'hbP', [2, 3], '22–23', 'wbP', [1, 2], '1–2'),
@@ -17,8 +17,9 @@ CH = [
  ('Time', 5, 'Compound and irregular time', '6/8, 9/8, 12/8; 5/4, 7/8 and 3 + 3 + 2.', 'hbT', [10, 11], '56–57', 'wbT', [9, 10], '9–10'),
  ('Time', 6, 'Groups and upbeats', 'Beams, upbeats, triplets, duplets and semiquavers.', 'hbT', [12, 13], '58–59', 'wbT', [11, 12], '11–12'),
  ('Time', 7, 'Off the beat', 'Syncopation, swing, hemiola, polyrhythm and rubato.', 'hbT', [14, 15], '60–61', 'wbT', [13, 14], '13–14'),
+ ('Harmony', 1, 'Chords and triads', 'Root, 3rd and 5th; play one, skip one; solid and broken chords.', 'hbH', [2, 3], '64–65', 'wbH', [1, 2], '1–2'),
 ]
-EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'), ('hb', 'Pitch', 'Tips: when a note sounds wrong', 'hbP', [26], 'The end of Part I: the usual slips, what to check, and where to turn (p. 46).'), ('hb', 'Time', 'Tips: when the rhythm slips', 'hbT', [16], 'The end of Part II: what to check when the rhythm slips, and four ways to steady it (p. 62).'), ('hb', 'Time', 'Putting it together', 'hbX', [1, 2], 'The closing pages, after the last part: everything one note tells you; when a passage won’t come right (pp. 63–64; they move to the end when Harmony is added).'),
+EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'), ('hb', 'Pitch', 'Tips: when a note sounds wrong', 'hbP', [26], 'The end of Part I: the usual slips, what to check, and where to turn (p. 46).'), ('hb', 'Time', 'Tips: when the rhythm slips', 'hbT', [16], 'The end of Part II: what to check when the rhythm slips, and four ways to steady it (p. 62).'), ('hb', 'Harmony', 'Part III opener', 'hbH', [1], 'The map of Part III and its contents.'), ('hb', 'Harmony', 'Putting it together', 'hbX', [1, 2], 'The closing pages of the Handbook: everything one note tells you; when a passage won’t come right (pp. 66–67 for now; they stay last as Harmony grows).'), ('wb', 'Harmony', 'Answers', 'wbH', [3], 'Every answer so far.'),
          ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [13, 14, 15], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [15, 16, 17], 'A ten-minute review, the progress chart and every answer.')]
 R = {k: PdfReader(v) for k, v in SRC.items()}
 def slug(x): return ''.join(c if c.isalnum() else '-' for c in x.lower()).strip('-').replace('--', '-')
@@ -29,16 +30,16 @@ def cut(src, pages, path):
 def thumb(src, page, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     subprocess.run(['pdftoppm', '-jpeg', '-jpegopt', 'quality=82', '-r', '60', '-f', str(page), '-l', str(page), '-singlefile', SRC[src], path[:-4]], check=True)
-cards = {'hb': {'Pitch': [], 'Time': [], 'Tips': []}, 'wb': {'Pitch': [], 'Time': []}}
-PARTN = {'Pitch': 'Part I · Pitch', 'Time': 'Part II · Time', 'Tips': 'Tips'}
+cards = {'hb': {'Pitch': [], 'Time': [], 'Harmony': [], 'Tips': []}, 'wb': {'Pitch': [], 'Time': [], 'Harmony': []}}
+PARTN = {'Pitch': 'Part I · Pitch', 'Time': 'Part II · Time', 'Harmony': 'Part III · Harmony', 'Tips': 'Tips'}
 for part, n, title, blurb, hs, hp, hpp, ws, wp, wpp in CH:
-    base = f'{"1" if part == "Pitch" else "2"}-{n}-{slug(title)}'
+    base = f'{"1" if part == "Pitch" else "3" if part == "Harmony" else "2"}-{n}-{slug(title)}'
     hf = f'1 Handbook/{PARTN[part].replace(" · ", " ")}/handbook-{base}.pdf'; wf = f'2 Workbook/{part}/workbook-{base}.pdf'
     cut(hs, hp, O + hf); cut(ws, wp, O + wf); thumb(hs, hp[0], O + f'_thumbs/hb-{base}.jpg'); thumb(ws, wp[0], O + f'_thumbs/wb-{base}.jpg')
     cards['hb'][part].append((f'Chapter {n} · {part}', title, blurb, hf, f'_thumbs/hb-{base}.jpg', f'p. {hpp}' if '–' not in hpp else f'pp. {hpp}', len(hp)))
     cards['wb'][part].append((f'Chapter {n} · {part}', title, blurb, wf, f'_thumbs/wb-{base}.jpg', f'pp. {wpp}', len(wp)))
 for kind, part, title, src, pages, blurb in EXTRA:
-    base = f'{"1" if part == "Pitch" else "3" if part == "Tips" else "2"}-0-{slug(title)}' if kind == 'hb' else f'{"1" if part == "Pitch" else "2"}-9-{slug(title)}'
+    base = f'{"1" if part == "Pitch" else "3" if part == "Harmony" else "2"}-0-{slug(title)}' if kind == 'hb' else f'{"1" if part == "Pitch" else "3" if part == "Harmony" else "2"}-9-{slug(title)}'
     f = (f'1 Handbook/{PARTN[part].replace(" · ", " ")}/handbook-{base}.pdf' if kind == 'hb' else f'2 Workbook/{part}/workbook-{base}.pdf')
     cut(src, pages, O + f); thumb(src, pages[0], O + f'_thumbs/{kind}-{base}.jpg')
     c = (part, title, blurb, f, f'_thumbs/{kind}-{base}.jpg', '', len(pages))
@@ -51,7 +52,9 @@ def card(c):
 BOOKS = [('hbP', 'hb', 'Pitch', 'The Piano Butler Handbook', 'Part I', 'Pitch', 'The keyboard, the staff, accidentals, intervals, scales and keys', 'Whole books (later)/handbook-part1-pitch.pdf'),
          ('wbP', 'wb', 'Pitch', 'The Piano Butler Workbook', 'Workbook', 'Pitch', 'Learn and Use pages for every Pitch chapter, review and answers', 'Whole books (later)/workbook-pitch.pdf'),
          ('hbT', 'hb', 'Time', 'The Piano Butler Handbook', 'Part II', 'Time', 'Pulse, note values, time signatures and rhythm', 'Whole books (later)/handbook-part2-time.pdf'),
-         ('wbT', 'wb', 'Time', 'The Piano Butler Workbook', 'Workbook', 'Time', 'Learn and Use pages for every Time chapter, review and answers', 'Whole books (later)/workbook-time.pdf')]
+         ('wbT', 'wb', 'Time', 'The Piano Butler Workbook', 'Workbook', 'Time', 'Learn and Use pages for every Time chapter, review and answers', 'Whole books (later)/workbook-time.pdf'),
+         ('hbH', 'hb', 'Harmony', 'The Piano Butler Handbook', 'Part III', 'Harmony', 'Triads, kinds of chord, chords in a key, inversions, cadences (in progress)', 'Whole books (later)/handbook-part3-harmony.pdf'),
+         ('wbH', 'wb', 'Harmony', 'The Piano Butler Workbook', 'Workbook', 'Harmony', 'Learn and Use pages for every Harmony chapter (in progress)', 'Whole books (later)/workbook-harmony.pdf')]
 def cover(b):
     k, kind, part, series, kick, title, blurb, whole = b
     n = len(cards[kind][part]); acc = '#e4572e' if kind == 'wb' else '#f4a9bb'; ink = '#26296b' if kind == 'wb' else '#fffdf7'

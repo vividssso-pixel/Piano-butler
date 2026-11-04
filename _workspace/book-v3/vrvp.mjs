@@ -7,12 +7,12 @@ const M = await createVerovioModule(); const tk = new VerovioToolkit(M);
 let id = 0;
 const ACC = { '#': 's', 'b': 'f', 'n': 'n', 'x': 'x', 'bb': 'ff' };
 function one(tok, dflt) {
-  let [t, lab] = tok.split('/'); let dur = dflt; if (t.includes(':')) [t, dur] = t.split(':');
+  let [t, lab] = tok.split('/'); let dur = dflt; if (t.includes(':')) [t, dur] = t.split(':'); let dots = ''; if (String(dur).endsWith('.')) { dur = dur.slice(0, -1); dots = ' dots="1"'; }   // c4:4. = dotted crotchet
   if (t === 'r') { id++; return `<rest xml:id="n${id}" dur="${dur}"/>`; }
   if (t === 's') { id++; return `<space xml:id="n${id}" dur="${dur}"/>`; }
   const chord = t.startsWith('(');
   const ps = chord ? t.slice(1, -1).split('.') : [t];
-  const notes = ps.map(p => { const m = p.match(/^([a-g])(bb|#|b|n|x)?(\d)$/); id++; return `<note xml:id="n${id}" pname="${m[1]}" oct="${m[3]}"${m[2] ? ` accid="${ACC[m[2]]}"` : ''}${chord ? '' : ` dur="${dur}"`}/>`; });
+  const notes = ps.map(p => { const m = p.match(/^([a-g])(bb|#|b|n|x)?(\d)$/); id++; return `<note xml:id="n${id}" pname="${m[1]}" oct="${m[3]}"${m[2] ? ` accid="${ACC[m[2]]}"` : ''}${chord ? '' : ` dur="${dur}"${dots}`}/>`; });
   const syl = lab ? `<verse n="1"><syl>${lab.replace(/_/g, ' ')}</syl></verse>` : '';
   if (chord) { notes[0] = notes[0].replace('/>', `>${syl}</note>`); return `<chord dur="${dur}">${notes.join('')}</chord>`; }
   return notes[0].replace('/>', `>${syl}</note>`);
