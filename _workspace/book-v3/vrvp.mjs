@@ -17,7 +17,7 @@ function one(tok, dflt) {
   if (chord) { notes[0] = notes[0].replace('/>', `>${syl}</note>`); return `<chord dur="${dur}">${notes.join('')}</chord>`; }
   return notes[0].replace('/>', `>${syl}</note>`);
 }
-function layer(src, dflt) { return src.trim().split(/\s+/).filter(Boolean).map(t => one(t, dflt)).join(''); }
+function layer(src, dflt) { return src.trim().split(/\s+/).filter(Boolean).map(t => t === '[' ? '<beam>' : t === ']' ? '</beam>' : one(t, dflt)).join(''); }   // [ ] beam a group
 function mei(v) {
   const dflt = v.dur || '1';
   const staves = v.clef === 'GF' ? [['G', 2, v.src], ['F', 4, v.src2 || '']] : [[v.clef || 'G', v.cline || (v.clef === 'F' ? 4 : 2), v.src]];
