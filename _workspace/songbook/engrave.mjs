@@ -153,7 +153,7 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen) {
       + `<text x="${cx}" y="${+y + FS * 0.36}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${open ? '#26296b' : '#fff'}" class="cnt lname">${name}</text>`;
     return m.replace(/<use [^>]*\/>/, head);
   });
-  return svg.replace(/class="verse">/g, 'class="verse" transform="translate(0,150)">');   // the words below the bigger low notes
+  return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
 }
 const JOBS = S.jobs || {
   sing1: [0, 4, { words: 1, meter: 1, boxes: 1, pw: 1500 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1, pw: 1500 }],
