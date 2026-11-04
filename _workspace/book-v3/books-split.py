@@ -13,8 +13,10 @@ CH = [
  ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', [2, 3], '48–49', 'wbT', [1, 2], '1–2'),
  ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', [4, 5], '50–51', 'wbT', [3, 4], '3–4'),
  ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', [6, 7], '52–53', 'wbT', [5, 6], '5–6'),
- ('Time', 4, 'Time signatures', 'Simple, compound and irregular time.', 'hbT', [8, 9, 10, 11], '54–57', 'wbT', [7, 8, 9, 10], '7–10'),
- ('Time', 5, 'Rhythm', 'Grouping, upbeats, triplets, syncopation and swing.', 'hbT', [12, 13, 14, 15], '58–61', 'wbT', [11, 12, 13, 14], '11–14'),
+ ('Time', 4, 'Time signatures', 'Simple time: the top and bottom numbers, changing time.', 'hbT', [8, 9], '54–55', 'wbT', [7, 8], '7–8'),
+ ('Time', 5, 'Compound and irregular time', '6/8, 9/8, 12/8; 5/4, 7/8 and 3 + 3 + 2.', 'hbT', [10, 11], '56–57', 'wbT', [9, 10], '9–10'),
+ ('Time', 6, 'Groups and upbeats', 'Beams, upbeats, triplets, duplets and semiquavers.', 'hbT', [12, 13], '58–59', 'wbT', [11, 12], '11–12'),
+ ('Time', 7, 'Off the beat', 'Syncopation, swing, hemiola, polyrhythm and rubato.', 'hbT', [14, 15], '60–61', 'wbT', [13, 14], '13–14'),
 ]
 EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Tips', 'Tips', 'hbX', [1, 2], 'Everything one note tells you; when a passage won’t come right; five ways to fix a hard bar.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'),
          ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [12, 13, 14], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [15, 16, 17], 'A ten-minute review, the progress chart and every answer.')]
