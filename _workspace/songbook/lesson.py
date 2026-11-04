@@ -40,7 +40,7 @@ def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
         inpos = start <= i < start + 5; lit = inpos and l in used
         out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="3" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.5"/>'
         out += f'<text x="{i * w + w / 2}" y="{H - 12}" text-anchor="middle" font-family="AH" font-weight="700" font-size="17" fill="{N}">{l.upper()}</text>'
-        if fmap is not None: inpos = i < 5 and l in fmap; lit = inpos
+        if fmap is not None: inpos = i < len(fmap) and l in fmap; lit = i < 5   # a sixth key (a stretch) gets an open circle
         if inpos: f = fmap[l] if fmap else i - start + 1; out += f'<circle cx="{i * w + w / 2}" cy="{H + 19}" r="13" fill="{C if lit else "#fff"}" stroke="{C}" stroke-width="1.8"/><text x="{i * w + w / 2}" y="{H + 24.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{"#fff" if lit else C}">{f}</text>'
     for i in [i for i in (0, 1, 3, 4, 5, 7, 8) if i < len(whites) - 1]:
         out += f'<rect x="{(i + 1) * w - 13}" y="0" width="26" height="{H * 0.6}" rx="2" fill="{C if i == sharp else N}"/>'
