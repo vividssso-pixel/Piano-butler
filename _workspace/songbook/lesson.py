@@ -16,7 +16,7 @@ def qr(url, px=96):   # a plain navy QR, drawn as one SVG path
     q = qrcode.QRCode(border=1, error_correction=qrcode.constants.ERROR_CORRECT_M); q.add_data(url); q.make(fit=True)
     m = q.get_matrix(); n = len(m); d = ''.join(f'M{x},{y}h1v1h-1z' for y, r in enumerate(m) for x, v in enumerate(r) if v)
     return f'<svg viewBox="0 0 {n} {n}" style="width:{px}px;height:{px}px;display:block" shape-rendering="crispEdges"><path d="{d}" fill="{N}"/></svg>'
-URL = 'https://thepianobutler.com/drills.html?room=' + ROOM
+URL = 'https://thepianobutler.com/listen.html#' + ''.join(c for c in SONG.get('id', '') if not c.isdigit())   # the listening page plays this song (her 5 Nov 00:21)
 def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>{SONG.get('label', 'Lesson ' + str(LESSON)).upper()} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
 def mus(k, cls=''):   # a shorter last line keeps the same size of note: its width in proportion to its bars
     w = SONG.get('widths', {}).get(k); st = f' style="max-width:{w * 100:.1f}%"' if w else ''

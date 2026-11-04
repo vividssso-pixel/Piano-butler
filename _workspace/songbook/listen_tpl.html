@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Listen · The Piano Butler Lesson Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@700;800&display=swap">
+<style>
+:root { --navy:#26296b; --coral:#e4572e; --coral-soft:#fbe3da; --cream:#faf6ec; --paper:#fffefa; --line:rgba(38,41,107,.14); --mute:#6e70a0; }
+* { box-sizing:border-box }
+html, body { margin:0 }
+body { background:var(--cream); color:var(--navy); font-family:Inter, system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased }
+.wrap { max-width:760px; margin:0 auto; padding:24px 16px 48px }
+.kick { font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--mute) }
+.lessons { display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 18px }
+.lessons a { text-decoration:none; color:var(--navy); border:1.5px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:600; background:var(--paper) }
+.lessons a.on { background:var(--navy); color:#fff; border-color:var(--navy) }
+.lno { font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--coral) }
+h1 { font-family:'Playfair Display', Georgia, serif; font-weight:800; font-size:clamp(30px, 7vw, 44px); line-height:1.05; margin:4px 0 14px; text-wrap:balance }
+.tunes { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px }
+.tunes button { font:inherit; font-size:14px; font-weight:600; color:var(--navy); background:none; border:none; border-bottom:2px solid transparent; padding:4px 2px; cursor:pointer }
+.tunes button.on { border-bottom-color:var(--coral) }
+.tunes .sep { color:var(--mute); font-size:12px; align-self:center; letter-spacing:.14em; text-transform:uppercase; margin-left:8px }
+.bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:var(--paper); border:1.5px solid var(--line); border-radius:14px; padding:12px }
+.play { font:inherit; font-weight:800; font-size:17px; color:#fff; background:var(--navy); border:none; border-radius:999px; padding:12px 26px; cursor:pointer; min-width:120px }
+.play.stop { background:var(--coral) }
+.seg { display:flex; border:1.5px solid var(--line); border-radius:999px; overflow:hidden }
+.seg button { font:inherit; font-size:13px; font-weight:600; color:var(--navy); background:none; border:none; padding:8px 14px; cursor:pointer }
+.seg button.on { background:var(--navy); color:#fff }
+.chk { display:flex; gap:6px; align-items:center; font-size:13px; font-weight:600; cursor:pointer; user-select:none }
+.chk input { accent-color:var(--navy); width:16px; height:16px }
+.sheet { margin-top:18px; display:grid; gap:14px }
+.line { display:flex; flex-wrap:wrap; gap:4px 0; background:var(--paper); border:1.5px solid var(--line); border-radius:12px; padding:12px 10px }
+.m { display:flex; border-right:1.5px solid var(--line); padding:0 6px }
+.m:last-child { border-right:none }
+.n { display:flex; flex-direction:column; align-items:center; gap:6px; padding:0 3px; min-width:30px }
+.n b { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; background:var(--navy); color:#fff; transition:background .12s, transform .12s }
+.n.long b { background:#fff; color:var(--navy); box-shadow:inset 0 0 0 2px var(--navy) }
+.n span { font-size:15px; min-height:20px; white-space:nowrap }
+.n.now b { background:var(--coral); color:#fff; box-shadow:none; transform:scale(1.18) }
+.n.now span { color:var(--coral); font-weight:700 }
+.kb { margin:22px auto 0; display:block; width:100%; max-width:420px }
+.foot { margin-top:26px; font-size:13px; color:var(--mute); line-height:1.5 }
+.foot b { color:var(--navy) }
+@media (max-width:480px) { .n { min-width:26px } .n b { width:24px; height:24px; font-size:12px } .n span { font-size:13px } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">The Piano Butler · Lesson Book · Level 0</div>
+  <nav class="lessons" id="lessons"></nav>
+  <div class="lno" id="lno"></div>
+  <h1 id="title"></h1>
+  <div class="tunes" id="tunes"></div>
+  <div class="bar">
+    <button class="play" id="play">▶ Play</button>
+    <div class="seg" id="speed"><button data-s="0.7">Slow</button><button data-s="1" class="on">Normal</button></div>
+    <label class="chk"><input type="checkbox" id="count" checked> Count in</label>
+    <label class="chk"><input type="checkbox" id="loop"> Again and again</label>
+  </div>
+  <div class="sheet" id="sheet"></div>
+  <svg class="kb" id="kb" viewBox="0 0 294 110"></svg>
+  <p class="foot"><b>Listen first:</b> hear it once, then point to each note as it lights up. The second time, sing along. The open circles are the long notes: hold them.</p>
+</div>
+<script>
+const SONGS = /*DATA*/[];
+const LEN = { s: 4, m: 2, c: 1, q: 0.5 };
+const FREQ = p => { const st = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[p[0]] + (p[1] === 's' ? 1 : 0); const oct = +p.replace(/[^0-9]/g, ''); return 261.63 * Math.pow(2, (st + 12 * (oct - 4)) / 12); };
+const $ = id => document.getElementById(id);
+let song = SONGS[0], tune = 0, speed = 1, ctx = null, playing = false, timer = null, events = [], startAt = 0;
+
+// the keyboard: middle C up to B, the lit key follows the tune
+const KEYS = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
+function drawKb() {
+  let s = '';
+  KEYS.forEach((k, i) => s += `<rect id="k-${k}" x="${i * 42}" y="0" width="42" height="104" rx="3" fill="#fff" stroke="#26296b" stroke-width="1.5"/><text x="${i * 42 + 21}" y="94" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="14" fill="#26296b">${k.toUpperCase()}</text>`);
+  [0, 1, 3, 4, 5].forEach(i => s += `<rect x="${(i + 1) * 42 - 12}" y="0" width="24" height="62" rx="2" fill="#26296b"/>`);
+  $('kb').innerHTML = s;
+}
+function lightKey(p) { KEYS.forEach(k => { const r = $('k-' + k); if (r) r.setAttribute('fill', p && p[0] === k ? '#e4572e' : '#fff'); }); }
+
+function render() {
+  $('lessons').innerHTML = SONGS.map(s => `<a href="#${s.id}" class="${s === song ? 'on' : ''}">${s.n}</a>`).join('');
+  $('lno').textContent = 'Lesson ' + song.n;
+  $('title').textContent = song.title;
+  $('tunes').innerHTML = song.tunes.map((t, i) => (i === 1 ? '<span class="sep">More to play</span>' : '') + `<button data-t="${i}" class="${i === tune ? 'on' : ''}">${t.t}</button>`).join('');
+  const bars = song.tunes[tune].b; let html = '', k = 0;
+  for (let l = 0; l < bars.length; l += 4) {
+    html += '<div class="line">';
+    bars.slice(l, l + 4).forEach(bar => {
+      html += '<div class="m">';
+      bar.forEach(([p, d, syl, wp]) => { const hy = wp === 'i' || wp === 'm' ? '-' : '';
+        html += `<div class="n${LEN[d] >= 2 ? ' long' : ''}" id="n${k++}"><b>${p[0].toUpperCase()}</b><span>${syl ? syl + hy : ''}</span></div>`; });
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  $('sheet').innerHTML = html;
+  document.querySelectorAll('#tunes button').forEach(b => b.onclick = () => { stop(); tune = +b.dataset.t; render(); });
+}
+
+function pianoNote(f, t, dur) {   // a soft piano-like tone: a quick attack and a long fall
+  const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  o1.type = 'triangle'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2;
+  const g2 = ctx.createGain(); g2.gain.value = 0.18;
+  lp.type = 'lowpass'; lp.frequency.value = 2400;
+  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(ctx.destination);
+  const end = t + Math.max(0.25, dur * 0.95);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.42, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.16, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.15);
+  o1.start(t); o2.start(t); o1.stop(end + 0.2); o2.stop(end + 0.2);
+}
+function click(t, hi) {
+  const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'square'; o.frequency.value = hi ? 1500 : 1000;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.06);
+}
+
+function play() {
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+  const beat = 60 / (song.bpm * speed), per = +song.meter.split('/')[0];
+  let t = ctx.currentTime + 0.15;
+  if ($('count').checked) { for (let i = 0; i < per; i++) click(t + i * beat, i === 0); t += per * beat; }
+  startAt = t; events = []; let k = 0;
+  song.tunes[tune].b.forEach(bar => bar.forEach(([p, d]) => { const dur = LEN[d] * beat; pianoNote(FREQ(p), t, dur); events.push({ t, end: t + dur, k: k++, p }); t += dur; }));
+  playing = true; $('play').textContent = '■ Stop'; $('play').classList.add('stop');
+  const endT = t; let last = -1;
+  const tick = () => {
+    if (!playing) return;
+    const now = ctx.currentTime; const e = events.findIndex(ev => now >= ev.t && now < ev.end);
+    if (e !== last) { document.querySelectorAll('.n.now').forEach(n => n.classList.remove('now'));
+      if (e >= 0) { const el = $('n' + events[e].k); el.classList.add('now'); lightKey(events[e].p);
+        const r = el.getBoundingClientRect(); if (r.top < 60 || r.bottom > innerHeight - 60) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      else lightKey(null); last = e; }
+    if (now > endT + 0.3) { if ($('loop').checked) { playing = false; play(); return; } stop(); return; }
+    timer = requestAnimationFrame(tick);
+  };
+  timer = requestAnimationFrame(tick);
+}
+function stop() {
+  playing = false; if (timer) cancelAnimationFrame(timer);
+  if (ctx) { ctx.close(); ctx = null; }
+  document.querySelectorAll('.n.now').forEach(n => n.classList.remove('now')); lightKey(null);
+  $('play').textContent = '▶ Play'; $('play').classList.remove('stop');
+}
+$('play').onclick = () => playing ? stop() : play();
+document.querySelectorAll('#speed button').forEach(b => b.onclick = () => { document.querySelectorAll('#speed button').forEach(x => x.classList.toggle('on', x === b)); speed = +b.dataset.s; if (playing) { stop(); play(); } });
+function route() { const id = location.hash.slice(1); stop(); song = SONGS.find(s => s.id === id) || SONGS[0]; tune = 0; render(); }
+addEventListener('hashchange', route);
+drawKb(); route();
+</script>
+</body>
+</html>
