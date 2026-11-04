@@ -1,0 +1,7 @@
+import sys, io, re
+hist = sys.argv[1]
+h = io.open(hist, encoding='utf-8').read().split('\n')
+rows = [i for i, l in enumerate(h) if re.match(r'^\| \d+ \|', l)]
+n = max(int(h[i].split('|')[1]) for i in rows) + 1
+h.insert(rows[-1] + 1, f"| {n} | 2026-11-04 | **The song Lesson Book: Getting ready before Lesson 1; letter names in the boxes before the staff; one size for every line (chat window, her 12:01 to 12:02).** 12:01: with no staff the boxes must hold the letter names (they do now, and the task is to sing them), and the boxes all alike (one size on a line). 12:02: finger numbers, sitting and the twos and threes come before the songs, as activities, then Lesson 1. Built: 'Getting ready' (lesson-00, ready.json), two pages: 1 your fingers have numbers (both hands drawn), the number game and the mirror taps, a dashed box to draw around your hand and number it; 2 sit like a pianist (four ticks), the keyboard's map (twos and threes, find C), low and high in her turtle and bird, and a blank three-octave keyboard to colour the twos and threes and write every C. Lesson 1's page 3 is now Play it: the three black keys with 4 3 2, E D C with 3 2 1, the left hand with 1 2 3 (stems down, fingers below the stems), then the check. The engraver renders in two passes: each group's lines (rhy, sing, play) at the size of its widest, every line justified to the right margin. Lesson 5 rebuilt, unchanged. |")
+io.open(hist, 'w', encoding='utf-8').write('\n'.join(h)); print('row', n)

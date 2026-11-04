@@ -76,7 +76,7 @@ function addCounts(svg) {
     beat += L; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
-function addBoxes(svg, ex) {
+function addBoxes(svg, ex, names, boxSize) {   // names: every box filled in (before the staff the place can't tell the note)
   const ev = []; let m; const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use xlink:href="#[^"]+" transform="translate\((\d+), (\d+)\)/g;
   while ((m = re.exec(svg))) ev.push(+m[2] + 106);
   // the boxes sit in a row of their own: below middle C's ledger line (top line + 4 spaces + a ledger + a head), or below
@@ -86,8 +86,11 @@ function addBoxes(svg, ex) {
   const T = sylY.length ? Math.max(...sylY) + 160 : sy + 1110; let out = '';
   // each box as wide as its own room allows: a note close to its neighbours gets a narrower box, never touching them
   const room = (k) => Math.min(k ? ev[k] - ev[k - 1] : 1e9, k < ev.length - 1 ? ev[k + 1] - ev[k] : 1e9);
-  ev.forEach((x, k) => { const B = Math.max(130, Math.min(380, room(k) - 120)); out += `<rect x="${x - B / 2}" y="${T}" width="${B}" height="${Math.max(B, 300)}" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
-    if (k === 0 && ex) out += `<text x="${x}" y="${T + Math.max(B, 300) * 0.78}" text-anchor="middle" font-size="${B * 0.76}" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
+  const minRoom = Math.min(...ev.map((x, k) => room(k)));
+  ev.forEach((x, k) => { const B = boxSize || Math.max(130, Math.min(380, minRoom - 120));   // one size for every box on the line
+    out += `<rect x="${x - B / 2}" y="${T}" width="${B}" height="${B}" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
+    if (names) out += `<text x="${x}" y="${T + B * 0.76}" text-anchor="middle" font-size="${Math.min(B * 0.8, 260)}" font-weight="700" fill="#26296b" class="cnt">${names[k]}</text>`;
+    else if (k === 0 && ex) out += `<text x="${x}" y="${T + B * 0.78}" text-anchor="middle" font-size="${B * 0.76}" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
 // A lead sheet's "when" row, under the staff: for each bar, the left hand's pattern for that bar's chord, placed on its beats.
@@ -132,21 +135,37 @@ const JOBS = S.jobs || {
   duet1: [0, 4, { duet: 1, meter: 1, pw: 2300 }], duet2: [4, 8, { duet: 1, pw: 2300 }],   // small: the teacher reads it
   g1: [0, 4, { fing: 1, chords: 1, meter: 1, tr: 4, key: '1s' }], g2: [4, 8, { fing: 1, chords: 1, tr: 4, key: '1s' }],   // Move it: bars 1 to 4 in G, one sharp, the same fingers
 };
+// Two passes, so that every line of a group (rhy1, rhy2...; sing1, sing2...) comes out at one size and ends at the right
+// margin: first each line's natural width, then every line of the group justified to the group's widest.
+const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
+  pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20,
+  spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5,
+  lyricWordSpace: 2.6, fingeringScale: 0.9, ...extra });
+const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); };
+const group = (k) => k.replace(/\d+$/, ''), natural = {};
+for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
+  tk.setOptions(opts(o, { pageWidth: o.pw || 1750, breaks: 'none' })); load(b0, b1, o);
+  const w = +tk.renderToSVG(1).match(/viewBox="[^"]+"/g)[1].split(' ')[2]; natural[group(k)] = Math.max(natural[group(k)] || 0, w);
+}
 const out = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
-  INFO = {}; id = 0;
-  tk.setOptions({ pageWidth: o.pw || 1750, adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
-    pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20, breaks: 'none', spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5, lyricWordSpace: 2.6, fingeringScale: 0.9 });
-  tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); let svg = tk.renderToSVG(1);
+  tk.setOptions(opts(o, { pageWidth: Math.ceil(natural[group(k)] / 10) + 8, breaks: 'auto', minLastJustification: 0 })); load(b0, b1, o);
+  if (tk.getPageCount() > 1) console.log('warning: ' + k + ' broke over a page');
+  let svg = tk.renderToSVG(1);
   // fingers above the staff: Verovio clears the staff but not a stem that rises past it (G's, A's), so set them all on one
   // line, clear of the highest stem
+  // left-hand fingers below a line whose stems go down: below the lowest stem
+  if (o.lhfing) { const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
+    const bots = [...svg.matchAll(/class="stem">\s*<path d="M\d+ (\d+) L\d+ (\d+)"/g)].map(m => Math.max(+m[1], +m[2]));
+    const base = Math.max(sy, ...bots) + 330;
+    svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y > sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m); }
   if (o.fing) { const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
     const tops = [...svg.matchAll(/class="stem">\s*<path d="M\d+ (\d+) L\d+ (\d+)"/g)].map(m => Math.min(+m[1], +m[2]));
     const base = Math.min(sy, ...tops) - 130;
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
-  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase()); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
+  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
   out[k] = svg;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
