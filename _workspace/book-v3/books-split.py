@@ -6,10 +6,10 @@ SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/us
 # chapter: (part, n, title, blurb, handbook pages in its PDF (1-based), printed pp, workbook pages, workbook printed pp)
 CH = [
  ('Pitch', 1, 'The keyboard', 'High and low, white-key names, the groups of two and three black keys, octaves.', 'hbP', [2, 3], '22–23', 'wbP', [1, 2], '1–2'),
- ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, clefs, ledger lines, reading every note, and the map from staff to keyboard.', 'hbP', [4, 5, 6, 7, 8, 9], '24–29', 'wbP', [3, 4, 5], '3–5'),
- ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [10, 11], '30–31', 'wbP', [6, 7], '6–7'),
- ('Pitch', 4, 'Tones, semitones and intervals', 'Counting the distance between notes: numbers and qualities.', 'hbP', [12, 13, 14, 15], '32–35', 'wbP', [8, 9], '8–9'),
- ('Pitch', 5, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbP', [16, 17, 18, 19, 20, 21, 22, 23, 24, 25], '36–45', 'wbP', [10, 11], '10–11'),
+ ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, clefs, ledger lines, reading every note, and the map from staff to keyboard.', 'hbP', [4, 5, 6, 7, 8, 9], '24–29', 'wbP', [3, 4, 5, 6], '3–6'),
+ ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [10, 11], '30–31', 'wbP', [7, 8], '7–8'),
+ ('Pitch', 4, 'Tones, semitones and intervals', 'Counting the distance between notes: numbers and qualities.', 'hbP', [12, 13, 14, 15], '32–35', 'wbP', [9, 10], '9–10'),
+ ('Pitch', 5, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbP', [16, 17, 18, 19, 20, 21, 22, 23, 24, 25], '36–45', 'wbP', [11, 12], '11–12'),
  ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', [2, 3], '48–49', 'wbT', [1, 2], '1–2'),
  ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', [4, 5], '50–51', 'wbT', [3, 4], '3–4'),
  ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', [6, 7], '52–53', 'wbT', [5, 6], '5–6'),
@@ -19,7 +19,7 @@ CH = [
  ('Time', 7, 'Off the beat', 'Syncopation, swing, hemiola, polyrhythm and rubato.', 'hbT', [14, 15], '60–61', 'wbT', [13, 14], '13–14'),
 ]
 EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Tips', 'Tips', 'hbX', [1, 2], 'Everything one note tells you; when a passage won’t come right; five ways to fix a hard bar.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'),
-         ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [12, 13, 14], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [15, 16, 17], 'A ten-minute review, the progress chart and every answer.')]
+         ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [13, 14, 15], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [15, 16, 17], 'A ten-minute review, the progress chart and every answer.')]
 R = {k: PdfReader(v) for k, v in SRC.items()}
 def slug(x): return ''.join(c if c.isalnum() else '-' for c in x.lower()).strip('-').replace('--', '-')
 def cut(src, pages, path):
