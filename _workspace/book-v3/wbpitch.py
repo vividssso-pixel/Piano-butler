@@ -3,12 +3,18 @@ import json, sys, re
 exec(open('/tmp/claude-0/pk/wbtime2.py').read())   # helpers + css from the Time workbook (rewrites its own html, harmless)
 sys.path.insert(0, '/tmp/claude-0/pk')
 from kb import keyboard
-WP = json.load(open('/tmp/claude-0/pk/wp/wpout_c.json'))
+WP = json.load(open('/tmp/claude-0/pk/wp/wpout_v.json'))
 
-def wpx(k, h=70):
-    svg = WP[k].replace('<svg ', '<svg style="width:100%%;height:auto;max-height:%dpx" ' % h, 1)
+def wpx(k, h=70, spx=None):
+    s = WP[k]
+    m = re.search(r'data-sh="([\d.]+)"', s); vb = re.search(r'viewBox="[-\d.]+ [-\d.]+ ([\d.]+) ([\d.]+)"', s)
+    if spx and m and float(m.group(1)) > 0:   # every staff in a grid drawn at the same size: staff height = spx pixels
+        H = float(vb.group(2)) / float(m.group(1)) * spx
+        svg = s.replace('<svg ', '<svg data-spx="%d" style="height:%dpx;width:auto;max-width:100%%" ' % (spx, round(H)), 1)
+    else:
+        svg = s.replace('<svg ', '<svg style="width:100%%;height:auto;max-height:%dpx" ' % h, 1)
     return '<figure class="vx px"><div class="vs">' + svg + '</div></figure>'
-def pc(k, lab, h=70): return f'<div class="fc">{wpx(k, 70 if k.startswith(('ks', 'blank')) else 60 if k.startswith('w_') else 84)}<div class="add">{lab}</div></div>'
+def pc(k, lab, h=70): return f'<div class="fc">{wpx(k, 84, 30)}<div class="add">{lab.replace(BOX, WL)}</div></div>'
 def wpage2(inner, n, hb):
     return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{'PITCH · HANDBOOK P. ' + str(22 + 2 * (hb - 22)) if hb else 'PITCH'}</span></div><div class="rule"></div><div class="body">{inner}</div>
 <div class="sign"><span>Date <i></i></span><span>Practised <i class="s"></i> times</span><span>Checked <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
@@ -44,18 +50,17 @@ B1 = tq('Use', 'The keyboard', 'The keyboard', 'E–F and B–C have no black ke
 # ---------- 2 Staff and reading the notes (Handbook pp. 23–24) ----------
 A2 = tq('Learn', 'Reading the notes', 'The staff and the notes', 'Count lines and spaces from the bottom. Treble lines E G B D F, spaces F A C E; bass lines G B D F A, spaces A C E G.', f'''
 {ex(1, 'The clefs', 1, 'Write the name of each clef and the note it marks.', tbl(['Clef', 'Name', 'It marks the line for'], [[gsym('𝄞', 46), LINE, LINE], [gsym('𝄢', 30), LINE, LINE]], ['16%', '42%', '42%']))}
-{ex(2, 'Line or space?', 1, 'Circle line or space, then write its number (counted from the bottom).', grid([pc('t_' + n, circ('line', 'space') + ' ' + BOX, 58) for n in ('e4', 'a4', 'd5', 'c5', 'g4', 'f5')], 3))}
+{ex(2, 'Line or space?', 1, 'Circle line or space, then write its number (counted from the bottom).', grid([pc('t_' + n, circ('line', 'space') + ' ' + BOX, 58) for n in ('e4', 'a4', 'd5', 'c5', 'g4', 'f5')], 6))}
 {ex(3, 'Treble clef notes', 1, 'Write the letter name under each note.', grid([pc('t_' + n, BOX, 58) for n in ('g4', 'e5', 'a4', 'c5', 'f4', 'd5', 'b4', 'e4')], 4))}
 ''', 3, 23)
 B2 = tq('Use', 'Reading the notes', 'The staff and the notes', 'A step goes from a line to the next space; a skip jumps line to line or space to space.', f'''
-{ex(1, 'Note words', 2, 'Each group of notes spells a word. Write it underneath.', grid([pc('w_' + w, '<span class="ab wide"></span>', 66) for w in ('BAG', 'FACE', 'EGG', 'CAGE', 'BED', 'CAFE', 'BAD', 'CAGE_b')], 4))}
-
-{ex(2, 'Bass clef notes', 2, 'Write the letter name under each note. Careful: the same place has a different name in the bass clef.', grid([pc('b_' + n, BOX, 58) for n in ('f3', 'a2', 'c3', 'g2', 'e3', 'b2', 'd3', 'a3')], 4))}
-{ex(3, 'Name-it race', 2, 'Time yourself naming the eight treble notes on page 3 and the eight bass notes above, out loud. Write your time each day and watch it fall.', '<div class="race">' + ''.join(f'<span><b>Day {d}</b>{BOX}<i>sec</i></span>' for d in range(1, 8)) + '</div>')}''', 4, 24)
+{ex(1, 'Note words', 2, 'Each group of notes spells a word. Write it underneath.', grid([pc('w_' + w, WL, 66) for w in ('BAG', 'FACE', 'EGG', 'CAGE', 'BED', 'CAFE', 'BAD', 'CAGE_b')], 2))}
+{ex(2, 'Bass clef notes', 2, 'Write the letter name under each note. Careful: the same place has a different name in the bass clef.', grid([pc('b_' + n, BOX, 58) for n in ('f3', 'a2', 'c3', 'g2', 'e3', 'b2', 'd3', 'a3')], 4))}''', 4, 24)
 C2 = tq('Practise', 'Reading the notes', 'The staff and the notes', 'Find a landmark note first (middle C, treble G, bass F), then step or skip from it.', f'''
 {ex(1, 'Draw it', 2, 'Draw each note as a semibreve, in the one place on the staff where it fits.', grid([pc('blank_t', t, 58) for t in ('G on a line', 'C in a space', 'E on a line', 'F in a space')] + [pc('blank_b', t, 58) for t in ('A in a space', 'B on a line', 'G on a line', 'E in a space')], 4))}
 {ex(2, 'Step or skip?', 1, 'Circle step or skip.', grid([pc(f'ss{i}', circ('step', 'skip'), 62) for i in range(6)], 6))}
-{ex(3, 'Ledger lines', 2, 'Name each note above or below the staff.', grid([pc(k, BOX, 66) for k in ('t_a5', 't_c4', 't_b3', 't_c6', 'b_c4', 'b_e2', 'b_b3', 'b_d4')], 4))}''', 5, 25)
+{ex(3, 'Ledger lines', 2, 'Name each note above or below the staff.', grid([pc(k, BOX, 66) for k in ('t_a5', 't_c4', 't_b3', 't_c6', 'b_c4', 'b_e2', 'b_b3', 'b_d4')], 4))}
+{ex(4, 'Name-it race', 2, 'Time yourself naming the eight treble notes on page 3 and the eight bass notes on page 4, out loud. Write your time each day and watch it fall.', '<div class="race">' + ''.join(f'<span><b>Day {d}</b>{BOX}<i>sec</i></span>' for d in range(1, 8)) + '</div>')}''', 5, 25)
 
 # ---------- 3 Sharps, flats and naturals (Handbook p. 25) ----------
 KB3 = 40
@@ -78,10 +83,10 @@ A4 = tq('Learn', 'Intervals', 'Tones, semitones and intervals', 'Count letter na
 {ex(3, 'Count the semitones', 2, 'Count every key from the first note to the second, black and white. The first is done.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> {BOX if not d else "<b class=done2>" + d + "</b>"} <span class="mu2">semitones</span></div>' for a, d in (('C up to E', '4'), ('C up to G', ''), ('E up to F', ''), ('D up to F', ''), ('C up to C', ''), ('F up to B', ''))) + '</div>')}
 {ex(4, 'Your hand measures it', 1, 'Thumb on C, one finger on each white key above it. Write the interval each finger makes with the thumb.', '<div class="ts6">' + ''.join(f'<div><b>finger {f}</b> {BOX}</div>' for f in (2, 3, 4, 5)) + '</div>')}''', 8, 27)
 B4 = tq('Use', 'Intervals', 'Tones, semitones and intervals', 'A major 3rd is four semitones; a minor 3rd is three.', f'''
-{ex(1, 'Draw the note above', 2, 'Draw a note the given interval above, then write its letter name.', grid([pc(f'up{i}', f'{t} {BOX}', 64) for i, t in enumerate(('a 3rd', 'a 5th', 'a 4th', 'an octave', 'a 2nd', 'a 6th'))], 6))}
+{ex(1, 'Draw the note above', 2, 'Draw a note the given interval above, then write its letter name.', grid([pc(f'up{i}', f'{t} {BOX}', 64) for i, t in enumerate(('a 3rd', 'a 5th', 'a 4th', 'an octave', 'a 2nd', 'a 6th'))], 3))}
 {ex(2, 'Major or minor 3rd?', 3, 'Count the semitones, then circle major or minor.', grid([pc(f'th{i}', f'{BOX} &nbsp;{circ("M", "m")}', 66) for i in range(6)], 6))}
 {ex(3, 'Higher, lower or the same?', 1, 'Someone plays two notes, one after the other. Circle what the second does. Swap and play for them.', '<div class="ts6">' + ''.join(f'<div><b>{i}</b><span class="tf">higher · lower · same</span></div>' for i in range(1, 7)) + '</div>')}
-{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a harmonic 3rd', 'a melodic 5th', 'an octave', 'five notes moving by step']))}''', 9, 28)
+{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a harmonic 3rd', 'a melodic 5th', 'five notes moving by step']))}''', 9, 28)
 
 # ---------- 5 Scales and keys (Handbook pp. 27–28) ----------
 A5 = tq('Learn', 'Scales and keys', 'Scales and keys', 'Every major scale has the same pattern: T T S T T T S.', f'''
@@ -130,9 +135,34 @@ css += f'''
 .ord{{display:flex;align-items:center;gap:8px;margin:6px 0}} .ord b{{width:64px}}
 .row .tk{{margin-left:auto}} .ts6 .tk{{margin-left:auto}} .ts6 b{{white-space:nowrap}}
 .px .vs svg{{width:100%;height:auto}} .px text{{font-family:'AH',Arial !important;fill:#26296b !important;font-weight:700}} .kbf{{display:flex;justify-content:center}}
-.race{{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}} .race span{{display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid #e2ddd0;background:#fff;padding:10px 4px}} .race i{{font-style:normal;font-size:12px;color:{MUTE}}}
+.race{{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}} .race span{{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px}} .race .ab{{height:22px}} .race i{{font-style:normal;font-size:12px;color:{MUTE}}}
 .fills>.fc{{display:flex;flex-direction:column}} .fills>.fc>.px{{flex:1;display:flex;align-items:center;justify-content:center}} .fills>.fc>.add{{margin-top:auto}}
+.fills>.fc>.px{{flex:1;display:flex;align-items:center;justify-content:center;padding:8px 6px}} .fills>.fc>.add{{justify-content:center;text-align:center;gap:6px;flex-wrap:wrap}} .wl{{display:inline-block;width:64px;height:26px;border-bottom:1.6px solid #26296b}} .fills>.fc>.add .wl:only-child{{width:72%}} .ab.wide{{display:none}}
+.fills>.fc>figure.vx{{border:0;background:none;box-shadow:none;height:auto;flex:1 1 auto;padding:4px 0;display:flex;align-items:center}} .fills>.fc>.add{{margin-top:auto !important;padding-top:6px}} .fills>.fc>figure .vs{{display:flex;align-items:center;justify-content:center;width:100%;height:100%}} .fills>.fc>figure svg{{display:block;margin:0 auto}} .fills{{row-gap:18px}}
 '''
 pages = [A1, B1, A2, B2, C2, A3, B3, A4, B4, A5, B5, R, PR, AN]
-open('/mnt/user-data/outputs/house-rooms/workbook-pitch.html', 'w').write(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>')
+FITJS = '''<script>
+// Fit every exercise cell's staff to its drawn content (staff, clef, notes), with a small even margin, so it fills the cell, centred.
+(async function(){ try { await document.fonts.ready; } catch (e) {}
+  document.querySelectorAll('.fills .fc > figure svg:not(svg svg)').forEach(s => { try {
+    const M = s.getScreenCTM().inverse(); let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    s.querySelectorAll('g.staff > path, g.clef use, g.note use, g.note path, g.chord use, g.ledgerLines path, g.keySig use, g.accid use, g.notehead use').forEach(e => { const r = e.getBoundingClientRect(); if (!r.width && !r.height) return;
+      [[r.left, r.top], [r.right, r.bottom]].forEach(([x, y]) => { const q = new DOMPoint(x, y).matrixTransform(M); x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y); x1 = Math.max(x1, q.x); y1 = Math.max(y1, q.y); }); });
+    if (x1 <= x0) return; const m = (y1 - y0) * 0.12;
+    s.setAttribute('viewBox', [x0 - m, y0 - m, x1 - x0 + 2 * m, y1 - y0 + 2 * m].map(v => v.toFixed(1)).join(' '));
+    s.setAttribute('overflow', 'hidden'); } catch (e) {} });
+  document.body.dataset.fitted = '1'; })();
+</script>'''
+SIZEJS = '''<script>
+// Every staff in one exercise grid drawn at the same size: as large as data-spx, but no larger than the narrowest cell allows.
+(function () { const lines = s => { let a = 1e9, z = -1e9; s.querySelectorAll('g.staff > path').forEach(e => { const r = e.getBoundingClientRect(); a = Math.min(a, r.top); z = Math.max(z, r.bottom); }); return z - a; };
+  document.querySelectorAll('.fills').forEach(g => { const ss = [...g.querySelectorAll('svg[data-spx]')]; if (!ss.length) return;
+    let want = Math.min(...ss.map(s => +s.dataset.spx));
+    ss.forEach(s => { const vb = s.viewBox.baseVal, cw = s.closest('.fc').clientWidth - 8, h = lines(s), H = s.getBoundingClientRect().height;   // staff px per svg px
+      if (h > 0) { const k = h / H, fitH = cw * vb.height / vb.width; want = Math.min(want, fitH * k); s._k = k; s._ar = vb.height / vb.width; } });
+    ss.forEach(s => { if (s._k) { s.style.height = (want / s._k).toFixed(1) + 'px'; s.style.width = (want / s._k / s._ar).toFixed(1) + 'px'; s.style.maxWidth = 'none'; } });
+  });
+})();
+</script>'''
+open('/mnt/user-data/outputs/house-rooms/workbook-pitch.html', 'w').write(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}{SIZEJS}</body></html>')
 print('ok', len(pages))

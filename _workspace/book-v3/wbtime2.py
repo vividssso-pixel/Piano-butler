@@ -22,7 +22,8 @@ def staff(ts='', bars=2, h=74, heads=None, stems=None):
 def opts(keys, h=56):
     return '<div class="op3">' + ''.join(f'<div class="opc"><span class="ol">{"ABC"[i]}</span>{wx(k, h)}</div>' for i, k in enumerate(keys)) + '</div>'
 def grid(cells, cols=3, cls=''): return f'<div class="fills {cls}" style="grid-template-columns:repeat({cols},1fr)">' + ''.join(cells) + '</div>'
-def cell(k, lab, h=70): return f'<div class="fc">{wx(k, h)}<div class="add">{lab}</div></div>'
+WL = '<span class="wl"></span>'   # centred writing line (her 4 Nov)
+def cell(k, lab, h=70): return f'<div class="fc">{wx(k, max(h, 78))}<div class="add">{lab.replace(BOX, WL)}</div></div>'
 def piece(rows): return tbl(['Find in a piece you are learning', 'Piece', 'Bar'], [[r, LINE, BOX] for r in rows], ['46%', '38%', '16%'])
 
 # ---------- 1 Pulse ----------
@@ -126,7 +127,7 @@ css += f'''
 .score{{margin-top:14px;text-align:right;font-weight:700;font-size:16px;display:flex;justify-content:flex-end;align-items:center;gap:8px}}
 .prog td{{padding:9px 8px;font-size:15px}} .cb2{{display:inline-block;width:20px;height:20px;border:1.6px solid {N_}}}
 .note2{{margin-top:20px}} .note2 b{{font-size:15px}} .lines .al{{height:34px}}
-.ansT td{{font-size:13.5px;line-height:1.45;padding:6px 8px;vertical-align:top}} .ansT td:first-child{{font-weight:700;color:{C}}}
+.fills>.fc{{display:flex;flex-direction:column}} .fills>.fc>.add{{margin-top:auto;justify-content:center;text-align:center;gap:6px}} .wl{{display:inline-block;width:64px;height:26px;border-bottom:1.6px solid #26296b}} .fills>.fc>figure.vx{{border:0;background:none;box-shadow:none;height:auto;flex:0 0 auto;padding:4px 0}} .fills>.fc>.add{{margin-top:6px !important}} .fills{{row-gap:18px}} .ansT td{{font-size:13.5px;line-height:1.45;padding:6px 8px;vertical-align:top}} .ansT td:first-child{{font-weight:700;color:{C}}}
 '''
 pages = [A1, B1, A2, B2, A3, B3, A4, B4, A5, B5, R, PR, AN]
 open('/mnt/user-data/outputs/house-rooms/workbook-time2.html', 'w').write(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>')

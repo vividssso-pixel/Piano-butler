@@ -14,7 +14,7 @@ const { chromium } = require('playwright');
         pg.querySelectorAll(boxes).forEach(cell => {
           const C = cell.getBoundingClientRect();
           cell.querySelectorAll('svg, img, .gl2, .ts, .pat, .ab').forEach(el => {
-            if (el.closest('figure.vx') && !cell.matches('.fc, .opc')) return;
+            if (el.closest('figure.vx') && !cell.matches('.fc, .opc')) return; if (el.tagName.toLowerCase() === 'svg' && el.parentElement.closest('svg')) return;   // a nested coordinate box, not a drawing
             const E = el.getBoundingClientRect(); if (!E.width || !E.height) return;
             const t = 1.5;
             if (E.top < C.top - t || E.bottom > C.bottom + t || E.left < C.left - t || E.right > C.right + t)
