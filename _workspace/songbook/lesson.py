@@ -41,12 +41,12 @@ def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
         out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="3" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.5"/>'
         out += f'<text x="{i * w + w / 2}" y="{H - 12}" text-anchor="middle" font-family="AH" font-weight="700" font-size="17" fill="{N}">{l.upper()}</text>'
         if fmap is not None: inpos = i < 5 and l in fmap; lit = inpos
-        if inpos: f = fmap[l] if fmap else i - start + 1; out += f'<circle cx="{i * w + w / 2}" cy="{H - 48}" r="13" fill="{C if lit else "#fff"}" stroke="{C}" stroke-width="1.8"/><text x="{i * w + w / 2}" y="{H - 42.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{"#fff" if lit else C}">{f}</text>'
+        if inpos: f = fmap[l] if fmap else i - start + 1; out += f'<circle cx="{i * w + w / 2}" cy="{H + 19}" r="13" fill="{C if lit else "#fff"}" stroke="{C}" stroke-width="1.8"/><text x="{i * w + w / 2}" y="{H + 24.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{"#fff" if lit else C}">{f}</text>'
     for i in [i for i in (0, 1, 3, 4, 5, 7, 8) if i < len(whites) - 1]:
         out += f'<rect x="{(i + 1) * w - 13}" y="0" width="26" height="{H * 0.6}" rx="2" fill="{C if i == sharp else N}"/>'
         if i == sharp: out += f'<text x="{(i + 1) * w}" y="-8" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{C}">F♯</text>'
-    out += f'<text x="1" y="{H + 20}" text-anchor="start" font-family="AH" font-weight="700" font-size="12" fill="{MUTE}">middle C</text>'
-    return f'<svg viewBox="-2 {-2 - top} {W + 4} {H + 28 + top}" style="width:{width:.0f}px;max-width:100%;display:block">{out}</svg>'
+    out += f'<text x="1" y="{H + 50}" text-anchor="start" font-family="AH" font-weight="700" font-size="12" fill="{MUTE}">middle C</text>'   # the finger numbers under the keys, clear of the black keys (her 4 Nov 19:58)
+    return f'<svg viewBox="-2 {-2 - top} {W + 4} {H + 58 + top}" style="width:{width:.0f}px;max-width:100%;display:block">{out}</svg>'
 
 # a left-hand keyboard from G below to G (the C chord under C to G, the G chord's hand moved down to G), the way's notes for
 # that chord lit with their fingers

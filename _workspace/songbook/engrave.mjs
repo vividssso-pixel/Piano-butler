@@ -15,7 +15,7 @@ function noteXml(p, d, o = {}) {
   const [pname, oct] = pn(p); const i = nid(); o.ids && o.ids.push(i);
   const syl = o.syl ? `<verse n="1"><syl${o.wp ? ` wordpos="${o.wp}" con="d"` : ''}>${o.syl}</syl></verse>` : '';
   const loc = o.loc != null ? ` loc="${o.loc}"` : '';
-  if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}" stem.dir="${o.lh ? 'down' : 'up'}">${syl}</note>`];   // the right hand's stems up, the left hand's down
+  if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}" stem.dir="${o.staff5 ? ((o.bass ? BASS_PLACE : STAFF_PLACE)[p] > 4 ? 'down' : 'up') : o.lh ? 'down' : 'up'}">${syl}</note>`];   // on a staff: above the middle line, stems down   // the right hand's stems up, the left hand's down
   return [i, o.rhythm ? `<note xml:id="${i}" dur="${DUR[d]}" loc="0" stem.dir="up">${syl}</note>` : `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${o.stem ? ` stem.dir="${o.stem}"` : ''}>${syl}</note>`];
 }
 function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b] = pn(p); return `<note pname="${a}" oct="${b}"/>`; }).join('') + '</chord>']; }
@@ -25,7 +25,7 @@ function mei(b0, b1, o) {
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, lh: !o.staff5 && (o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L')) });
+    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, lh: !o.staff5 && (o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L')) });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
       if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${(o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
@@ -39,7 +39,7 @@ function mei(b0, b1, o) {
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff>${st2}${ctrl.splice(0).join('')}</measure>`;
   }
   const met = (o.key ? ` keysig="${o.key}"` : '') + (o.meter ? ` meter.count="4" meter.unit="4"` : '');
-  const sd = o.staff5 ? `<staffDef n="1" lines="1" clef.shape="G" clef.line="1"${met}/>`   // a staff drawn to the lettered heads (her 4 Nov 18:11): Verovio gives the clef, we draw the lines
+  const sd = o.staff5 ? `<staffDef n="1" lines="1" clef.shape="${o.bass ? 'F' : 'G'}" clef.line="1"${met}/>`   // a staff drawn to the lettered heads (her 4 Nov 18:11): Verovio gives the clef, we draw the lines
     : o.rhythm || o.pre ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
     : o.lh ? `<staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp>`
     : `<staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/>`;
@@ -155,19 +155,21 @@ function fitBeams(svg, L) {
 
 // a five-line staff spaced to the lettered heads (her 4 Nov 18:11): a line every head-height, E4 on the bottom line
 let SP5 = 0;
+// the left hand an octave lower on the King's staff (her 4 Nov 19:58): G2 on the bottom line, so C3 in the second space
+const BASS_PLACE = { c4: 3, d4: 4, e4: 5, f4: 6, g4: 7, a4: 8, b4: 9 };
 const STAFF_PLACE = { c4: -2, d4: -1, e4: 0, f4: 1, g4: 2, a4: 3, b4: 4, c5: 5, d5: 6, e5: 7, f5: 8, g5: 9 };
-function drawStaff5(svg, lineY, RY) {
+function drawStaff5(svg, lineY, RY, bass) {
   const sp = 2 * RY, k = sp / 180; SP5 = sp;
   svg = svg.replace(/(<g id="[^"]+" class="staff">\s*)<path d="M(\d+) (\d+) L(\d+) (\d+)" stroke-width="13" \/>/g, (m, a, x1, y1, x2) =>
     a + [0, 1, 2, 3, 4].map(i => `<path d="M${x1} ${lineY - i * sp} L${x2} ${lineY - i * sp}" stroke-width="13" class="s5"/>`).join(''));
   svg = svg.replace(/class="barLine">[\s\S]*?<\/g>/g, g => g.replace(/<path d="M(\d+) (-?[\d.]+) L(\d+) (-?[\d.]+)"/g, (m, x, ya, x2) => `<path d="M${x} ${lineY - 4 * sp} L${x2} ${lineY}"`));
-  svg = svg.replace(/(class="clef">\s*<use [^>]*transform=")translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)/, (m, a, x, y, sx) => `${a}translate(${+x - 40}, ${lineY - sp}) scale(${sx * k * 0.72}, ${sx * k * 0.72})`);
+  svg = svg.replace(/(class="clef">\s*<use [^>]*transform=")translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)/, (m, a, x, y, sx) => `${a}translate(${+x - 40}, ${lineY - (bass ? 3 : 1) * sp}) scale(${sx * k * 0.72}, ${sx * k * 0.72})`);
   let mi = 0; const mid = lineY - 2 * sp;
   svg = svg.replace(/(class="meterSig">)([\s\S]*?)(<\/g>)/, (m, a, body, c) => a + body.replace(/transform="translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)"/g, (mm, x, y, sx) => `transform="translate(${+x + 60}, ${mi++ ? mid + sp : mid - sp}) scale(${sx * k}, ${sx * k})"`) + c);
   return svg;
 }
-function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5) {
-  const PL = staff5 ? STAFF_PLACE : (S.place || {});   // on a staff of our own every note has its line or space
+function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5, bass) {
+  const PL = staff5 ? (bass ? BASS_PLACE : STAFF_PLACE) : (S.place || {});   // on a staff of our own every note has its line or space
   // heads about twice the size, so the places are twice as far apart too (S.pre: E on the line, D hanging just under it, C
   // on a ledger of its own); Verovio's ledger lines go, and the song's ledger notes (S.ledger) get one through their middle.
   // A head never touches its neighbour: where notes are close (quavers) it shrinks to fit.
@@ -197,7 +199,7 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5) {
       + `<text x="${cx}" y="${+y + FS * 0.36}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${open ? '#26296b' : '#fff'}" class="cnt lname">${name}</text>`;
     return m.replace(/<use [^>]*\/>/, head);
   });
-  if (staff5) svg = drawStaff5(svg, lineY, RY);
+  if (staff5) svg = drawStaff5(svg, lineY, RY, bass);
   // beamed quavers: their stems as long as a crotchet's (her 4 Nov 15:19), so the beam moves to sit that far from the heads
   if (!onStaff) svg = fitBeams(svg, STEM);
   return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
@@ -216,7 +218,7 @@ const JOBS = S.jobs || {
 const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
   pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: o.pml || 20, pageMarginRight: 20,
   spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.ltm || (o.rhythm ? 2 : 5),
-  lyricWordSpace: o.lws || 2.6, lyricSize: o.lys || 4.0, fingeringScale: 0.9,
+  lyricWordSpace: o.lws || 3.4, lyricSize: o.lys || 4.0, fingeringScale: 0.9,
   ...(o.letters ? { leftMarginNote: 2, rightMarginNote: 1.5, leftMarginBarLine: 1.5, rightMarginBarLine: 2 } : { leftMarginNote: 1, rightMarginNote: 0, leftMarginBarLine: 0, rightMarginBarLine: 0 }),   // set every time: the toolkit keeps options between jobs   // big lettered heads: room round each and off the bar lines (her 4 Nov 13:22)
   ...extra });
 const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); };
@@ -238,7 +240,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   const sy0 = +(svg.match(/class="staff">\s*<path d="M\d+ (\d+)/) || svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];   // the line's height, read before anything moves
  if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box, o.pre);   // the boxes read the engraved heads, so before the lettered heads replace them
   if (o.rows) svg = addRows(svg, o.rows, b0, o.pic, o.pre);   // the rows read the engraved notes and the line, so before the lettered heads too
-  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix, !o.pre, o.staff5);   // first, so the fingers clear the stems as they end up
+  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix, !o.pre, o.staff5, o.bass);   // first, so the fingers clear the stems as they end up
   if (o.lhfing) { const sy = sy0;
     const bots = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.max(+m[1], +m[2]));
     const base = Math.max(sy, ...bots) + 330 + (o.letters && (!o.pre || o.staff5) ? 220 : 0);   // on the staff a lettered head hangs below its stem
@@ -264,5 +266,46 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
       .replace(/class="definition-scale"([^>]*)viewBox="0 0 ([\d.]+) ([\d.]+)"/, (m, a, w, h) => `class="definition-scale"${a}viewBox="-500 0 ${+w + 500} ${h}"`);
   }
   out[k] = svg; S.bars = SB;
+}
+
+// Bars of one width (her 4 Nov 19:58): in every line of a group the bars are the same width and start at the same place,
+// so the bar lines stand one under another. Every x after the first note is mapped piecewise, bar by bar.
+function barsOf(svg) {
+  const body = svg.slice(svg.indexOf('</defs>') > 0 ? svg.indexOf('</defs>') : 0);
+  const bars = [...body.matchAll(/class="barLine">\s*<path d="M(-?[\d.]+) /g)].map(m => +m[1]);
+  const heads = [...body.matchAll(/class="notehead">\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/g)].map(m => +(m[1] || m[2]));
+  return { bars, first: heads.length ? Math.min(...heads) : null };
+}
+function mapX(svg, knotsOld, knotsNew) {
+  const f = (x) => { x = +x; if (x <= knotsOld[0]) return x;
+    for (let i = 1; i < knotsOld.length; i++) if (x <= knotsOld[i]) return Math.round((knotsNew[i - 1] + (x - knotsOld[i - 1]) * (knotsNew[i] - knotsNew[i - 1]) / (knotsOld[i] - knotsOld[i - 1])) * 10) / 10;
+    return x - knotsOld[knotsOld.length - 1] + knotsNew[knotsNew.length - 1]; };
+  const cut = svg.indexOf('</defs>'), head = svg.slice(0, cut > 0 ? cut : 0); let body = svg.slice(cut > 0 ? cut : 0);
+  const rects = [];   // a rect (a word's hyphen, a box) keeps its two ends on the map: its width follows
+  body = body.replace(/<rect ([^>]*)\/?>(<\/rect>)?/g, (m, attrs) => { const x = +(attrs.match(/(?:^| )x="(-?[\d.]+)"/) || [])[1], w = +(attrs.match(/ width="(-?[\d.]+)"/) || [])[1];
+    if (isNaN(x) || isNaN(w)) { rects.push(m); return `@@R${rects.length - 1}@@`; }
+    const nx = f(x), nw = Math.max(1, f(x + w) - nx);
+    rects.push(m.replace(/(^<rect |[ ])x="(-?[\d.]+)"/, `$1x="${nx}"`).replace(/ width="(-?[\d.]+)"/, ` width="${Math.round(nw * 10) / 10}"`)); return `@@R${rects.length - 1}@@`; });
+  body = body.replace(/(<(?:use|g)[^>]*transform="translate\()(-?[\d.]+)/g, (m, a, x) => a + f(x))
+    .replace(/ (x|cx|x1|x2)="(-?[\d.]+)"/g, (m, a, x) => ` ${a}="${f(x)}"`)
+    .replace(/ d="([^"]+)"/g, (m, d) => ' d="' + d.replace(/([ML])\s*(-?[\d.]+)/g, (mm, c, x) => c + f(x)) + '"')
+    .replace(/ points="([^"]+)"/g, (m, p) => ' points="' + p.trim().split(/\s+/).map(q => { const [x, y] = q.split(','); return f(x) + ',' + y; }).join(' ') + '"');
+  body = body.replace(/@@R(\d+)@@/g, (m, i) => rects[+i]);
+  return head + body;
+}
+const MIN_FIT = 0.9;
+for (const g of new Set(Object.keys(out).map(group))) {
+  const ks = Object.keys(out).filter(k => group(k) === g && !(JOBS[k][2].duet)); if (!ks.length) continue;
+  const info = ks.map(k => barsOf(out[k])); if (info.some(i => i.first == null || !i.bars.length)) continue;
+  const s = Math.max(...info.map(i => i.first)) - 260;   // where the first bar's music starts, the same in every line
+  // each bar column as wide as its widest bar in the group (so words never crowd), then all of them fill the line
+  const n = Math.max(...info.map(i => i.bars.length)), same = info.every(i => i.bars.length === n);
+  const wid = info.map(i => i.bars.map((b, j) => b - (j ? i.bars[j - 1] : i.first - 260)));   // natural widths, as engraved
+  const col = [...Array(n)].map((_, j) => same ? Math.max(...wid.map(w => w[j])) : 1), tot = col.reduce((a, b) => a + b, 0);
+  const span0 = Math.min(...info.map(i => i.bars[i.bars.length - 1])) - s, fit = span0 / tot;
+  if (same && fit < MIN_FIT) { console.log('bars left as engraved in ' + g + ' (would squeeze to ' + fit.toFixed(2) + ')'); continue; }   // never crowd the words
+  ks.forEach((k, j) => { const { bars, first } = info[j], a1 = first - 260, end = bars[bars.length - 1];
+    const span = end - s; let x = s; const nw = [s, ...bars.map((b, i) => (x += span * (same ? col[i] / tot : 1 / bars.length)))];
+    out[k] = mapX(out[k], [a1, ...bars], nw); });
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
