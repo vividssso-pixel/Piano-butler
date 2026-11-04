@@ -81,6 +81,7 @@ P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Under 
      h3('Strong and weak beats') + tbl(['Beats', 'Pattern', 'Feels like'], [['2', '<b>Strong</b> weak', 'a march'], ['3', '<b>Strong</b> weak weak', 'a waltz'], ['4', '<b>Strong</b> weak <b>medium</b> weak', 'most songs']], ['16%', '50%', '34%']))}
 {h3('Bars and bar lines')}
 {tbl(['Sign', 'Name', 'Meaning'], [[bars('bar'), 'bar line', 'divides the music into bars'], [bars('dbl'), 'double bar line', 'marks the end of a section, or a change of key, time signature or tempo'], [bars('fin'), 'final bar line', 'marks the end of the piece'], [bars('repeat'), 'repeat signs', 'play the passage between them again; if there is no start sign, go back to the beginning']], ['18%', '24%', '58%'])}
+{thinkt('The beat is the stage: it is there before anyone walks on. The notes are the actors who come and go on it, and the bar lines divide the stage into scenes.')}
 <!--SPLIT-->
 {h3('Counting')}
 {vx('t34', 84, 'Three bars of 3/4. Every beat is counted, even inside a long note: the red number is where you play, the grey numbers are the beats you hold.')}
