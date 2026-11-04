@@ -43,9 +43,11 @@ def carriage(seats, x0, label=''):   # one bar as a train carriage: seats = [(ki
         x += n * W
     o += ''.join(f'<text x="{x0 + 8 + j * W + W / 2}" y="12" text-anchor="middle" font-family="AH,Arial" font-size="12" font-weight="700" fill="{C}">{j + 1}</text>' for j in range(n_all))
     return o, w
-def train(bars, ts_top):
+def train(bars, ts='3/4'):
     o = '<defs><pattern id="hz2" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#fff"/><line x1="0" y1="0" x2="0" y2="6" stroke="#26296b" stroke-width="1.4"/></pattern></defs>'
-    x = 4
+    top, bot = ts.split('/')   # the engine carries the time signature
+    o += f'<path d="M4,80 L4,30 Q4,18 16,18 L60,18 Q72,18 72,30 L72,80 Z" fill="{N}"/><text x="38" y="47" text-anchor="middle" font-family="PF,serif" font-size="27" font-weight="700" fill="#fff">{top}</text><text x="38" y="73" text-anchor="middle" font-family="PF,serif" font-size="27" font-weight="700" fill="#fff">{bot}</text><circle cx="20" cy="88" r="7" fill="{N}"/><circle cx="56" cy="88" r="7" fill="{N}"/><line x1="72" x2="86" y1="60" y2="60" stroke="{N}" stroke-width="3"/>'
+    x = 86
     for i, b in enumerate(bars):
         c, w = carriage(b, x); o += c; x += w
         if i < len(bars) - 1: o += f'<line x1="{x}" x2="{x + 14}" y1="60" y2="60" stroke="{N}" stroke-width="3"/>'; x += 14
@@ -173,10 +175,9 @@ P38 = page(f'''{head('Part II · Time · 3', 'How long is a note?', 'Notes and r
 
 bottom = [['2', gcell('n', 'm', 34), 'minim', 'Level 3'], ['4', gcell('n', 'c', 34), 'crotchet', 'Level 0'], ['8', gcell('n', 'q', 34), 'quaver', 'Level 1'], ['16', gcell('n', 'sq', 34), 'semiquaver', lv('')]]
 simple = [[ts(2, 4), '2 crotchets', 'Level 0'], [ts(3, 4), '3 crotchets', 'Level 0'], [f'<span class="tsrow">{ts(4, 4)}{gsym("𝄴", 26)}</span>', '4 crotchets (the C sign: common time)', 'Level 0'], [f'<span class="tsrow">{ts(2, 2)}{gsym("𝄵", 30)}</span>', '2 minims (the cut C: cut common time)', 'Level 3'], [ts(3, 2), '3 minims', 'Level 3'], [ts(4, 2), '4 minims', lv('')], [ts(3, 8), '3 quavers', 'Level 3']]
-TRAIN = '<div class="pzbox"><b class="it">Think of a train</b><p class="sm" style="margin:2px 0 6px">In 3/4 every carriage (bar) has exactly <b>3 seats</b>; each seat is one crotchet beat. Notes book seats: a minim takes 2, a crotchet 1. A rest books a seat and leaves it <b>empty</b> (shaded). Every seat in every carriage must be booked.</p>' + train([[('n', 2, 'm'), ('n', 1, 'c')], [('n', 1, 'c'), ('r', 1, 'c'), ('n', 1, 'c')], [('n', 3, 'dm')]], 3) + '<p class="sm" style="margin:6px 0 0;text-align:center">minim + crotchet · crotchet, crotchet rest, crotchet · dotted minim: 3 seats each</p></div>'
+TRAIN = '<div class="pzbox"><b class="it">Think of a train</b><p class="sm" style="margin:2px 0 6px">In 3/4 every carriage (bar) has exactly <b>3 seats</b>; each seat is one crotchet beat. Notes book seats: a minim takes 2, a crotchet 1. A rest books a seat and leaves it <b>empty</b> (shaded). Every seat in every carriage must be booked.</p>' + train([[('n', 2, 'm'), ('n', 1, 'c')], [('n', 1, 'c'), ('r', 1, 'c'), ('n', 1, 'c')], [('n', 3, 'dm')]], '3/4') + '<p class="sm" style="margin:6px 0 0;text-align:center">minim + crotchet · crotchet, crotchet rest, crotchet · dotted minim: 3 seats each</p></div>'
 P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers at the start of the music. The <b>top number</b> says how many counts are in each bar; the <b>bottom number</b> says which note gets one count.')}
-{two(h3('The bottom number') + tbl(['Bottom', 'Note', 'One count is a', 'First met'], bottom, ['18%', '16%', '36%', '30%']),
-     box('Simple or compound?', '<p>In <b>simple time</b> each beat divides into <b>two</b>. In <b>compound time</b> each beat is a dotted note and divides into <b>three</b>.</p><p><b>Quick test:</b> a top number of 6, 9 or 12 means compound. Divide it by 3 to find the beats: 6/8 has 2, 9/8 has 3, 12/8 has 4.</p>'))}
+{h3('The bottom number') + tbl(['Bottom', 'Note', 'One count is a', 'First met'], bottom, ['18%', '16%', '36%', '30%'])}
 {TRAIN}
 <!--SPLIT-->
 {h3('Simple time: each beat divides in two')}
@@ -194,6 +195,7 @@ irreg = [[ts(5, 4), '5 crotchets: 3 + 2 or 2 + 3', 'Level 5'], [ts(7, 4), '7 cro
 P40 = page(f'''{head('Part II · Time · 5', 'Compound and irregular time', 'Compound time has dotted beats that divide into three; irregular time has five or seven counts, grouped unevenly. (9/4, 12/4 and the /16 signatures exist but are rare.)')}
 {h3('3/4 or 6/8?')}
 {two(vx('t34q', 56, '3/4: six quavers in three twos'), vx('t68q', 56, '6/8: six quavers in two threes'))}
+{box('Simple or compound?', '<p>In <b>simple time</b> each beat divides into <b>two</b>. In <b>compound time</b> each beat is a dotted note and divides into <b>three</b>.</p><p><b>Quick test:</b> a top number of 6, 9 or 12 means compound. Divide it by 3 to find the beats: 6/8 has 2, 9/8 has 3, 12/8 has 4.</p>')}
 {h3('Compound time')}
 {tbl(['Time signature', 'Each bar holds', 'First met'], compound, ['26%', '50%', '24%'])}
 {h3('Counting 6/8')}
@@ -206,7 +208,6 @@ P40 = page(f'''{head('Part II · Time · 5', 'Compound and irregular time', 'Com
 {thinkt('Like a skipping rope: two big swings, each with three little steps inside.')}
 {realm('Uneven and compound beats in real music', [('6/8 · rocking', 'Row, Row, Row Your Boat; the barcarolles of Offenbach and Chopin, which imitate a gondola.'), ('5/4 · lopsided', 'Take Five (Dave Brubeck), Mars from The Planets (Holst), the Mission: Impossible theme.'), ('7/8 · folk', 'Dances from Bulgaria and Greece, counted 2 + 2 + 3.'), ('3 + 3 + 2 · pop and Latin', 'The bass and drums of countless pop and Latin songs.')], 'Clap 3 + 3 + 2 (accent the first of each group) along with a pop song in 4/4: it fits.')}
 {inact('Hear 3 + 3 + 2 inside 4/4', vx('t332', 74), ['<b>Count eight quavers</b> in a bar of 4/4.', '<b>Group them</b> 3 + 3 + 2, accenting 1, 4 and 7.', '<b>Keep the beat</b> in your foot: it stays in four.'], 'The bar is still <b>4/4</b>; only the accents are uneven.')}
-{inact('Count 6/8 in two', vx('cmp6', 64), ['<b>Six quavers,</b> beamed in two threes.', '<b>Slowly:</b> count 1 2 3 4 5 6, leaning on 1 and 4.', '<b>Faster:</b> feel only 1 and 4: two beats.'], '6/8 is <b>two</b> dotted-crotchet beats, each split into three.')}
 {foot('Time signatures p. 39 · Rhythm: groups and upbeats p. 41', 'Workbook Levels 2–4 · Compound time · Online: Rhythm clock')}''', 40)
 
 P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Rhythm is the pattern of long and short sounds over the pulse. The pulse stays steady; the rhythm moves around it. The way notes are grouped on the page shows where the beats are.')}
