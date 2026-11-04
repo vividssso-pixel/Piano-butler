@@ -204,7 +204,7 @@ P29b = ppage(f"""{head('Part I · Pitch · 9', 'Minor scales', 'Every minor scal
 {px('a_har', 84, 'Harmonic: the 7th raised a semitone (<b class="co">G♯</b>). The gap F–G♯ is a tone and a half.')}
 {px('a_mel', 84, 'Melodic: the 6th and 7th raised going up (<b class="co">F♯ G♯</b>), lowered coming down (<b class="co">G♮ F♮</b>).')}
 {two(h3('Relative minor') + '<p>Same key signature, three semitones below the major: C major and A minor share every note.</p>', h3('Parallel minor') + '<p>Same key note, different signature: C major (no sharps or flats) and C minor (three flats).</p>')}
-<p class="think"><span>Think of it</span>The relative minor lives in the same house as its major, with the same furniture (notes); the parallel minor lives at the same address (key note) but furnishes it differently.</p>
+<p class="think"><span>Think of it</span>The relative minor is the same clothes worn by a different person: the same notes, a new key note. The parallel minor is the same person in different clothes: the same key note, some notes changed.</p>
 <!--SPLIT-->
 {inaction('Build E harmonic minor', '', ['<b>Borrow G major’s notes</b> starting on E: E F♯ G A B C D E.', '<b>Raise the 7th:</b> D becomes D♯.', '<b>Check the gap</b> C to D♯: a tone and a half.'], 'E harmonic minor: <b>E F♯ G A B C D♯ E</b>.')}
 {realm('Minor in all music', [('Folk and ballads', 'The natural minor: the sound of many folk songs and slow pop ballads.'), ('Classical', 'The harmonic minor: its raised 7th pulls hard towards the key note.'), ('Jazz', 'The melodic minor, the same up and down, is called the jazz minor.'), ('Film and games', 'Minor keys for mystery, danger and sadness.')], 'Play A natural minor, then A harmonic minor: which one sounds more tense?')}
