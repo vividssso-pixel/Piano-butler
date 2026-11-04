@@ -1,0 +1,32 @@
+# The Piano Butler Workbook, Harmony: two pages per chapter (Learn, Use), matching Handbook Part III
+exec(open('/tmp/claude-0/pk/wbpitch.py').read())   # helpers, css, SIZEJS, firstdone (rewrites the Pitch workbook, harmless)
+def hpage2(inner, n, hb):
+    return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{'HARMONY · HANDBOOK P. ' + str(hb) if hb else 'HARMONY'}</span></div><div class="rule"></div><div class="body">{inner}</div>
+<div class="sign"><span style="flex:0 0 240px">Date <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
+def th(kind, topic, title, rule, inner, n, hb):
+    return hpage2(f'<div class="kick">Harmony · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
+KW = 30
+def kdot(i, t, y=62): return f'<circle cx="{i * KW + KW / 2}" cy="{y}" r="9" fill="#e4572e"/><text x="{i * KW + KW / 2}" y="{y + 4}" text-anchor="middle" font-family="AH,Arial" font-size="10" font-weight="700" fill="#fff">{t}</text>'
+
+# ---------- 1 Chords and triads (Handbook pp. 64–65) ----------
+HA1 = th('Learn', 'Chords and triads', 'Chords and triads', 'A triad is three notes stacked in 3rds: root, 3rd, 5th. Play one, skip one.', f'''
+{ex(1, 'Build it', 1, 'Write the 3rd and the 5th above each root: play one, skip one. The first row is done.', tbl(['Root', '3rd', '5th', 'Root', '3rd', '5th'], [['<b>C</b>', '<b class="done2">E</b>', '<b class="done2">G</b>', '<b>G</b>', BOX, BOX], ['<b>D</b>', BOX, BOX, '<b>A</b>', BOX, BOX], ['<b>F</b>', BOX, BOX, '<b>B</b>', BOX, BOX]], ['14%', '18%', '18%', '14%', '18%', '18%'], 'bld'))}
+{ex(2, 'On the keyboard', 1, 'Mark the root, 3rd and 5th of the F triad with 1, 3 and 5. The C triad is done.', '<div class="two" style="grid-template-columns:1fr 1fr">' + kbd('C', 8, KW, 90, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[kdot(0, '1'), kdot(2, '3'), kdot(4, '5')]) + kbd('C', 8, KW, 90, label=True) + '</div><div class="anrow"><span><b>C triad</b> C E G</span><span><b>F triad</b>' + BOX + BOX + BOX + '</span></div>')}
+{ex(3, 'Name the triad', 1, 'Write the root of each triad: the bottom note names it.', grid([pc('hn%d' % i, BOX, 58) for i in range(6)], 3))}
+{ex(4, 'Play it', 1, 'Play the triads of C, F and G, solid and then broken, each hand alone. Tick a circle each day it is even.', '<div class="ts6">' + ''.join(f'<div><b>{s}</b>{ticks(4)}</div>' for s in ('C triad', 'F triad', 'G triad')) + '</div>')}''', 1, 64)
+HB1 = th('Use', 'Chords and triads', 'Chords and triads', 'A stacked triad sits on three lines in a row or in three spaces in a row.', f'''
+{ex(1, 'Lines or spaces?', 1, 'Circle lines or spaces for each triad.', grid([pc('hl%d' % i, circ('lines', 'spaces'), 58) for i in range(3)], 3))}
+{ex(2, 'Is it a triad?', 2, 'Circle ✓ if the chord is stacked in 3rds, ✗ if it is not.', grid([pc('hi%d' % i, circ('✓', '✗'), 58) for i in range(4)], 4))}
+{ex(3, 'Draw it', 2, 'Draw the 3rd and the 5th above each root, as semibreves stacked on top of it.', grid([pc('uph%d' % i, '', 58) for i in range(6)], 3))}
+{ex(4, 'Solid or broken?', 1, 'Circle solid or broken.', grid([pc('hs%d' % i, circ('solid', 'broken'), 58) for i in range(4)], 4))}''', 2, 65)
+hans = [('p. 1', 'Build it: C E G · D F A · F A C · G B D · A C E · B D F. Keyboard: F A C. Name the triad: C, F, G, D, A, E.'),
+        ('p. 2', 'Lines or spaces: lines, spaces, lines. Is it a triad: ✓, ✗, ✓, ✗. Draw it: C E G, F A C, G B D, D F A, A C E, E G B. Solid or broken: solid, broken, solid, broken.')]
+HAN = hpage2(f'''<div class="kick">Harmony · Answers</div><h1>Answers</h1>
+{tbl(['Page', 'Answers'], [[p, a] for p, a in hans], ['12%', '88%'], 'ansT')}
+<p class="sm">“Play it” has no single answer to copy: check it at the piano with your teacher, or with the online lessons. More chapters follow as Part III grows.</p>''', 3, None)
+css += '''
+.bld td{text-align:center} .bld td b{font-size:16px} .bld .ab{margin:0 auto}
+'''
+HFIRST = {'Name the triad': [('fill', 'C')], 'Lines or spaces?': [('ring', 'lines')], 'Is it a triad?': [('ring', '✓')], 'Solid or broken?': [('ring', 'solid')]}
+open('/mnt/user-data/outputs/house-rooms/workbook-harmony.html', 'w').write(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{HA1}{HB1}{HAN}{SIZEJS}</body></html>', HFIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1))
+print('ok')

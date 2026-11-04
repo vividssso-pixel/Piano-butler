@@ -22446,7 +22446,9 @@ function RefPick({ onChapter }) {
 // shelf opens below with its table). It replaces the Topics chips; the House is behind 'My house'.
 const REF_SHELVES = [
   ['Reading music', '악보 읽기', [['staff', 'Staff and clefs', '오선과 음자리표'], ['notes', 'Notes and rests', '음표와 쉼표'], ['rhythm', 'Rhythm', '리듬'], ['time', 'Time signatures', '박자표'], ['signs', 'Signs', '기호'], ['ornaments', 'Ornaments', '꾸밈음']]],
-  ['Pitch and harmony', '음높이와 화성', [['keys', 'Keys', '조성'], ['related', 'Related keys', '관계조'], ['scales', 'Scales', '음계'], ['modes', 'Modes', '선법'], ['intervals', 'Intervals', '음정'], ['chords', 'Chords', '화음'], ['cadences', 'Cadences', '종지'], ['melody', 'Melody', '선율'], ['nonchord', 'Non-chord notes', '비화성음'], ['chromatic', 'Chromatic chords', '반음계적 화음'], ['transposition', 'Transposition', '이조']]],
+  // her 4 Nov: split like the Handbook (Part I Pitch, Part III Harmony), books in Handbook order
+  ['Pitch', '음높이', [['intervals', 'Intervals', '음정'], ['scales', 'Scales', '음계'], ['keys', 'Keys', '조성'], ['related', 'Related keys', '관계조'], ['modes', 'Modes', '선법'], ['transposition', 'Transposition', '이조'], ['melody', 'Melody', '선율']]],
+  ['Harmony', '화성', [['chords', 'Chords', '화음'], ['cadences', 'Cadences', '종지'], ['nonchord', 'Non-chord notes', '비화성음'], ['chromatic', 'Chromatic chords', '반음계적 화음']]],
   ['Words and history', '용어와 역사', [['play', 'How to play', '연주 용어'], ['terms', 'Music words', '음악 낱말'], ['form', 'Form', '형식'], ['texture', 'Texture', '짜임새'], ['kinds', 'Kinds of pieces', '곡의 종류'], ['periods', 'Periods', '시대'], ['composers', 'Composers', '작곡가'], ['instruments', 'Instruments', '악기']]],
   ['Playing and listening', '연주와 듣기', [['technique', 'Technique', '테크닉'], ['aural', 'Aural', '청음']]],
 ];
@@ -22754,7 +22756,7 @@ const SHELF_FAVS = [['scale-finder', 'Scale finder', '스케일 찾기'], ['metr
 // m66 (her 3 Nov): the topic books (The Piano Butler Handbook and Workbook, drafts) sit in the Library, each topic opening its own pages.
 // Files in /books/ (robots.txt keeps them out of search). Links jump to the PDF page (#page=); labels give the printed page numbers.
 const PB_BOOKS = { hb: 'books/handbook-draft.pdf', wb: 'books/workbook-draft.pdf', rg: 'books/rhythm-activities-games.pdf', pg: 'books/pitch-games.pdf' };
-const TOPIC_BOOKS = {   // [file, pdf page, label]  (m72: Pitch opener + 22-45 = pdf 1-25; Time opener + 48-61 = pdf 26-40; Tips 62-63 = pdf 41-42)
+const TOPIC_BOOKS = {   // [file, pdf page, label]  (4 Nov: Pitch opener + 22-46 = pdf 1-26; Time opener + 48-62 = pdf 27-42; Harmony opener + 64-65 = pdf 43-45; Putting it together 66-67 = pdf 46-47. Workbook: Pitch 1-15, Time 16-32, Harmony 33-35)
   staff: [['hb', 2, 'Handbook pp. 22–31: keyboard, staff, notes, the staff and the keyboard, accidentals'], ['wb', 1, 'Workbook · Pitch pp. 1–8'], ['pg', 1, 'Pitch games']],
   notes: [['hb', 30, 'Handbook pp. 50–53: notes, rests, note lengths'], ['wb', 18, 'Workbook · Time pp. 3–6']],
   rhythm: [['hb', 28, 'Handbook pp. 48–49, 58–62: pulse, groups, off the beat, rhythm tips'], ['wb', 16, 'Workbook · Time pp. 1–2, 11–14'], ['rg', 1, 'Rhythm activities and games']],
@@ -22762,6 +22764,7 @@ const TOPIC_BOOKS = {   // [file, pdf page, label]  (m72: Pitch opener + 22-45 =
   intervals: [['hb', 12, 'Handbook pp. 32–35: counting intervals; major, minor and perfect'], ['wb', 9, 'Workbook · Pitch pp. 9–10'], ['pg', 6, 'Frog hops (game)']],
   scales: [['hb', 16, 'Handbook pp. 36–39: major and minor scales'], ['wb', 11, 'Workbook · Pitch pp. 11–12'], ['pg', 3, 'Scale trains (game)']],
   keys: [['hb', 20, 'Handbook pp. 40–46: key signatures, finding the key, the circle of fifths, pitch tips'], ['wb', 11, 'Workbook · Pitch pp. 11–12'], ['pg', 5, 'Who am I? (game)']],
+  chords: [['hb', 44, 'Handbook pp. 64–65: chords and triads'], ['wb', 33, 'Workbook · Harmony pp. 1–2']],
 };
 function TopicBooks({ id }) {
   const L = booksUnlocked() && TOPIC_BOOKS[id]; if (!L) return null;
@@ -22779,7 +22782,7 @@ function RefShelf({ onChapter, onHouse, onTool }) {
   const MX = Math.max(...REF_SHELVES.map(x => x[2].length)), spW2 = Math.max(26, Math.min(58, Math.floor((bw - 8 - (MX - 1) * 5) / MX)));   // m23: a full shelf still fits the screen
   const NB = REF_SHELVES.reduce((a, x) => a + x[2].length, 0), spW = Math.floor((bw - 2 * 10 - 6 * 5 - (NB - 3) * 4) / NB), one = spW >= 36;
   const rowW = (grp) => { const n = grp.reduce((a, gi) => a + REF_SHELVES[gi][2].length, 0); return Math.floor((bw - (grp.length - 1) * 10 - grp.length * 10 - (n - grp.length) * 4) / n); };
-  const pairs = REF_SHELVES.length === 4 ? [[0, 1], [2, 3]] : null, rows = one ? [REF_SHELVES.map((x, i) => i)] : pairs && pairs.every(g => rowW(g) >= 28) ? pairs : null;   // m33: two shelves when every spine still gets 28px   // m21: thirteen spines on one shelf when each is at least 36px
+  const pairs = ({4: [[0, 1], [2, 3]], 5: [[0], [1, 2], [3, 4]]})[REF_SHELVES.length] || null, rows = one ? [REF_SHELVES.map((x, i) => i)] : pairs && pairs.every(g => rowW(g) >= 28) ? pairs : null;   // m33: two shelves when every spine still gets 28px   // m21: thirteen spines on one shelf when each is at least 36px
   const pick = (id) => { setSel(id); try { localStorage.setItem(REF_PICK_KEY + '_shelf', id || ''); } catch (e) {} if (id) setTimeout(() => { const el = panel.current; if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
   const s = sel && REF_SECS.find(z => z.id === sel), B = s && REF_BODY[s.id];
   const L = (typeof tLessonGet === 'function' && tLessonGet()) || null;

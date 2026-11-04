@@ -99,7 +99,7 @@ srows = ''.join('<div class="sum">' + ' <span class="pl">+</span> '.join(gin('n'
 A3 = tp('Learn', 'How long is a note?', 'How long is a note?', 'A dot adds half the note’s value; a tie joins two notes of the same pitch into one sound.', f'''
 {ex(1, 'Note sums', 1, 'Add up the beats (crotchet = 1 beat). The first one is done.', f'<div class="sums">{srows}</div>')}
 {ex(2, 'Complete the bar', 2, 'Each bar is one note short. Count the beats you have, then find what is missing. The first is done: 4/4 needs 4 beats; minim 2 + crotchet 1 = 3, so <b>1 beat</b> is missing: a crotchet.', grid([cell('wf1', 'one note <b class="done2">crotchet</b>', 64)] + [cell(k, 'one note ' + BOX, 64) for k in ('wf2', 'wf3', 'wf4', 'wf5', 'wf6')], 3))}
-{ex(3, 'Dotted notes: count it', 2, 'Write a count in every box. The first is done.', wx('wc44', 84))}''', 5, 40)
+{ex(3, 'Ode to Joy: count it', 2, 'Bars 3–4 of Beethoven’s Ode to Joy (Handbook p. 53). Write a count in every box, then sing it as you clap. The first is done.', wx('wc44', 84))}''', 5, 40)
 B3 = tp('Use', 'How long is a note?', 'How long is a note?', 'A tie can cross a bar line; a dot cannot.', f'''
 {ex(1, 'Tie or dot?', 2, 'Each tie makes one sound. Write the one dotted note that lasts the same.', grid([cell(k, 'dotted note ' + BOX, 60) for k in ('wti1', 'wti2', 'wti3')], 3))}
 {ex(2, 'Spot the mistake', 2, 'One bar does not add up to four beats. Circle it and write how many beats it has.', wx('wmis2', 70) + f'<div class="add">beats in the wrong bar {BOX}</div>')}
@@ -175,7 +175,7 @@ ans = [('p. 1', 'Slow to fast: 4, 1, 3, 2 (60 slowest, 120 fastest). Strong beat
        ('p. 2', 'Bar lines: 2/4 after notes 2, 3, 5, 7 and 8, final bar line after note 11; 3/4 after notes 2, 5 and 6, final bar line after note 8. Mistake: bar 3 has 4 beats.'),
        ('p. 3', 'Draw it: minim, quaver, dotted minim, semibreve. Table: crotchet 1, crotchet rest; minim 2, minim rest; quaver ½, quaver rest; dotted minim 3, dotted minim rest; semiquaver ¼, semiquaver rest. Why a whole note: minim = half note, 2 beats; crotchet = quarter note, 1 beat; quaver = eighth note, ½ beat; semiquaver = sixteenth note, ¼ beat.'),
        ('p. 4', 'Stems: up on the right below the middle line, down on the left above it, either on it. Finish with a rest: minim, crotchet, minim, crotchet. Empty slices: minim rest 2 beats (2 pizzas), crotchet rest 1 beat (1 pizza), quaver rest ½ beat (half a pizza).'),
-       ('p. 5', 'Sums: 3, 1½, 4, 6, 2, 2. Complete: crotchet, crotchet, crotchet, quaver, quaver, quaver. Count it: 1–2 & 3–4 · 1 & 2 3–4.'),
+       ('p. 5', 'Sums: 3, 1½, 4, 6, 2, 2. Complete: crotchet, crotchet, crotchet, quaver, quaver, quaver. Ode to Joy: 1 2 3 4 · 1–2 & 3–4.'),
        ('p. 6', 'Tie or dot: dotted minim, dotted crotchet, dotted semibreve. Mistake: bar 2 has 5 beats.'),
        ('p. 7', 'Time signatures: 3/4, 2/4, 6/8 (3/4 also fits), 4/4, 5/4, 9/8. Compound: 6/8, 9/8, 12/8, 6/4 (beats 2, 3, 4, 2). Simple: 3/4 (3), 2/2 (2), 4/4 (4), 3/8 (3). 3/4: 3 crotchet beats; 6/8: 2 dotted-crotchet beats; C = 4/4, ¢ = 2/2.'),
        ('p. 8', 'Bar lines: 3/4 after notes 3, 5 and 6, final bar line after note 9; 4/4 after notes 3 and 7, final bar line after note 8. Beams: 3/4 in three pairs; 6/8 in two groups of three. Seats: 3/4 carriage 1 a crotchet, carriage 2 a minim, carriage 3 a minim (or a minim rest); 4/4 carriage 1 a minim (or a minim rest), carriage 2 a minim (or a minim rest).'),
