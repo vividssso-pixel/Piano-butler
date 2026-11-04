@@ -204,6 +204,25 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5, bass) {
   if (!onStaff) svg = fitBeams(svg, STEM);
   return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
 }
+// Hands take turns (her 5 Nov 00:39: the zigzag pieces): one line of notes that steps between the two staves, the right
+// hand's on the Queen's staff, the left hand's on the King's (note[6] === 'L'), quavers beamed in fours across both
+function zigMei(b0, b1, o) {
+  let ms = '';
+  for (let b = b0; b < b1; b++) {
+    let l1 = '', run = [], ctrl = [];
+    const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };
+    S.bars[b].forEach(([p, d, syl, wp, f, lf, h]) => { const [pname, oct] = pn(p), i = nid(), L = h === 'L';
+      const x = `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${L ? ' staff="2"' : ''}/>`;
+      if (d === 'q') { run.push(x); if (run.length === 4) flush(); } else { flush(); l1 += x; }
+      if (o.fing && f != null) ctrl.push(`<fing startid="#${i}" staff="${L ? 2 : 1}" place="${L ? 'below' : 'above'}">${f}</fing>`);
+      INFO[i] = { len: LEN[d] }; });
+    flush();
+    const right = b === S.bars.length - 1 ? ' right="end"' : '';
+    ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff><staff n="2"><layer n="1"><mSpace/></layer></staff>${ctrl.join('')}</measure>`;
+  }
+  const met = o.meter ? ' meter.count="4" meter.unit="4"' : '';
+  return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef><staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp></scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
+}
 const JOBS = S.jobs || {
   sing1: [0, 4, { words: 1, meter: 1, fing: 1, pw: 1500 }], sing2: [4, 8, { words: 1, fing: 1, pw: 1500 }],   // page 1: the whole song (her 4 Nov 13:13)
   name1: [0, 4, { meter: 1, boxes: 1, pw: 1500 }], name2: [4, 8, { boxes: 1, noEx: 1, pw: 1500 }],   // page 2: its letter names to write
@@ -222,7 +241,7 @@ const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, sc
   ...(o.staff5 ? { rightMarginClef: 2, leftMarginMeterSig: 2, rightMarginMeterSig: 2 } : { rightMarginClef: 1, leftMarginMeterSig: 1, rightMarginMeterSig: 1 }),   // room round the clef and the time on our big staff (her 4 Nov 21:11)
   ...(o.letters ? { leftMarginNote: 2, rightMarginNote: 1.5, leftMarginBarLine: 1.5, rightMarginBarLine: 2 } : { leftMarginNote: 1, rightMarginNote: 0, leftMarginBarLine: 0, rightMarginBarLine: 0 }),   // set every time: the toolkit keeps options between jobs   // big lettered heads: room round each and off the bar lines (her 4 Nov 13:22)
   ...extra });
-const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); };
+const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : o.zig ? zigMei(b0, b1, o) : mei(b0, b1, o)); };
 const group = (k) => k.replace(/\d+$/, ''), natural = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   const SB = S.bars; if (o.src != null) S.bars = S.more[o.src].bars;   // a More to play tune (S.more) engraved like the song
