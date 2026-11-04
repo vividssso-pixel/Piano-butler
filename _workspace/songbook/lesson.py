@@ -12,10 +12,10 @@ FF = (f"@font-face{{font-family:'AH';font-weight:400;src:url(data:font/woff2;bas
 LESSON, LEVEL = SONG.get('lesson', 5), 'Level 0'
 ROOM = SONG.get('room', 'note-values')   # the drills room this lesson goes with (the QR opens it; drills needs ?room=)
 import qrcode, qrcode.image.svg
-def qr(url):   # a plain navy QR, drawn as one SVG path
+def qr(url, px=96):   # a plain navy QR, drawn as one SVG path
     q = qrcode.QRCode(border=1, error_correction=qrcode.constants.ERROR_CORRECT_M); q.add_data(url); q.make(fit=True)
     m = q.get_matrix(); n = len(m); d = ''.join(f'M{x},{y}h1v1h-1z' for y, r in enumerate(m) for x, v in enumerate(r) if v)
-    return f'<svg viewBox="0 0 {n} {n}" style="width:96px;height:96px;display:block" shape-rendering="crispEdges"><path d="{d}" fill="{N}"/></svg>'
+    return f'<svg viewBox="0 0 {n} {n}" style="width:{px}px;height:{px}px;display:block" shape-rendering="crispEdges"><path d="{d}" fill="{N}"/></svg>'
 URL = 'https://thepianobutler.com/drills.html?room=' + ROOM
 def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>{SONG.get('label', 'Lesson ' + str(LESSON)).upper()} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
 def mus(k, cls=''):   # a shorter last line keeps the same size of note: its width in proportion to its bars
@@ -86,24 +86,28 @@ TSN = '<div class="tsn"><span>4</span><span>4</span></div>' if SONG.get("time_la
 tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
-  '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G. In which bar? <span class="ib"></span></p></div></div>')
+  '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G.</p></div></div>')
 exec(open('early.py').read())
 if 'pos' in SONG: POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else kb(width=340, fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
 P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
 LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
+SUB = lambda t, how: f'<div class="sub"><span>{t}</span></div><p class="how">{how}</p>'
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <p class="lead">{LEAD}</p>
 <div class="chips"><span class="cl">In this song</span>{chips}</div>
-<div class="sp"></div>{part(1, 'Say and clap', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
-<div class="mat"><div class="mh">{SONG.get("time_label", "The time")}</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
-<div class="sp"></div>{LINES('rhy')}
-<div class="end">{ticks(SONG.get('p1_ticks', ['Said it in time', 'Clapped and counted', 'Found every minim (2 beats)']), True)}</div>''', 1)
-
-P2 = page(f'''{part(2, 'Listen and sing', SONG.get('p2_how', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter name of every note in the boxes; the first one is done.'))}
+<div class="listen">{qr(URL, 64)}<div><div class="lh2">Listen first</div><p>Hear the whole song before you take it apart: scan the code, listen once, then hum along the second time.</p></div></div>
+<div class="sp"></div>{part(1, 'Listen and sing', SONG.get('sing_how', 'Listen, pointing to each note as it sounds. Then sing it with the words.'))}
 {POS}
 <div class="sp"></div>{LINES('sing')}
+<div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
 
-<div class="row2 end"><div>{ticks(P2T, True)}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>''', 2)
+NAMES = LINES('name')
+P2 = page(f'''{part(2, 'Take it apart', 'The same song, one piece at a time: first its rhythm, then its notes.')}
+{SUB('The rhythm', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
+<div class="mat"><div class="mh">{SONG.get("time_label", "The time")}</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
+<div class="sp"></div>{LINES('rhy')}
+{(SUB('The notes', SONG.get('names_how', 'Write the letter name of every note in the boxes; the first one is done.')) + '<div class="sp"></div>' + NAMES) if NAMES else ''}
+<div class="end">{ticks(SONG.get('p2_ticks', ['Said it in time', 'Clapped and counted', 'Wrote the letter names']), True)}</div>''', 2)
 
 exec(open('early.py').read())
 if SONG.get('kind') == 'ready': P3 = ''
@@ -124,6 +128,8 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .foot{{position:absolute;left:0;right:0;bottom:30px;text-align:center}} .foot span{{display:inline-block;color:{N};font:700 13px 'AH',Arial;letter-spacing:.08em}}
 .kick{{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:{C}}} h1{{font-family:'PF',Georgia,serif;font-size:40px;line-height:1.1;margin:3px 0 8px;font-weight:700}}
 .lead{{font-size:17px;line-height:1.5;margin:0 0 8px}} p{{font-size:16px;line-height:1.5;margin:4px 0 8px}}
+.listen{{display:flex;align-items:center;gap:16px;border:1.5px solid {C};border-radius:12px;padding:10px 16px;margin:2px 0}} .listen p{{margin:2px 0 0;font-size:14.5px;line-height:1.45}} .lh2{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}}
+.sub{{display:flex;align-items:center;gap:10px;margin:8px 0 0}} .sub span{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .sub::after{{content:'';flex:1;height:1px;background:rgba(38,41,107,.18)}}
 .chips{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}} .cl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-right:4px}} .chip{{border:1.2px solid {N};border-radius:14px;padding:3px 12px;font-size:14px;font-weight:700}}
 .ph{{display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:10px;margin-top:10px}} .pn{{width:30px;height:30px;background:{N};color:#fff;display:inline-flex;align-items:center;justify-content:center;font:700 16px 'AH'}} h2{{font-family:'PF',Georgia,serif;font-size:25px;margin:0}}
 .how{{font-size:15.5px;color:#3d4080;margin:6px 0 6px}}
