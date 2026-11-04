@@ -130,11 +130,32 @@ function addRows(svg, ways, b0, pic, pre) {
 }
 // Before the staff the letter goes inside the note (her 4 Nov 12:07): a bigger head with its name in it, joined to its stem;
 // filled for a crotchet or quaver (white letter), open for a minim or longer (navy letter). The small engraved head goes.
+
+function fitBeams(svg, L) {
+  let out = '', i = 0;
+  for (;;) {
+    const j = svg.indexOf('class="beam">', i); if (j < 0) { out += svg.slice(i); break; }
+    const start = svg.lastIndexOf('<g', j); let depth = 0, end = -1;
+    const re = /<g[\s>]|<\/g>/g; re.lastIndex = start; let m;
+    while ((m = re.exec(svg))) { if (m[0] === '</g>') { depth--; if (depth === 0) { end = m.index + 4; break; } } else depth++; }
+    if (end < 0) { out += svg.slice(i); break; }
+    let g = svg.slice(start, end);
+    const stems = [...g.matchAll(/class="stem">\s*<path d="M([\d.]+) (-?[\d.]+) L([\d.]+) (-?[\d.]+)"/g)];
+    if (stems.length) {
+      const up = +stems[0][4] < +stems[0][2], heads = stems.map(s => +s[2]), old = +stems[0][4];
+      const tip = up ? Math.min(...heads) - L : Math.max(...heads) + L, d = tip - old;
+      g = g.replace(/class="stem">(\s*)<path d="M([\d.]+) (-?[\d.]+) L([\d.]+) (-?[\d.]+)"/g, (mm, sp, x1, y1, x2, y2) => `class="stem">${sp}<path d="M${x1} ${y1} L${x2} ${+y2 + d}"`);
+      g = g.replace(/<polygon points="([^"]+)"/, (mm, pts) => `<polygon points="${pts.trim().split(/\s+/).map(p => { const [x, y] = p.split(','); return x + ',' + (+y + d); }).join(' ')}"`);
+    }
+    out += svg.slice(i, start) + g; i = end;
+  }
+  return out;
+}
 function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff) {
   // heads about twice the size, so the places are twice as far apart too (S.pre: E on the line, D hanging just under it, C
   // on a ledger of its own); Verovio's ledger lines go, and the song's ledger notes (S.ledger) get one through their middle.
   // A head never touches its neighbour: where notes are close (quavers) it shrinks to fit.
-  const RX0 = 250, RY0 = 195, FS0 = 290, STEM = 950;
+  const RX0 = 250, RY0 = 195, FS0 = 290, STEM = 700;
   if (!onStaff) svg = svg.replace(/<g[^>]*class="ledgerLines[^"]*"[^>]*>[\s\S]*?<\/g>/g, '');   // on the staff the ledgers stay
   const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use [^>]*transform="translate\((\d+), (\d+)\)[^>]*\/>\s*<\/g>(\s*<g id="[^"]+" class="stem">\s*<path d="M(\d+) (\d+) L\d+ (\d+)")?/g;
   const at = [...svg.matchAll(re)].map(m => +m[2] + 108), room = (k) => Math.min(k ? at[k] - at[k - 1] : 1e9, k < at.length - 1 ? at[k + 1] - at[k] : 1e9);
@@ -150,7 +171,7 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff) {
       // before the staff every stem not on a beam is one long length from its head (her 4 Nov 13:32 and 15:15: not short,
       // all the same, the long one); a beamed one stays on its beam
       if (st) { const down = +y2 > +y1, beamed = beams.some(([a, b]) => +sx >= a - 30 && +sx <= b + 30);
-        const tip = beamed ? +y2 : down ? ny + STEM : ny - STEM;
+        const tip = beamed ? +y2 : S.place && p in S.place ? (down ? Math.max(+y2, ny + STEM) : Math.min(+y2, ny - STEM)) : +y2;
         m = m.replace(`M${sx} ${y1} L${sx} ${y2}`, `M${sx} ${ny} L${sx} ${tip}`); }
       y = ny; }
     if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
@@ -160,6 +181,8 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff) {
       + `<text x="${cx}" y="${+y + FS * 0.36}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${open ? '#26296b' : '#fff'}" class="cnt lname">${name}</text>`;
     return m.replace(/<use [^>]*\/>/, head);
   });
+  // beamed quavers: their stems as long as a crotchet's (her 4 Nov 15:19), so the beam moves to sit that far from the heads
+  if (!onStaff) svg = fitBeams(svg, STEM);
   return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
 }
 const JOBS = S.jobs || {
