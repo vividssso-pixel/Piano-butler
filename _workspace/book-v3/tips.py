@@ -13,7 +13,7 @@ READ = [('The finger number', '<b class="co">3</b>: the middle finger plays it. 
         ('The chord', 'The <b>C</b> above the staff: this E belongs to the C major chord.', 'Harmony (later)'),
         ('The marks', '<b style="font-family:PF,serif;font-style:italic;font-size:17px">p</b> and the slur: play it softly and smoothly.', 'Expression (later)'),
         ('The phrase', 'The slur ends here, so the note lands gently, like the end of a sentence.', 'Shape and style (later)')]
-T1 = tpage(f"""{head('Tips · 1', 'Everything one note tells you', 'Look at the coral note. It carries six pieces of information at once, and each one can be read straight off the page. Read all six and the note is right; miss one and it is only nearly right.')}
+T1 = tpage(f"""{head('Tips · 1', 'Everything one note tells you', 'Look at the red note. It carries six pieces of information at once, and each one can be read straight off the page. Read all six and the note is right; miss one and it is only nearly right.')}
 {FIG}
 <div class="six rd">{''.join(f'<div><span class="rn">{i + 1}</span><b>{a}</b><span>{b}</span><i>{c}</i></div>' for i, (a, b, c) in enumerate(READ))}</div>
 <p class="think"><span>Think of it</span>A note is like a word said aloud: its spelling, its timing, its tone of voice and its place in the sentence all change what it means.</p>

@@ -17,7 +17,7 @@ def qr(url):   # a plain navy QR, drawn as one SVG path
     m = q.get_matrix(); n = len(m); d = ''.join(f'M{x},{y}h1v1h-1z' for y, r in enumerate(m) for x, v in enumerate(r) if v)
     return f'<svg viewBox="0 0 {n} {n}" style="width:96px;height:96px;display:block" shape-rendering="crispEdges"><path d="{d}" fill="{N}"/></svg>'
 URL = 'https://thepianobutler.com/drills.html?room=' + ROOM
-def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>LESSON {LESSON} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
+def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>{SONG.get('label', 'Lesson ' + str(LESSON)).upper()} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
 def mus(k, cls=''):   # a shorter last line keeps the same size of note: its width in proportion to its bars
     w = SONG.get('widths', {}).get(k); st = f' style="max-width:{w * 100:.1f}%"' if w else ''
     return f'<div class="mus {cls}" data-snip="{k}"{st}>{V[k]}</div>'
@@ -29,7 +29,7 @@ def way(n, t, stars, how, a, b):
 
 # the keyboard in C position: five white keys under the right hand, the song's notes lit, the finger numbers on them
 L7 = 'cdefgab'
-def trp(p, k): i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p[1:]) + i // 7)
+def trp(p, k): i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p.lstrip('abcdefgs')) + i // 7)   # 'cs5' (a sharp) keeps its octave
 # a keyboard from middle C: the five white keys under the right hand (from `start`), the song's notes lit, the fingers on
 # them; `sharp` marks the key's black key in coral, named above it
 def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
@@ -87,7 +87,8 @@ tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
   '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G. In which bar? <span class="ib"></span></p></div></div>')
-if 'pos' in SONG: POS = '<div class="pos"><div>' + kb(width=340, fmap=SONG.get('fmap')) + '</div><div>' + SONG['pos'] + '</div></div>'
+exec(open('early.py').read())
+if 'pos' in SONG: POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else kb(width=340, fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
 P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
 LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
@@ -98,14 +99,15 @@ P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <div class="sp"></div>{LINES('rhy')}
 <div class="end">{ticks(SONG.get('p1_ticks', ['Said it in time', 'Clapped and counted', 'Found every minim (2 beats)']), True)}</div>''', 1)
 
-P2 = page(f'''{part(2, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter name of every note in the boxes; the first one is done.')}
+P2 = page(f'''{part(2, 'Listen and sing', SONG.get('p2_how', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter name of every note in the boxes; the first one is done.'))}
 {POS}
 <div class="sp"></div>{LINES('sing')}
 
 <div class="row2 end"><div>{ticks(P2T, True)}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>''', 2)
 
 exec(open('early.py').read())
-if 'basics' in SONG: P3 = basics_page()
+if SONG.get('kind') == 'ready': P3 = ''
+elif 'basics' in SONG: P3 = basics_page()
 else: P3 = page(f'''{part(3, 'Play it four ways', 'Each way adds a little more for the left hand. Your teacher tells you which is yours this week.')}
 <div class="lg"><div class="lgl">{legend}</div><div class="lks"><span class="lkh">Left hand</span>{lhkb('way2', 'C', both=True)}</div></div>
 <div class="sp"></div>{mus('play1')}<div class="sp"></div>{mus('play2')}<div class="sp"></div>
@@ -135,5 +137,6 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .mv{{display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;margin:4px 0 2px}} .cap2{{font-size:15px;line-height:1.5;margin:0}} .gl{{max-width:91%;margin:0 auto}} .wrow{{display:flex;align-items:center;gap:10px;margin:6px 0}} .wk{{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{C};width:38px;flex:none}} .wrow .ticks{{margin:0}} .ck2{{font-size:15.5px;font-weight:700;margin:8px 0 2px}}
 .tch{{display:flex;align-items:center;gap:16px;margin-top:12px;padding-top:10px;border-top:1px dashed #c9cbe0}} .tch>span:first-child{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{MUTE}}}
 @media print {{ body{{background:#fff}} .pg{{margin:0}} }}''' + EARLY_CSS
-html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{P1}{P2}{P3}</body></html>'
+BODY = ready_pages() if SONG.get('kind') == 'ready' else P1 + P2 + P3
+html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{BODY}</body></html>'
 open(sys.argv[3], 'w').write(html); print('ok', len(html))

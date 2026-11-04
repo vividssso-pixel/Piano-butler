@@ -5,6 +5,7 @@ def star(n): return '★' * n + '<span class="so">' + '★' * (3 - n) + '</span>
 def ex(n, title, stars, how, body):
     return f'<div class="ex2"><div class="eh"><span class="en">{n}</span><b>{title}</b><span class="el">{star(stars)}</span></div><p class="how">{how}</p>{body}</div>'
 def tp(kind, topic, title, rule, inner, n, hb):
+    hb = hb + 12   # Part II now starts at p. 48
     return wpage(f'<div class="kick">Time · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
 def staff(ts='', bars=2, h=74, heads=None, stems=None):
     W_ = 600; y0 = 14; s = ''.join(f'<line x1="10" x2="{W_ - 10}" y1="{y0 + i * 12}" y2="{y0 + i * 12}" stroke="{N_}" stroke-width="1.3"/>' for i in range(5))
@@ -21,7 +22,8 @@ def staff(ts='', bars=2, h=74, heads=None, stems=None):
 def opts(keys, h=56):
     return '<div class="op3">' + ''.join(f'<div class="opc"><span class="ol">{"ABC"[i]}</span>{wx(k, h)}</div>' for i, k in enumerate(keys)) + '</div>'
 def grid(cells, cols=3, cls=''): return f'<div class="fills {cls}" style="grid-template-columns:repeat({cols},1fr)">' + ''.join(cells) + '</div>'
-def cell(k, lab, h=70): return f'<div class="fc">{wx(k, h)}<div class="add">{lab}</div></div>'
+WL = '<span class="wl"></span>'   # centred writing line (her 4 Nov)
+def cell(k, lab, h=70): return f'<div class="fc">{wx(k, max(h, 78))}<div class="add">{lab.replace(BOX, WL)}</div></div>'
 def piece(rows): return tbl(['Find in a piece you are learning', 'Piece', 'Bar'], [[r, LINE, BOX] for r in rows], ['46%', '38%', '16%'])
 
 # ---------- 1 Pulse ----------
@@ -70,7 +72,7 @@ scrows = ''.join(f'<div class="scc">{x}<span class="sel">simple · compound</spa
 A4 = tp('Learn', 'Time signatures', 'Time signatures', 'Top number: how many counts in a bar. Bottom number: which note is one count.', f'''
 {ex(1, 'Which time signature?', 1, 'Each line is one full bar. Write a time signature that fits.', grid([cell(k, 'time signature ' + BOX, 60) for k in ('wt1', 'wt2', 'wt3', 'wt4', 'wt5', 'wt6')], 3))}
 {ex(2, 'Simple or compound?', 2, 'Circle simple or compound, then write how many beats are in each bar.', f'<div class="scg">{scrows}</div>')}
-{ex(3, 'What does it mean?', 1, 'Complete each sentence.', '<div class="sent"><p>In 3/4 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al in') + '.</p><p>In 6/8 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al in') + '.</p><p>C means the same as ' + BOX + ' ; ¢ means the same as ' + BOX + ' .</p></div>')}''', 7, 42)
+{ex(3, 'What does it mean?', 1, 'Complete each sentence.', '<div class="sent"><p>In 3/4 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al inl') + '.</p><p>In 6/8 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al inl') + '.</p><p>C means the same as ' + BOX + ' ; ¢ means the same as ' + BOX + ' .</p></div>')}''', 7, 42)
 B4 = tp('Use', 'Time signatures', 'Time signatures', 'In compound time each beat is a dotted note, divided into three.', f'''
 {ex(1, 'Add the bar lines', 2, 'Draw a bar line after every full bar, and a final bar line at the end.', wx('wb1', 50) + wx('wb2', 50) + wx('wb3', 50))}
 {ex(2, 'Beam them', 3, 'The same six quavers in two time signatures. Join them with beams to show the beats: in twos for 3/4, in threes for 6/8.', grid([cell('wbm2', '3 beats', 64), cell('wbm1', '2 beats', 64)], 2))}
@@ -80,7 +82,8 @@ B4 = tp('Use', 'Time signatures', 'Time signatures', 'In compound time each beat
 A5 = tp('Learn', 'Rhythm', 'Rhythm', 'Beams join the notes of one beat, so the beats stay visible.', f'''
 {ex(1, 'Good grouping?', 2, 'Circle ✓ if the grouping shows the beats, ✗ if it hides one.', grid([cell(k, '✓ &nbsp; ✗', 64) for k in ('wg1', 'wg2', 'wg3', 'wg4')], 2))}
 {ex(2, 'Count it', 2, 'Write a count in every box: a triplet, then a syncopation.', '<div class="two" style="grid-template-columns:1fr 1fr">' + wx('wtr', 80) + wx('wsy', 80) + '</div>')}
-{ex(3, 'The upbeat', 2, 'This piece starts on beat 3. Write a count in every box. Then: how many beats does the last bar need?', wx('wan', 70) + f'<div class="add">beats in the last bar {BOX}</div>')}''', 9, 46)
+{ex(3, 'The upbeat', 2, 'This piece starts on beat 3. Write a count in every box. Then: how many beats does the last bar need?', wx('wan', 70) + f'<div class="add">beats in the last bar {BOX}</div>')}
+{ex(4, 'Clap the upbeat', 1, 'Clap the piece in exercise 3 with a metronome: count “1 2” silently, clap on 3. Tick a circle each time the last bar is exactly two beats.', ticks())}''', 9, 46)
 B5 = tp('Use', 'Rhythm', 'Rhythm', 'Swing: pairs of quavers written evenly, played long–short.', f'''
 {ex(1, 'Swing', 1, 'Which line shows how swung quavers are played? Circle A or B, then play both and hear the difference.', '<div class="op3" style="grid-template-columns:1fr 1fr">' + ''.join(f'<div class="opc"><span class="ol">{l}</span>{wx(k, 60)}</div>' for l, k in (('A', 'wsw1'), ('B', 'wsw2'))) + '</div>')}
 {ex(2, 'Clap and count', 2, 'Clap each line with a metronome while counting aloud. Tick a circle each day it is steady.', ''.join(f'<div class="cl2"><div class="clh"><span class="lv3">{l}</span>{ticks()}</div>{wx(k, 64)}</div>' for k, l in (('wl6', '6/8'), ('wl3', 'triplets and semiquavers'), ('wl4', 'syncopation'))))}
@@ -94,37 +97,37 @@ R = wpage(f'''<div class="kick">Time · Review</div><h1>Review</h1><p class="rem
 {ex(3, 'Time signatures', 2, 'Write a time signature for each bar, then circle the compound ones.', grid([cell(k, 'time signature ' + BOX, 56) for k in ('wt3', 'wt5', 'wt6')], 3))}
 {ex(4, 'Count it', 2, 'Write a count in every box.', wx('wrev', 74))}
 {ex(5, 'True or false?', 2, 'Circle T or F.', ''.join(f'<div class="row">{t}<span class="tf">T &nbsp; F</span></div>' for t in ('A tie joins two notes of different pitches.', '6/8 has two beats in a bar.', 'In 4/4, a beam may cross the middle of the bar.')))}
-<div class="score">Score <span class="ab"></span> / 20</div>''', 11, 36)
+<div class="score">Score <span class="ab"></span> / 20</div>''', 11, None)
 concepts = ['pulse, tempo and strong beats', 'bar lines and repeat signs', 'note and rest values', 'dots and ties', 'simple time signatures', 'compound time (6/8)', 'grouping with beams', 'upbeats', 'triplets', 'syncopation and swing']
 PR = wpage(f'''<div class="kick">Time · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
 {tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (48, 48, 50, 52, 54, 56, 58, 58, 58, 60))], ['40%', '15%', '15%', '15%', '15%'], 'prog')}
-<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 12, 36)
+<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 12, None)
 ans = [('p. 1', 'Slow to fast: 60, 76, 92, 120. Strong beats on 1; in 4/4 medium on 3. Signs: bar line, double bar line, final bar line, repeat signs. Count: 1 2 3 · 1–2 3 · 1–2–3.'),
        ('p. 2', 'Mistake: bar 3 has 4 beats.'),
        ('p. 3', 'Draw it: minim, quaver, dotted minim, semibreve. Table: crotchet 1, minim 2, quaver ½, dotted minim 3, semiquaver ¼. Also called: half note, quarter note, eighth note, sixteenth note.'),
        ('p. 4', 'Stems: up on the right below the middle line, down on the left above it, either on it. Rests: minim, crotchet, minim, crotchet.'),
        ('p. 5', 'Sums: 1½, 4, 6, 2, 2. Complete: crotchet, crotchet, crotchet, quaver, quaver, quaver.'),
        ('p. 6', 'Tie or dot: dotted minim, dotted crotchet, dotted semibreve. Mistake: bar 2 has 5 beats.'),
-       ('p. 8', 'Beams: 3/4 in three pairs; 6/8 in two groups of three.'),
        ('p. 7', 'Time signatures: 3/4, 2/4, 6/8, 4/4, 5/4, 9/8. Compound: 6/8, 9/8, 12/8, 6/4 (beats 2, 3, 4, 2). Simple: 3/4 (3), 2/2 (2), 4/4 (4), 3/8 (3). 3/4: 3 crotchet beats; 6/8: 2 dotted-crotchet beats; C = 4/4, ¢ = 2/2.'),
+       ('p. 8', 'Beams: 3/4 in three pairs; 6/8 in two groups of three.'),
        ('p. 9', 'Grouping: ✓ ✗ ✓ ✗. Triplet: 1 & a 2. Syncopation: 1 & & 1 2. Upbeat: 3 · 1 2 3 · 1–2; the last bar needs 2 beats.'),
        ('p. 10', 'Swing is played as B.'),
        ('p. 11', 'minim, quaver, dotted crotchet, semibreve · 4, 4 · 6/8, 5/4, 9/8 (compound: 6/8 and 9/8) · 1–2 & 3 · 1–2–3 · F, T, F.')]
 AN = wpage(f'''<div class="kick">Time · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in ans], ['12%', '88%'], 'ansT')}
-<p class="sm">Pages with “make your own”, “in your music” and clapping have no single answer: check them at the piano with your teacher, or with the online lessons.</p>''', 13, 36)
+<p class="sm">Pages with “make your own”, “in your music” and clapping have no single answer: check them at the piano with your teacher, or with the online lessons.</p>''', 13, None)
 
 css += f'''
 .so{{color:#d9d4c6}} .el{{color:{GOLD if False else '#c9a24f'};font-size:13px;letter-spacing:1px}}
 .rem2{{display:flex;gap:12px;align-items:baseline;font-size:14.5px;margin:-2px 0 4px;color:#3d4080}} .rem2 span{{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}}
 .op3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px}} .opc{{position:relative}} .opc .vx{{margin:0;padding-left:30px}} .ol{{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-weight:700;font-size:16px;color:{C};z-index:1}}
-.sent p{{font-size:15px;margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}} .al.in{{display:inline-block;width:150px;height:20px}}
+.sent p{{font-size:15px;margin:6px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}} .al.inl{{display:inline-block;width:150px;height:20px}}
 .mm4{{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}} .mm4>div{{display:flex;flex-direction:column;align-items:center;gap:8px;border:1px solid #e2ddd0;background:#fff;padding:12px 6px}} .mmk{{font-weight:700;font-size:15px}} .drw{{display:block;width:70px;height:70px}} .nm4{{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}} .nm4>div{{text-align:center}}
 .tf{{margin-left:auto;font-weight:700;letter-spacing:.1em;color:{MUTE}}} .row{{display:flex;align-items:center;gap:10px;font-size:15px;padding:5px 0;border-bottom:.6px solid #e2ddd0}}
 .score{{margin-top:14px;text-align:right;font-weight:700;font-size:16px;display:flex;justify-content:flex-end;align-items:center;gap:8px}}
 .prog td{{padding:9px 8px;font-size:15px}} .cb2{{display:inline-block;width:20px;height:20px;border:1.6px solid {N_}}}
 .note2{{margin-top:20px}} .note2 b{{font-size:15px}} .lines .al{{height:34px}}
-.ansT td{{font-size:13.5px;line-height:1.45;padding:6px 8px;vertical-align:top}} .ansT td:first-child{{font-weight:700;color:{C}}}
+.fills>.fc{{display:flex;flex-direction:column}} .fills>.fc>.add{{margin-top:auto;justify-content:center;text-align:center;gap:6px}} .wl{{display:inline-block;width:64px;height:26px;border-bottom:1.6px solid #26296b}} .fills>.fc>figure.vx{{border:0;background:none;box-shadow:none;height:auto;flex:0 0 auto;padding:4px 0}} .fills>.fc>.add{{margin-top:6px !important}} .fills{{row-gap:18px}} .ansT td{{font-size:13.5px;line-height:1.45;padding:6px 8px;vertical-align:top}} .ansT td:first-child{{font-weight:700;color:{C}}}
 '''
 pages = [A1, B1, A2, B2, A3, B3, A4, B4, A5, B5, R, PR, AN]
 open('/mnt/user-data/outputs/house-rooms/workbook-time2.html', 'w').write(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>')

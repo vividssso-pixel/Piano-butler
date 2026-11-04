@@ -25,7 +25,7 @@ function mei(b0, b1, o) {
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, lh: o.lhfing });
+    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, lh: o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L') });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
       if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${(o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
@@ -76,7 +76,7 @@ function addCounts(svg) {
     beat += L; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
-function addBoxes(svg, ex) {
+function addBoxes(svg, ex, names, boxSize) {   // names: every box filled in (before the staff the place can't tell the note)
   const ev = []; let m; const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use xlink:href="#[^"]+" transform="translate\((\d+), (\d+)\)/g;
   while ((m = re.exec(svg))) ev.push(+m[2] + 106);
   // the boxes sit in a row of their own: below middle C's ledger line (top line + 4 spaces + a ledger + a head), or below
@@ -86,8 +86,11 @@ function addBoxes(svg, ex) {
   const T = sylY.length ? Math.max(...sylY) + 160 : sy + 1110; let out = '';
   // each box as wide as its own room allows: a note close to its neighbours gets a narrower box, never touching them
   const room = (k) => Math.min(k ? ev[k] - ev[k - 1] : 1e9, k < ev.length - 1 ? ev[k + 1] - ev[k] : 1e9);
-  ev.forEach((x, k) => { const B = Math.max(130, Math.min(380, room(k) - 120)); out += `<rect x="${x - B / 2}" y="${T}" width="${B}" height="${Math.max(B, 300)}" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
-    if (k === 0 && ex) out += `<text x="${x}" y="${T + Math.max(B, 300) * 0.78}" text-anchor="middle" font-size="${B * 0.76}" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
+  const minRoom = Math.min(...ev.map((x, k) => room(k)));
+  ev.forEach((x, k) => { const B = boxSize || Math.max(130, Math.min(380, minRoom - 120));   // one size for every box on the line
+    out += `<rect x="${x - B / 2}" y="${T}" width="${B}" height="${B}" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
+    if (names) out += `<text x="${x}" y="${T + B * 0.76}" text-anchor="middle" font-size="${Math.min(B * 0.8, 260)}" font-weight="700" fill="#26296b" class="cnt">${names[k]}</text>`;
+    else if (k === 0 && ex) out += `<text x="${x}" y="${T + B * 0.78}" text-anchor="middle" font-size="${B * 0.76}" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
 // A lead sheet's "when" row, under the staff: for each bar, the left hand's pattern for that bar's chord, placed on its beats.
@@ -124,6 +127,34 @@ function addRows(svg, ways, b0, pic) {
     Y += tall ? 860 : 400; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${lab}`);
 }
+// Before the staff the letter goes inside the note (her 4 Nov 12:07): a bigger head with its name in it, joined to its stem;
+// filled for a crotchet or quaver (white letter), open for a minim or longer (navy letter). The small engraved head goes.
+function addLetterHeads(svg, pitches, hs, hm, keepLen) {
+  // heads about twice the size, so the places are twice as far apart too (S.pre: E on the line, D hanging just under it, C
+  // on a ledger of its own); Verovio's ledger lines go, and the song's ledger notes (S.ledger) get one through their middle.
+  // A head never touches its neighbour: where notes are close (quavers) it shrinks to fit.
+  const RX0 = 250, RY0 = 195, FS0 = 290;
+  svg = svg.replace(/<g[^>]*class="ledgerLines[^"]*"[^>]*>[\s\S]*?<\/g>/g, '');
+  const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use [^>]*transform="translate\((\d+), (\d+)\)[^>]*\/>\s*<\/g>(\s*<g id="[^"]+" class="stem">\s*<path d="M(\d+) (\d+) L\d+ (\d+)")?/g;
+  const at = [...svg.matchAll(re)].map(m => +m[2] + 108), room = (k) => Math.min(k ? at[k] - at[k - 1] : 1e9, k < at.length - 1 ? at[k + 1] - at[k] : 1e9);
+  const lineY = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
+  let k = 0; const s = hs || Math.min(1, Math.min(...at.map((x, i) => room(i))) / 2 / RX0 - 0.12);   // one size on the line (or the song's)
+  const RX = RX0 * s, RY = RY0 * s, FS = FS0 * s;
+  svg = svg.replace(re, (m, id, x, y, st, sx, y1, y2) => {
+    const L = INFO[id].len, open = L >= 2, p = pitches[k++], name = hm ? S[hm][p] : p[0].toUpperCase(); let cx = +x + 108;
+    // S.place: steps of half a head, as on a real staff (E on the line, D touching it from below, C a step further on its
+    // ledger); the stem's head end moves with the head, its tip (and any beam) stays
+    if (S.place && p in S.place) { const ny = lineY - S.place[p] * RY; if (st) { const down = +y2 > +y1, tip = keepLen && down ? Math.max(+y2, ny + 3.6 * RY0) : +y2;   // hands mixed, no beams: a left-hand stem keeps a full length down
+      m = m.replace(`M${sx} ${y1} L${sx} ${y2}`, `M${sx} ${ny} L${sx} ${tip}`); } y = ny; }
+    if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
+    const ledger = (S.ledger || []).includes(p) ? `<line x1="${cx - RX - 110}" x2="${cx + RX + 110}" y1="${y}" y2="${y}" stroke="#000" stroke-width="22" class="lledger"/>` : '';
+    // drawn where the head was, so it sits over the line and under its own stem
+    const head = ledger + `<ellipse cx="${cx}" cy="${y}" rx="${RX}" ry="${RY}" fill="${open ? '#fff' : '#26296b'}" stroke="#26296b" stroke-width="${open ? 26 : 0}" class="lhead"/>`
+      + `<text x="${cx}" y="${+y + FS * 0.36}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${open ? '#26296b' : '#fff'}" class="cnt lname">${name}</text>`;
+    return m.replace(/<use [^>]*\/>/, head);
+  });
+  return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
+}
 const JOBS = S.jobs || {
   sing1: [0, 4, { words: 1, meter: 1, boxes: 1, pw: 1500 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1, pw: 1500 }],
   rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350 }],   // bigger: the first thing a child reads
@@ -132,21 +163,47 @@ const JOBS = S.jobs || {
   duet1: [0, 4, { duet: 1, meter: 1, pw: 2300 }], duet2: [4, 8, { duet: 1, pw: 2300 }],   // small: the teacher reads it
   g1: [0, 4, { fing: 1, chords: 1, meter: 1, tr: 4, key: '1s' }], g2: [4, 8, { fing: 1, chords: 1, tr: 4, key: '1s' }],   // Move it: bars 1 to 4 in G, one sharp, the same fingers
 };
+// Two passes, so that every line of a group (rhy1, rhy2...; sing1, sing2...) comes out at one size and ends at the right
+// margin: first each line's natural width, then every line of the group justified to the group's widest.
+const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
+  pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20,
+  spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.ltm || (o.rhythm ? 2 : 5),
+  lyricWordSpace: 2.6, fingeringScale: 0.9, ...extra });
+const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); };
+const group = (k) => k.replace(/\d+$/, ''), natural = {};
+for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
+  tk.setOptions(opts(o, { pageWidth: o.pw || 1750, breaks: 'none' })); load(b0, b1, o);
+  const w = +tk.renderToSVG(1).match(/viewBox="[^"]+"/g)[1].split(' ')[2]; natural[group(k)] = Math.max(natural[group(k)] || 0, w);
+}
 const out = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
-  INFO = {}; id = 0;
-  tk.setOptions({ pageWidth: o.pw || 1750, adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
-    pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20, breaks: 'none', spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5, lyricWordSpace: 2.6, fingeringScale: 0.9 });
-  tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); let svg = tk.renderToSVG(1);
+  tk.setOptions(opts(o, { pageWidth: Math.ceil(natural[group(k)] / 10) + 8, breaks: 'auto', minLastJustification: 0 })); load(b0, b1, o);
+  if (tk.getPageCount() > 1) console.log('warning: ' + k + ' broke over a page');
+  let svg = tk.renderToSVG(1);
   // fingers above the staff: Verovio clears the staff but not a stem that rises past it (G's, A's), so set them all on one
   // line, clear of the highest stem
+  // left-hand fingers below a line whose stems go down: below the lowest stem
+  if (o.lhfing) { const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
+    const bots = [...svg.matchAll(/class="stem">\s*<path d="M\d+ (\d+) L\d+ (\d+)"/g)].map(m => Math.max(+m[1], +m[2]));
+    const base = Math.max(sy, ...bots) + 330;
+    svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y > sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m); }
   if (o.fing) { const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
     const tops = [...svg.matchAll(/class="stem">\s*<path d="M\d+ (\d+) L\d+ (\d+)"/g)].map(m => Math.min(+m[1], +m[2]));
     const base = Math.min(sy, ...tops) - 130;
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
-  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase()); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
+  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().map(n => n[0][0].toUpperCase()) : null, o.box); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
+  if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]), o.hs, o.hm, o.mix);
+  // a left-hand line before the staff (her 12:18): the line and the ledgers mean the treble's places, so they go; the notes
+  // keep their high and low, the bar lines stay
+  // her 12:22: and the right hand's too -- before the staff no line at all, only the notes' high and low and the bar lines;
+  // the staff comes in whole, later
+  if (o.pre) svg = svg.replace(/(<g id="[^"]+" class="staff">\s*)<path d="M\d+ \d+ L\d+ \d+" stroke-width="13" \/>/g, '$1').replace(/<line [^>]*class="lledger"\/>/g, '');
+  // before the staff the bar lines reach as far as the notes do (the one-line staff draws them a space each way)
+  if (o.pre) svg = svg.replace(/class="barLine">[\s\S]*?<\/g>/g, g => g.replace(/<path d="M(\d+) (\d+) L(\d+) (\d+)"/g, (m, x, ya, x2, yb) => `<path d="M${x} ${+ya - 260} L${x2} ${+yb + 260}"`));   // the end bar's thick stroke as tall as its thin one (her 4 Nov 12:41)
+  // bar numbers lifted clear of the notes
+  svg = svg.replace(/class="mNum autogenerated">/g, 'class="mNum autogenerated" transform="translate(-60,-260)">');
   out[k] = svg;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
