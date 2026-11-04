@@ -5,8 +5,8 @@ def hpage(inner, n): return page(inner, n, 'PART III · HARMONY')
 W_ = 34   # white-key width in the keyboard pictures
 def dot(i, t='', col='#e4572e', y=74): return f'<circle cx="{i * W_ + W_ / 2}" cy="{y}" r="11" fill="{col}"/>' + (f'<text x="{i * W_ + W_ / 2}" y="{y + 4}" text-anchor="middle" font-family="AH,Arial" font-size="11" font-weight="700" fill="#fff">{t}</text>' if t else '')
 
-YK545 = '<figure class="vx"><div class="vs">' + ''.join([P['yk_545'].replace('<svg ', '<svg style="max-height:68px" ', 1)]) + '</div></figure>'
-for _n in ('n1', 'n2', 'n3', 'n4'): YK545 = YK545.replace(f'<g id="{_n}" class="note">', f'<g id="{_n}" class="note" style="fill:#e4572e;color:#e4572e">', 1)
+YKDAN = '<figure class="vx"><div class="vs">' + P['yk_dan'].replace('<svg ', '<svg style="max-height:72px" ', 1) + '</div></figure>'   # (K. 545 and the Alberti bass wait for Harmony 6, in the bass clef: her 4 Nov)
+for _n in ('n2', 'n3', 'n4'): YKDAN = YKDAN.replace(f'<g id="{_n}" class="note">', f'<g id="{_n}" class="note" style="fill:#e4572e;color:#e4572e">', 1)
 # ---------- Part III opener ----------
 HTOC = [('Chords and triads', 64), ('Four kinds of triad', 66), ('Chords in a key', 68), ('Inversions', 70), ('Cadences', 72), ('Chords under a melody', 74), ('The dominant 7th', 76), ('Tips: when a chord sounds wrong', 78)]
 hflow = ''.join(f'<div class="fl"><b>{a}</b><span>{b}</span></div>' + ('<span class="fa">›</span>' if i < 4 else '') for i, (a, b) in enumerate([('Triads', 'three notes stacked in 3rds'), ('Kinds', 'major, minor, diminished, augmented'), ('Chords in a key', 'I, IV and V'), ('Inversions', 'the same chord, a new bass'), ('Cadences', 'the endings of phrases')]))
@@ -32,7 +32,7 @@ H1 = hpage(f"""{head('Part III · Harmony · 1', 'Chords and triads', 'A <b>chor
 {two(h3('All lines or all spaces') + '<p>A stacked triad sits on <b>three lines in a row</b> or in <b>three spaces in a row</b>, like a snowman. If one note breaks the pattern, it is not a triad.</p>', px('h_ls', 80, 'Lines, spaces, lines, spaces: every one a triad.'), '1fr 1.15fr')}
 {two(h3('Solid and broken') + '<p>Played together, a chord is <b>solid</b> (or blocked). Played one note at a time, it is <b>broken</b>. Spread up and down the keyboard, a broken chord becomes an <b>arpeggio</b>.</p><p class="sm">First met: Level 0; arpeggios from Level 1.</p>', px('h_sb', 80, 'The same three notes, solid then broken.'), '1fr 1.15fr')}
 {inaction('Is it a triad?', px('h_is', 64), ['<b>Chord 1:</b> D F A, all in spaces, each a 3rd apart: <b>a triad</b>.', '<b>Chord 2:</b> D E A: D to E is a 2nd. <b>Not a triad.</b>', '<b>Chord 3:</b> D G C, stacked in 4ths. <b>Not a triad.</b>'], 'Only chord 1 is a triad. Check that each note is a <b>3rd</b> above the one below.')}
-{youknow('Mozart, Sonata in C, K. 545: the left hand', YK545, 'The famous rippling left hand is just the <b class="co">C triad</b>, broken: <b>C G E G</b>, over and over. Root, 5th, 3rd, 5th: one chord, one note at a time.', 'Play C G E G evenly with your left hand, then C E G together.')}
+{youknow('The Blue Danube (Johann Strauss II), here in C', YKDAN, 'The most famous waltz tune simply climbs the <b class="co">C triad</b>: <b>C, C E G, G</b>. Root, 3rd, 5th, then it holds the top: that is why it sounds so open.', 'Play C E G one at a time, then hum the waltz over it.')}
 {watch(['Stacking 2nds or 4ths: a triad skips exactly one letter each time.', 'Naming a chord from its top note: the root, at the bottom of the stack, names it.'])}
 {foot('Counting intervals p. 32 · Major scales p. 36', 'Workbook Harmony 1 · Online: Library › Chords')}""", 64)
 
