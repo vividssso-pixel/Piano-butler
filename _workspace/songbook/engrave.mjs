@@ -90,7 +90,7 @@ function addBoxes(svg, ex, names, boxSize, pre) {   // names: every box filled i
   const minRoom = Math.min(...ev.map((x, k) => room(k)));
   ev.forEach((x, k) => { const B = boxSize || Math.max(150, Math.min(440, minRoom - 50));   // as big as the space allows (her 4 Nov 15:21: too small)   // one size for every box on the line
     out += `<rect x="${x - B / 2}" y="${T}" width="${B}" height="${B}" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
-    if (names) out += `<text x="${x}" y="${T + B * 0.76}" text-anchor="middle" font-size="${Math.min(B * 0.8, 260)}" font-weight="700" fill="#26296b" class="cnt">${names[k]}</text>`;
+    if (names) out += `<text x="${x}" y="${T + B * 0.76}" text-anchor="middle" font-size="${B * 0.66}" font-weight="700" fill="#26296b" class="cnt">${names[k]}</text>`;
     else if (k === 0 && ex) out += `<text x="${x}" y="${T + B * 0.78}" text-anchor="middle" font-size="${B * 0.76}" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
@@ -165,7 +165,7 @@ function drawStaff5(svg, lineY, RY, bass) {
   svg = svg.replace(/class="barLine">[\s\S]*?<\/g>/g, g => g.replace(/<path d="M(\d+) (-?[\d.]+) L(\d+) (-?[\d.]+)"/g, (m, x, ya, x2) => `<path d="M${x} ${lineY - 4 * sp} L${x2} ${lineY}"`));
   svg = svg.replace(/(class="clef">\s*<use [^>]*transform=")translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)/, (m, a, x, y, sx) => `${a}translate(${+x - 40}, ${lineY - (bass ? 3 : 1) * sp}) scale(${sx * k * 0.72}, ${sx * k * 0.72})`);
   let mi = 0; const mid = lineY - 2 * sp;
-  svg = svg.replace(/(class="meterSig">)([\s\S]*?)(<\/g>)/, (m, a, body, c) => a + body.replace(/transform="translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)"/g, (mm, x, y, sx) => `transform="translate(${+x + 60}, ${mi++ ? mid + sp : mid - sp}) scale(${sx * k}, ${sx * k})"`) + c);
+  svg = svg.replace(/(class="meterSig">)([\s\S]*?)(<\/g>)/, (m, a, body, c) => a + body.replace(/transform="translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)"/g, (mm, x, y, sx) => `transform="translate(${+x + 40}, ${mi++ ? mid + sp : mid - sp}) scale(${sx * k * 0.85}, ${sx * k * 0.85})"`) + c);
   return svg;
 }
 function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5, bass) {
@@ -189,7 +189,7 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5, bass) {
       // before the staff every stem not on a beam is one long length from its head (her 4 Nov 13:32 and 15:15: not short,
       // all the same, the long one); a beamed one stays on its beam
       if (st) { const down = +y2 > +y1, beamed = beams.some(([a, b]) => +sx >= a - 30 && +sx <= b + 30);
-        const tip = beamed ? +y2 : p in PL ? (down ? Math.max(+y2, ny + STEM) : Math.min(+y2, ny - STEM)) : +y2;
+        const tip = beamed ? +y2 : staff5 ? (down ? ny + STEM : ny - STEM) : p in PL ? (down ? Math.max(+y2, ny + STEM) : Math.min(+y2, ny - STEM)) : +y2;   // on our staff: exactly three and a half spaces
         m = m.replace(`M${sx} ${y1} L${sx} ${y2}`, `M${sx} ${ny} L${sx} ${tip}`); }
       y = ny; }
     if (st) cx = +y2 < +y1 ? +sx - RX + 10 : +sx + RX - 10;   // the stem on the head's edge: up on the right, down on the left
@@ -219,6 +219,7 @@ const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, sc
   pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: o.pml || 20, pageMarginRight: 20,
   spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.ltm || (o.rhythm ? 2 : 5),
   lyricWordSpace: o.lws || 3.4, lyricSize: o.lys || 4.0, fingeringScale: 0.9,
+  ...(o.staff5 ? { rightMarginClef: 2, leftMarginMeterSig: 2, rightMarginMeterSig: 2 } : { rightMarginClef: 1, leftMarginMeterSig: 1, rightMarginMeterSig: 1 }),   // room round the clef and the time on our big staff (her 4 Nov 21:11)
   ...(o.letters ? { leftMarginNote: 2, rightMarginNote: 1.5, leftMarginBarLine: 1.5, rightMarginBarLine: 2 } : { leftMarginNote: 1, rightMarginNote: 0, leftMarginBarLine: 0, rightMarginBarLine: 0 }),   // set every time: the toolkit keeps options between jobs   // big lettered heads: room round each and off the bar lines (her 4 Nov 13:22)
   ...extra });
 const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : mei(b0, b1, o)); };
@@ -286,7 +287,7 @@ function mapX(svg, knotsOld, knotsNew) {
     if (isNaN(x) || isNaN(w)) { rects.push(m); return `@@R${rects.length - 1}@@`; }
     const nx = f(x), nw = Math.max(1, f(x + w) - nx);
     rects.push(m.replace(/(^<rect |[ ])x="(-?[\d.]+)"/, `$1x="${nx}"`).replace(/ width="(-?[\d.]+)"/, ` width="${Math.round(nw * 10) / 10}"`)); return `@@R${rects.length - 1}@@`; });
-  body = body.replace(/(<(?:use|g)[^>]*transform="translate\()(-?[\d.]+)/g, (m, a, x) => a + f(x))
+  body = body.replace(/(<use[^>]*transform="translate\()(-?[\d.]+)/g, (m, a, x) => a + f(x))   // a group's own transform (the page margin, a bar number) is relative: left alone
     .replace(/ (x|cx|x1|x2)="(-?[\d.]+)"/g, (m, a, x) => ` ${a}="${f(x)}"`)
     .replace(/ d="([^"]+)"/g, (m, d) => ' d="' + d.replace(/([ML])\s*(-?[\d.]+)/g, (mm, c, x) => c + f(x)) + '"')
     .replace(/ points="([^"]+)"/g, (m, p) => ' points="' + p.trim().split(/\s+/).map(q => { const [x, y] = q.split(','); return f(x) + ',' + y; }).join(' ') + '"');
@@ -304,7 +305,8 @@ for (const g of new Set(Object.keys(out).map(group))) {
   const col = [...Array(n)].map((_, j) => same ? Math.max(...wid.map(w => w[j])) : 1), tot = col.reduce((a, b) => a + b, 0);
   const span0 = Math.min(...info.map(i => i.bars[i.bars.length - 1])) - s, fit = span0 / tot;
   if (same && fit < MIN_FIT) { console.log('bars left as engraved in ' + g + ' (would squeeze to ' + fit.toFixed(2) + ')'); continue; }   // never crowd the words
-  ks.forEach((k, j) => { const { bars, first } = info[j], a1 = first - 260, end = bars[bars.length - 1];
+  const E = Math.min(...info.map(i => i.bars[i.bars.length - 1]));   // one right edge for every line, so the last bar lines stand together too
+  ks.forEach((k, j) => { const { bars, first } = info[j], a1 = first - 260, end = E;
     const span = end - s; let x = s; const nw = [s, ...bars.map((b, i) => (x += span * (same ? col[i] / tot : 1 / bars.length)))];
     out[k] = mapX(out[k], [a1, ...bars], nw); });
 }
