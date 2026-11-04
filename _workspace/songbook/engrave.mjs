@@ -25,10 +25,10 @@ function mei(b0, b1, o) {
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp, fo]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, lh: !o.staff5 && (o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L')) });
+    bar.forEach(([p, d, syl, wp, fo, lfo]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, lh: !o.staff5 && (o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L')) });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
       if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${fo != null && !o.fk ? fo : (o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);   // fo: this note's own finger (G with 4 next to A)
-      if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
+      if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${lfo != null ? lfo : S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
     flush();
     let st2 = '';
     if (o.lh) { const ch = S.chords[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';

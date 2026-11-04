@@ -78,7 +78,7 @@ def ready_pages():   # the two pages before Lesson 1
 def play_page():   # an early lesson's page 3: the song on the keys, step by step
     B = SONG['basics']
     return page(f'''{part(3, 'Play it', B['play'])}
-<div class="sp"></div><div class="bas"><div>{blackkb(260) if B.get('blackpic') else kb(width=300, fmap=SONG.get('fmap')) if B.get('kb') else keys(1, True, True, 200)}</div><div><p class="cap2">{B.get('keys_note', '')}</p></div></div>
+<div class="sp"></div><div class="bas"><div>{blackkb(260) if B.get('blackpic') else (KBS(200) if SONG.get('kbs') else kb(width=300, fmap=SONG.get('fmap'))) if B.get('kb') else keys(1, True, True, 200)}</div><div><p class="cap2">{B.get('keys_note', '')}</p></div></div>
 {hand_panels(B.get('lines', []))}{('<div class="sp"></div>' + B['after']) if B.get('after') else ''}
 <div class="sp"></div>
 <div class="chk end"><div class="ch">4 · Check</div><div class="cgrid">
