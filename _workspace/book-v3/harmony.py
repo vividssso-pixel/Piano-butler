@@ -98,7 +98,7 @@ INV = [['root position', 'the root (C)', 'C', 'I', '5/3', 'Level ½'], ['1st inv
 H4 = hpage(f"""{head('Part IV · Harmony · 4', 'Inversions', 'Shuffle a chord’s three notes and it is still the same chord. Root at the bottom: <b>root position</b>. Lift the root to the top and a new note takes the bottom: an <b>inversion</b>. Same name, new bass note.')}
 {pxr('h4_inv', ('n2', 'n7', 'n9'), 100, 'The red note is the root, C. Watch it climb: at the bottom, then on top, then in the middle. The chord is always C major.')}
 {tbl(['Position', 'Bass note', 'Chord symbol', 'Numeral', 'Figures', 'First met'], INV, ['21%', '18%', '17%', '13%', '15%', '16%'])}
-<p class="sm">Only the lowest note decides: E C G, or E G C E, is still a 1st inversion. Chord symbols write the bass after a slash: C/E is a C chord with E in the bass. Figures count the intervals above the bass, by letters: in E G C, G is a 3rd and C a 6th above E, so 6/3.</p>
+<p class="sm">Only the lowest note decides: E C G, or E G C E, is still a 1st inversion. Chord symbols write the bass after a slash: C/E is a C chord with E in the bass (more uses in Slash chords, p. {{H8}}). Figures count the intervals above the bass, by letters: in E G C, G is a 3rd and C a 6th above E, so 6/3.</p>
 {h3('Roll the bottom note to the top')}
 <div class="fk"><div class="fkf">{kbx('C', 10, W_, 100, label=True, shade={0: '#eef0f8'}, marks=[f'<circle cx="{W_ / 2}" cy="74" r="11" fill="none" stroke="#e4572e" stroke-width="2" stroke-dasharray="3 2"/>', f'<path d="M{W_ / 2},60 C{W_ * 2},2 {W_ * 6},2 {W_ * 7.4},58" fill="none" stroke="#e4572e" stroke-width="2.5"/><path d="M{W_ * 7.4 - 7},52 L{W_ * 7.4 + 1},61 L{W_ * 7.4 + 4},50" fill="none" stroke="#e4572e" stroke-width="2.5"/>', dot(2, 'E', col='#26296b'), dot(4, 'G', col='#26296b'), dot(7, 'C')], scale=1.0)}</div><div>Play C E G, then lift the <b class="co">root C</b> and put it on top (the red arrow): <b>E G C</b>. The E is now the bass: the 1st inversion. Do it again (G C E) for the 2nd inversion. In an inversion the stack has a <b>gap of a 4th</b> (G up to C): the note above the gap is the root.</div></div>
 {inaction('Name this chord: E G C', pxr('h4_name', ('n2', 'n5'), 84), ['<b>Restack it in 3rds</b>, like the snowman: C E G.', '<b>The bottom of the stack is the root:</b> C, so it is C major.', '<b>Which note is in the bass?</b> E, the 3rd: 1st inversion.'], 'E G C is <b>C major, 1st inversion</b>: C/E.')}
@@ -270,13 +270,38 @@ H7B = hpage(f"""<div class="kick">Part IV · Harmony · 7 · continued</div>
 {watch(['Hunting far up for the 9th: it is just the 2nd, an octave higher (D on C).', 'Calling C13 a C6: the 13th chord has the 7th (B♭) as well.', 'Playing F and E together in C13 or C11: they clash. C13 drops the F; C11 drops the E.'])}
 {foot('Seventh chords p. {{H5}} · Colour chords p. {{H6}}', 'Workbook Harmony 7 · Online: Library › Chords')}""", 79)
 
+# ---------- Harmony 8 · Slash chords (her 5 Nov: cover all the uses) ----------
+SLASHSVG = ('<svg viewBox="0 0 320 220" style="width:100%;max-width:290px;height:auto;display:block;margin:0 auto">'
+    '<text x="92" y="92" text-anchor="middle" font-family="PF,serif" font-size="92" font-weight="700" fill="#26296b">C</text>'
+    '<line x1="150" y1="20" x2="104" y2="200" stroke="#26296b" stroke-width="6" stroke-linecap="round"/>'
+    '<text x="170" y="196" text-anchor="middle" font-family="PF,serif" font-size="92" font-weight="700" fill="#e4572e">E</text>'
+    '<text x="8" y="120" font-family="AH,Arial" font-size="15" font-weight="700" fill="#26296b">the chord</text><text x="8" y="140" font-family="AH,Arial" font-size="14" fill="#26296b">right hand</text>'
+    '<text x="222" y="150" font-family="AH,Arial" font-size="15" font-weight="700" fill="#e4572e">the bass</text><text x="222" y="170" font-family="AH,Arial" font-size="14" fill="#e4572e">left hand,</text><text x="222" y="188" font-family="AH,Arial" font-size="14" fill="#e4572e">lowest note</text></svg>')
+JOBS = [['<b>Inversion</b>', 'C/E · C/G', 'a note of the chord', 'smoother changes (p. {{H4}})'], ['<b>Walk-down</b>', 'C · G/B · Am', 'one step down each time', 'a bass line that walks down'],
+        ['<b>Pedal</b>', 'F/C · G/C', 'the same note, held', 'chords move over a floor'], ['<b>Colour</b>', 'F/G · D/C', 'not in the chord', 'open, modern: pop, gospel']]
+H8A = hpage(f"""{head('Part IV · Harmony · 8', 'Slash chords', 'C/E means one chord with a chosen bass note: play a C chord, with E as the lowest note. It is not a fraction, and not two chords.')}
+{two(SLASHSVG, '<div class="big3"><div><span>1</span><p>Before the slash: the <b>chord</b>. C means C E G, in the right hand.</p></div><div><span>2</span><p>After the slash: the <b class="co">bass</b>. E goes in the left hand, below everything.</p></div><div><span>3</span><p>Play them together: <b>C/E</b>, “C over E”.</p></div></div>' + pxr('h9_hero', ('n4',), 120), '1fr 1.1fr')}
+{h3('Four jobs for a slash chord')}
+{tbl(['Job', 'Example', 'The bass note is', 'What you hear'], JOBS, ['20%', '22%', '28%', '30%'])}
+{h3('Job 2: a bass that walks down')}
+{pxr('h9_walk', ('n4', 'n8', 'n12', 'n16', 'n20'), 160, 'The red bass walks straight down, C B A G F, while the right hand moves a step at most. G/B and C/G make the steps possible.')}""", 80)
+H8B = hpage(f"""<div class="kick">Part IV · Harmony · 8 · continued</div>
+{h3('Job 3: a pedal, one bass under everything')}
+{pxr('h9_pedal', ('n4', 'n8', 'n12', 'n16'), 110, 'The bass holds C while the chords change above it: C, F/C, G/C, C. The chords pull away from the C, then come home. (It is called a pedal after the organ’s foot pedals, which hold long low notes.)')}
+{h3('Job 4: a bass from outside the chord')}
+{two(pxr('h9_out', ('n4', 'n8'), 140), '<p><b>F/G</b>: F A C over a G. G is not in the F chord, so it floats, open and unfinished, ready to land on C. Pop and gospel players love it.</p><p><b>D/C</b>: D F♯ A over a C. The C is not in the D chord, so it rubs, then usually steps down to B (D/C to G/B).</p>', '1fr 1.1fr')}
+{inaction('Name it: G B D over a low B', pxr('h9_mys', ('n4',), 120), ['<b>The right hand:</b> G B D, the G chord.', '<b>The lowest note:</b> B, in the left hand.', '<b>Chord, slash, bass:</b> G/B. B is in the G chord: an inversion.'], 'It is <b>G/B</b>, “G over B”: G major, 1st inversion.')}
+{thinkt('A house and the ground it stands on: the slash says what to build (the chord) and where to build it (the bass). Same house, new ground, new view.')}
+{watch(['Writing it back to front: the chord comes first, the bass second. E/C would be an E chord over C.', 'Letting the right hand dip below the bass: the letter after the slash must be the lowest note you play.', 'Forgetting the chord itself: in C/E the right hand still plays the whole C chord, C E G, not just C.'])}
+{foot('Inversions p. {{H4}} · Colour chords p. {{H6}}', 'Workbook Harmony 8 · Online: Library › Chords')}""", 81)
+
 css += """
 .big3{display:flex;flex-direction:column;gap:12px;font-size:16px;line-height:1.4} .big3 div{display:flex;gap:10px;align-items:flex-start} .big3 p{margin:0} .big3 span{flex:none;width:26px;height:26px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
 .k7{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:6px 0 4px} .kc{border:1.5px solid #e3e1ee;border-radius:8px;padding:8px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 .ks{font-family:PF,serif;font-size:26px;color:#26296b;line-height:1} .kn{font-size:12.5px;font-weight:700;color:#26296b} .km{font-size:17px;font-weight:700;color:#e4572e} .kw{font-size:11.5px;color:#6d6f9c;line-height:1.3}
 """
 
-_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)))]
+_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)))]
 html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}</style></head><body>{HOPEN}{"".join(_secs)}{_flowjs}</body></html>'
 open('/mnt/user-data/outputs/house-rooms/handbook-harmony.html', 'w').write(html)
 print('ok')
