@@ -93,12 +93,12 @@ B4 = tq('Use', 'Intervals', 'Tones, semitones and intervals', 'A major 3rd is fo
 {ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a harmonic 3rd', 'a melodic 5th', 'five notes moving by step']))}''', 10, 28)
 
 # ---------- 5 Scales and keys (Handbook pp. 27–28) ----------
-A5 = tq('Learn', 'Scales and keys', 'Scales and keys', 'Every major scale has the same pattern: T T S T T T S.', f'''
+A5 = tq('Learn', 'Scales', 'Scales and keys', 'Every major scale has the same pattern: T T S T T T S.', f'''
 {ex(1, 'Fix the scale', 2, 'This should be G major, but one note is missing its sharp. Add it, then answer.', wpx('g_noacc', 92) + f'<div class="add">the note that needs a sharp {BOX} &nbsp; semitones between degrees {BOX} – {BOX} and {BOX} – {BOX}</div>')}
 {ex(2, 'The major pattern', 1, 'Write T or S between each pair of degrees.', '<div class="tsp">' + ''.join(f'<span class="dg">{i}</span>' + (f'<span class="ab{" dn" if i < 3 else ""}">{"T" if i < 3 else ""}</span>' if i < 8 else '') for i in range(1, 9)) + '</div>')}
 {ex(3, 'Degree names', 1, 'Write the name of each degree.', tbl(['Degree', 'Name', 'Degree', 'Name'], [['1', '<b class="done2">tonic</b>', '2', LINE], ['5', LINE, '3', LINE], ['4', LINE, '6', LINE], ['7', LINE, '', '']], ['12%', '38%', '12%', '38%']))}
 {ex(4, 'Relative minor', 2, 'Each major key shares its key signature with a minor key, three semitones lower.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> → {BOX if not d else "<b class=done2>" + d + "</b>"} <span class="mu2">minor</span></div>' for a, d in (('C major', 'A'), ('G major', ''), ('F major', ''), ('D major', ''), ('B♭ major', ''), ('E♭ major', ''))) + '</div>')}''', 11, 29)
-B5 = tq('Use', 'Scales and keys', 'Scales and keys', 'The order of sharps: F C G D A E B. The order of flats is the same, backwards.', f'''
+B5 = tq('Use', 'Scales', 'Scales and keys', 'The order of sharps: F C G D A E B. The order of flats is the same, backwards.', f'''
 {ex(1, 'Name the key', 2, 'Write the major key and its relative minor for each key signature.', grid([pc('ks' + k, f'major {BOX} &nbsp; minor {BOX}', 56) for k in ('1s', '1f', '2s', '2f', '3s', '3f')], 3, 'ksg'))}
 {ex(2, 'Which minor?', 3, 'Three forms of A minor, going up. Write natural, harmonic or melodic under each.', ''.join(f'<div class="opc mrow"><span class="ol">{l}</span>{wpx(k, 64)}<span class="al mf"></span></div>' for l, k in (('A', 'mf_a'), ('B', 'mf_b'), ('C', 'mf_c'))))}
 {ex(3, 'In order', 1, 'Write the order of sharps and the order of flats.', '<div class="ord"><b>Sharps</b>' + BOX * 7 + '</div><div class="ord"><b>Flats</b>' + BOX * 7 + '</div>')}
