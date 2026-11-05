@@ -121,7 +121,7 @@ NAMES = LINES('name') if not SONG.get('names_row') else '<div class="trow">' + '
 # New in this song: one picture, one line, and where the Handbook takes it further (her 4 Nov 22:08)
 NW = SONG.get('new')
 NEW = (f'<div class="nws"><div class="nws-p">{KBS(NW["kbw"]) if NW.get("kbs") else NW["pic"]}</div><div class="nws-t"><div class="nws-h">New in this song</div><p>{NW["text"]}</p>'
-       + f'<p class="nws-b">More in the Handbook: {NW["hb"]}</p></div></div>') if NW else ''
+       + (f'<p class="nws-b">More in the Handbook: {NW["hb"]}</p>' if NW.get('hb') else '') + '</div></div>') if NW else ''
 P2 = page(f'''{part(2, 'Take it apart', 'The same song, one piece at a time: first its rhythm, then its notes.')}
 {NEW}
 {SUB('The rhythm', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}

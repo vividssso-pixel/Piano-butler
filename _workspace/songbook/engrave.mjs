@@ -27,6 +27,7 @@ function mei(b0, b1, o) {
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
     bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; return; }   // a rest (Lesson 8 on)
       const HL = o.mix && (S.hand || {})[p] === 'L';   // a left-hand note in a right-hand line: stem down, finger below
+      if (HL && o.lh) { flush(); const i = nid(); l1 += `<note xml:id="${i}" dur="${DUR[d]}" pname="b" oct="4" head.visible="false" stem.visible="false" class="ghost">${o.words && syl ? `<verse n="1"><syl${wp ? ` wordpos="${wp}" con="d"` : ''}>${syl}</syl></verse>` : ''}</note>`; return; }   // both hands (her 6 Nov 10:09): the left hand's note sits on its own staff, written in S.lh
       const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, hand: HL ? 'LU' : '', lh: !o.staff5 && (o.lhfing || o.lhdown || HL) });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
       if (o.fing && HL) ctrl.push(`<fing startid="#${i}" place="below">${lfo != null ? lfo : (S.lh_finger || {})[p]}</fing>`);
@@ -187,6 +188,7 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5, bass) {
   const RX = RX0 * s, RY = RY0 * s, FS = FS0 * s, STEM = staff5 ? Math.round(7 * RY) : 700;   // on our own staff a stem is three and a half spaces
   const beams = [...svg.matchAll(/class="beam">\s*<polygon points="([^"]+)"/g)].map(m => { const xs = m[1].trim().split(/\s+/).map(p => +p.split(',')[0]); return [Math.min(...xs), Math.max(...xs)]; });
   svg = svg.replace(re, (m, id, x, y, st, sx, y1, y2) => {
+    if (!INFO[id]) return m;   // the left hand's own staff (o.lh): plain heads
     const L = INFO[id].len, open = L >= 2, p = pitches[k++], name = (FIRST_ONLY && k > 1) ? '' : hm ? S[hm][p] : p[0].toUpperCase(); let cx = +x + 108;
     // S.place: steps of half a head, as on a real staff (E on the line, D touching it from below, C a step further on its
     // ledger); the stem's head end moves with the head, its tip (and any beam) stays
@@ -300,10 +302,12 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
 
 // Bars of one width (her 4 Nov 19:58): in every line of a group the bars are the same width and start at the same place,
 // so the bar lines stand one under another. Every x after the first note is mapped piecewise, bar by bar.
+const staff1 = (svg) => svg.split(/(?=<g id="[^"]+" class="measure)/).map(m => { const a = m.indexOf('class="staff"'), b = m.indexOf('class="staff"', a + 1); return b > 0 ? m.slice(0, b) : m; }).join('');   // the first staff of each bar (both hands: the right hand's)
 function barsOf(svg) {
   const body = svg.slice(svg.indexOf('</defs>') > 0 ? svg.indexOf('</defs>') : 0);
   const bars = [...body.matchAll(/class="barLine">\s*<path d="M(-?[\d.]+) /g)].map(m => +m[1]);
-  const heads = [...body.matchAll(/class="notehead">\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/g)].map(m => +(m[1] || m[2]));
+  const one = staff1(body);
+  const heads = [...one.matchAll(/class="notehead">\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/g)].map(m => +(m[1] || m[2]));
   return { bars, heads, first: heads.length ? Math.min(...heads) : null };
 }
 function mapX(svg, knotsOld, knotsNew) {
@@ -314,7 +318,8 @@ function mapX(svg, knotsOld, knotsNew) {
   const rects = [];   // a rect (a word's hyphen, a box) keeps its two ends on the map: its width follows
   body = body.replace(/<rect ([^>]*)\/?>(<\/rect>)?/g, (m, attrs) => { const x = +(attrs.match(/(?:^| )x="(-?[\d.]+)"/) || [])[1], w = +(attrs.match(/ width="(-?[\d.]+)"/) || [])[1];
     if (isNaN(x) || isNaN(w)) { rects.push(m); return `@@R${rects.length - 1}@@`; }
-    const nx = f(x), nw = Math.max(1, f(x + w) - nx);
+    let nx = f(x), nw = Math.max(1, f(x + w) - nx);
+    if (w < 600) { nx = Math.round((f(x + w / 2) - w / 2) * 10) / 10; nw = w; }   // a small box or hyphen keeps its size: only its middle moves
     rects.push(m.replace(/(^<rect |[ ])x="(-?[\d.]+)"/, `$1x="${nx}"`).replace(/ width="(-?[\d.]+)"/, ` width="${Math.round(nw * 10) / 10}"`)); return `@@R${rects.length - 1}@@`; });
   body = body.replace(/(<use[^>]*transform="translate\()(-?[\d.]+)/g, (m, a, x) => a + f(x))   // a group's own transform (the page margin, a bar number) is relative: left alone
     .replace(/ (x|cx|x1|x2)="(-?[\d.]+)"/g, (m, a, x) => ` ${a}="${f(x)}"`)
@@ -325,7 +330,7 @@ function mapX(svg, knotsOld, knotsNew) {
 }
 // each note's word (syllable) width, in the line's own units, from its letters and size
 function sylWidths(svg) {
-  const starts = [...svg.matchAll(/<g id="x\d+" class="note">/g)].map(m => m.index); starts.push(svg.length);
+  svg = staff1(svg); const starts = [...svg.matchAll(/<g id="x\d+" class="note">/g)].map(m => m.index); starts.push(svg.length);
   return starts.slice(0, -1).map((st, i) => { const seg = svg.slice(st, starts[i + 1]); const m = seg.match(/class="syl">[\s\S]*?<tspan font-size="(\d+)px">([^<]*)<\/tspan>/);
     return m ? m[2].length * +m[1] * 0.56 + (/class="syl">[\s\S]*?<rect/.test(seg) ? +m[1] * 0.5 : 0) : 0; });
 }
@@ -350,18 +355,26 @@ for (const g of new Set(Object.keys(out).map(group))) {
     // a minim two; the gap after the bar line keeps its share
     const [b0, b1, oo] = JOBS[k], data = (oo.src != null ? S.more[oo.src].bars : S.bars).slice(b0, b1);
     let ko = [a1], kn = [s0];
-    if (EVEN && !oo.rhythm && data.flat().filter(n => n[0] !== 'r').length === info[j].heads.length && data.length === bars.length) {
+    const SKIP = n => n[0] === 'r' || (oo.lh && oo.mix && (S.hand || {})[n[0]] === 'L');   // a rest, or a note the left hand plays on its own staff
+    if (process.env.DBG) console.log(k, JSON.stringify(sylWidths(out[k]).map(Math.round)), JSON.stringify(info[j].bars));
+    if (EVEN && !oo.rhythm && data.flat().filter(n => !SKIP(n)).length === info[j].heads.length && data.length === bars.length) {
       // as even by the beat as the words allow (her 5 Nov 13:50): try all the way first, then less, until no two words touch
       const sy = sylWidths(out[k]);
       const build = (K) => { const o = [a1], nn = [s0], hx2 = []; let h = 0;
         data.forEach((bar, bi) => { const os = bi ? bars[bi - 1] : a1, oe = bars[bi], ns = nw[bi], ne = nw[bi + 1];
-          const T = bar.reduce((a, n) => a + LEN[n[1]], 0), lead = Math.max(360, (info[j].heads[h] - os) * (ne - ns) / (oe - os)),   // a head never crowds the bar line before it
-            u = (ne - ns - lead) / T; let t = 0;
-          bar.forEach(n => { const hx = info[j].heads[h++], ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + K * (ns + lead + t * u - ox);
+          // by the beat, and the notes as a whole centred in the bar (her 6 Nov 10:09: 'never leaning to one side'):
+          // the gap after the bar line and the gap before the next one are the same
+          const T = bar.reduce((a, n) => a + LEN[n[1]], 0), W = ne - ns, tl = T - LEN[bar[bar.length - 1][1]];
+          const nh = bar.filter(n => !SKIP(n)).length, Lm = Math.max(360, (sy[h] || 0) / 2 + 280), Rm = Math.max(360, (sy[h + nh - 1] || 0) / 2 + 280);   // a head, and its word, never crowd a bar line
+          let u = W / T, lead = (W - tl * u) / 2; if (lead < Math.max(Lm, Rm)) { lead = Lm; u = tl ? (W - Lm - Rm) / tl : 0; }
+          let t = 0;
+          bar.forEach(n => { if (SKIP(n)) { t += LEN[n[1]]; return; }
+            const hx = info[j].heads[h++], ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + K * (ns + lead + t * u - ox);
             hx2.push(nx); if (hx > o[o.length - 1] && nx > nn[nn.length - 1]) { o.push(hx); nn.push(nx); } t += LEN[n[1]]; });
           o.push(oe); nn.push(ne); });
         return { o, nn, hx2 }; };
       const fits = ({ hx2 }) => hx2.every((x, i) => i === 0 || !sy.length || (x - hx2[i - 1]) >= ((sy[i - 1] || 0) + (sy[i] || 0)) / 2 + 120);
+      const worst = ({ hx2 }) => Math.min(...hx2.map((x, i) => i === 0 || !sy.length ? 1e9 : (x - hx2[i - 1]) - ((sy[i - 1] || 0) + (sy[i] || 0)) / 2 - 120));
       let best = null; for (const K of [1, 0.85, 0.7, 0.55, 0.4, 0.25, 0]) { const c = build(K); if (fits(c)) { best = c; break; } }
       if (best) { ko = best.o; kn = best.nn; } else { ko = [a1, ...bars]; kn = nw; }
     } else { ko = [a1, ...bars]; kn = nw; }
