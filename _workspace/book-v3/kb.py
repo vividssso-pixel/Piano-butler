@@ -12,7 +12,7 @@ def keyboard(start='C', n=14, W=22, H=88, shade=None, dots=(), bdots=(), bracket
         x = i * W; fill = (shade or {}).get(i, '#fff')
         out.append(f'<rect x="{x}" y="0" width="{W}" height="{H}" fill="{fill}" stroke="{N}" stroke-width="1.4"/>')
         if i in dots: out.append(f'<circle cx="{x + W / 2}" cy="{H - 14}" r="4.6" fill="{C}"/>')
-        if label: out.append(f'<text x="{x + W / 2}" y="{H - 8}" text-anchor="middle" font-family="Inter,Arial" font-size="9" font-weight="700" fill="{N}">{WHITE[(s0 + i) % 7]}</text>')
+        if label: out.append(f'<text x="{x + W / 2}" y="{H - 8}" text-anchor="middle" font-family="Inter,Arial" font-size="10.5" font-weight="700" fill="{N}">{WHITE[(s0 + i) % 7]}</text>')
     for i in range(n - 1):
         if WHITE[(s0 + i) % 7] in HAS_BLACK:
             x = (i + 1) * W - BW / 2
