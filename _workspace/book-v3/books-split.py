@@ -4,30 +4,36 @@ from pypdf import PdfReader, PdfWriter
 O = '/mnt/user-data/outputs/books-latest/'
 SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/user-data/outputs/handbook-part2-time.pdf', 'wbP': '/mnt/user-data/outputs/workbook-pitch.pdf', 'wbT': '/mnt/user-data/outputs/workbook-time.pdf', 'hbX': '/mnt/user-data/outputs/house-rooms/handbook-tips.pdf', 'hbH': '/mnt/user-data/outputs/handbook-part4-harmony.pdf', 'hbS': '/mnt/user-data/outputs/handbook-part3-scales.pdf', 'wbS': '/mnt/user-data/outputs/workbook-scales.pdf', 'wbH': '/mnt/user-data/outputs/workbook-harmony.pdf'}
 # chapter: (part, n, title, blurb, handbook pages in its PDF (1-based), printed pp, workbook pages, workbook printed pp)
+import sys as _sy; _sy.path.insert(0, '/tmp/claude-0/pk'); import pagemap as PM
+def HB(keys):   # pdf pages (1-based, opener = 1) and printed pages of a run of topics, from the page map
+    o = PM.PAGE[keys[0][0] + 'O']; pg = []
+    for k in keys:
+        a, n = PM.pages_of(k); pg += list(range(a, a + n))
+    return [x - o + 1 for x in pg], (f'{pg[0]}–{pg[-1]}' if len(pg) > 1 else str(pg[0]))
 CH = [
- ('Pitch', 1, 'The keyboard', 'High and low, white-key names, the groups of two and three black keys, octaves.', 'hbP', [2, 3], '22–23', 'wbP', [1, 2], '1–2'),
- ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, clefs, ledger lines, reading every note, and the map from staff to keyboard.', 'hbP', [4, 5, 6, 7, 8, 9], '24–29', 'wbP', [3, 4, 5, 6], '3–6'),
- ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [10, 11], '30–31', 'wbP', [7, 8], '7–8'),
- ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', [2, 3], '34–35', 'wbT', [1, 2], '1–2'),
- ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', [4, 5], '36–37', 'wbT', [3, 4], '3–4'),
- ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', [6, 7], '38–39', 'wbT', [5, 6], '5–6'),
- ('Time', 4, 'Time signatures', 'Simple time: the top and bottom numbers, changing time.', 'hbT', [8, 9], '40–41', 'wbT', [7, 8], '7–8'),
- ('Time', 5, 'Compound and irregular time', '6/8, 9/8, 12/8; 5/4, 7/8 and 3 + 3 + 2.', 'hbT', [10, 11], '42–43', 'wbT', [9, 10], '9–10'),
- ('Time', 6, 'Groups and upbeats', 'Beams, upbeats, triplets, duplets and semiquavers.', 'hbT', [12, 13], '44–45', 'wbT', [11, 12], '11–12'),
- ('Time', 7, 'Off the beat', 'Syncopation, swing, hemiola, polyrhythm and rubato.', 'hbT', [14, 15], '46–47', 'wbT', [13, 14], '13–14'),
- ('Scales', 1, 'Intervals', 'Counting the distance between notes: numbers, tones and semitones, major, minor and perfect.', 'hbS', [2, 3, 4, 5], '50–53', 'wbS', [1, 2], '1–2'),
- ('Scales', 2, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbS', [6, 7, 8, 9, 10, 11, 12, 13, 14, 15], '54–63', 'wbS', [3, 4], '3–4'),
- ('Harmony', 1, 'Chords and triads', 'Root, 3rd and 5th; play one, skip one; solid and broken chords.', 'hbH', [2, 3], '66–67', 'wbH', [1, 2], '1–2'),
- ('Harmony', 2, 'Four kinds of triad', 'Major, minor, diminished and augmented: counting the keys in between.', 'hbH', [4, 5], '68–69', 'wbH', [3, 4], '3–4'),
- ('Harmony', 3, 'Chords in a key', 'Roman numerals, the primary chords I, IV and V, chords in a minor key, the twelve-bar blues.', 'hbH', [6, 7], '70–71', 'wbH', [5, 6], '5–6'),
- ('Harmony', 4, 'Inversions', 'Root position, 1st and 2nd inversion, slash chords, smooth chord changes.', 'hbH', [8, 9], '72–73', 'wbH', [7, 8], '7–8'),
- ('Harmony', 5, 'Seventh chords', 'One more floor: maj7, 7, m7, ø7 and °7; sevenths in a key; why G7 pulls home.', 'hbH', [10, 11], '74–75', 'wbH', [9, 10], '9–10'),
- ('Harmony', 6, 'Colour chords', 'sus2, sus4, power chords, 6 and add9: move the 3rd, drop it, or add one note.', 'hbH', [12, 13], '76–77', 'wbH', [11, 12], '11–12'),
- ('Harmony', 7, 'The tower: 9, 11, 13', 'Keep stacking 3rds: ninths, elevenths and thirteenths, and which notes to leave out.', 'hbH', [14, 15], '78–79', 'wbH', [13, 14], '13–14'),
+ ('Pitch', 1, 'The keyboard', 'High and low, white-key names, the groups of two and three black keys, octaves.', 'hbP', *HB(['P1']), 'wbP', [1, 2], '1–2'),
+ ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, clefs, ledger lines, reading every note, and the map from staff to keyboard.', 'hbP', *HB(['P2', 'P3', 'P4']), 'wbP', [3, 4, 5, 6], '3–6'),
+ ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', *HB(['P5']), 'wbP', [7, 8], '7–8'),
+ ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', *HB(['T1']), 'wbT', [1, 2], '1–2'),
+ ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', *HB(['T2']), 'wbT', [3, 4], '3–4'),
+ ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', *HB(['T3']), 'wbT', [5, 6], '5–6'),
+ ('Time', 4, 'Time signatures', 'Simple time: the top and bottom numbers, changing time.', 'hbT', *HB(['T4']), 'wbT', [7, 8], '7–8'),
+ ('Time', 5, 'Compound and irregular time', '6/8, 9/8, 12/8; 5/4, 7/8 and 3 + 3 + 2.', 'hbT', *HB(['T5']), 'wbT', [9, 10], '9–10'),
+ ('Time', 6, 'Groups and upbeats', 'Beams, upbeats, triplets, duplets and semiquavers.', 'hbT', *HB(['T6']), 'wbT', [11, 12], '11–12'),
+ ('Time', 7, 'Off the beat', 'Syncopation, swing, hemiola, polyrhythm and rubato.', 'hbT', *HB(['T7']), 'wbT', [13, 14], '13–14'),
+ ('Scales', 1, 'Intervals', 'Counting the distance between notes: numbers, tones and semitones, major, minor and perfect.', 'hbS', *HB(['S1', 'S2']), 'wbS', [1, 2], '1–2'),
+ ('Scales', 2, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbS', *HB(['S3', 'S4', 'S5', 'S6', 'S7']), 'wbS', [3, 4], '3–4'),
+ ('Harmony', 1, 'Chords and triads', 'Root, 3rd and 5th; play one, skip one; solid and broken chords.', 'hbH', *HB(['H1']), 'wbH', [1, 2], '1–2'),
+ ('Harmony', 2, 'Four kinds of triad', 'Major, minor, diminished and augmented: counting the keys in between.', 'hbH', *HB(['H2']), 'wbH', [3, 4], '3–4'),
+ ('Harmony', 3, 'Chords in a key', 'Roman numerals, the primary chords I, IV and V, chords in a minor key, the twelve-bar blues.', 'hbH', *HB(['H3']), 'wbH', [5, 6], '5–6'),
+ ('Harmony', 4, 'Inversions', 'Root position, 1st and 2nd inversion, slash chords, smooth chord changes.', 'hbH', *HB(['H4']), 'wbH', [7, 8], '7–8'),
+ ('Harmony', 5, 'Seventh chords', 'One more floor: maj7, 7, m7, ø7 and °7; sevenths in a key; why G7 pulls home.', 'hbH', *HB(['H5']), 'wbH', [9, 10], '9–10'),
+ ('Harmony', 6, 'Colour chords', 'sus2, sus4, power chords, 6 and add9: move the 3rd, drop it, or add one note.', 'hbH', *HB(['H6']), 'wbH', [11, 12], '11–12'),
+ ('Harmony', 7, 'The tower: 9, 11, 13', 'Keep stacking 3rds: ninths, elevenths and thirteenths, and which notes to leave out.', 'hbH', *HB(['H7']), 'wbH', [13, 14], '13–14'),
 ]
 EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'), ('hb', 'Scales', 'Part III opener', 'hbS', [1], 'The map of Part III and its contents.'), ('hb', 'Harmony', 'Part IV opener', 'hbH', [1], 'The map of Part IV and its contents.'),
-         ('hb', 'Pitch', 'Tips: when a note reads wrong', 'hbP', [12], 'The end of Part I: the usual reading slips, what to check, and where to turn (p. 32).'), ('hb', 'Time', 'Tips: when the rhythm slips', 'hbT', [16], 'The end of Part II: what to check when the rhythm slips, and four ways to steady it (p. 48).'), ('hb', 'Scales', 'Tips: when a note sounds wrong', 'hbS', [16], 'The end of Part III: the usual key slips, what to check, and where to turn (p. 64).'),
-         ('hb', 'Harmony', 'Putting it together', 'hbX', [1, 2], 'The closing pages of the Handbook: everything one note tells you; when a passage won’t come right (pp. 80–81 for now; they stay last as Harmony grows).'), ('wb', 'Harmony', 'Answers', 'wbH', [15], 'Every answer so far.'),
+         ('hb', 'Pitch', 'Tips: when a note reads wrong', 'hbP', HB(['PT'])[0], f'The end of Part I: the usual reading slips, what to check, and where to turn (p. {PM.PAGE["PT"]}).'), ('hb', 'Time', 'Tips: when the rhythm slips', 'hbT', HB(['TT'])[0], f'The end of Part II: what to check when the rhythm slips, and four ways to steady it (p. {PM.PAGE["TT"]}).'), ('hb', 'Scales', 'Tips: when a note sounds wrong', 'hbS', HB(['ST'])[0], f'The end of Part III: the usual key slips, what to check, and where to turn (p. {PM.PAGE["ST"]}).'),
+         ('hb', 'Harmony', 'Putting it together', 'hbX', [1, 2], 'The closing pages of the Handbook: everything one note tells you; when a passage won’t come right (pp. ' + f'{PM.PAGE["X"]}–{PM.PAGE["X"] + 1}' + ' for now; they stay last as Harmony grows).'), ('wb', 'Harmony', 'Answers', 'wbH', [15], 'Every answer so far.'),
          ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [9, 10, 11], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [15, 16, 17], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Scales', 'Review, progress and answers', 'wbS', [5, 6, 7], 'A ten-minute review, the progress chart and every answer.')]
 PNUM = {'Pitch': '1', 'Time': '2', 'Scales': '3', 'Harmony': '4'}
 R = {k: PdfReader(v) for k, v in SRC.items()}

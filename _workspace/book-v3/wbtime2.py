@@ -1,6 +1,9 @@
 # The Piano Butler Workbook, Time (expanded): two pages per topic (Learn, Use), stars for difficulty, review, progress, answers
 exec(open('/tmp/claude-0/pk/wbtime.py').read())   # helpers, css, W (snippets), old pages
 N_ = N
+import sys as _sy2, re as _re2; _sy2.path.insert(0, '/tmp/claude-0/pk'); import importlib as _il2, pagemap as PM; _il2.reload(PM)
+def _LG(h):   # workbook pages still name Handbook pages in the pre-5-Nov numbering; map them to the live page map
+    return _re2.sub(r'\b([Pp]\.(?: |&nbsp;|\u00a0))(\d\d)\b', lambda m: m.group(1) + str(PM.legacy(int(m.group(2))) if int(m.group(2)) >= 22 else m.group(2)), h)
 def star(n): return '★' * n + '<span class="so">' + '★' * (3 - n) + '</span>'
 def ex(n, title, stars, how, body):
     return f'<div class="ex2"><div class="eh"><span class="en">{n}</span><b>{title}</b><span class="el">{star(stars)}</span></div><p class="how">{how}</p>{body}</div>'
@@ -205,5 +208,5 @@ css += f'''
 pages = [A1, B1, A2, B2, A3, B3, A4, B4, A5, B5, A6, B6, A7, B7, R, PR, AN]
 import sys as _s; _s.path.insert(0, '/tmp/claude-0/pk'); import importlib, firstdone; importlib.reload(firstdone)
 FIRST = {'Which time signature?': [('fill', '3/4')], 'Finish with a rest': [('fill', 'minim rest')], 'Tie or dot?': [('fill', 'dotted minim')], 'Simple or compound?': [('both', [('ring', 'simple'), ('fill', '3')])], '3/4 or 6/8?': [('fill', '3/4')], 'Beats in compound time': [('fill', '2')], 'Good grouping?': [('ring', '✓')], 'Slow to fast': [('fill', '4')]}
-open('/mnt/user-data/outputs/house-rooms/workbook-time2.html', 'w').write(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>', FIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1))
+open('/mnt/user-data/outputs/house-rooms/workbook-time2.html', 'w').write(_LG(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>', FIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1)))
 print('ok', len(pages))

@@ -123,10 +123,10 @@ def _cat(el):
 def order_blocks(inner):   # her 5 Nov: on every topic the boxes come in one order: the content, then In action (together), You know this, Think of it, Watch out
     ns = _nodes(inner)
     if ''.join(x for _, x in ns) != inner: return inner
-    els, split_at = [], None
+    els, splits = [], []
     for k, x in ns:
         if k == 'el': els.append(x)
-        elif k == 'com' and 'SPLIT' in x: split_at = len(els)
+        elif k == 'com' and 'SPLIT' in x: splits.append(len(els))
         elif k == 'com': els.append(x)
     cats = [None] * len(els)
     for i in range(len(els) - 1, -1, -1):
@@ -139,11 +139,36 @@ def order_blocks(inner):   # her 5 Nov: on every topic the boxes come in one ord
     ex = [k for k, x in enumerate(body) if cats[order[k]] == 1 and '<div class="bh">Example</div>' in x]
     if len(ex) > 1:   # her 5 Nov: 'Example 1', 'Example 2' when a topic has two
         for n, k in enumerate(ex): body[k] = body[k].replace('<div class="bh">Example</div>', f'<div class="bh">Example {n + 1}</div>', 1)
-    if split_at is not None: body.insert(split_at, '<!--SPLIT-->')
+    for k in sorted(splits, reverse=True): body.insert(k, '<!--SPLIT-->')
     return '\n'.join(body)
+import sys as _sy; _sy.path.insert(0, '/tmp/claude-0/pk')
+import importlib as _il, pagemap as PM; _il.reload(PM)
 def page(inner, n, right='PART II · TIME'):
-    inner = order_blocks(inner)
+    inner = PM.resolve(order_blocks(inner))
     return f'''<section class="pg"><div class="top"><span>THE PIANO BUTLER HANDBOOK</span><span>{right}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'''
+MINCSS = """
+/* her 5 Nov: nothing shrinks to fit. Minimum sizes: body 15px, captions and steps 14.5px, labels 13px */
+figcaption{font-size:14.5px!important;line-height:1.45} .sm{font-size:14.5px!important} .isteps{font-size:14.5px!important} .ia2 ol{font-size:14.5px!important} .ires{font-size:15px!important}
+.think{font-size:15px!important} .tryit{font-size:14.5px!important} .ykg p{font-size:15px!important} .howto{font-size:15px!important} .wr{font-size:15px!important} .ht{font-size:15px!important}
+.kw{font-size:13px!important} .kn{font-size:14px!important}
+h3{margin:10px 0 5px!important;padding-top:6px!important} .inact,.inact2{margin:8px 0!important} .think{margin:5px 0!important}
+"""
+def assemble(key, pg):   # her 5 Nov: a topic is 2 pages, or 3 when it needs room; page numbers come from the page map
+    if isinstance(pg, str):
+        parts = pg.split('<!--SPLIT-->'); a = parts[0]
+        kick = _ro.search(r'<div class="kick">(.*?)</div>', a).group(1)
+        he = a.index('<div class="body">') + len('<div class="body">'); foot = pg[pg.rindex('<div class="foot">'):]
+        secs = [a + '</div>' + foot] + [a[:he] + f'<div class="kick fk2">{kick} · continued</div>' + b + ('' if i == len(parts) - 2 else '</div>' + foot) for i, b in enumerate(parts[1:])]
+    else:
+        secs = list(pg); a = secs[0]
+        kick = _ro.search(r'<div class="kick">(.*?)</div>', a).group(1); he = a.index('<div class="body">') + len('<div class="body">'); foot = a[a.rindex('<div class="foot">'):]
+    start, cnt = PM.pages_of(key)
+    while len(secs) < cnt: secs.append(a[:he] + f'<div class="kick fk2">{kick} · continued</div></div>' + foot)
+    out = []
+    for i, x in enumerate(secs):
+        x = _ro.sub(r'^<section class="pg"( data-flow="[^"]*")?', f'<section class="pg" data-flow="{"ABCDE"[i]}{key}"', x, count=1)
+        out.append(_ro.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{start + i}</span></div>', x))
+    return ''.join(out)
 def head(k, t, lead): return f'<div class="kick">{k}</div><h1>{t}</h1><p class="lead">{lead}</p>'
 def h3(t): return f'<h3>{t}</h3>'
 def tbl(head, rows, widths=None, cls=''):
@@ -165,7 +190,7 @@ flow = ''.join(f'<div class="fl"><b>{a}</b><span>{b}</span></div>' + ('<span cla
 OPEN = f'''<section class="pg part2"><div class="pframe"><div class="pk">Part II · When, and for how long</div><div class="pt">Time</div><div class="pdv"></div>
 <p class="pl">Music never stands still. Underneath runs a steady <b>pulse</b>, packed into <b>bars</b>, and every note and rest gets its fair share. We start with the big beat and zoom in to a single note.</p>
 <div class="flow">{flow}</div>
-<div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p - 2}</span></div>' for x, p in (('Pulse, tempo and the bar', 36), ('Notes and rests', 38), ('How long is a note?', 40), ('Time signatures', 42), ('Compound and irregular time', 44), ('Rhythm: groups and upbeats', 46), ('Rhythm: off the beat', 48), ('Tips: when the rhythm slips', 50)))}</div></div></section>'''
+<div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{PM.PAGE[p]}</span></div>' for x, p in (('Pulse, tempo and the bar', 'T1'), ('Notes and rests', 'T2'), ('How long is a note?', 'T3'), ('Time signatures', 'T4'), ('Compound and irregular time', 'T5'), ('Rhythm: groups and upbeats', 'T6'), ('Rhythm: off the beat', 'T7'), ('Tips: when the rhythm slips', 'TT')))}</div></div></section>'''
 
 P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Put your hand on your heart: that steady beat is a <b>pulse</b>, and almost every piece has one. Its speed is the <b>tempo</b>. Beats travel in groups called <b>bars</b>, and beat 1 is the strongest.')}
 {two(h3('Tempo') + f'<p>Tempo is measured in beats per minute. A <b>metronome mark</b> at the top of the music shows it: <span class="mm">{gin("n", "c")} = 60</span> means 60 crotchet beats a minute, one beat a second. <span class="mm">{gin("n", "c")} = 120</span> is twice as fast. Tempo words such as <i>Andante</i> and <i>Allegro</i> come with Expression, later in the book.</p>',
@@ -183,7 +208,7 @@ P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Put yo
 {inact('Feel the beat before you play', '<div><p class="mmk"><span class="mm">' + gin("n", "c") + ' = 96</span></p>' + vx('t34', 72) + '</div>', ['<b>Read the mark:</b> <span class="mm">' + gin("n", "c") + ' = 96</span>, 96 crotchet beats a minute.', '<b>Listen first:</b> set the metronome and let one full bar go by, counting “1 2 3” in your head.', '<b>Step in</b> on the next beat 1, the way you step onto a moving escalator.'], 'The first note lands <b>on the beat</b>, not a guess.')}
 {thinkt('The beat is the stage and the notes are the actors: the stage is there before anyone walks on. So step in the way you step onto an escalator or take a plate off a sushi train: watch it move for a bar, then join in.')}
 {watch(['Speeding up in the easy bars and slowing down in the hard ones: the pulse stays the same all the way through.', 'Counting only the notes you play: the beat goes on through long notes and rests.'])}
-{foot('Time signatures p. 39 · Tempo words: Expression (later)', 'Workbook Level 0 · Pulse · Online: Metronome')}''', 36)
+{foot('Time signatures p. {{T4}} · Tempo words: Expression (later)', 'Workbook Level 0 · Pulse · Online: Metronome')}''', 36)
 
 rows = [('breve', 'breve', 'double whole note', '8', 'Level 4'), ('dsb', 'dotted semibreve', 'dotted whole note', '6', ''), ('sb', 'semibreve', 'whole note', '4', 'Level 0'), ('dm', 'dotted minim', 'dotted half note', '3', 'Level 0'), ('m', 'minim', 'half note', '2', 'Level 0'), ('dc', 'dotted crotchet', 'dotted quarter note', '1½', 'Level ½'),
         ('c', 'crotchet', 'quarter note', '1', 'Level 0'), ('dq', 'dotted quaver', 'dotted eighth note', '¾', 'Level 3'), ('q', 'quaver', 'eighth note', '½', 'Level 0'), ('sq', 'semiquaver', 'sixteenth note', '¼', 'Level 2'), ('dsq', 'demisemiquaver', '32nd note', '⅛', ''), ('hdsq', 'hemidemisemiquaver', '64th note', '¹⁄₁₆', '')]
@@ -197,9 +222,9 @@ P37 = page(f'''{head('Part II · Time · 2', 'Notes and rests', 'You can see how
 {PZBOX}
 {two(h3('Head, stem, flag') + '<p>The <b>head</b> sits on a line or in a space. A <b>stem</b> goes up on the right of the head or down on the left. <b>Flags</b> on the stem halve the value each time; groups of quavers are joined by <b>beams</b> instead of flags.</p>',
      h3('Which rest is which?') + '<figure class="vx"><svg viewBox="0 0 300 90" style="width:100%;height:auto;display:block"><line x1="10" x2="290" y1="20" y2="20" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="32" y2="32" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="44" y2="44" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="56" y2="56" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="68" y2="68" stroke="#26296b" stroke-width="1.2"/><line x1="150" x2="150" y1="20" y2="68" stroke="#26296b" stroke-width="1.2"/><rect x="62" y="32" width="26" height="7" fill="#26296b"/><rect x="202" y="37" width="26" height="7" fill="#26296b"/> <text x="75" y="86" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">semibreve rest</text><text x="215" y="86" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">minim rest</text></svg></figure>' + '<p class="sm">The semibreve rest <b>hangs</b> below the fourth line; the minim rest <b>sits</b> on the middle line.</p>', '1fr 1fr')}
-{inact('How long is each sound, and each silence?', vx('ia_rest', 62), ['<b>Name each shape:</b> minim, crotchet, crotchet rest.', '<b>Count its beats:</b> 2, 1 and 1.', '<b>Count the rests too:</b> the red rests last as long as their notes.'], 'Every bar adds up to <b>4 beats</b>, silences included.')}
+{inact('How long is each sound, and each silence?', vx('ia_rest', 56), ['<b>Name each shape:</b> minim, crotchet, crotchet rest.', '<b>Count its beats:</b> 2, 1 and 1.', '<b>Count the rests too:</b> the red rests last as long as their notes.'], 'Every bar adds up to <b>4 beats</b>, silences included.')}
 {box('The semibreve rest’s special power', '<p>Most rests last a fixed number of beats. The <b>semibreve rest</b> can also mean <b>a whole bar of silence</b> in any time signature: 4 beats in 4/4, but 3 in 3/4 and 2 in 2/4. It is then centred in the bar. No other rest can do this.</p><p class="sm" style="margin:4px 0 0">One more rule: keep the middle of a 4/4 bar visible. Silence on beats 2–3 is two crotchet rests, never one minim rest.</p>' + two(vx('wbr34', 50), vx('wbr24', 50)))}
-{foot('Pulse and the bar p. 36 · How long is a note? p. 38', 'Workbook Level 0 · Note values · Online: Library › Notes and rests')}''', 37).replace('<svg viewBox="0 0 300 90"', '<svg viewBox="0 0 300 90" class="rst"', 1)
+{foot('Pulse and the bar p. {{T1}} · How long is a note? p. {{T3}}', 'Workbook Level 0 · Note values · Online: Library › Notes')}''', 37).replace('<svg viewBox="0 0 300 90"', '<svg viewBox="0 0 300 90" class="rst"', 1)
 
 def _tri(i, n, g):   # cell i of n: tint by which half of the bar, divider weight by how big a split it marks
     f = i / n; bg = '#f6f4f8' if n == 1 else '#fdeee8' if f < 0.5 else '#eef0f8'
@@ -220,12 +245,11 @@ P38 = page(f'''{head('Part II · Time · 3', 'How long is a note?', 'Need a note
 {h3('Tie or slur?')}
 {two(pvx('tieA', 78, '<b>Tie</b>: the same pitch. Play once and hold: G for 4 beats, then E for 4.'), pvx('slurA', 78, '<b>Slur</b>: different pitches. Play every note, smoothly joined (legato).'))}
 {inact('Dot or tie: which is longer?', vx('ia_dot', 60), ['<b>The dotted minim:</b> 2 + half of 2 = 3 beats.', '<b>The tied notes:</b> a minim tied to a crotchet, 2 + 1 = 3 beats.', '<b>Play both:</b> one sound, held for three beats.'], 'They are <b>the same length</b>. A tie can also cross a bar line, which a dot cannot.')}
-{inact('Count through a tie across the bar line', vx('hem', 60), ['<b>Bar 1:</b> minim on 1–2, crotchet on 3.', '<b>The tie</b> joins beat 3 to beat 1 of the next bar: one sound.', '<b>Keep counting:</b> 3, 1 held, then 2–3 on the minim.'], 'A tie can cross the bar line: <b>play once, count on</b>.')}
 {inact('A dotted crotchet you already know: Ode to Joy', ODE, ['<b>Bars 3–4 of Beethoven’s Ode to Joy.</b> Sing it: “C C D E, E — D D”.', '<b>The red E is a dotted crotchet:</b> 1 + ½ = 1½ beats, held through “1 & 2”.', '<b>The quaver D</b> falls on the “&” of beat 2; the last D takes beats 3 and 4.'], 'Long–short, then long: the dot is why the tune <b>leans</b> before it lands.')}
 {inact('Which is longer: a dotted minim or a minim tied to a quaver?', '<div style="display:flex;gap:18px;align-items:center;justify-content:center">' + ''.join(pzc(*p) for p in ((1, 1, '#e98a6c'), (1, 1, '#e98a6c'), (1, 1, '#f6c9b8'))) + '<span style="font-weight:700">vs</span>' + ''.join(pzc(*p) for p in ((1, 1, '#e98a6c'), (1, 1, '#e98a6c'), (2, 1, '#e98a6c'))) + '</div>', ['<b>Dotted minim:</b> 2 + 1 = 3 pizzas.', '<b>Minim tied to a quaver:</b> 2 + ½ = 2½ pizzas.', '<b>Compare:</b> 3 is half a beat more than 2½.'], 'The <b>dotted minim</b> is longer, by half a beat.')}
-{inact('Tie or slur? Read the curves', pvx('tsmix', 80), ['<b>The first curve</b> joins two Gs: the same pitch, so a <b>tie</b>.', '<b>Play G once</b> and hold it for both minims: 4 beats.', '<b>The second curve</b> covers C B A G: different pitches, so a <b>slur</b>: play each, smoothly joined.'], 'Same pitch: <b>tie</b> (one sound). Different pitches: <b>slur</b> (legato).')}
 {thinkt('A tie couples two carriages: the passenger stays seated across the join, even over a bar line. A dot cannot cross the bar line.')}
-{foot('Time signatures p. 39 · Rhythm p. 41', 'Workbook Level 0 · Note values · Online: Library › Notes and rests')}''', 38)
+{watch(['Putting the dot on the wrong note: a dot adds half of <b>its own</b> note.', 'Tying two different pitches: that curve is a slur, not a tie.'])}
+{foot('Time signatures p. {{T4}} · Rhythm p. {{T6}}', 'Workbook Level 0 · Note values · Online: Library › Notes and rests')}''', 38)
 
 bottom = [['2', gcell('n', 'm', 34), 'minim', 'Level 3'], ['4', gcell('n', 'c', 34), 'crotchet', 'Level 0'], ['8', gcell('n', 'q', 34), 'quaver', 'Level 1'], ['16', gcell('n', 'sq', 34), 'semiquaver', lv('')]]
 simple = [[ts(2, 4), '2 crotchets', 'Level 0'], [ts(3, 4), '3 crotchets', 'Level 0'], [f'<span class="tsrow">{ts(4, 4)}{gsym("𝄴", 26)}</span>', '4 crotchets (the C sign: common time)', 'Level 0'], [f'<span class="tsrow">{ts(2, 2)}{gsym("𝄵", 30)}</span>', '2 minims (the cut C: cut common time)', 'Level 3'], [ts(3, 2), '3 minims', 'Level 3'], [ts(4, 2), '4 minims', lv('')], [ts(3, 8), '3 quavers', 'Level 3']]
@@ -238,11 +262,11 @@ P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers, li
 {tbl(['Time signature', 'Each bar holds', 'First met'], simple, ['26%', '50%', '24%'])}
 {h3('Changing time signature')}
 <p>A new time signature can appear in the middle of a piece, right after a bar line; it holds until the next one. A time signature is written only once, not on every line.</p>
-{watch(['Reading 6/8 as six beats: at most speeds it moves in two.', 'Mixing up 3/4 and 6/8: both hold six quavers, grouped differently (p. 40).'])}
+{watch(['Reading 6/8 as six beats: at most speeds it moves in two.', 'Mixing up 3/4 and 6/8: both hold six quavers, grouped differently (p. {{T5}}).'])}
 {inact('Read a time signature', vx('ia_ts', 74), ['<b>Top number 3:</b> three counts in each bar.', '<b>Bottom number 4:</b> a crotchet is one count.', '<b>Check a bar:</b> two quavers + crotchet + crotchet = 3.'], '3/4: <b>three crotchet beats</b> in every bar.')}
 {youknow('Minuet in G (from the Notebook for Anna Magdalena Bach)', ykfig('yk_min3', ('n1','n6'), 70), 'Every bar holds <b class="co">three crotchet beats</b>: 1 2 3, 1 2 3, the step of the dance. That is 3/4.', 'Count 1 2 3 aloud while someone plays it.')}
 {inact('Which time signature fits?', vx('ia_which', 74), ['<b>Find the strong beats</b> by clapping, accenting the first note of each bar.', '<b>Count each bar:</b> two crotchets, or one minim: 2 beats.', '<b>Each beat is a crotchet.</b>'], 'It is in <b>2/4</b>: two crotchet beats a bar.')}
-{foot('Pulse and the bar p. 36 · Compound time p. 40', 'Workbook Level 0 · Time signatures · Online: Library › Time signatures')}''', 39)
+{foot('Pulse and the bar p. {{T1}} · Compound time p. {{T5}}', 'Workbook Level 0 · Time signatures · Online: Library › Time signatures')}''', 39)
 
 compound = [[ts(6, 8), '2 dotted crotchets', 'Level 1'], [ts(9, 8), '3 dotted crotchets', 'Level 3'], [ts(12, 8), '4 dotted crotchets', 'Level 3'], [ts(6, 4), '2 dotted minims', 'Level 4']]
 irreg = [[ts(5, 4), '5 crotchets: 3 + 2 or 2 + 3', 'Level 5'], [ts(7, 4), '7 crotchets: 4 + 3 or 3 + 4', lv('')], [ts(5, 8), '5 quavers: 3 + 2 or 2 + 3', lv('')], [ts(7, 8), '7 quavers: 2 + 2 + 3 or 3 + 2 + 2', lv('')]]
@@ -262,7 +286,7 @@ P40 = page(f'''{head('Part II · Time · 5', 'Compound and irregular time', 'Com
 {inact('Count 6/8 in two', vx('ia_68', 74), ['<b>Slowly, count all six:</b> 1 2 3 4 5 6.', '<b>Lean on 1 and 4</b>, the red notes.', '<b>Faster, count only those:</b> two beats, each a dotted crotchet.'], '6/8 has <b>two beats</b> in a bar, each split into three.')}
 {youknow('Row, Row, Row Your Boat', ykfig('yk_row', ('n1','n2'), 70), 'Two big beats in every bar, each a <b class="co">dotted crotchet</b>: “Row, row”. Inside each beat, “gent-ly” splits it into three. That is 6/8.', 'Sway twice per bar while you sing it.')}
 {inact('Hear 3 + 3 + 2 inside 4/4', vx('t332', 74), ['<b>Count eight quavers</b> in a bar of 4/4.', '<b>Group them</b> 3 + 3 + 2, accenting 1, 4 and 7.', '<b>Keep the beat</b> in your foot: it stays in four.'], 'The bar is still <b>4/4</b>; only the accents are uneven.')}
-{foot('Time signatures p. 39 · Rhythm: groups and upbeats p. 41', 'Workbook Levels 1–4 · Compound time · Online: Rhythm clock')}''', 40)
+{foot('Time signatures p. {{T4}} · Rhythm: groups and upbeats p. {{T6}}', 'Workbook Levels 1–4 · Compound time · Online: Rhythm clock')}''', 40)
 
 P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Say your own name: long and short sounds, that’s <b>rhythm</b>. The pulse marches steadily on; the rhythm dances around it. How the notes are grouped on the page shows where the beats fall.')}
 {h3('Grouping with beams')}
@@ -281,7 +305,7 @@ P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Say 
 
 {youknow('Happy Birthday', ykfig('yk_bday', ('n1','n2'), 70), '“Hap-py” comes <b class="co">before</b> the first strong beat: an upbeat. The strong beat lands on “birth”.', 'Sing it and clap only on “birth”, “day” and “you”: you feel where bar 1 starts.')}
 {inact('Fit a triplet into a bar', vx('ia_trip2', 72), ['<b>Count the bar:</b> four crotchet beats, “1 2 3 4”.', '<b>Find the 3:</b> on beat 2, three quavers share one beat.', '<b>Say it:</b> “1, 2 & a, 3, 4”, keeping beats 3 and 4 steady.'], 'The triplet squeezes three notes into <b>beat 2</b>; the beat itself never moves.')}
-{foot('Notes and rests p. 37 · Rhythm: off the beat p. 42', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 41)
+{foot('Notes and rests p. {{T2}} · Rhythm: off the beat p. {{T7}}', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 41)
 
 terms = [['syncopation', 'the stress falls off the beat, often on a note held across it', 'Level 4'], ['hemiola', 'two bars of three felt as three bars of two', 'Level 4'], ['swing', 'pairs of quavers played long–short, like the first and last notes of a triplet', 'Level ½'], ['polyrhythm', 'two rhythms at once, such as three notes in one hand against two in the other', 'Level 7'], ['rubato', 'time stretched and given back, for expression; the pulse returns', lv('')]]
 P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Now the fun part: rhythm that teases the beat. It only works if the beat underneath stays rock-steady.')}
@@ -299,7 +323,7 @@ P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Now the fu
 {inact('Swing this bar', '<div><p class="mmk">Swing</p>' + vx('ia_swing', 72) + '</div>', ['<b>Find the quaver pairs:</b> beats 2 and 3.', '<b>Play each pair long–short:</b> “doo-ba, doo-ba”.', '<b>Leave the crotchets alone:</b> beats 1 and 4 stay as written.'], 'Only the <b>pairs</b> swing; the beat underneath stays even.')}
 {inact('Count a hemiola', vx('hem', 74), ['<b>Two bars of 3/4:</b> six crotchet beats.', '<b>Regroup them</b> in twos: 1 2 | 3 4 | 5 6.', '<b>Feel three big beats</b> across the two bars.'], 'Two bars of three become <b>three bars of two</b> for a moment: a hemiola.')}
 {thinkt('Syncopation is a skip in your walk: a step that lands between the beats. Swing is walking with a spring in your step, long-short, long-short. Rubato is borrowing time like pocket money: whatever you spend, you pay back.')}
-{foot('Rhythm: groups and upbeats p. 41 · Words for how to play: Expression (later)', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 42)
+{foot('Rhythm: groups and upbeats p. {{T6}} · Words for how to play: Expression (later)', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 42)
 
 css = f'''
 @page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margin:0;background:#e9e4d8;font-family:'AH',Arial,sans-serif;color:{N}}}
@@ -328,23 +352,7 @@ h3{{font-size:17px;font-weight:700;margin:12px 0 6px;padding-top:7px;border-top:
 '''
 html = ''   # (generators read the css above up to this line)
 import re as _re
-TBASE = 34   # Part II starts here (her 5 Nov, four parts: Pitch 22-32, Time opener 33)
-_secs, _map, _n = [], {}, TBASE
-for _old, _pg in zip(range(36, 43), (P36, P37, P38, P39, P40, P41, P42)):
-    _map[_old] = _n
-    if '<!--SPLIT-->' in _pg:
-        _a, _b = _pg.split('<!--SPLIT-->', 1)
-        _kick = _re.search(r'<div class="kick">(.*?)</div>', _a).group(1)
-        _head_end = _a.index('<div class="body">') + len('<div class="body">')
-        _foot = _pg[_pg.rindex('<div class="foot">'):]
-        _secs.append((_a + '</div>' + _foot).replace('<section class="pg"', f'<section class="pg" data-flow="A{_old}"', 1))
-        _secs.append((_a[:_head_end] + f'<div class="kick fk2">{_kick} · continued</div>' + _b).replace('<section class="pg"', f'<section class="pg" data-flow="B{_old}"', 1))
-        _n += 2
-    else:
-        _secs.append(_pg); _n += 1
-_secs = [_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{TBASE + i}</span></div>', x) for i, x in enumerate(_secs)]
-_body = ''.join(_secs)
-_body = _re.sub(r'(p\.[ \u00a0]|page )(3[6-9]|4[0-2])\b', lambda m: m.group(1) + str(_map[int(m.group(2))]), _body)
+_body = ''.join(assemble(f'T{_i + 1}', _pg) for _i, _pg in enumerate((P36, P37, P38, P39, P40, P41, P42)))
 # ---------- Part II ends with its own tips page (her 4 Nov: each part ends with its tips) ----------
 css += """
 .tip{border-left:3px solid #e4572e;background:#fdf6f2;padding:10px 16px 12px;margin:12px 0} .tip .bh{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e4572e} .tip .tt{display:block;font-size:16px;margin:2px 0 6px} .tip table{background:transparent} .tip td,.tip th{vertical-align:top}
@@ -352,31 +360,35 @@ css += """
 """
 TT = page(f"""{head('Part II · Time · Tips', 'When the rhythm slips', 'A rhythm that slips is nearly always a beat that was not counted. Find which beat, count it out loud, and the rest of the bar usually falls into place.')}
 <div class="tip"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
-{tbl(['What you notice', 'Check', 'Turn to'], [['It speeds up or slows down', '<b class="co">the pulse</b>: count one bar aloud before you start', 'p. 34'], ['A rest gets skipped', '<b class="co">the rest</b>: it is counted just like a note', 'p. 36'], ['Long notes come out short', '<b class="co">the hold</b>: count every beat of a minim, dot or tie', 'p. 38'], ['The bar feels too long or too short', '<b class="co">the time signature</b>: how many counts, which note is one', 'p. 40'], ['6/8 sounds like 3/4', '<b class="co">the dotted beat</b>: two beats, each split in three', 'p. 42'], ['You lose your place in fast notes', '<b class="co">the beams</b>: each group is one beat', 'p. 44'], ['An off-beat note lands on the beat', '<b class="co">the “&”</b>: keep the beat in your foot and count it', 'p. 46']], ['38%', '50%', '12%'])}
+{tbl(['What you notice', 'Check', 'Turn to'], [['It speeds up or slows down', '<b class="co">the pulse</b>: count one bar aloud before you start', 'p. {{T1}}'], ['A rest gets skipped', '<b class="co">the rest</b>: it is counted just like a note', 'p. {{T2}}'], ['Long notes come out short', '<b class="co">the hold</b>: count every beat of a minim, dot or tie', 'p. {{T3}}'], ['The bar feels too long or too short', '<b class="co">the time signature</b>: how many counts, which note is one', 'p. {{T4}}'], ['An off-beat note lands on the beat', '<b class="co">the “&”</b>: keep the beat in your foot and count it', 'p. {{T7}}']], ['38%', '50%', '12%'])}
 </div>
 {inact('Count the long notes', train([[('n', 2, 'm'), ('n', 1, 'c')], [('n', 3, 'dm')]], '3/4'), ['<b>Say 1 2 3</b> once through before you play, to feel the beat.', '<b>The minim books seats 1 and 2:</b> keep saying “2” while it sounds.', '<b>The dotted minim books all three:</b> let go on the next “1”, not before.'], 'Long notes are where counting slips: <b>say every seat</b> they book.')}
 {h3('Four ways to steady a rhythm')}
 <div class="fixes">{''.join(f'<div><span class="rn">{i + 1}</span><b>{a}</b><span>{b}</span></div>' for i, (a, b) in enumerate([('Count out loud', 'Say the counts while you play, not in your head: a slip you can hear is a slip you can fix.'), ('Tap, then play', 'Tap the rhythm on the lid and say the counts; play only when the tapping is steady.'), ('Walk the beat', 'Step the pulse while you clap the rhythm, so the beat lives in your feet.'), ('Split the beat', 'For dots and quavers, count “1 & 2 &”: the extra “&” shows exactly where each note goes.')]))}</div>
-{thinkt('Like a dance partner: the beat leads and the rhythm follows. Lose the beat and every step after it goes wrong.')}""", 48)
+{thinkt('Like a dance partner: the beat leads and the rhythm follows. Lose the beat and every step after it goes wrong.')}""", PM.PAGE['TT'])
 
 _body += TT
-TIME_MAP = _map
 FLOWJS = '''<script>
-// Each topic fills its first page, then flows on to its second: blocks move between the two until the first is as full as it can be.
+// Each topic fills its first page, then flows on to the next (2 or 3 pages): blocks move along the chain until every page but the last is as full as it can be.
 (async function () { try { await document.fonts.ready; } catch (e) {}
-  document.querySelectorAll('section[data-flow^="A"]').forEach(A => {
-    const B = document.querySelector('section[data-flow="B' + A.dataset.flow.slice(1) + '"]'); if (!B) return;
+  const pair = (A, B, mode) => {
     const ab = A.querySelector('.body'), bb = B.querySelector('.body'), kick = bb.querySelector('.fk2');
     const limit = () => A.querySelector('.foot').getBoundingClientRect().top - 24;
     const bottom = () => { let m = 0; [...ab.children].forEach(c => { const r = c.getBoundingClientRect(); if (r.height) m = Math.max(m, r.bottom); }); return m; };
-    while (bottom() > limit() && ab.children.length > 3) bb.insertBefore(ab.lastElementChild, kick.nextSibling);
-    let failCat = null; for (const nx of [...bb.children]) { if (failCat !== null && +(nx.dataset.cat || 0) !== failCat) break; if (nx === kick || nx.classList.contains('links') || nx.parentNode !== bb) continue; const grp = [nx]; if (/^H[234]$/.test(nx.tagName) && nx.nextElementSibling && !nx.nextElementSibling.classList.contains('links')) grp.push(nx.nextElementSibling); const ref = grp[grp.length - 1].nextSibling; grp.forEach(e => ab.appendChild(e)); if (bottom() > limit()) { grp.forEach(e => bb.insertBefore(e, ref)); if (grp.length > 1) break; failCat = +(grp[0].dataset.cat || 0); } }   // her 5 Nov: a block may only jump ahead of one of its own kind (content, In action, You know this, Think of it, Watch out keep their order)   // nothing jumps ahead of a heading that stays behind   // fill the first page: try each block in turn (a small one may fit where a big one did not); a heading only moves together with the block under it
-    while (ab.lastElementChild && /^H[234]$/.test(ab.lastElementChild.tagName)) bb.insertBefore(ab.lastElementChild, kick.nextSibling);   // a heading never sits alone at the foot of a page: it goes over with its text
+    if (mode === 'push') { while (bottom() > limit() && ab.children.length > 3) bb.insertBefore(ab.lastElementChild, kick.nextSibling); return; }
+    let failCat = null; for (const nx of [...bb.children]) { if (failCat !== null && +(nx.dataset.cat || 0) !== failCat) break; if (nx === kick || nx.classList.contains('links') || nx.parentNode !== bb) continue; const grp = [nx]; if (/^H[234]$/.test(nx.tagName) && nx.nextElementSibling && !nx.nextElementSibling.classList.contains('links')) grp.push(nx.nextElementSibling); const ref = grp[grp.length - 1].nextSibling; grp.forEach(e => ab.appendChild(e)); if (bottom() > limit()) { grp.forEach(e => bb.insertBefore(e, ref)); if (grp.length > 1) break; failCat = +(grp[0].dataset.cat || 0); } }   // a block may only jump ahead of one of its own kind; a heading moves only with the block under it
+    while (ab.lastElementChild && /^H[234]$/.test(ab.lastElementChild.tagName)) bb.insertBefore(ab.lastElementChild, kick.nextSibling);   // a heading never sits alone at the foot of a page
+  };
+  document.querySelectorAll('section[data-flow^="A"]').forEach(A => {
+    const key = A.dataset.flow.slice(1), chain = [A];
+    for (const L of 'BCDE') { const S = document.querySelector('section[data-flow="' + L + key + '"]'); if (!S) break; chain.push(S); }
+    for (let i = 0; i + 1 < chain.length; i++) pair(chain[i], chain[i + 1], 'push');
+    for (let i = 0; i + 1 < chain.length; i++) pair(chain[i], chain[i + 1], 'fill');
   });
   document.body.dataset.flowed = '1';
 })();
 </script>'''
-html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{OPEN}{_body}{FLOWJS}</body></html>'
+html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}</style></head><body>{OPEN}{_body}{FLOWJS}</body></html>'
 
 open('/mnt/user-data/outputs/house-rooms/handbook-time2.html', 'w').write(html)
 print('ok')
