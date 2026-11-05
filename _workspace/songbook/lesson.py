@@ -20,6 +20,7 @@ URL = 'https://thepianobutler.com/listen.html#' + ''.join(c for c in SONG.get('i
 def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>{SONG.get('label', 'Lesson ' + str(LESSON)).upper()} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
 def mus(k, cls=''):   # a shorter last line keeps the same size of note: its width in proportion to its bars
     w = SONG.get('widths', {}).get(k); st = f' style="max-width:{w * 100:.1f}%"' if w else ''
+    z = SONG.get('scale', {}).get(k); st = f' style="width:100%;max-width:{z * 100:.1f}%;margin-left:auto;margin-right:auto"' if z else st   # a smaller line, centred
     tag = SONG.get('tags', {}).get(k)   # a hand-position label over the line (her 5 Nov 14:22)
     return (f'<div class="htag">{tag}</div>' if tag else '') + f'<div class="mus {cls}" data-snip="{k}"{st}>{V[k]}</div>'
 def part(n, t, how): return f'<div class="ph"><span class="pn">{n}</span><h2>{t}</h2></div><p class="how">{how}</p>'
@@ -94,6 +95,16 @@ POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div
 exec(open('early.py').read())
 KBS = lambda w: '<div class="kbs">' + ''.join(f'<div><div class="kbl">{t}</div>{kb(width=w, fmap=fm)}</div>' for t, fm in SONG['kbs']) + '</div>'
 if 'pos' in SONG: POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else KBS(SONG.get('kb_w', 300)) if SONG.get('kbs') else kb(width=SONG.get('kb_w', 300), fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
+# her 5 Nov 21:19: the five ideas for teaching it like your own child -- a wow moment, a spot-the-mistake game, a turtle-to-bird ladder, make it yours, a 5-minute menu
+STAR = '<svg width="26" height="26" viewBox="0 0 26 26"><path d="M13 2.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L13 18.6l-6.4 3.5 1.4-7.1-5.3-5 7.2-.9z" fill="none" stroke="#e4572e" stroke-width="2" stroke-linejoin="round"/></svg>'
+WOW = f'<div class="wow">{STAR}<div><div class="wowh">The wow moment</div><p>{SONG["wow"]}</p></div></div>' if SONG.get('wow') else ''
+TRICK = f'<div class="tog"><span class="tgh">Spot the mistake</span><span>{SONG["trick"]}</span></div>' if SONG.get('trick') else ''
+TURTLE = '<svg width="34" height="22" viewBox="0 0 34 22"><path d="M5 15 Q7 4 17 4 Q27 4 29 15 Z" fill="none" stroke="#26296b" stroke-width="2" stroke-linejoin="round"/><path d="M11 15v4M23 15v4M29 13h3.5" stroke="#26296b" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="11.5" r="1.6" fill="#26296b"/></svg>'
+BIRD = '<svg width="34" height="22" viewBox="0 0 34 22"><path d="M3 9 Q10 3 16 12 Q22 3 31 7" fill="none" stroke="#e4572e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v6" stroke="#e4572e" stroke-width="2" stroke-linecap="round"/></svg>'
+LSTEPS = SONG.get('ladder', ['With letters', 'No letters', 'With the band', 'Fast'])
+def ladder(rows):   # one row per way of playing: colour a step each time you climb
+    head = '<div class="lad lhd"><span></span>' + TURTLE + ''.join(f'<span class="lst">{t}</span>' for t in LSTEPS) + BIRD + '</div>'
+    return head + ''.join(f'<div class="lad"><span class="lrn">{r}</span><span></span>' + ''.join('<span class="lsq"></span>' for _ in LSTEPS) + '<span></span></div>' for r in rows)
 P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
 LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
 SUB = lambda t, how: f'<div class="sub"><span>{t}</span></div><p class="how">{how}</p>'
@@ -104,7 +115,7 @@ P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <div class="sp"></div>{part(1, 'Meet the song', SONG.get('sing_how', 'Listen, pointing to each note as it sounds. Then sing it with the words.'))}
 {POS}
 <div class="sp"></div>{LINES('sing')}
-<div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
+{WOW}<div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
 
 NAMES = LINES('name') if not SONG.get('names_row') else '<div class="trow">' + ''.join(mus(k) for k in sorted(k for k in V if k.startswith('name') and k[4:].isdigit())) + '</div>'
 # New in this song: one picture, one line, and where the Handbook takes it further (her 4 Nov 22:08)
@@ -117,7 +128,7 @@ P2 = page(f'''{part(2, 'Take it apart', 'The same song, one piece at a time: fir
 <div class="mat"><div class="mh">{SONG.get("time_label", "The time")}</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
 <div class="sp"></div>{LINES('rhy')}
 {(SUB('The notes', SONG.get('names_how', 'Write the letter name of every note in the boxes; the first one is done.')) + '<div class="sp"></div>' + NAMES) if NAMES else ''}
-<div class="end">{ticks(SONG.get('p2_ticks', ['Said it in time', 'Clapped and counted', 'Wrote the letter names']), True)}</div>''', 2)
+{('<div class="sp"></div>' + TRICK) if TRICK else ''}<div class="end">{ticks(SONG.get('p2_ticks', ['Said it in time', 'Clapped and counted', 'Wrote the letter names']), True)}</div>''', 2)
 
 exec(open('early.py').read())
 if SONG.get('kind') == 'ready': P3 = ''
@@ -161,6 +172,10 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .chk{{border:1.5px solid {N};margin-top:8px;padding:12px 16px}} .ch{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-bottom:4px}} .cgrid{{display:grid;grid-template-columns:1fr 1.25fr;gap:20px}} .chk .ticks.h{{gap:12px}} .chk .tk{{white-space:nowrap}}
 .mv{{display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;margin:4px 0 2px}} .cap2{{font-size:15px;line-height:1.5;margin:0}} .gl{{max-width:91%;margin:0 auto}} .wrow{{display:flex;align-items:center;gap:10px;margin:6px 0}} .wk{{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{C};width:38px;flex:none}} .wrow .ticks{{margin:0}} .ck2{{font-size:15.5px;font-weight:700;margin:8px 0 2px}}
 .tch{{display:flex;align-items:center;gap:16px;margin-top:12px;padding-top:10px;border-top:1px dashed #c9cbe0}} .tch>span:first-child{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{MUTE}}}
+.wow{{display:flex;gap:12px;align-items:center;border-left:3px solid {C};padding:4px 12px;margin:6px 0 0}} .wow p{{margin:0;font-size:15px;line-height:1.45}} .wowh{{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}}
+.lad{{display:grid;grid-template-columns:118px 34px repeat({len(LSTEPS)},1fr) 34px;gap:6px;align-items:center;margin:3px 0}} .lad.lhd{{margin-bottom:2px}} .lst{{font-size:11px;font-weight:700;color:{MUTE};text-align:center;line-height:1.15}} .lrn{{font-size:14px;font-weight:700}} .lsq{{height:22px;border:1.8px solid {N};border-radius:4px}}
+.yrs{{display:grid;grid-template-columns:1fr 1fr;gap:24px;border-top:1px solid #d9d6ea;padding-top:10px}} .yrs .ticks{{gap:6px;margin:4px 0 0}} .yrs .tk{{font-size:14.5px}} .menu ol{{margin:2px 0 6px;padding-left:20px;font-size:14.5px;line-height:1.55}} .days{{display:flex;gap:9px}} .dy{{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:{MUTE}}}
+[hidden]{{display:none!important}}
 @media print {{ body{{background:#fff}} .pg{{margin:0}} }}''' + EARLY_CSS
 def own_tune(bars):   # her 4 Nov 15:00: make your own -- the rhythm given, a box under each note for its letter
     cells = ''
@@ -174,12 +189,16 @@ if SONG.get('more'):
     TASK = (f'<div class="sp"></div>' + SUB(T['title'], T['how']) + '<div class="sp"></div>' + (lambda ms: f'<div class="trow">{ms}</div>' if T.get('row') else ms)(''.join(mus(k, 'ghost' if T.get('kind') == 'draw' else '') for k in T.get('jobs', ['task1'])))) if T else (
         "<div class=\"sp\"></div>" + SUB('Your own tune', SONG.get('more_own_how', 'Write a letter in each box, then play your tune. Give it a name:') + ' <span class=\"ib\" style=\"width:180px\"></span>') + '<div class="sp"></div>' + own_tune(SONG.get('more_own', [])))
     if NO_OWN and not T: TASK = ''   # her 5 Nov 13:47: no make-your-own here
+    Y = SONG.get('yours'); MN = SONG.get('menu')
+    YOURS = ('<div class="sp"></div><div class="yrs">' + (f'<div><div class="sh">Make it yours</div><p class="cap2">{Y["how"]}</p>{ticks(Y["pick"])}</div>' if Y else '')
+             + (f'<div class="menu"><div class="sh">5 minutes at home</div><ol>' + ''.join(f'<li>{m}</li>' for m in MN) + '</ol><div class="days">' + ''.join(f'<span class="dy"><span class="bx"></span>{d}</span>' for d in 'MTWTFSS') + '</div></div>' if MN else '') + '</div>') if (Y or MN) else ''
     P4 = page(f'''{part('+', 'More to play', SONG.get('more_how', 'The same keys, the same fingers, the same note values: two new tunes. Then make your own.'))}
 <div class="sp"></div>{SUB(M[0]['title'], M[0].get('how', 'Sing it on the words, then play it.'))}
 <div class="sp"></div>{''.join(mus(k) for k in sorted((k for k in V if k.startswith('moreA') and k[5:].isdigit()), key=lambda k: int(k[5:])))}
 <div class="sp"></div>{SUB(M[1]['title'], M[1].get('how', 'Say the words in rhythm first, then play it.'))}
 <div class="sp"></div>{''.join(mus(k) for k in sorted((k for k in V if k.startswith('moreB') and k[5:].isdigit()), key=lambda k: int(k[5:])))}
 {TASK}
+{YOURS}
 <div class="sp"></div><div class="end">{ticks(SONG.get('more_ticks', ['Played the first tune', 'Played the second tune', 'Played my own tune']), True)}</div>''', 4)
 BODY = ready_pages() if SONG.get('kind') == 'ready' else P1 + P2 + P3 + P4
 html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{BODY}</body></html>'

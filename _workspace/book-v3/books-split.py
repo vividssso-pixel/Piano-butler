@@ -30,10 +30,11 @@ CH = [
  ('Harmony', 5, 'Seventh chords', 'One more floor: maj7, 7, m7, ø7 and °7; sevenths in a key; why G7 pulls home.', 'hbH', *HB(['H5']), 'wbH', [9, 10], '9–10'),
  ('Harmony', 6, 'Colour chords', 'sus2, sus4, power chords, 6 and add9: move the 3rd, drop it, or add one note.', 'hbH', *HB(['H6']), 'wbH', [11, 12], '11–12'),
  ('Harmony', 7, 'The tower: 9, 11, 13', 'Keep stacking 3rds: ninths, elevenths and thirteenths, and which notes to leave out.', 'hbH', *HB(['H7']), 'wbH', [13, 14], '13–14'),
+ ('Harmony', 8, 'Slash chords', 'C/E and its four jobs: inversions, walk-downs, pedals and colour basses.', 'hbH', *HB(['H8']), 'wbH', [15, 16], '15–16'),
 ]
 EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'), ('hb', 'Scales', 'Part III opener', 'hbS', [1], 'The map of Part III and its contents.'), ('hb', 'Harmony', 'Part IV opener', 'hbH', [1], 'The map of Part IV and its contents.'),
          ('hb', 'Pitch', 'Tips: when a note reads wrong', 'hbP', HB(['PT'])[0], f'The end of Part I: the usual reading slips, what to check, and where to turn (p. {PM.PAGE["PT"]}).'), ('hb', 'Time', 'Tips: when the rhythm slips', 'hbT', HB(['TT'])[0], f'The end of Part II: what to check when the rhythm slips, and four ways to steady it (p. {PM.PAGE["TT"]}).'), ('hb', 'Scales', 'Tips: when a note sounds wrong', 'hbS', HB(['ST'])[0], f'The end of Part III: the usual key slips, what to check, and where to turn (p. {PM.PAGE["ST"]}).'),
-         ('hb', 'Harmony', 'Putting it together', 'hbX', [1, 2], 'The closing pages of the Handbook: everything one note tells you; when a passage won’t come right (pp. ' + f'{PM.PAGE["X"]}–{PM.PAGE["X"] + 1}' + ' for now; they stay last as Harmony grows).'), ('wb', 'Harmony', 'Answers', 'wbH', [15], 'Every answer so far.'),
+         ('hb', 'Harmony', 'Putting it together', 'hbX', [1, 2], 'The closing pages of the Handbook: everything one note tells you; when a passage won’t come right (pp. ' + f'{PM.PAGE["X"]}–{PM.PAGE["X"] + 1}' + ' for now; they stay last as Harmony grows).'), ('wb', 'Harmony', 'Answers', 'wbH', [17], 'Every answer so far.'),
          ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [9, 10, 11], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [15, 16, 17], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Scales', 'Review, progress and answers', 'wbS', [5, 6, 7], 'A ten-minute review, the progress chart and every answer.')]
 PNUM = {'Pitch': '1', 'Time': '2', 'Scales': '3', 'Harmony': '4'}
 R = {k: PdfReader(v) for k, v in SRC.items()}
@@ -71,7 +72,7 @@ BOOKS = [('hbP', 'hb', 'Pitch', 'The Piano Butler Handbook', 'Part I', 'Pitch', 
          ('wbT', 'wb', 'Time', 'The Piano Butler Workbook', 'Workbook', 'Time', 'Learn and Use pages for every Time chapter, review and answers', 'Whole books (later)/workbook-time.pdf'),
          ('hbS', 'hb', 'Scales', 'The Piano Butler Handbook', 'Part III', 'Scales and keys', 'Intervals, major and minor scales, key signatures, the circle of fifths', 'Whole books (later)/handbook-part3-scales.pdf'),
          ('wbS', 'wb', 'Scales', 'The Piano Butler Workbook', 'Workbook', 'Scales and keys', 'Learn and Use pages for intervals, scales and keys, review and answers', 'Whole books (later)/workbook-scales.pdf'),
-         ('hbH', 'hb', 'Harmony', 'The Piano Butler Handbook', 'Part IV', 'Harmony', 'Triads, chords in a key, inversions, sevenths, colour chords, 9 11 13 (in progress)', 'Whole books (later)/handbook-part4-harmony.pdf'),
+         ('hbH', 'hb', 'Harmony', 'The Piano Butler Handbook', 'Part IV', 'Harmony', 'Triads, chords in a key, inversions, sevenths, colour chords, 9 11 13, slash chords (in progress)', 'Whole books (later)/handbook-part4-harmony.pdf'),
          ('wbH', 'wb', 'Harmony', 'The Piano Butler Workbook', 'Workbook', 'Harmony', 'Learn and Use pages for every Harmony chapter (in progress)', 'Whole books (later)/workbook-harmony.pdf')]
 TS = lambda t: ' style="font-size:10cqw;line-height:12.5cqw"' if len(t) > 10 else ''   # her 5 Nov: long titles (Scales and keys) stay inside the frame
 def cover(b):
