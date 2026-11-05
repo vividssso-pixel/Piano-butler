@@ -122,6 +122,7 @@ H3 = hpage(f"""{head('Part IV · Harmony · 3', 'Chords in a key', 'Build a tria
 {foot('Four kinds of triad p. {{H2}} · Major scales p. {{S3}} · Cadences p. {{H10}}', 'Workbook Harmony 3 · Online: Library › Chords')}""", 68)
 css += """
 .snowc{margin:0;font-size:15px;line-height:1.5}
+.home7{display:grid;grid-template-columns:repeat(7,1fr);gap:2px} .hl{font-family:CV;font-size:19px;color:#6d6f9c;text-align:center;margin:-2px 0 6px} .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1.5px dashed #e4572e;padding-top:8px} .g3>div{display:flex;flex-direction:column;align-items:center;text-align:center} .g3 span{font-size:15px;line-height:1.3} .twr{display:flex;gap:10px;align-items:baseline;margin:6px 0 2px} .twr b{font-size:16px} .twr span{font-family:CV;font-size:19px;color:#6d6f9c} .twarrow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-family:CV;font-size:20px;color:#e4572e;height:22px;line-height:22px} .twmin .fav{background:#fff7f3;border:2px dashed #e4572e;border-radius:8px} .big3.h3x{flex-direction:row;gap:16px;margin:10px 0 4px} .big3.h3x>div{flex:1}
 .pns{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0 4px} .pn{position:relative;border:2px solid #26296b;border-radius:10px;padding:16px 10px 10px;background:#fff;display:flex;flex-direction:column;gap:6px} .pn p{margin:0;font-size:15px;line-height:1.4;text-align:center} .pnum{position:absolute;left:-10px;top:-12px;width:28px;height:28px;border-radius:50%;background:#e4572e;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px}
 .blues{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;width:100%;max-width:330px;margin:0 auto} .blues span{border:1.5px solid #26296b;border-radius:4px;padding:4px 0 5px;text-align:center;font-weight:700;font-size:15px;line-height:1.1;background:#fff} .blues i{display:block;font-style:normal;font-size:10.5px;color:#6d6f9c;letter-spacing:.06em} .blues .b4{background:#fdeee8} .blues .b5{background:#e4572e;color:#fff;border-color:#e4572e} .blues .b5 i{color:#ffe1d6}
 """
@@ -196,11 +197,11 @@ H5A = hpage(f"""{head('Part IV · Harmony · 5', 'Seventh chords', 'Add one more
 {px('h7_key', 84, 'Only white keys. G7 is the one with the strongest pull home.')}""", 72)
 
 H5B = hpage(f"""<div class="kick">Part IV · Harmony · 5 · continued</div>
-{inaction('Which seventh is it? G B D F', px('h7_mys', 84), ['<b>Count the keys between:</b> G to B is 3, B to D is 2, D to F is 2.', '<b>3 + 2 + 2</b> is the bluesy one.', '<b>The root is G:</b> G7.'], 'G B D F is <b>G7</b>, the chord that pulls hardest back to C.')}
+{inaction('Which seventh is it? G B D F', px('h7_mys', 76), ['<b>Count the keys between:</b> G to B is 3, B to D is 2, D to F is 2.', '<b>3 + 2 + 2</b> is the bluesy one.', '<b>The root is G:</b> G7.'], 'G B D F is <b>G7</b>, the chord that pulls hardest back to C.')}
 {h3('Spot the difference')}
-{pxr('h7_diff', ('n8', 'n12'), 96, 'One note decides: B makes Cmaj7, B♭ makes C7. Everything below stays the same.')}
+{pxr('h7_diff', ('n8', 'n12'), 80, 'One note decides: B makes Cmaj7, B♭ makes C7. Everything below stays the same.')}
 {youknow('The blues, with sevenths', BLUES.replace('>C<', '>C7<').replace('>F<', '>F7<').replace('>G<', '>G7<'), 'Swap the triads for <b class="co">7th chords</b> and the twelve-bar chart (p. {{H3+1}}) turns into the real blues: the 7th is the blue note.', 'Play the chart with plain C, F and G first (p. {{H3+1}}), then add the red 7ths: B♭, E♭ and F.')}
-{two(pxr('h7_pull', ('n3', 'n5', 'n7', 'n8'), 86), '<p><b>Why G7 pulls home:</b> its B wants to rise to <b class="co">C</b> and its F wants to fall to <b class="co">E</b>. Two small steps, and you are home in C.</p>', '1.2fr 1fr')}
+{two(pxr('h7_pull', ('n3', 'n5', 'n7', 'n8'), 76), '<p><b>Why G7 pulls home:</b> its B wants to rise to <b class="co">C</b> and its F wants to fall to <b class="co">E</b>. Two small steps, and you are home in C.</p>', '1.2fr 1fr')}
 {thinkt('A triad is plain toast. The 7th is the topping: the same bread, but now it tastes of something.')}
 {watch(['Writing C7 when you mean Cmaj7: “7” alone means the bluesy one, with B♭.', 'Stacking the 7th from the wrong note: count a 7th up from the root, not from the 5th.'])}
 {foot('Four kinds of triad p. {{H2}} · Chords in a key p. {{H3}}', 'Workbook Harmony 5 · Online: Library › Chords')}""", 73)
@@ -332,13 +333,60 @@ H8B = hpage(f"""<div class="kick">Part IV · Harmony · 8 · continued</div>
 {watch(['Writing it back to front: the chord comes first, the bass second. E/C would be an E chord over C.', 'Letting the right hand dip below the bass: the letter after the slash must be the lowest note you play.', 'Forgetting the chord itself: in C/E the right hand still plays the whole C chord, C E G, not just C.'])}
 {foot('Inversions p. {{H4}} · Colour chords p. {{H6}}', 'Workbook Harmony 8 · Online: Library › Chords')}""", 81)
 
+# ---------- Harmony 9 · Chords from outside the key (direction A: secret, picture first, game, Try it) ----------
+def guestman(letters, redi=(), w=70, tag=''):
+    ys, rs = [150, 98, 58], [34, 26, 20]
+    o = f'<svg viewBox="0 0 160 250" style="width:{w}px;height:auto;display:block;margin:0 auto">'
+    for i in range(3):
+        red = i in redi
+        o += f'<circle cx="60" cy="{ys[i] + 10}" r="{rs[i]}" fill="{"#fde6dd" if red else "#fff"}" stroke="{R if red else N}" stroke-width="{3 if red else 2.4}"/>'
+        o += f'<text x="{60 + rs[i] + 6}" y="{ys[i] + 20}" font-family="PF" font-size="{34 - i * 3}" font-weight="700" fill="{R if red else N}">{letters[i]}</text>'
+    o += f'<path d="M48,49 L72,49 L69,27 L51,27 Z" fill="{N}"/><line x1="40" x2="80" y1="49" y2="49" stroke="{N}" stroke-width="4" stroke-linecap="round"/>'
+    if tag:   # her 5 Nov: the chord name sits in its own label, clear of the snowman, so it reads as a name
+        tw = 22 + 15 * len(tag.replace('♭', 'b').replace('♯', '#'))
+        o += f'<rect x="{60 - tw / 2}" y="214" width="{tw}" height="32" rx="16" fill="{N}"/><text x="60" y="237" text-anchor="middle" font-family="AH" font-size="22" font-weight="700" fill="#fff">{tag}</text>'
+    return o + '</svg>'
+HOME = ''.join(f'<div>{guestman((a, b_, c), (), 78, nm)}</div>' for a, b_, c, nm in [('C', 'E', 'G', 'C'), ('D', 'F', 'A', 'Dm'), ('E', 'G', 'B', 'Em'), ('F', 'A', 'C', 'F'), ('G', 'B', 'D', 'G'), ('A', 'C', 'E', 'Am'), ('B', 'D', 'F', 'B°')])
+GUESTS = [('D', 'F♯', 'A', (1,), 'D', 'F♯ steps up to <b>G</b>'), ('F', 'A♭', 'C', (1,), 'Fm', 'A♭ sighs down to <b>G</b>'), ('B♭', 'D', 'F', (0,), 'B♭', 'B♭ walks on to <b>C</b>')]
+GHERO = ('<div class="g3">' + ''.join(f'<div>{guestman((a, b_, c), r, 104, nm)}<span>{t}</span></div>' for a, b_, c, r, nm, t in GUESTS) + '</div>'
+         + '<div class="hl" style="margin-top:4px">three guests in C major: the red ball is the note from outside</div>')
+MAJ = [('C', 'E', 'G', 'I', 'C'), ('D', 'F', 'A', 'ii', 'Dm'), ('E', 'G', 'B', 'iii', 'Em'), ('F', 'A', 'C', 'IV', 'F'), ('G', 'B', 'D', 'V', 'G'), ('A', 'C', 'E', 'vi', 'Am'), ('B', 'D', 'F', 'vii°', 'B°')]
+MIN = [('C', 'E♭', 'G', (1,), 'Cm'), ('D', 'F', 'A♭', (2,), 'D°'), ('E♭', 'G', 'B♭', (0, 2), 'E♭'), ('F', 'A♭', 'C', (1,), 'Fm'), ('G', 'B♭', 'D', (1,), 'Gm'), ('A♭', 'C', 'E♭', (0, 2), 'A♭'), ('B♭', 'D', 'F', (0,), 'B♭')]
+FAV = {3, 5, 6}   # the three favourites to borrow: Fm, A♭, B♭
+TWINS = ('<div class="twins"><div class="twr"><b>C major</b><span>at home</span></div><div class="home7">' + ''.join(f'<div>{guestman((a, b_, c), (), 74, nm)}</div>' for a, b_, c, _, nm in MAJ) + '</div>'
+         + '<div class="twarrow">' + ''.join(f'<span>{"↑ borrow" if i in FAV else ""}</span>' for i in range(7)) + '</div>'
+         + '<div class="home7 twmin">' + ''.join(f'<div class="{"fav" if i in FAV else ""}">{guestman((a, b_, c), r, 74, nm)}</div>' for i, (a, b_, c, r, nm) in enumerate(MIN)) + '</div><div class="twr"><b>C minor</b><span>the twin: same home note, darker clothes</span></div></div>')
+
+GTAB = [['<b>V of V</b>', 'D', 'F♯', 'G', 'a bright push'], ['<b>borrowed iv</b>', 'Fm', 'A♭', 'C', 'a sad sigh'], ['<b>♭VII</b> (borrowed)', 'B♭', 'B♭', 'C', 'rock and film'],
+        ['<b>♭VI</b> (borrowed)', 'A♭', 'A♭, E♭', 'B♭ or G', 'big, epic'], ['<b>Neapolitan</b> <span class="lvl2">Level 7</span>', 'D♭/F', 'D♭, A♭', 'G', 'dramatic'], ['<b>augmented 6th</b> <span class="lvl2">Extra</span>', 'A♭ C F♯', 'A♭, F♯', 'G', 'pulls apart to G']]
+H9 = hpage(f"""{head('Part IV · Harmony · 9', 'Chords from outside the key', 'Every key has a family of seven chords at home. Sometimes a guest drops in: a chord with a note from outside the key. Guests never stay long. They always have somewhere to go.')}
+{GHERO}
+{'<div class="big3 h3x"><div><span>1</span><p>Spot the note that is <b class="co">not in the key</b>. In C major, any black key is a guest.</p></div><div><span>2</span><p>Ask where it wants to go: usually <b>one small step</b>, up or down.</p></div><div><span>3</span><p>Follow it. The guest leads you home, with a little extra colour on the way.</p></div></div>'}
+{h3('Guest 1: the boss of the boss (V of V)')}
+{two(pxr('h10_vv', ('n5',), 96), '<p>G is the boss of C (V). Its own boss is <b>D major</b>, with an <b class="co">F♯</b>. Play C, D, G, C: the F♯ pushes up to G, and G pushes home to C.</p><p class="sm">Written V/V, “five of five”.</p>', '1.1fr 1fr')}
+{h3('Guest 2: borrowed from the twin')}
+<p>C major and C minor are <b>twins</b>: the same home note, C, in different clothes. Borrowing means wearing <b>one piece</b> of your twin’s outfit: the song stays in C major, but one chord comes from C minor. The red balls are the notes C major does not have.</p>
+{two(pxr('h10_iv', ('n9',), 90), '<p>The favourite: swap F for <b>Fm</b>. Play C, F, Fm, C: the <b class="co">A♭</b> sighs down to G. Fm, A♭ and B♭ all come from the twin family below.</p>', '1.1fr 1fr')}
+{TWINS}
+<!--SPLIT-->
+{h3('Guests you will meet')}
+{tbl(['Guest', 'In C', 'Outside note', 'Next chord', 'Sounds like'], GTAB, ['26%', '15%', '17%', '18%', '24%'])}
+{h3('Two dramatic guests')}
+{two(pxr('h10_neap', ('n2', 'n3'), 90, 'Neapolitan: D♭ major (written over F) slides down to G.'), pxr('h10_aug', ('n1', 'n3'), 90, 'Augmented 6th: A♭ falls and F♯ rises, both to G.'))}
+{inaction('Find the guest: A C♯ E in C major', pxr('h10_mys', ('n2',), 90), ['<b>Which note is not in C major?</b> C♯.', '<b>Where does it want to go?</b> Up a step, to D.', '<b>So it leads to D minor:</b> A major is the boss of Dm (V of ii).'], 'A C♯ E is a guest: <b>V of ii</b>, leading to D minor.')}
+{game('Spot the guests', '<div class="gm4">' + ''.join(f'<div>{guestman(t, (), 96, n)}</div>' for t, n in ((('G', 'B', 'D'), '1'), (('E', 'G♯', 'B'), '2'), (('F', 'A', 'C'), '3'), (('B♭', 'D', 'F'), '4'))) + '</div>', 'These four chords are played in C major. Which two are guests?', '2 (E major, with G♯) and 4 (B♭ major).')}
+{try10(pxr('h10_iv', ('n9',), 70), 'Play C, F, Fm, C slowly.', 'Hear the A♭ sigh down to G? Then play C, D, G, C: the F♯ pushes up instead. Same home, two different guests.')}
+{thinkt('A surprise guest at dinner: one new face changes the whole conversation, and then everyone goes home a little happier.')}
+{watch(['Thinking an accidental in a chord is a mistake: it is usually a guest with a job.', 'Calling D major “II” in C. Name it by where it is going: V of V.', 'Mixing up the relatives: C minor is C major’s twin (same home note). A minor is its neighbour (same key signature). We borrow from the twin.'])}
+{foot('Chords in a key p. {{H3}} · Slash chords p. {{H8}} · Cadences p. {{H10}}', 'Workbook Harmony 9 · Online: Library › Chromatic chords')}""", 83)
+
 css += """
 .big3{display:flex;flex-direction:column;gap:12px;font-size:16px;line-height:1.4} .big3 div{display:flex;gap:10px;align-items:flex-start} .big3 p{margin:0} .big3 span{flex:none;width:26px;height:26px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
 .k7{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:6px 0 4px} .kc{border:1.5px solid #e3e1ee;border-radius:8px;padding:8px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 .ks{font-family:PF,serif;font-size:26px;color:#26296b;line-height:1} .kn{font-size:12.5px;font-weight:700;color:#26296b} .km{font-size:17px;font-weight:700;color:#e4572e} .kw{font-size:11.5px;color:#6d6f9c;line-height:1.3}
 """
 
-_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)))]
+_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)), ('H9', H9))]
 html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}</style></head><body>{HOPEN}{"".join(_secs)}{_flowjs}</body></html>'
 open('/mnt/user-data/outputs/house-rooms/handbook-harmony.html', 'w').write(html)
 print('ok')
