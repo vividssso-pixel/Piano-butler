@@ -5,7 +5,7 @@ def star(n): return '★' * n + '<span class="so">' + '★' * (3 - n) + '</span>
 def ex(n, title, stars, how, body):
     return f'<div class="ex2"><div class="eh"><span class="en">{n}</span><b>{title}</b><span class="el">{star(stars)}</span></div><p class="how">{how}</p>{body}</div>'
 def tp(kind, topic, title, rule, inner, n, hb):
-    hb = hb + 12   # Part II now starts at p. 48
+    hb = hb - 2   # Part II now starts at p. 34 (her 5 Nov, four parts)
     return wpage(f'<div class="kick">Time · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
 def staff(ts='', bars=2, h=74, heads=None, stems=None):
     W_ = 600; y0 = 14; s = ''.join(f'<line x1="10" x2="{W_ - 10}" y1="{y0 + i * 12}" y2="{y0 + i * 12}" stroke="{N_}" stroke-width="1.3"/>' for i in range(5))
@@ -99,7 +99,7 @@ srows = ''.join('<div class="sum">' + ' <span class="pl">+</span> '.join(gin('n'
 A3 = tp('Learn', 'How long is a note?', 'How long is a note?', 'A dot adds half the note’s value; a tie joins two notes of the same pitch into one sound.', f'''
 {ex(1, 'Note sums', 1, 'Add up the beats (crotchet = 1 beat). The first one is done.', f'<div class="sums">{srows}</div>')}
 {ex(2, 'Complete the bar', 2, 'Each bar is one note short. Count the beats you have, then find what is missing. The first is done: 4/4 needs 4 beats; minim 2 + crotchet 1 = 3, so <b>1 beat</b> is missing: a crotchet.', grid([cell('wf1', 'one note <b class="done2">crotchet</b>', 64)] + [cell(k, 'one note ' + BOX, 64) for k in ('wf2', 'wf3', 'wf4', 'wf5', 'wf6')], 3))}
-{ex(3, 'Ode to Joy: count it', 2, 'Bars 3–4 of Beethoven’s Ode to Joy (Handbook p. 53). Write a count in every box, then sing it as you clap. The first is done.', wx('wc44', 84))}''', 5, 40)
+{ex(3, 'Ode to Joy: count it', 2, 'Bars 3–4 of Beethoven’s Ode to Joy (Handbook p. 39). Write a count in every box, then sing it as you clap. The first is done.', wx('wc44', 84))}''', 5, 40)
 B3 = tp('Use', 'How long is a note?', 'How long is a note?', 'A tie can cross a bar line; a dot cannot.', f'''
 {ex(1, 'Tie or dot?', 2, 'Each tie makes one sound. Write the one dotted note that lasts the same.', grid([cell(k, 'dotted note ' + BOX, 60) for k in ('wti1', 'wti2', 'wti3')], 3))}
 {ex(2, 'Spot the mistake', 2, 'One bar does not add up to four beats. Circle it and write how many beats it has.', wx('wmis2', 70) + f'<div class="add">beats in the wrong bar {BOX}</div>')}
@@ -169,7 +169,7 @@ R = wpage(f'''<div class="kick">Time · Review</div><h1>Review</h1><p class="rem
 <div class="score">Score <span class="ab"></span> / 18</div>''', 15, None)
 concepts = ['pulse, tempo and strong beats', 'bar lines and repeat signs', 'note and rest values', 'dots and ties', 'simple time signatures', 'compound time (6/8)', 'irregular time (5/4, 7/8)', 'grouping with beams', 'triplets and semiquavers', 'upbeats', 'syncopation', 'swing', 'hemiola']
 PR = wpage(f'''<div class="kick">Time · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
-{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (48, 48, 50, 52, 54, 56, 56, 58, 58, 58, 60, 60, 60))], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
+{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (34, 34, 36, 38, 40, 42, 42, 44, 44, 44, 46, 46, 46))], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
 <div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 16, None)
 ans = [('p. 1', 'Slow to fast: 4, 1, 3, 2 (60 slowest, 120 fastest). Strong beats on 1; in 4/4 medium on 3. Signs: bar line, double bar line, final bar line, repeat signs. Count: 1 2 3 · 1–2 3 · 1–2–3. How fast does it feel: any answer; slower to faster is usual.'),
        ('p. 2', 'Bar lines: 2/4 after notes 2, 3, 5, 7 and 8, final bar line after note 11; 3/4 after notes 2, 5 and 6, final bar line after note 8. Mistake: bar 3 has 4 beats.'),

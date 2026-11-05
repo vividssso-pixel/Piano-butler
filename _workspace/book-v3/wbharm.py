@@ -1,7 +1,7 @@
 # The Piano Butler Workbook, Harmony: two pages per chapter (Learn, Use), matching Handbook Part III
 exec(open('/tmp/claude-0/pk/wbpitch.py').read())   # helpers, css, SIZEJS, firstdone (rewrites the Pitch workbook, harmless)
 def hpage2(inner, n, hb):
-    return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{'HARMONY · HANDBOOK P. ' + str(hb) if hb else 'HARMONY'}</span></div><div class="rule"></div><div class="body">{inner}</div>
+    return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{'HARMONY · HANDBOOK P. ' + str(hb + 2) if hb else 'HARMONY'}</span></div><div class="rule"></div><div class="body">{inner}</div>
 <div class="sign"><span style="flex:0 0 240px">Date <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
 def th(kind, topic, title, rule, inner, n, hb):
     return hpage2(f'<div class="kick">Harmony · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
