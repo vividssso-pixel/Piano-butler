@@ -5,7 +5,7 @@ HLT = {'ia_waltz': ['n1', 'n4', 'n7'], 'ia_dot': ['n1', 'n2', 'n3'], 'ia_anac': 
 for _k, _ids in HLT.items():
     for _n in _ids:
         for _c in ('note', 'rest'): V[_k] = V[_k].replace(f'<g id="{_n}" class="{_c}">', f'<g id="{_n}" class="{_c}" fill="#e4572e" color="#e4572e" stroke="#e4572e">')
-def inact(title, fig, steps, result): return '<div class="inact2"><div class="bh">Step by step</div><b class="it">' + title + '</b><div class="ia2">' + fig + '<ol>' + ''.join(f'<li><span class="in">{i + 1}</span><span>{t}</span></li>' for i, t in enumerate(steps)) + '</ol></div><div class="ires">' + result + '</div></div>'
+def inact(title, fig, steps, result): return '<div class="inact2"><div class="bh">Example</div><b class="it">' + title + '</b><div class="ia2">' + fig + '<ol>' + ''.join(f'<li><span class="in">{i + 1}</span><span>{t}</span></li>' for i, t in enumerate(steps)) + '</ol></div><div class="ires">' + result + '</div></div>'
 def youknow(title, fig, line, tryit='', wide=False):   # her 4 Nov: one tune everyone knows, on the staff, the point in red: the 'aha' (replaces In real music); wide: the music takes the full width
     return '<div class="yk"><div class="bh">You know this</div><b class="it">' + title + '</b><div class="ykg"' + (' style="grid-template-columns:1fr"' if wide else '') + '>' + fig + '<p>' + line + '</p></div>' + (f'<p class="tryit"><b>Try it.</b> {tryit}</p>' if tryit else '') + '</div>'
 def realm(title, items, tryit=''):   # 'In real music': where the idea lives across all music, not only exams
@@ -136,6 +136,9 @@ def order_blocks(inner):   # her 5 Nov: on every topic the boxes come in one ord
     if not any(c in (1, 2, 3, 4) for c in cats): return inner
     order = sorted(range(len(els)), key=lambda i: (cats[i], i))
     body = [_ro.sub(r'^<(\w+)', lambda m: f'<{m.group(1)} data-cat="{cats[i]}"', els[i], count=1) if cats[i] else els[i] for i in order]
+    ex = [k for k, x in enumerate(body) if cats[order[k]] == 1 and '<div class="bh">Example</div>' in x]
+    if len(ex) > 1:   # her 5 Nov: 'Example 1', 'Example 2' when a topic has two
+        for n, k in enumerate(ex): body[k] = body[k].replace('<div class="bh">Example</div>', f'<div class="bh">Example {n + 1}</div>', 1)
     if split_at is not None: body.insert(split_at, '<!--SPLIT-->')
     return '\n'.join(body)
 def page(inner, n, right='PART II · TIME'):

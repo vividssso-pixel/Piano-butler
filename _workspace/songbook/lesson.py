@@ -20,7 +20,8 @@ URL = 'https://thepianobutler.com/listen.html#' + ''.join(c for c in SONG.get('i
 def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>{SONG.get('label', 'Lesson ' + str(LESSON)).upper()} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
 def mus(k, cls=''):   # a shorter last line keeps the same size of note: its width in proportion to its bars
     w = SONG.get('widths', {}).get(k); st = f' style="max-width:{w * 100:.1f}%"' if w else ''
-    return f'<div class="mus {cls}" data-snip="{k}"{st}>{V[k]}</div>'
+    tag = SONG.get('tags', {}).get(k)   # a hand-position label over the line (her 5 Nov 14:22)
+    return (f'<div class="htag">{tag}</div>' if tag else '') + f'<div class="mus {cls}" data-snip="{k}"{st}>{V[k]}</div>'
 def part(n, t, how): return f'<div class="ph"><span class="pn">{n}</span><h2>{t}</h2></div><p class="how">{how}</p>'
 def ticks(items, h=False): return f'<div class="ticks{" h" if h else ""}">' + ''.join(f'<span class="tk"><span class="bx"></span>{t}</span>' for t in items) + '</div>'
 def way(n, t, stars, how, a, b):
@@ -147,6 +148,7 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .nws-p{{flex:0 0 auto}} .nws-t{{flex:1 1 0;min-width:0}} .nws{{display:flex;gap:18px;align-items:center;border:1.5px solid rgba(38,41,107,.22);border-radius:10px;padding:10px 16px;margin:8px 0 2px}} .nws-p svg{{display:block}}
 .nws-h{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-bottom:3px}} .nws-t p{{margin:0;font-size:15px;line-height:1.45}} .nws-t p.nws-b{{margin-top:4px;font-size:13px;color:{MUTE}}}
 .kbs{{display:flex;gap:16px}} .kbl{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{MUTE};margin-bottom:4px}}
+.htag{{font-size:11.5px;font-weight:700;letter-spacing:.06em;color:{C};margin:4px 0 -8px 2px;line-height:1.2}}
 .chips{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}} .cl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-right:4px}} .chip{{border:1.2px solid {N};border-radius:14px;padding:3px 12px;font-size:14px;font-weight:700}}
 .ph{{display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:10px;margin-top:10px}} .pn{{width:30px;height:30px;background:{N};color:#fff;display:inline-flex;align-items:center;justify-content:center;font:700 16px 'AH'}} h2{{font-family:'PF',Georgia,serif;font-size:25px;margin:0}}
 .how{{font-size:15.5px;color:#3d4080;margin:6px 0 6px}}

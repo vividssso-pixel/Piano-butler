@@ -41,6 +41,7 @@ h1 { font-family:'Playfair Display', Georgia, serif; font-weight:800; font-size:
 .n b { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; background:var(--navy); color:#fff; transition:background .12s, transform .12s }
 .n.long b { background:#fff; color:var(--navy); box-shadow:inset 0 0 0 2px var(--navy) }
 .n.lh { padding-top:22px } .n.lh b { background:#fff; color:var(--navy); box-shadow:inset 0 0 0 2px var(--navy) }
+.n.rest b { background:transparent; color:var(--mute); box-shadow:inset 0 0 0 1.5px var(--line) }
 .n span { font-size:15px; min-height:20px; white-space:nowrap }
 .n.now b { background:var(--coral); color:#fff; box-shadow:none; transform:scale(1.18) }
 .n.now span { color:var(--coral); font-weight:700 }
@@ -74,7 +75,7 @@ h1 { font-family:'Playfair Display', Georgia, serif; font-weight:800; font-size:
 <script>
 const SONGS = /*DATA*/[];
 const LEN = { s: 4, m: 2, c: 1, q: 0.5 };
-const FREQ = p => { const st = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[p[0]] + (p[1] === 's' ? 1 : 0); const oct = +p.replace(/[^0-9]/g, ''); return 261.63 * Math.pow(2, (st + 12 * (oct - 4)) / 12); };
+const FREQ = p => { const st = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[p[0]] + (p[1] === 's' ? 1 : p[1] === 'f' && p.length > 2 ? -1 : 0); const oct = +p.replace(/[^0-9]/g, ''); return 261.63 * Math.pow(2, (st + 12 * (oct - 4)) / 12); };
 const $ = id => document.getElementById(id);
 let OUT = null, BUS = null, ACCBUS = null, acc = 'band', song = SONGS[0], tune = 0, speed = 1, ctx = null, playing = false, timer = null, events = [], startAt = 0;
 
@@ -99,6 +100,7 @@ function render() {
     bars.slice(l, l + 4).forEach(bar => {
       html += '<div class="m">';
       bar.forEach(([p, d, syl, wp, h]) => { const hy = wp === 'i' || wp === 'm' ? '-' : '';
+        if (p === 'r') { html += `<div class="n rest" id="n${k++}"><b>·</b><span></span></div>`; return; }   // a rest: a quiet beat
         html += `<div class="n${LEN[d] >= 2 ? ' long' : ''}${h === 'L' ? ' lh' : ''}" id="n${k++}"><b>${p[0].toUpperCase()}</b><span>${syl ? syl + hy : h ? (h === 'L' ? 'L' : 'R') : ''}</span></div>`; });
       html += '</div>';
     });
@@ -195,10 +197,11 @@ async function play() {
   const at = pos => { const b = Math.floor(pos + 1e-6), f = pos - b; return t + (b + (Math.abs(f - 0.5) < 1e-6 ? sw : f)) * beat; };
   let pos = 0;
   song.tunes[tune].b.forEach(bar => bar.forEach(([p, d]) => { const t0 = at(pos), t1 = at(pos + LEN[d]); const f = FREQ(p) * (ACC && !(E && MEL_OCT[E.style]) ? 2 : 1);
-    if (!ME) { if (!(MEL && inst(MEL, f, t0, (t1 - t0) * 0.92, 0.36))) pianoNote(f, t0, t1 - t0, ACC ? 0.5 : 0.42); if (E && E.style === 'orchestra') inst('flute', f * 2, t0, (t1 - t0) * 0.92, 0.12); } events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
+    if (p !== 'r' && !ME) { if (!(MEL && inst(MEL, f, t0, (t1 - t0) * 0.92, 0.36))) pianoNote(f, t0, t1 - t0, ACC ? 0.5 : 0.42); if (E && E.style === 'orchestra') inst('flute', f * 2, t0, (t1 - t0) * 0.92, 0.12); } events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
   // every song its own groove (her 5 Nov 01:54: 'all different'): A.style picks the pattern
   const STY = {
     // the teacher's piano
+    waltz: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 3 === 0) pianoNote(r, at(s + x), 0.9 * beat, 0.28); else v.forEach(f => pianoNote(f, at(s + x), 0.45 * beat, 0.12)); } },
     alberti: (r, v, s, len) => { pianoNote(r, at(s), len * beat, 0.26); for (let x = 0; x < len; x++) pianoNote(v[[0, 2, 1, 2][x % 4]], at(s + x), 0.9 * beat, 0.13); },
     march: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) pianoNote(x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.6 * beat, 0.3); else v.forEach(f => pianoNote(f, at(s + x), 0.3 * beat, 0.13)); } },
     lullaby: (r, v, s, len) => { pianoNote(r, at(s), len * beat, 0.24); for (let x = 0; x < len; x++) pianoNote(v[x % 3], at(s + x), 1.5 * beat, 0.12); },
@@ -250,7 +253,7 @@ async function play() {
     if (!playing) return;
     const now = ctx.currentTime; const e = events.findIndex(ev => now >= ev.t && now < ev.end);
     if (e !== last) { document.querySelectorAll('.n.now').forEach(n => n.classList.remove('now'));
-      if (e >= 0) { const el = $('n' + events[e].k); el.classList.add('now'); lightKey(events[e].p);
+      if (e >= 0) { const el = $('n' + events[e].k); el.classList.add('now'); lightKey(events[e].p === 'r' ? null : events[e].p);
         const r = el.getBoundingClientRect(); if (r.top < 60 || r.bottom > innerHeight - 60) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
       else lightKey(null); last = e; }
     if (now > endT + 0.3) { if ($('loop').checked) { playing = false; play(); return; } stop(); return; }
@@ -275,7 +278,7 @@ function accData() { return tune === 0 && acc ? song[acc] : null; }
 function setAcc() {   // the sound: the tune alone, the teacher's piano, or the band (only what this song has)
   const has = a => !a || (tune === 0 && song[a]);
   if (!has(acc)) acc = song.band && tune === 0 ? 'band' : song.piano && tune === 0 ? 'piano' : song.ens && tune === 0 ? 'ens' : '';
-  const LBL = { brass: 'Brass band', moon: 'Moonlight ensemble', strings: 'String quartet', winds: 'Woodwinds', orchestra: 'Orchestra', winter: 'Winter ensemble', harp: 'Harp and strings', march: 'March', lullaby: 'Lullaby', stride: 'Stride', hymn: 'Hymn', gallop: 'Gallop', drops: 'Raindrops', swing: 'Swing', walking: 'Walking jazz', bossa: 'Bossa nova', funk: 'Funk', gospel: 'Gospel', reggae: 'Reggae' };
+  const LBL = { waltz: 'Waltz', brass: 'Brass band', moon: 'Moonlight ensemble', strings: 'String quartet', winds: 'Woodwinds', orchestra: 'Orchestra', winter: 'Winter ensemble', harp: 'Harp and strings', march: 'March', lullaby: 'Lullaby', stride: 'Stride', hymn: 'Hymn', gallop: 'Gallop', drops: 'Raindrops', swing: 'Swing', walking: 'Walking jazz', bossa: 'Bossa nova', funk: 'Funk', gospel: 'Gospel', reggae: 'Reggae' };
   document.querySelectorAll('#acc button').forEach(b => { const a = b.dataset.a; b.hidden = !has(a); b.classList.toggle('on', a === acc);
     b.textContent = !a ? 'Tune' : ({ piano: 'Piano', band: 'Band', ens: 'Ensemble' })[a] + (song[a] && song[a].style ? ' · ' + LBL[song[a].style] : ''); });
   $('acc').hidden = !(tune === 0 && (song.band || song.piano || song.ens)); $('mew').hidden = !acc;
