@@ -5,7 +5,7 @@ HLT = {'ia_waltz': ['n1', 'n4', 'n7'], 'ia_dot': ['n1', 'n2', 'n3'], 'ia_anac': 
 for _k, _ids in HLT.items():
     for _n in _ids:
         for _c in ('note', 'rest'): V[_k] = V[_k].replace(f'<g id="{_n}" class="{_c}">', f'<g id="{_n}" class="{_c}" fill="#e4572e" color="#e4572e" stroke="#e4572e">')
-def inact(title, fig, steps, result): return '<div class="inact2"><div class="bh">In action</div><b class="it">' + title + '</b><div class="ia2">' + fig + '<ol>' + ''.join(f'<li><span class="in">{i + 1}</span><span>{t}</span></li>' for i, t in enumerate(steps)) + '</ol></div><div class="ires">' + result + '</div></div>'
+def inact(title, fig, steps, result): return '<div class="inact2"><div class="bh">Step by step</div><b class="it">' + title + '</b><div class="ia2">' + fig + '<ol>' + ''.join(f'<li><span class="in">{i + 1}</span><span>{t}</span></li>' for i, t in enumerate(steps)) + '</ol></div><div class="ires">' + result + '</div></div>'
 def youknow(title, fig, line, tryit='', wide=False):   # her 4 Nov: one tune everyone knows, on the staff, the point in red: the 'aha' (replaces In real music); wide: the music takes the full width
     return '<div class="yk"><div class="bh">You know this</div><b class="it">' + title + '</b><div class="ykg"' + (' style="grid-template-columns:1fr"' if wide else '') + '>' + fig + '<p>' + line + '</p></div>' + (f'<p class="tryit"><b>Try it.</b> {tryit}</p>' if tryit else '') + '</div>'
 def realm(title, items, tryit=''):   # 'In real music': where the idea lives across all music, not only exams
@@ -99,7 +99,47 @@ def bars(kind, h=34):
 def gl(ch, size=34): return f'<span class="gl2" style="font-size:{size}px">{ch}</span>'
 NT = {'breve': '𝅜', 'dsb': '𝅝𝅭', 'sb': '𝅝', 'dm': '𝅗𝅥𝅭', 'm': '𝅗𝅥', 'dc': '𝅘𝅥𝅭', 'c': '𝅘𝅥', 'dq': '𝅘𝅥𝅮𝅭', 'q': '𝅘𝅥𝅮', 'sq': '𝅘𝅥𝅯', 'dsq': '𝅘𝅥𝅰', 'hdsq': '𝅘𝅥𝅱'}
 RS = {'breve': '𝄺', 'dsb': '𝄻𝅭', 'sb': '𝄻', 'dm': '𝄼𝅭', 'm': '𝄼', 'dc': '𝄽𝅭', 'c': '𝄽', 'dq': '𝄾𝅭', 'q': '𝄾', 'sq': '𝄿', 'dsq': '𝅀', 'hdsq': '𝅁'}
+import re as _ro
+_VOID = {'br', 'img', 'hr', 'col', 'input', 'meta', 'link', 'wbr'}
+_TAIL = {'inact': 1, 'inact2': 1, 'yk': 2, 'realm': 2, 'think': 3, 'watch': 4, 'links': 9}
+def _nodes(t):   # top-level nodes of an HTML fragment (comments kept as their own nodes)
+    out, depth, start, pos = [], 0, None, 0
+    for m in _ro.finditer(r'<!--.*?-->|<(/?)([a-zA-Z][\w:-]*)((?:[^>"\']|"[^"]*"|\'[^\']*\')*?)(/?)>', t, _ro.S):
+        if m.group(0).startswith('<!--'):
+            if depth == 0: out.append(('gap', t[pos:m.start()])); out.append(('com', m.group(0))); pos = m.end()
+            continue
+        close, tag = m.group(1), m.group(2).lower(); selfc = bool(m.group(4)) or tag in _VOID
+        if depth == 0 and not close:
+            out.append(('gap', t[pos:m.start()])); start = m.start()
+            if selfc: out.append(('el', t[start:m.end()])); pos = m.end(); continue
+        if close: depth -= 1
+        elif not selfc: depth += 1
+        if depth == 0 and close: out.append(('el', t[start:m.end()])); pos = m.end()
+    out.append(('gap', t[pos:]))
+    return out
+def _cat(el):
+    m = _ro.match(r'<(\w+)[^>]*?class="([^"]*)"', el)
+    return _TAIL.get(m.group(2).split()[0], 0) if m else 0
+def order_blocks(inner):   # her 5 Nov: on every topic the boxes come in one order: the content, then In action (together), You know this, Think of it, Watch out
+    ns = _nodes(inner)
+    if ''.join(x for _, x in ns) != inner: return inner
+    els, split_at = [], None
+    for k, x in ns:
+        if k == 'el': els.append(x)
+        elif k == 'com' and 'SPLIT' in x: split_at = len(els)
+        elif k == 'com': els.append(x)
+    cats = [None] * len(els)
+    for i in range(len(els) - 1, -1, -1):
+        c = _cat(els[i]) if not els[i].startswith('<!--') else 0
+        if _ro.match(r'<h[234][\s>]', els[i]): c = cats[i + 1] if i + 1 < len(els) else 0
+        cats[i] = c
+    if not any(c in (1, 2, 3, 4) for c in cats): return inner
+    order = sorted(range(len(els)), key=lambda i: (cats[i], i))
+    body = [_ro.sub(r'^<(\w+)', lambda m: f'<{m.group(1)} data-cat="{cats[i]}"', els[i], count=1) if cats[i] else els[i] for i in order]
+    if split_at is not None: body.insert(split_at, '<!--SPLIT-->')
+    return '\n'.join(body)
 def page(inner, n, right='PART II · TIME'):
+    inner = order_blocks(inner)
     return f'''<section class="pg"><div class="top"><span>THE PIANO BUTLER HANDBOOK</span><span>{right}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'''
 def head(k, t, lead): return f'<div class="kick">{k}</div><h1>{t}</h1><p class="lead">{lead}</p>'
 def h3(t): return f'<h3>{t}</h3>'
@@ -129,16 +169,16 @@ P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Put yo
      h3('Strong and weak beats') + tbl(['Beats', 'Pattern', 'Feels like'], [['2', '<b>Strong</b> weak', 'a march'], ['3', '<b>Strong</b> weak weak', 'a waltz'], ['4', '<b>Strong</b> weak <b>medium</b> weak', 'most songs']], ['16%', '50%', '34%']))}
 {h3('Bars and bar lines')}
 {tbl(['Sign', 'Name', 'Meaning'], [[bars('bar'), 'bar line', 'divides the music into bars'], [bars('dbl'), 'double bar line', 'marks the end of a section, or a change of key, time signature or tempo'], [bars('fin'), 'final bar line', 'marks the end of the piece'], [bars('repeat'), 'repeat signs', 'play the passage between them again; if there is no start sign, go back to the beginning']], ['18%', '24%', '58%'])}
-{thinkt('The beat is the stage: it is there before anyone walks on. The notes are the actors who come and go on it, and the bar lines divide the stage into scenes.')}
 <!--SPLIT-->
+{h3('The beat in tunes you know')}
+{tbl(['Tune', 'Beats in a bar', 'Pattern'], [['Twinkle, Twinkle, Little Star', '4', '<b>Strong</b> weak <b>medium</b> weak'], ['Happy Birthday', '3', '<b>Strong</b> weak weak'], ['The Blue Danube (a waltz)', '3', '<b>Strong</b> weak weak'], ['Radetzky March', '2', '<b>Strong</b> weak']], ['46%', '20%', '34%'])}
 {h3('Counting')}
 {vx('t34', 84, 'Three bars of 3/4. Every beat is counted, even inside a long note: the red number is where you play, the grey numbers are the beats you hold.')}
 <p>Count aloud at one speed, a little louder on beat 1. With a metronome, start slower than you think and speed up only when the passage is steady.</p>
-{watch(['Speeding up in the easy bars and slowing down in the hard ones: choose a tempo you can keep in the hardest bar.', 'Counting the notes instead of the beats.'])}
 {inact('Is this a march or a waltz?', vx('ia_waltz', 70), ['<b>Tap a steady beat</b> as you clap or listen.', '<b>Find the strong one:</b> the red beats feel heavier.', '<b>Count the gap</b> between strong beats: 1 2 3, 1 2 3.'], 'Groups of three: a <b>waltz</b>, in 3/4. Groups of two would be a march.')}
 {youknow('Radetzky March (Johann Strauss I)', ykfig('yk_clap', ('n1','n2','n3','n4','n5','n6'), 66), 'At the New Year concert the audience claps along on <b class="co">every beat</b>. That steady clap is the pulse; the orchestra’s tune moves freely over it.', 'Put on any march and clap only the beat, not the tune.')}
 {inact('Feel the beat before you play', '<div><p class="mmk"><span class="mm">' + gin("n", "c") + ' = 96</span></p>' + vx('t34', 72) + '</div>', ['<b>Read the mark:</b> <span class="mm">' + gin("n", "c") + ' = 96</span>, 96 crotchet beats a minute.', '<b>Listen first:</b> set the metronome and let one full bar go by, counting “1 2 3” in your head.', '<b>Step in</b> on the next beat 1, the way you step onto a moving escalator.'], 'The first note lands <b>on the beat</b>, not a guess.')}
-{thinkt('To take the plate you want off a sushi train, or to step onto an escalator, you watch the movement first, then move with it at the right moment. Music is already moving before your first note: feel the beat for a bar, then step in.')}
+{thinkt('The beat is the stage and the notes are the actors: the stage is there before anyone walks on. So step in the way you step onto an escalator or take a plate off a sushi train: watch it move for a bar, then join in.')}
 {watch(['Speeding up in the easy bars and slowing down in the hard ones: the pulse stays the same all the way through.', 'Counting only the notes you play: the beat goes on through long notes and rests.'])}
 {foot('Time signatures p. 39 · Tempo words: Expression (later)', 'Workbook Level 0 · Pulse · Online: Metronome')}''', 36)
 
@@ -238,7 +278,6 @@ P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Say 
 
 {youknow('Happy Birthday', ykfig('yk_bday', ('n1','n2'), 70), '“Hap-py” comes <b class="co">before</b> the first strong beat: an upbeat. The strong beat lands on “birth”.', 'Sing it and clap only on “birth”, “day” and “you”: you feel where bar 1 starts.')}
 {inact('Fit a triplet into a bar', vx('ia_trip2', 72), ['<b>Count the bar:</b> four crotchet beats, “1 2 3 4”.', '<b>Find the 3:</b> on beat 2, three quavers share one beat.', '<b>Say it:</b> “1, 2 & a, 3, 4”, keeping beats 3 and 4 steady.'], 'The triplet squeezes three notes into <b>beat 2</b>; the beat itself never moves.')}
-{inact('Count four semiquavers', vx('pz_s', 64), ['<b>One beat</b> cut into four equal notes.', '<b>Say it:</b> 1 e & a, evenly.', '<b>The next beat</b> starts again on 2.'], 'Four semiquavers fill <b>one beat</b>: a quarter each.')}
 {foot('Notes and rests p. 37 · Rhythm: off the beat p. 42', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 41)
 
 terms = [['syncopation', 'the stress falls off the beat, often on a note held across it', 'Level 4'], ['hemiola', 'two bars of three felt as three bars of two', 'Level 4'], ['swing', 'pairs of quavers played long–short, like the first and last notes of a triplet', 'Level ½'], ['polyrhythm', 'two rhythms at once, such as three notes in one hand against two in the other', 'Level 7'], ['rubato', 'time stretched and given back, for expression; the pulse returns', lv('')]]
@@ -253,11 +292,10 @@ P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Now the fu
      h3('Rubato <span class="lvl2">Extra</span>') + '<p>Time is stretched and then given back, for expression: the music leans into a phrase and catches up after it. The pulse always returns. Marked <i>rubato</i>, or simply part of the style in much Romantic music.</p>')}
 {watch(['Rushing the short notes after a long one: keep counting inside the long note.', 'Playing a triplet unevenly: three equal notes, not two quick and one long.', 'Letting syncopation drag the pulse: tap the beat with your foot.'])}
 {inact('Count a syncopation', vx('ia_sync', 74), ['<b>Tap the beats:</b> 1, 2.', '<b>Find the red crotchet:</b> it starts on the “&”, between the beats.', '<b>Hold it through beat 2</b>, then play bar 2 on the beats.'], 'The accent falls <b>off the beat</b>: that is syncopation.')}
-{thinkt('Syncopation is a step that lands between the beats, like a skip in your walk.')}
 {youknow('The Entertainer (Scott Joplin)', ykfig('yk_ent', ('n4','n6'), 70), 'The high <b class="co">C</b> keeps landing just after the beat, not on it: syncopation, the bounce of ragtime.', 'Tap the beat with your foot and hum the tune: hear the C slip between the taps.')}
 {inact('Swing this bar', '<div><p class="mmk">Swing</p>' + vx('ia_swing', 72) + '</div>', ['<b>Find the quaver pairs:</b> beats 2 and 3.', '<b>Play each pair long–short:</b> “doo-ba, doo-ba”.', '<b>Leave the crotchets alone:</b> beats 1 and 4 stay as written.'], 'Only the <b>pairs</b> swing; the beat underneath stays even.')}
 {inact('Count a hemiola', vx('hem', 74), ['<b>Two bars of 3/4:</b> six crotchet beats.', '<b>Regroup them</b> in twos: 1 2 | 3 4 | 5 6.', '<b>Feel three big beats</b> across the two bars.'], 'Two bars of three become <b>three bars of two</b> for a moment: a hemiola.')}
-{thinkt('Swing is walking with a spring in your step: long-short, long-short. Rubato is borrowing time like pocket money: whatever you spend, you pay back.')}
+{thinkt('Syncopation is a skip in your walk: a step that lands between the beats. Swing is walking with a spring in your step, long-short, long-short. Rubato is borrowing time like pocket money: whatever you spend, you pay back.')}
 {foot('Rhythm: groups and upbeats p. 41 · Words for how to play: Expression (later)', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 42)
 
 css = f'''
@@ -329,7 +367,7 @@ FLOWJS = '''<script>
     const limit = () => A.querySelector('.foot').getBoundingClientRect().top - 24;
     const bottom = () => { let m = 0; [...ab.children].forEach(c => { const r = c.getBoundingClientRect(); if (r.height) m = Math.max(m, r.bottom); }); return m; };
     while (bottom() > limit() && ab.children.length > 3) bb.insertBefore(ab.lastElementChild, kick.nextSibling);
-    for (const nx of [...bb.children]) { if (nx === kick || nx.classList.contains('links') || nx.parentNode !== bb) continue; const grp = [nx]; if (/^H[234]$/.test(nx.tagName) && nx.nextElementSibling && !nx.nextElementSibling.classList.contains('links')) grp.push(nx.nextElementSibling); const ref = grp[grp.length - 1].nextSibling; grp.forEach(e => ab.appendChild(e)); if (bottom() > limit()) { grp.forEach(e => bb.insertBefore(e, ref)); if (grp.length > 1) break; } }   // nothing jumps ahead of a heading that stays behind   // fill the first page: try each block in turn (a small one may fit where a big one did not); a heading only moves together with the block under it
+    let failCat = null; for (const nx of [...bb.children]) { if (failCat !== null && +(nx.dataset.cat || 0) !== failCat) break; if (nx === kick || nx.classList.contains('links') || nx.parentNode !== bb) continue; const grp = [nx]; if (/^H[234]$/.test(nx.tagName) && nx.nextElementSibling && !nx.nextElementSibling.classList.contains('links')) grp.push(nx.nextElementSibling); const ref = grp[grp.length - 1].nextSibling; grp.forEach(e => ab.appendChild(e)); if (bottom() > limit()) { grp.forEach(e => bb.insertBefore(e, ref)); if (grp.length > 1) break; failCat = +(grp[0].dataset.cat || 0); } }   // her 5 Nov: a block may only jump ahead of one of its own kind (content, In action, You know this, Think of it, Watch out keep their order)   // nothing jumps ahead of a heading that stays behind   // fill the first page: try each block in turn (a small one may fit where a big one did not); a heading only moves together with the block under it
     while (ab.lastElementChild && /^H[234]$/.test(ab.lastElementChild.tagName)) bb.insertBefore(ab.lastElementChild, kick.nextSibling);   // a heading never sits alone at the foot of a page: it goes over with its text
   });
   document.body.dataset.flowed = '1';
