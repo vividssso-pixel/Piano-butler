@@ -19,14 +19,27 @@ HB1 = th('Use', 'Chords and triads', 'Chords and triads', 'A stacked triad sits 
 {ex(2, 'Is it a triad?', 2, 'Circle ✓ if the chord is stacked in 3rds, ✗ if it is not.', grid([pc('hi%d' % i, circ('✓', '✗'), 58) for i in range(4)], 4))}
 {ex(3, 'Draw it', 2, 'Draw the 3rd and the 5th above each root, as semibreves stacked on top of it.', grid([pc('uph%d' % i, '', 58) for i in range(6)], 3))}
 {ex(4, 'Solid or broken?', 1, 'Circle solid or broken.', grid([pc('hs%d' % i, circ('solid', 'broken'), 58) for i in range(4)], 4))}''', 2, 65)
+
+# ---------- 2 Four kinds of triad (Handbook pp. 66–67) ----------
+HA2 = th('Learn', 'Four kinds of triad', 'Four kinds of triad', 'Major 3rd = 4 semitones, minor 3rd = 3. Major: major below, minor above. Minor: the other way round.', f'''
+{ex(1, 'Count the 3rds', 1, 'Count the semitones in each 3rd, then write the kind. The first row is done.', tbl(['Triad', 'Bottom 3rd', 'Top 3rd', 'Kind'], [['<b>C E G</b>', '<b class="done2">4</b>', '<b class="done2">3</b>', '<b class="done2">major</b>']] + [[f'<b>{t}</b>', BOX, BOX, LINE] for t in ('A C E', 'G B D', 'E G B', 'B D F')], ['25%', '22%', '22%', '31%'], 'bld'))}
+{ex(2, 'Which kind?', 2, 'Write major, minor, dim or aug under each triad.', grid([pc('wk%d' % i, BOX, 58) for i in range(6)], 3))}
+{ex(3, 'Major to minor', 1, 'Lower the 3rd by a semitone to make each major triad minor. The first is done.', tbl(['Major', 'Minor'], [['<b>C E G</b>', '<b class="done2">C E♭ G</b>']] + [[f'<b>{t}</b>', LINE] for t in ('F A C', 'G B D', 'D F♯ A')], ['40%', '60%'], 'bld'))}''', 3, 66)
+HB2 = th('Use', 'Four kinds of triad', 'Four kinds of triad', 'On the white keys: C, F, G major; D, E, A minor; B diminished.', f'''
+{ex(1, 'Draw major and minor', 2, 'Draw a triad above each root: major on the top row, minor on the bottom row. Every note is a white key.', grid([pc('uph%d' % i, ('major' if i < 3 else 'minor'), 58) for i in range(6)], 3))}
+{ex(2, 'Bright or dark?', 1, 'Play each triad and circle what you hear.', ''.join(f'<div class="row"><b>{t}</b><span class="tf">bright &nbsp;·&nbsp; dark</span></div>' for t in ('C E G', 'A C E', 'G B D', 'D F A')))}
+{ex(3, 'Sort the white keys', 2, 'Write the kind of each white-key triad. The first is done.', tbl(['Triad on', 'C', 'D', 'E', 'F', 'G', 'A', 'B'], [['<b>Kind</b>', '<b class="done2">major</b>'] + [LINE] * 6], ['16%'] + ['12%'] * 7, 'bld'))}
+{ex(4, 'Play the four kinds', 1, 'Play C major, C minor, C diminished and C augmented, each hand alone. Tick a circle each day.', '<div class="ts6">' + ''.join(f'<div><b>{t}</b>{ticks(3)}</div>' for t in ('C', 'Cm', 'C°', 'C+')) + '</div>')}''', 4, 67)
 hans = [('p. 1', 'Build it: C E G · D F A · F A C · G B D · A C E · B D F. Keyboard: F A C. Name the triad: C, F, G, D, A, E.'),
-        ('p. 2', 'Lines or spaces: lines, spaces, lines. Is it a triad: ✓, ✗, ✓, ✗. Draw it: C E G, F A C, G B D, D F A, A C E, E G B. Solid or broken: solid, broken, solid, broken.')]
+        ('p. 2', 'Lines or spaces: lines, spaces, lines. Is it a triad: ✓, ✗, ✓, ✗. Draw it: C E G, F A C, G B D, D F A, A C E, E G B. Solid or broken: solid, broken, solid, broken.'),
+        ('p. 3', 'Count the 3rds: C E G 4, 3 major · A C E 3, 4 minor · G B D 4, 3 major · E G B 3, 4 minor · B D F 3, 3 diminished. Which kind: minor, major, dim, aug, minor, major. Major to minor: C E♭ G · F A♭ C · G B♭ D · D F A.'),
+        ('p. 4', 'Draw: major C E G, F A C, G B D; minor D F A, A C E, E G B. Bright or dark: bright, dark, bright, dark. White keys: C major, D minor, E minor, F major, G major, A minor, B diminished.')]
 HAN = hpage2(f'''<div class="kick">Harmony · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in hans], ['12%', '88%'], 'ansT')}
-<p class="sm">“Play it” has no single answer to copy: check it at the piano with your teacher, or with the online lessons. More chapters follow as Part III grows.</p>''', 3, None)
+<p class="sm">“Play it” has no single answer to copy: check it at the piano with your teacher, or with the online lessons. More chapters follow as Part III grows.</p>''', 5, None)
 css += '''
 .bld td{text-align:center} .bld td b{font-size:16px} .bld .ab{margin:0 auto}
 '''
-HFIRST = {'Name the triad': [('fill', 'C')], 'Lines or spaces?': [('ring', 'lines')], 'Is it a triad?': [('ring', '✓')], 'Solid or broken?': [('ring', 'solid')]}
-open('/mnt/user-data/outputs/house-rooms/workbook-harmony.html', 'w').write(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{HA1}{HB1}{HAN}{SIZEJS}</body></html>', HFIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1))
+HFIRST = {'Which kind?': [('fill', 'minor')], 'Bright or dark?': [('ring', 'bright')], 'Name the triad': [('fill', 'C')], 'Lines or spaces?': [('ring', 'lines')], 'Is it a triad?': [('ring', '✓')], 'Solid or broken?': [('ring', 'solid')]}
+open('/mnt/user-data/outputs/house-rooms/workbook-harmony.html', 'w').write(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{HA1}{HB1}{HA2}{HB2}{HAN}{SIZEJS}</body></html>', HFIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1))
 print('ok')
