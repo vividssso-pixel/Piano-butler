@@ -352,7 +352,7 @@ function reattach(svg) {
   svg = svg.replace(/(<ellipse cx="(-?[\d.]+)" cy="(-?[\d.]+)" rx="([\d.]+)"[^>]*class="lhead"\/>\s*<text[^>]*>[^<]*<\/text>\s*<\/g>\s*<g id="[^"]+" class="stem">\s*<path d=")M(-?[\d.]+) (-?[\d.]+) L(-?[\d.]+) (-?[\d.]+)"/g,
     (m, pre, cx, cy, rx, x1, y1, x2, y2) => { const up = +y2 < +y1, x = Math.round(+cx + (up ? 1 : -1) * (+rx - W / 2));
       return `${pre}M${x} ${y1} L${x} ${y2}"`; });
-  svg = svg.replace(/(class="stem">\s*<path d="[^"]+" stroke-width=")\d+"/g, `$1${W}"`);
+  svg = svg.replace(/(class="stem">\s*<path d="[^"]+" )stroke-width="\d+"/g, '$1stroke-width="1.7" vector-effect="non-scaling-stroke"');   // one width on the page, whatever the line's scale (her 5 Nov 13:42)
   // a beam reaches from its first stem to its last, edge to edge
   const stems = [...svg.matchAll(/class="stem">\s*<path d="M(-?[\d.]+) (-?[\d.]+) L-?[\d.]+ (-?[\d.]+)"/g)].map(m => ({ x: +m[1], tip: +m[3] }));
   return svg.replace(/(class="beam">\s*<polygon points=")([^"]+)"/g, (m, pre, pts) => {
