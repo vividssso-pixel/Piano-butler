@@ -4,7 +4,7 @@ import re
 PARTS = [('P', 'Pitch', 5), ('T', 'Time', 7), ('S', 'Scales and keys', 7), ('H', 'Harmony', 8)]
 PLANNED = {'H': 12}   # chapters planned but not built yet: their numbers follow on, for forward references
 TIPS = {'P': True, 'T': True, 'S': True, 'H': False}
-COUNT = {}          # pages per topic; 2 unless set here
+COUNT = {'T2': 3, 'H1': 3}          # pages per topic; 2 unless set here
 START = 21          # the Pitch opener
 def build(count=None, legacy=False):
     c = {} if legacy else dict(COUNT, **(count or {})); page, n = {}, START

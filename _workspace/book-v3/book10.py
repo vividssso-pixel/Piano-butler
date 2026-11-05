@@ -5,6 +5,9 @@ HLT = {'ia_waltz': ['n1', 'n4', 'n7'], 'ia_dot': ['n1', 'n2', 'n3'], 'ia_anac': 
 for _k, _ids in HLT.items():
     for _n in _ids:
         for _c in ('note', 'rest'): V[_k] = V[_k].replace(f'<g id="{_n}" class="{_c}">', f'<g id="{_n}" class="{_c}" fill="#e4572e" color="#e4572e" stroke="#e4572e">')
+def game(title, fig, task, answer):   # her 5 Nov (A): games with the answer printed upside down, like a puzzle book
+    return f'<div class="game"><div class="bh">Game</div><b class="it">{title}</b>{fig}<p class="gt">{task}</p><p class="ans">Answer: {answer}</p></div>'
+def try10(fig, big, text): return f'<div class="try10"><div class="bh">Try it · 10 seconds</div><div class="t10">{fig}<div><p class="big">{big}</p><p>{text}</p></div></div></div>'
 def inact(title, fig, steps, result): return '<div class="inact2"><div class="bh">Example</div><b class="it">' + title + '</b><div class="ia2">' + fig + '<ol>' + ''.join(f'<li><span class="in">{i + 1}</span><span>{t}</span></li>' for i, t in enumerate(steps)) + '</ol></div><div class="ires">' + result + '</div></div>'
 def youknow(title, fig, line, tryit='', wide=False):   # her 4 Nov: one tune everyone knows, on the staff, the point in red: the 'aha' (replaces In real music); wide: the music takes the full width
     return '<div class="yk"><div class="bh">You know this</div><b class="it">' + title + '</b><div class="ykg"' + (' style="grid-template-columns:1fr"' if wide else '') + '>' + fig + '<p>' + line + '</p></div>' + (f'<p class="tryit"><b>Try it.</b> {tryit}</p>' if tryit else '') + '</div>'
@@ -63,6 +66,7 @@ FF = (f"@font-face{{font-family:'AH';font-weight:400;src:url(data:font/woff2;bas
       f"@font-face{{font-family:'AH';font-weight:700;src:url(data:font/woff2;base64,{b64(FD + 'atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2')}) format('woff2')}}"
       f"@font-face{{font-family:'NM';src:url(data:font/woff2;base64,{b64(FD + 'noto-music/files/noto-music-music-400-normal.woff2')}) format('woff2')}}"
       f"@font-face{{font-family:'PF';font-weight:700;src:url(data:font/woff2;base64,{b64('/tmp/claude-0/fnt/package/files/playfair-display-latin-700-normal.woff2')}) format('woff2')}}")
+FF += f"@font-face{{font-family:'CV';font-weight:700;src:url(data:font/woff2;base64,{b64(FD + 'caveat/files/caveat-latin-700-normal.woff2')}) format('woff2')}}"   # her 5 Nov: handwritten notes, like a passed-down cheat sheet
 
 for _k in ('wbr34', 'wbr24'):
     if _k in V: V[_k] = V[_k].replace('class="mRest">', 'class="mRest" fill="#e4572e" color="#e4572e">')
@@ -101,7 +105,7 @@ NT = {'breve': '𝅜', 'dsb': '𝅝𝅭', 'sb': '𝅝', 'dm': '𝅗𝅥𝅭', 'm
 RS = {'breve': '𝄺', 'dsb': '𝄻𝅭', 'sb': '𝄻', 'dm': '𝄼𝅭', 'm': '𝄼', 'dc': '𝄽𝅭', 'c': '𝄽', 'dq': '𝄾𝅭', 'q': '𝄾', 'sq': '𝄿', 'dsq': '𝅀', 'hdsq': '𝅁'}
 import re as _ro
 _VOID = {'br', 'img', 'hr', 'col', 'input', 'meta', 'link', 'wbr'}
-_TAIL = {'inact': 1, 'inact2': 1, 'yk': 2, 'realm': 2, 'think': 3, 'watch': 4, 'links': 9}
+_TAIL = {'inact': 1, 'inact2': 1, 'game': 1, 'try10': 1, 'yk': 2, 'realm': 2, 'think': 3, 'watch': 4, 'links': 9}
 def _nodes(t):   # top-level nodes of an HTML fragment (comments kept as their own nodes)
     out, depth, start, pos = [], 0, None, 0
     for m in _ro.finditer(r'<!--.*?-->|<(/?)([a-zA-Z][\w:-]*)((?:[^>"\']|"[^"]*"|\'[^\']*\')*?)(/?)>', t, _ro.S):
@@ -151,8 +155,31 @@ MINCSS = """
 figcaption{font-size:14.5px!important;line-height:1.45} .sm{font-size:14.5px!important} .isteps{font-size:14.5px!important} .ia2 ol{font-size:14.5px!important} .ires{font-size:15px!important}
 .think{font-size:15px!important} .tryit{font-size:14.5px!important} .ykg p{font-size:15px!important} .howto{font-size:15px!important} .wr{font-size:15px!important} .ht{font-size:15px!important}
 .kw{font-size:13px!important} .kn{font-size:14px!important}
-h3{margin:10px 0 5px!important;padding-top:6px!important} .inact,.inact2{margin:8px 0!important} .think{margin:5px 0!important}
+h3{margin:10px 0 5px!important;padding-top:6px!important}
+.leadrow{display:grid;grid-template-columns:1fr 210px;gap:18px;align-items:start} .leadrow .lead{margin-top:0}
+.secret1{display:flex;flex-direction:column;gap:3px;border:2px dashed #e4572e;background:#fff7f3;border-radius:6px;padding:7px 11px 8px;margin:0 0 8px;font-size:14.5px;font-weight:700;color:#26296b;line-height:1.35;transform:rotate(1.2deg)} .secret1 .sl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#e4572e;font-weight:800} .secret1 b{color:#e4572e}
+.watch .trapst{display:inline-block;border:2.5px solid #e4572e;color:#e4572e!important;font-weight:800;letter-spacing:.2em;padding:1px 8px;border-radius:3px;transform:rotate(-4deg);margin:2px 0 4px}
+.hand3{font-family:CV;font-size:21px;color:#e4572e;line-height:1.1}
+.game,.try10{border:2px solid #e4572e;border-radius:8px;padding:9px 14px 10px;margin:10px 0;background:#fff} .try10{border-color:#26296b;background:#f6f5fa} .game .bh,.try10 .bh{font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#e4572e} .game .it{display:block;font-size:16px;margin:2px 0 6px}
+.game .gt{margin:6px 0 2px;font-size:15px} .game .ans{transform:rotate(180deg);text-align:center;font-size:14px;color:#6d6f9c;margin:6px 0 0} .t10{display:grid;grid-template-columns:1fr 1.2fr;gap:16px;align-items:center} .t10 p{margin:3px 0;font-size:15px} .t10 .big{font-size:17px;font-weight:700}
+.gm4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;align-items:end} .gm4>div{display:flex;flex-direction:column;align-items:center;gap:4px} .gm4 b{font-size:16px;color:#e4572e} .inact,.inact2{margin:8px 0!important} .think{margin:5px 0!important}
 """
+SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the trick in a sentence
+ 'P1': 'Find the two black keys: <b>C</b> is always just to their left.', 'P2': 'The treble clef curls round <b>G</b>; the bass clef’s two dots hug <b>F</b>.',
+ 'P3': 'Learn three landmark notes, then step or skip from them.', 'P4': 'Every line and every space is one white key, in order.',
+ 'P5': 'Sharp: the very next key to the <b>right</b>. Flat: the very next key to the <b>left</b>.',
+ 'T1': 'The beat never stops, not even in a rest. Feel it before you play.', 'T2': 'Each note is half the one above it, and every note has a rest twin.',
+ 'T3': 'A dot adds half. A tie glues two notes into one.', 'T4': 'Top number: how many beats. Bottom number: which note gets one beat.',
+ 'T5': 'Dotted beats split in three: 6/8 is two big beats.', 'T6': 'Beams group notes into beats; an upbeat borrows from the last bar.', 'T7': 'Keep the beat rock-steady and let the rhythm tease it.',
+ 'S1': 'Count the letters, both ends included: C to E is a 3rd.', 'S2': 'Count the semitones: 4 make a major 3rd, 3 a minor 3rd.',
+ 'S3': 'Every major scale: tone, tone, semitone, tone, tone, tone, semitone.', 'S4': 'Three minor scales, one home note: only the 6th and 7th change.',
+ 'S5': 'The key signature says once, at the start, which notes are always sharp or flat.', 'S6': 'Last sharp, one step up: the major key. Last flat but one: the major key.',
+ 'S7': 'Clockwise adds a sharp, anticlockwise adds a flat: every key on one clock.',
+ 'H1': 'Play one, skip one, play one: the snowman rule.', 'H2': 'Count the keys between: 3 + 2 is major, 2 + 3 is minor.', 'H3': 'Build a snowman on every note of the scale: I, IV and V are the strongest.',
+ 'H4': 'Move the bottom note to the top: same chord, new bass.', 'H5': 'One more floor on the snowman and the chord changes colour.', 'H6': 'Move the 3rd, take it away, or add one note: five new colours.',
+ 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.'}
+def secret_box(t): return f'<div class="secret1"><span class="sl">The secret</span><span>{t}</span></div>'
+def hand(t, cls=''): return f'<span class="hand3 {cls}">{t}</span>'
 def assemble(key, pg):   # her 5 Nov: a topic is 2 pages, or 3 when it needs room; page numbers come from the page map
     if isinstance(pg, str):
         parts = pg.split('<!--SPLIT-->'); a = parts[0]
@@ -162,6 +189,9 @@ def assemble(key, pg):   # her 5 Nov: a topic is 2 pages, or 3 when it needs roo
     else:
         secs = list(pg); a = secs[0]
         kick = _ro.search(r'<div class="kick">(.*?)</div>', a).group(1); he = a.index('<div class="body">') + len('<div class="body">'); foot = a[a.rindex('<div class="foot">'):]
+    if key in SECRETS and '<p class="lead">' in secs[0]:
+        b0 = secs[0].index('<p class="lead">'); e = secs[0].index('</p>', b0) + 4
+        secs[0] = secs[0][:b0] + '<div class="leadrow">' + secs[0][b0:e] + secret_box(SECRETS[key]) + '</div>' + secs[0][e:]
     start, cnt = PM.pages_of(key)
     while len(secs) < cnt: secs.append(a[:he] + f'<div class="kick fk2">{kick} · continued</div></div>' + foot)
     out = []
@@ -179,7 +209,7 @@ def ts(a, b, h=29):
     w = 26 if max(len(str(a)), len(str(b))) == 1 else 40
     return f'<svg class="tsv" viewBox="0 0 {w} 44" style="height:{h}px;width:{h * w / 44:.0f}px;display:inline-block;vertical-align:middle"><text x="{w / 2}" y="20" text-anchor="middle" font-family="PF" font-weight="700" font-size="24" fill="{N}">{a}</text><text x="{w / 2}" y="41" text-anchor="middle" font-family="PF" font-weight="700" font-size="24" fill="{N}">{b}</text></svg>'
 def box(t, body): return f'<div class="box"><div class="bh">{t}</div>{body}</div>'
-def watch(items): return '<div class="watch"><div class="bh">Watch out</div>' + ''.join(f'<div class="wr"><span class="x">✗</span><span>{t}</span></div>' for t in items) + '</div>'
+def watch(items): return '<div class="watch"><div class="bh trapst">Trap</div>' + ''.join(f'<div class="wr"><span class="x">✗</span><span>{t}</span></div>' for t in items) + '</div>'
 def remember(items): return '<div class="remem"><span class="rl">Remember?</span>' + ''.join(f'<span class="ri">{t} <i>p. {p}</i></span>' for t, p in items) + '</div>'
 def foot(see, practise):
     nb = lambda t: t.replace('p. ', 'p.\u00a0').replace('› ', '›\u00a0')   # a page number or a menu step never splits across lines
@@ -224,6 +254,9 @@ P37 = page(f'''{head('Part II · Time · 2', 'Notes and rests', 'You can see how
      h3('Which rest is which?') + '<figure class="vx"><svg viewBox="0 0 300 90" style="width:100%;height:auto;display:block"><line x1="10" x2="290" y1="20" y2="20" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="32" y2="32" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="44" y2="44" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="56" y2="56" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="68" y2="68" stroke="#26296b" stroke-width="1.2"/><line x1="150" x2="150" y1="20" y2="68" stroke="#26296b" stroke-width="1.2"/><rect x="62" y="32" width="26" height="7" fill="#26296b"/><rect x="202" y="37" width="26" height="7" fill="#26296b"/> <text x="75" y="86" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">semibreve rest</text><text x="215" y="86" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">minim rest</text></svg></figure>' + '<p class="sm">The semibreve rest <b>hangs</b> below the fourth line; the minim rest <b>sits</b> on the middle line.</p>', '1fr 1fr')}
 {inact('How long is each sound, and each silence?', vx('ia_rest', 56), ['<b>Name each shape:</b> minim, crotchet, crotchet rest.', '<b>Count its beats:</b> 2, 1 and 1.', '<b>Count the rests too:</b> the red rests last as long as their notes.'], 'Every bar adds up to <b>4 beats</b>, silences included.')}
 {box('The semibreve rest’s special power', '<p>Most rests last a fixed number of beats. The <b>semibreve rest</b> can also mean <b>a whole bar of silence</b> in any time signature: 4 beats in 4/4, but 3 in 3/4 and 2 in 2/4. It is then centred in the bar. No other rest can do this.</p><p class="sm" style="margin:4px 0 0">One more rule: keep the middle of a 4/4 bar visible. Silence on beats 2–3 is two crotchet rests, never one minim rest.</p>' + two(vx('wbr34', 50), vx('wbr24', 50)))}
+{game('Pizza match', '<div class="gm4">' + ''.join(f'<div>{gcell("n", k, 46)}<b>{c}</b></div>' for c, k in (('A', 'sb'), ('B', 'm'), ('C', 'c'), ('D', 'q'))) + '</div><div class="gm4" style="margin-top:8px">' + ''.join(f'<div>{pz}<b>{n}</b></div>' for n, pz in ((1, pizzas(1, 2)), (2, pizzas(2, 0, 1)), (3, pizzas(1, 4)), (4, pizzas(1, 1)))) + '</div>', 'Match each note (A to D) with its pizzas (1 to 4). One pizza is one beat.', 'A 3, B 1, C 4, D 2.')}
+{game('Which lasts longer?', '<div class="gm4" style="grid-template-columns:repeat(3,1fr)">' + ''.join(f'<div><span>{gin("n", a, 34)} or {gin("n", b, 34)}{" " + gin("n", b, 34) if two else ""}</span><b>{c}</b></div>' for c, a, b, two in (('1', 'm', 'c', True), ('2', 'sb', 'm', False), ('3', 'dm', 'm', False))) + '</div>', 'Circle the longer side in each pair. One pair is a trick: both sides are the same length.', '1 the same (2 beats each), 2 the semibreve (4 beats), 3 the dotted minim (3 beats).')}
+{try10(gcell('n', 'm', 60), 'Clap once and hold for 2: a minim.', 'Now clap four crotchets (1 2 3 4), then one semibreve (clap, and hold all four beats). Say the counts out loud.')}
 {foot('Pulse and the bar p. {{T1}} · How long is a note? p. {{T3}}', 'Workbook Level 0 · Note values · Online: Library › Notes')}''', 37).replace('<svg viewBox="0 0 300 90"', '<svg viewBox="0 0 300 90" class="rst"', 1)
 
 def _tri(i, n, g):   # cell i of n: tint by which half of the bar, divider weight by how big a split it marks
@@ -256,16 +289,15 @@ simple = [[ts(2, 4), '2 crotchets', 'Level 0'], [ts(3, 4), '3 crotchets', 'Level
 TRAIN = '<div class="pzbox"><b class="it">Think of a train</b><p class="sm" style="margin:2px 0 6px">In 3/4 every carriage (bar) has exactly <b>3 seats</b>; each seat is one crotchet beat. Notes book seats: a minim takes 2, a crotchet 1. A rest books a seat and leaves it <b>empty</b> (shaded). Every seat in every carriage must be booked.</p>' + train([[('n', 2, 'm'), ('n', 1, 'c')], [('n', 1, 'c'), ('r', 1, 'c'), ('n', 1, 'c')], [('n', 3, 'dm')]], '3/4') + '<p class="sm" style="margin:6px 0 0;text-align:center">minim + crotchet · crotchet, crotchet rest, crotchet · dotted minim: 3 seats each</p></div>'
 P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers, like a train ticket: the <b>top number</b> says how many seats (counts) each bar has; the <b>bottom number</b> says which note fills one seat.')}
 {h3('The bottom number') + tbl(['Bottom', 'Note', 'One count is a', 'First met'], bottom, ['18%', '16%', '36%', '30%'])}
-{TRAIN}
-<!--SPLIT-->
 {h3('Simple time: each beat divides in two')}
 {tbl(['Time signature', 'Each bar holds', 'First met'], simple, ['26%', '50%', '24%'])}
+<!--SPLIT-->
+{TRAIN}
 {h3('Changing time signature')}
 <p>A new time signature can appear in the middle of a piece, right after a bar line; it holds until the next one. A time signature is written only once, not on every line.</p>
-{watch(['Reading 6/8 as six beats: at most speeds it moves in two.', 'Mixing up 3/4 and 6/8: both hold six quavers, grouped differently (p. {{T5}}).'])}
+{watch(['Reading the bottom number as a count: it names the note that gets one beat.', 'Reading 6/8 as six beats: at most speeds it moves in two.', 'Mixing up 3/4 and 6/8: both hold six quavers, grouped differently (p. {{T5}}).'])}
 {inact('Read a time signature', vx('ia_ts', 74), ['<b>Top number 3:</b> three counts in each bar.', '<b>Bottom number 4:</b> a crotchet is one count.', '<b>Check a bar:</b> two quavers + crotchet + crotchet = 3.'], '3/4: <b>three crotchet beats</b> in every bar.')}
 {youknow('Minuet in G (from the Notebook for Anna Magdalena Bach)', ykfig('yk_min3', ('n1','n6'), 70), 'Every bar holds <b class="co">three crotchet beats</b>: 1 2 3, 1 2 3, the step of the dance. That is 3/4.', 'Count 1 2 3 aloud while someone plays it.')}
-{inact('Which time signature fits?', vx('ia_which', 74), ['<b>Find the strong beats</b> by clapping, accenting the first note of each bar.', '<b>Count each bar:</b> two crotchets, or one minim: 2 beats.', '<b>Each beat is a crotchet.</b>'], 'It is in <b>2/4</b>: two crotchet beats a bar.')}
 {foot('Pulse and the bar p. {{T1}} · Compound time p. {{T5}}', 'Workbook Level 0 · Time signatures · Online: Library › Time signatures')}''', 39)
 
 compound = [[ts(6, 8), '2 dotted crotchets', 'Level 1'], [ts(9, 8), '3 dotted crotchets', 'Level 3'], [ts(12, 8), '4 dotted crotchets', 'Level 3'], [ts(6, 4), '2 dotted minims', 'Level 4']]
@@ -321,7 +353,6 @@ P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Now the fu
 {inact('Count a syncopation', vx('ia_sync', 74), ['<b>Tap the beats:</b> 1, 2.', '<b>Find the red crotchet:</b> it starts on the “&”, between the beats.', '<b>Hold it through beat 2</b>, then play bar 2 on the beats.'], 'The accent falls <b>off the beat</b>: that is syncopation.')}
 {youknow('The Entertainer (Scott Joplin)', ykfig('yk_ent', ('n4','n6'), 70), 'The high <b class="co">C</b> keeps landing just after the beat, not on it: syncopation, the bounce of ragtime.', 'Tap the beat with your foot and hum the tune: hear the C slip between the taps.')}
 {inact('Swing this bar', '<div><p class="mmk">Swing</p>' + vx('ia_swing', 72) + '</div>', ['<b>Find the quaver pairs:</b> beats 2 and 3.', '<b>Play each pair long–short:</b> “doo-ba, doo-ba”.', '<b>Leave the crotchets alone:</b> beats 1 and 4 stay as written.'], 'Only the <b>pairs</b> swing; the beat underneath stays even.')}
-{inact('Count a hemiola', vx('hem', 74), ['<b>Two bars of 3/4:</b> six crotchet beats.', '<b>Regroup them</b> in twos: 1 2 | 3 4 | 5 6.', '<b>Feel three big beats</b> across the two bars.'], 'Two bars of three become <b>three bars of two</b> for a moment: a hemiola.')}
 {thinkt('Syncopation is a skip in your walk: a step that lands between the beats. Swing is walking with a spring in your step, long-short, long-short. Rubato is borrowing time like pocket money: whatever you spend, you pay back.')}
 {foot('Rhythm: groups and upbeats p. {{T6}} · Words for how to play: Expression (later)', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 42)
 
