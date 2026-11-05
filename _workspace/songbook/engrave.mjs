@@ -243,7 +243,7 @@ const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, sc
   ...(o.letters ? { leftMarginNote: 2, rightMarginNote: 1.5, leftMarginBarLine: 1.5, rightMarginBarLine: 2 } : { leftMarginNote: 1, rightMarginNote: 0, leftMarginBarLine: 0, rightMarginBarLine: 0 }),   // set every time: the toolkit keeps options between jobs   // big lettered heads: room round each and off the bar lines (her 4 Nov 13:22)
   ...extra });
 const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : o.zig ? zigMei(b0, b1, o) : mei(b0, b1, o)); };
-const group = (k) => k.replace(/\d+$/, ''), natural = {};
+const group = (k) => JOBS[k] && JOBS[k][2].zig ? 'zig' : k.replace(/\d+$/, '').replace(/^more[AB]$/, 'more'), natural = {};   // the two More to play tunes print at one size (her 5 Nov 13:51)
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   const SB = S.bars; if (o.src != null) S.bars = S.more[o.src].bars;   // a More to play tune (S.more) engraved like the song
   tk.setOptions(opts(o, { pageWidth: o.pw || 1750, breaks: 'none' })); load(b0, b1, o);
@@ -314,6 +314,12 @@ function mapX(svg, knotsOld, knotsNew) {
   body = body.replace(/@@R(\d+)@@/g, (m, i) => rects[+i]);
   return head + body;
 }
+// each note's word (syllable) width, in the line's own units, from its letters and size
+function sylWidths(svg) {
+  const starts = [...svg.matchAll(/<g id="x\d+" class="note">/g)].map(m => m.index); starts.push(svg.length);
+  return starts.slice(0, -1).map((st, i) => { const seg = svg.slice(st, starts[i + 1]); const m = seg.match(/class="syl">[\s\S]*?<tspan font-size="(\d+)px">([^<]*)<\/tspan>/);
+    return m ? m[2].length * +m[1] * 0.56 + (/class="syl">[\s\S]*?<rect/.test(seg) ? +m[1] * 0.5 : 0) : 0; });
+}
 const MIN_FIT = 0.9, EVEN = true, EVEN_K = +(process.env.EVEN_K || 0.6);   // how far toward even beats (1 = all the way)
 for (const g of new Set(Object.keys(out).map(group))) {
   const ks = Object.keys(out).filter(k => group(k) === g && !(JOBS[k][2].duet)); if (!ks.length) continue;
@@ -335,13 +341,20 @@ for (const g of new Set(Object.keys(out).map(group))) {
     // a minim two; the gap after the bar line keeps its share
     const [b0, b1, oo] = JOBS[k], data = (oo.src != null ? S.more[oo.src].bars : S.bars).slice(b0, b1);
     let ko = [a1], kn = [s0];
-    if (EVEN && !oo.noEven && !oo.rhythm && data.flat().length === info[j].heads.length && data.length === bars.length) {
-      let h = 0;
-      data.forEach((bar, bi) => { const os = bi ? bars[bi - 1] : a1, oe = bars[bi], ns = nw[bi], ne = nw[bi + 1];
-        const T = bar.reduce((a, n) => a + LEN[n[1]], 0), lead = Math.max(360, (info[j].heads[h] - os) * (ne - ns) / (oe - os)),   // a head never crowds the bar line before it
-          u = (ne - ns - lead) / T; let t = 0;
-        bar.forEach(n => { const hx = info[j].heads[h++], ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + EVEN_K * (ns + lead + t * u - ox); if (hx > ko[ko.length - 1] && nx > kn[kn.length - 1]) { ko.push(hx); kn.push(nx); } t += LEN[n[1]]; });
-        ko.push(oe); kn.push(ne); });
+    if (EVEN && !oo.rhythm && data.flat().length === info[j].heads.length && data.length === bars.length) {
+      // as even by the beat as the words allow (her 5 Nov 13:50): try all the way first, then less, until no two words touch
+      const sy = sylWidths(out[k]);
+      const build = (K) => { const o = [a1], nn = [s0], hx2 = []; let h = 0;
+        data.forEach((bar, bi) => { const os = bi ? bars[bi - 1] : a1, oe = bars[bi], ns = nw[bi], ne = nw[bi + 1];
+          const T = bar.reduce((a, n) => a + LEN[n[1]], 0), lead = Math.max(360, (info[j].heads[h] - os) * (ne - ns) / (oe - os)),   // a head never crowds the bar line before it
+            u = (ne - ns - lead) / T; let t = 0;
+          bar.forEach(n => { const hx = info[j].heads[h++], ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + K * (ns + lead + t * u - ox);
+            hx2.push(nx); if (hx > o[o.length - 1] && nx > nn[nn.length - 1]) { o.push(hx); nn.push(nx); } t += LEN[n[1]]; });
+          o.push(oe); nn.push(ne); });
+        return { o, nn, hx2 }; };
+      const fits = ({ hx2 }) => hx2.every((x, i) => i === 0 || !sy.length || (x - hx2[i - 1]) >= ((sy[i - 1] || 0) + (sy[i] || 0)) / 2 + 120);
+      let best = null; for (const K of [1, 0.85, 0.7, 0.55, 0.4, 0.25, 0]) { const c = build(K); if (fits(c)) { best = c; break; } }
+      if (best) { ko = best.o; kn = best.nn; } else { ko = [a1, ...bars]; kn = nw; }
     } else { ko = [a1, ...bars]; kn = nw; }
     out[k] = mapX(out[k], ko, kn); });
 }
