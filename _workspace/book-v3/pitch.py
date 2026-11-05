@@ -266,34 +266,62 @@ css += '''
 '''
 import re as _re
 PAGES = (P22, P23, P24, P25, P26, P27, P28, P29, P29b, P30, P31, P32)
-_secs, PMAP, _n = [], {}, 22
-for _old, _pg in zip(range(22, 34), PAGES):
-    PMAP[_old] = _n
+# her 5 Nov (A): four parts. Part I Pitch keeps topics 1-5 (pp. 22-31, tips p. 32); topics 6-12 become Part III Scales and keys (pp. 50-63, tips p. 64)
+_secs, PMAP = [], {}
+for _j, (_old, _pg) in enumerate(zip(range(22, 34), PAGES)):
+    PMAP[_old] = 22 + 2 * _j if _j < 5 else 50 + 2 * (_j - 5)
     _a, _b = _pg.split('<!--SPLIT-->', 1)
     _kick = _re.search(r'<div class="kick">(.*?)</div>', _a).group(1)
     _head_end = _a.index('<div class="body">') + len('<div class="body">')
     _foot = _pg[_pg.rindex('<div class="foot">'):]
     _secs.append((_a + '</div>' + _foot).replace('<section class="pg"', f'<section class="pg" data-flow="A{_old}"', 1))
     _secs.append((_a[:_head_end] + f'<div class="kick fk2">{_kick} · continued</div>' + _b).replace('<section class="pg"', f'<section class="pg" data-flow="B{_old}"', 1))
-    _n += 2
-_secs = [_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{22 + i}</span></div>', x) for i, x in enumerate(_secs)]
-_remap = lambda t: _re.sub(r'(p\.[ \u00a0]|pp\.[ \u00a0]|page )(2[2-9]|3[0-3])\b', lambda m: m.group(1) + str(PMAP[int(m.group(2))]), t)
+_secs = [_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{(22 + i) if i < 10 else (40 + i)}</span></div>', x) for i, x in enumerate(_secs)]
+_remap = lambda t: _re.sub(r'(p\.[  ]|pp\.[  ]|page )(2[2-9]|3[0-3])\b', lambda m: m.group(1) + str(PMAP[int(m.group(2))]), t)
+def _scales(t):   # Part III wording for topics 6-12
+    t = _re.sub(r'Part I · Pitch · (\d+)', lambda m: f'Part III · Scales and keys · {int(m.group(1)) - 5}', t)
+    t = t.replace('PART I · PITCH', 'PART III · SCALES AND KEYS').replace('Workbook Pitch 4', 'Workbook Scales and keys 1').replace('Workbook Pitch 5', 'Workbook Scales and keys 2')
+    return t.replace('Chords: Harmony (later)', 'Chords in a key p. 70').replace('Online: Scale finder, Library', 'Online: Library')
+_P1, _P3 = ''.join(_secs[:10]), _scales(''.join(_secs[10:]))
 
-# ---------- Part I ends with its own tips page (her 4 Nov: no separate Tips book; each part ends with its tips) ----------
+# ---------- Part I ends with its own tips page ----------
+PT1 = ppage(f"""{head('Part I · Pitch · Tips', 'When a note reads wrong', 'Most misread notes come from a handful of slips. Name the slip first, then fix only that note: playing the whole line again rarely finds it.')}
+<div class="tip tw"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
+{tbl(['What you notice', 'Check', 'Turn to'], [['The left hand reads like the right', '<b class="co">the clef</b>: bass lines are G B D F A, not E G B D F', 'p. 24'], ['You land an octave too high or too low', '<b class="co">a landmark</b>: middle C, treble G or bass F', 'p. 26'], ['Notes above or below the staff slow you down', '<b class="co">the ledger lines</b>: count them from the nearest landmark', 'p. 26'], ['A sharp or flat vanishes, or stays too long', '<b class="co">the bar line</b>: an accidental lasts only to the end of its bar', 'p. 30'], ['You play the black key on the wrong side', '<b class="co">the direction</b>: a sharp goes right (up), a flat goes left (down)', 'p. 30']], ['38%', '46%', '16%'])}
+</div>
+{inaction('Same key, two names', kbx('C', 8, 34, 100, label=True, shade={3: '#fde6dd', 4: '#fde6dd'}, marks=['<circle cx="136" cy="44" r="10" fill="#e4572e"/>'], scale=1.0), ['<b>From F, go one key right:</b> the red black key is <b>F♯</b>.', '<b>From G, go one key left:</b> you reach the same red key, <b>G♭</b>.', '<b>One key, two names:</b> the music decides which name it uses.'], 'If F♯ and G♭ both look odd, check the key: the name follows the notes around it, the key stays the same.')}
+{howto('Three checks before you read a new line', ['<b>The clefs:</b> which staff is treble, which is bass?', '<b>The landmarks:</b> find middle C, treble G and bass F, and read the other notes from them.', '<b>The accidentals:</b> mark each sharp, flat or natural, and see where its bar ends.'])}
+{thinkt('Like reading a map: find the big landmarks first, then the streets around them. A note far from any landmark is the one most often misread.')}""", 32)
+
 def _slip():
     svg = ringsvg(P['slip'], 0).replace('<g id="n7" class="note">', '<g id="n7" class="note" style="fill:#e4572e;color:#e4572e">', 1)
     return '<figure class="vx px"><div class="vs">' + svg.replace('<svg ', '<svg style="max-height:96px" ', 1) + '</div></figure>'
-PT = ppage(f"""{head('Part I · Pitch · Tips', 'When a note sounds wrong', 'Most wrong notes come from a handful of slips. Name the slip first, then fix only that note: playing the whole piece again rarely finds it.')}
+PT = ppage(f"""{head('Part III · Scales and keys · Tips', 'When a note sounds wrong', 'You read the note right, yet it sounds sour. The slip is usually in the key, not the note. Name the slip first, then fix only that note.')}
 <div class="tip tw"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
-{tbl(['What you notice', 'Check', 'Turn to'], [['A note sounds sour, though you read it right', '<b class="co">the key signature</b>: is this note sharp or flat all the way through?', 'p. 40'], ['A sharp or flat vanishes, or stays too long', '<b class="co">the bar line</b>: an accidental lasts only to the end of its bar', 'p. 30'], ['The left hand reads like the right', '<b class="co">the clef</b>: bass lines are G B D F A', 'p. 26'], ['You land an octave too high or too low', '<b class="co">a landmark</b>: middle C, treble G or bass F', 'p. 26'], ['Notes above or below the staff slow you down', '<b class="co">the ledger lines</b>: count on from the nearest landmark', 'p. 24'], ['A leap lands on the wrong key', '<b class="co">the interval</b>: count the letters, then see the shape', 'p. 32'], ['A minor piece sounds odd near a cadence', '<b class="co">the raised 7th</b> of the harmonic minor', 'p. 38']], ['38%', '50%', '12%'])}
+{tbl(['What you notice', 'Check', 'Turn to'], [['A note sounds sour, though you read it right', '<b class="co">the key signature</b>: is this note sharp or flat all the way through?', 'p. 58'], ['Two notes sound too close or too far apart', '<b class="co">the interval</b>: count the letters, then the keys between', 'p. 50'], ['A minor tune sounds wrong near the end', '<b class="co">the raised 7th</b>: harmonic and melodic minor sharpen it', 'p. 56'], ['A scale sounds wrong in the middle', '<b class="co">the semitone steps</b>: 3–4 and 7–8 in every major scale', 'p. 54'], ['A sharp is missing from the key signature', '<b class="co">the order of sharps</b>: F C G D A E B', 'p. 58'], ['You are not sure which major key it is', '<b class="co">the last sharp</b>: the key is one note above it', 'p. 60']], ['38%', '46%', '16%'])}
 </div>
 {inaction('Find the slip', _slip(), ['<b>Read the key signature:</b> one sharp, on the top line, F (ringed).', '<b>The red note sits on that line</b>, so the sharp belongs to it too.', '<b>No natural cancels it</b>, so this F is F♯, here and all through the piece.'], 'Play <b>F♯</b>, the black key. Plain F is the most common slip in G major.')}
-{howto('Three checks before you play', ['<b>The clefs:</b> which staff is treble, which is bass?', '<b>The key signature:</b> say its sharps or flats aloud, then find them in the first line.', '<b>The landmarks:</b> find middle C, treble G and bass F, and read the other notes from them.'])}
-{thinkt('Like proofreading: a spelling mistake jumps out once you know which words you usually get wrong. Keep a short list of your own slips, and check those first.')}""", 46)
-_body = _remap(''.join(_secs)) + PT
-OPEN2 = _re.sub(r'<span>(2[2-9]|3[0-3])</span></div>', lambda m: '<span>' + str(PMAP[int(m.group(1))]) + '</span></div>', OPEN)
+{howto('Three checks before you play', ['<b>The key signature:</b> say its sharps or flats aloud.', '<b>The key:</b> name it from the last sharp or the last-but-one flat, then check the last note.', '<b>The scale:</b> play it once, so your fingers know which black keys belong.'])}
+{thinkt('Like proofreading: a spelling mistake jumps out once you know which words you usually get wrong. Keep a short list of your own slips, and check those first.')}""", 64)
+PT = _scales(PT)
+
 _q = "'" * 3
 _flowjs = src10[src10.index('FLOWJS = ' + _q) + 12:src10.index('</script>' + _q) + 9]
-html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{OPEN2}{_body}{_flowjs}</body></html>'
-open('/mnt/user-data/outputs/house-rooms/handbook-pitch.html', 'w').write(html)
+def _opener(kick, title, line, boxes, toc):
+    fl = ''.join(f'<div class="fl"><b>{a}</b><span>{b}</span></div>' + ('<span class="fa">›</span>' if i < len(boxes) - 1 else '') for i, (a, b) in enumerate(boxes))
+    return f"""<section class="pg part2"><div class="pframe"><div class="pk">{kick}</div><div class="pt">{title}</div><div class="pdv"></div>
+<p class="pl">{line}</p>
+<div class="flow">{fl}</div>
+<div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p}</span></div>' for x, p in toc)}</div></div></section>"""
+OPEN2 = _opener('Part I · Which note', 'Pitch', 'High or low? That is the first question every note answers. Start with the keys under your fingers, then find where they live on the staff and how sharps and flats move them.',
+    [('Keyboard', 'high and low, the patterns'), ('Staff', 'lines, spaces and clefs'), ('Reading the notes', 'every note on the staff'), ('Sharps and flats', 'the black keys')],
+    [('The keyboard', 22), ('The staff and the clefs', 24), ('Reading the notes', 26), ('The staff and the keyboard', 28), ('Sharps, flats and naturals', 30), ('Tips: when a note reads wrong', 32)])
+OPEN3 = _opener('Part III · The ground under the chords', 'Scales and keys', 'Notes travel in families. Measure the distance between two notes, build the scales that whole pieces are made from, then learn to read the key a piece lives in.',
+    [('Intervals', 'the distance between notes'), ('Scales', 'major and minor'), ('Keys', 'signatures and the circle')],
+    [('Counting intervals', 50), ('Major, minor and perfect', 52), ('Major scales', 54), ('Minor scales', 56), ('Keys and key signatures', 58), ('Finding the key', 60), ('The circle of fifths', 62), ('Tips: when a note sounds wrong', 64)])
+def _write(name, body):
+    html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{body}{_flowjs}</body></html>'
+    open('/mnt/user-data/outputs/house-rooms/' + name, 'w').write(html)
+_write('handbook-pitch.html', OPEN2 + _remap(_P1) + PT1)
+_write('handbook-scales.html', OPEN3 + _remap(_P3) + PT)
 print('ok')
