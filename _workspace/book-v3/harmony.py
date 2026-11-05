@@ -83,8 +83,31 @@ css += """
 .blues{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;width:100%;max-width:330px;margin:0 auto} .blues span{border:1.5px solid #26296b;border-radius:4px;padding:4px 0 5px;text-align:center;font-weight:700;font-size:15px;line-height:1.1;background:#fff} .blues i{display:block;font-style:normal;font-size:10.5px;color:#6d6f9c;letter-spacing:.06em} .blues .b4{background:#fdeee8} .blues .b5{background:#e4572e;color:#fff;border-color:#e4572e} .blues .b5 i{color:#ffe1d6}
 """
 
+# ---------- Harmony 4 · Inversions ----------
+def pxr(k, ids, h, cap=''):   # a staff picture with chosen notes in red, and a caption
+    f = ykfig(k, ids, h)
+    return f.replace('</div></figure>', '</div>' + (f'<figcaption>{cap}</figcaption>' if cap else '') + '</figure>')
+INV = [['root position', 'the root (C)', 'C', 'I', '5/3', 'Level ½'], ['1st inversion', 'the 3rd (E)', 'C/E', 'Ib', '6/3 (6)', 'Level 3'], ['2nd inversion', 'the 5th (G)', 'C/G', 'Ic', '6/4', 'Level 5']]
+H4 = hpage(f"""{head('Part III · Harmony · 4', 'Inversions', 'The same three notes can be stacked in a different order. With the root at the bottom the chord is in <b>root position</b>. Move the root to the top and a new note is at the bottom: an <b>inversion</b>. The chord keeps its name; only the bass note changes.')}
+{pxr('h4_inv', ('n2', 'n5', 'n8'), 100, 'C E G, E G C, G C E: always the C major chord. The red note is the bass.')}
+{tbl(['Position', 'Bass note', 'Chord symbol', 'Numeral', 'Figures', 'First met'], INV, ['21%', '18%', '17%', '13%', '15%', '16%'])}
+<p class="sm">Only the lowest note decides: E C G, or E G C E, is still a 1st inversion. Chord symbols write the bass after a slash: C/E is a C chord with E in the bass. Figures count the intervals above the bass, by letters: in E G C, G is a 3rd and C a 6th above E, so 6/3.</p>
+{h3('Roll the bottom note to the top')}
+<div class="fk"><div class="fkf">{kbx('C', 10, W_, 100, label=True, shade={0: '#eef0f8'}, marks=[dot(2, 'E'), dot(4, 'G'), dot(7, 'C')], scale=1.0)}</div><div>Play C E G, then lift the C and put it on top: <b>E G C</b>. The E is now the bass: the 1st inversion. Do it again (G C E) for the 2nd inversion. In an inversion the stack has a <b>gap of a 4th</b> (G up to C): the note above the gap is the root.</div></div>
+{inaction('Name this chord: E G C', pxr('h4_name', ('n2', 'n5'), 84), ['<b>Restack it in 3rds</b>, like the snowman: C E G.', '<b>The bottom of the stack is the root:</b> C, so it is C major.', '<b>Which note is in the bass?</b> E, the 3rd: 1st inversion.'], 'E G C is <b>C major, 1st inversion</b>: C/E.')}
+{thinkt('The same three friends in a photo, swapping places: still the same group (the same chord), but whoever stands at the front (the bass) changes the picture.')}
+<!--SPLIT-->
+{h3('Why inversions?')}
+<p>They let your hand <b>move as little as possible</b>: keep any note two chords share, and move the others to the nearest note of the next chord. Left-hand accompaniments and hymn parts are written this way.</p>
+{inaction('Play I, IV, V, I smoothly', px('h4_smooth', 96), ['<b>I:</b> C E G. <b>IV:</b> keep C, move E up to F and G up to A: C F A.', '<b>V:</b> no shared note, so each moves to the nearest: C to B, F to D, A to G: B D G.', '<b>I again:</b> back to C E G. Each finger moved one or two keys.'], 'IV is F/C and V is G/B: <b>inversions</b> keep the hand in one place.')}
+{youknow('Pachelbel’s Canon, the bass (here in C)', ykfig('yk_canon', ('n2', 'n4', 'n6'), 84), 'The famous bass walks <b>straight down the scale</b>: C B A G F E. It can, because some chords are <b class="co">inversions</b>: G/B, Em/G and C/E put a different note in the bass.', 'Play the bass slowly and hum the famous violin tune over it.')}
+{h3('Chords of C, every position')}
+{tbl(['Chord', 'Root position', '1st inversion', '2nd inversion'], [['<b>I</b> (C)', 'C E G', 'E G C', 'G C E'], ['<b>IV</b> (F)', 'F A C', 'A C F', 'C F A'], ['<b>V</b> (G)', 'G B D', 'B D G', 'D G B'], ['<b>vi</b> (Am)', 'A C E', 'C E A', 'E A C']], ['16%', '28%', '28%', '28%'])}
+{watch(['Naming a chord from its bass note: in an inversion the bass is not the root. Restack it in 3rds first.', 'Thinking an inversion is a new chord: E G C is still C major.', 'Counting keys between before restacking: restack first (E G C → C E G), then count 3 + 2.'])}
+{foot('Chords and triads p. 64 · Chords in a key p. 68 · Cadences p. 72', 'Workbook Harmony 4 · Online: Library › Chords')}""", 70)
+
 _secs = []
-for _old, _pg in ((64, H1), (66, H2), (68, H3)):
+for _old, _pg in ((64, H1), (66, H2), (68, H3), (70, H4)):
     _a, _b = _pg.split('<!--SPLIT-->', 1)
     _kick = _re.search(r'<div class="kick">(.*?)</div>', _a).group(1)
     _head_end = _a.index('<div class="body">') + len('<div class="body">')
