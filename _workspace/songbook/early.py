@@ -75,15 +75,21 @@ def ready_pages():   # the two pages before Lesson 1
 <div class="sp"></div><div class="end">{ticks(['Tapped 2 3 on the lid', 'Tapped 2 3 4 on the lid', 'Played 2 3 4 on the keys', 'Played the echo game'], True)}</div>''', 3)
     return p1 + p2 + p3
 
+def LADCHK():   # her 5 Nov 21:19: the check as a turtle-to-bird ladder, the can-do ticks in one row above it
+    B = SONG['basics']
+    return (f'<div class="chk end"><div class="ch">4 · Check</div>{ticks(B.get("can", []), True)}'
+            f'<div class="ck2">I can play it: colour a step each time you climb</div>{ladder(B.get("checks", []))}'
+            f'<div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div>')
+
 def play_page():   # an early lesson's page 3: the song on the keys, step by step
     B = SONG['basics']
     return page(f'''{part(3, 'Play it', B['play'])}
-<div class="sp"></div><div class="bas"><div>{blackkb(260) if B.get('blackpic') else (KBS(200) if SONG.get('kbs') else kb(width=300, fmap=SONG.get('fmap'))) if B.get('kb') else keys(1, True, True, 200)}</div><div><p class="cap2">{B.get('keys_note', '')}</p></div></div>
+<div class="sp"></div>{('<p class="cap2">' + B.get('keys_note', '') + '</p>') if B.get('nokb') else ''}<div class="bas"{' hidden' if B.get('nokb') else ''}><div>{blackkb(260) if B.get('blackpic') else (KBS(200) if SONG.get('kbs') else kb(width=300, fmap=SONG.get('fmap'))) if B.get('kb') else keys(1, True, True, 200)}</div><div><p class="cap2">{B.get('keys_note', '')}</p></div></div>
 {hand_panels(B.get('lines', []))}{('<div class="sp"></div>' + B['after']) if B.get('after') else ''}
 <div class="sp"></div>
-<div class="chk end"><div class="ch">4 · Check</div><div class="cgrid">
+{LADCHK() if SONG.get('ladder_on') else ''}<div class="chk end"{' hidden' if SONG.get('ladder_on') else ''}><div class="ch">4 · Check</div><div class="cgrid">
 <div>{ticks(B.get('can', ['I can say and clap it', 'I can sing it with the words', 'I can sing the letter names']))}</div>
-<div><div class="ck2">I can play it:</div><div class="ticks h">{''.join(f'<span class="tk"><span class="bx"></span>{c}</span>' for c in B.get('checks', ['Right hand', 'Left hand']))}</div>
+<div><div class="ck2">I can play it:</div>{ladder(B.get('checks', ['Right hand', 'Left hand'])) if SONG.get('ladder_on') else '<div class="ticks h">' + ''.join(f'<span class="tk"><span class="bx"></span>{c}</span>' for c in B.get('checks', ['Right hand', 'Left hand'])) + '</div>'}
 <div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 3)
 
 def hand_panels(lines):   # her 4 Nov 12:34: the right hand and the left hand each in a panel of its own, so the two never blur
