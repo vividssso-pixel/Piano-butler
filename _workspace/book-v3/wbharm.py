@@ -33,16 +33,33 @@ HB2 = th('Use', 'Four kinds of triad', 'Four kinds of triad', 'Keys in between: 
 {ex(2, 'Bright or dark?', 1, 'Play each triad and circle what you hear.', ''.join(f'<div class="row"><b>{t}</b><span class="tf">bright &nbsp;·&nbsp; dark</span></div>' for t in ('C E G', 'A C E', 'G B D', 'D F A')))}
 {ex(3, 'Sort the white keys', 2, 'Write the kind of each white-key triad. The first is done.', tbl(['Triad on', 'C', 'D', 'E', 'F', 'G', 'A', 'B'], [['<b>Kind</b>', '<b class="done2">major</b>'] + [LINE] * 6], ['16%'] + ['12%'] * 7, 'bld'))}
 {ex(4, 'Play the four kinds', 1, 'Play C major, C minor, C diminished and C augmented, each hand alone. Tick a circle each day.', '<div class="ts6" style="grid-template-columns:1fr 1fr">' + ''.join(f'<div><b>{t}</b>{ticks(4)}</div>' for t in ('C major', 'C minor', 'C diminished', 'C augmented')) + '</div>')}''', 4, 67)
+
+# ---------- 3 Chords in a key (Handbook pp. 68–69) ----------
+NUMS = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°']
+HA3 = th('Learn', 'Chords in a key', 'Chords in a key', 'I on the 1st note, IV on the 4th, V on the 5th. Capitals major, small minor, ° diminished.', f"""
+{ex(1, 'Number the chords', 1, 'Write the numeral for each triad of C major.', tbl(['Triad', 'C E G', 'D F A', 'E G B', 'F A C', 'G B D', 'A C E', 'B D F'], [['<b>Numeral</b>', '<b class="done2">I</b>'] + [LINE] * 6], ['16%'] + ['12%'] * 7, 'bld'))}
+{ex(2, 'Find I, IV and V', 2, 'Write the letter names of chords I, IV and V in each key (F major has B♭). The first row is done.', tbl(['Key', 'I', 'IV', 'V'], [['<b>C major</b>', '<b class="done2">C</b>', '<b class="done2">F</b>', '<b class="done2">G</b>']] + [[f'<b>{k}</b>', BOX, BOX, BOX] for k in ('G major', 'F major', 'D major')], ['31%', '23%', '23%', '23%'], 'bld'))}
+{ex(3, 'Spell them', 2, 'Write the three notes of I, IV and V in G major (one sharp: F♯). The first is done.', tbl(['Chord', 'Notes'], [['<b>I (G)</b>', '<b class="done2">G B D</b>'], ['<b>IV (C)</b>', LINE], ['<b>V (D)</b>', LINE]], ['30%', '70%'], 'bld'))}
+{ex(4, 'Numerals on the staff', 2, 'These are chords of C major. Write the numeral under each.', grid([pc(k, BOX, 50) for k in ('hn1', 'hn2', 'hn3', 'hn4')], 4, 'tight'))}
+{ex(5, 'Home, visit, walk back', 1, 'Play I, IV, V, I in C, then in G, left hand. Tick a circle each smooth day.', '<div class="ts6" style="grid-template-columns:1fr 1fr">' + ''.join(f'<div><b>{t}</b>{ticks(4)}</div>' for t in ('C: C F G C', 'G: G C D G')) + '</div>')}""", 5, 68)
+HB3 = th('Use', 'Chords in a key', 'Chords in a key', 'I holds C E G, IV holds F A C, V holds G B D: every note of C major is in one of them.', f"""
+{ex(1, 'Which chord holds it?', 1, 'Write I, IV or V for each note of C major. C and G fit two chords: write both.', '<div class="anrow">' + ''.join(f'<span><b>{n}</b>{BOX}</span>' for n in ('C', 'D', 'E', 'F', 'G', 'A', 'B')) + '</div>')}
+{ex(2, 'Chords for Twinkle', 2, 'Write I, IV or V at the start of each bar, and again halfway through bars 2, 3 and 4.', wpx('w_twk', 70) + '<div class="anrow">' + ''.join(f'<span><b>{l}</b>{BOX}</span>' for l in ('bar 1', 'bar 2', '½', 'bar 3', '½', 'bar 4', '½')) + '</div>')}
+{ex(3, 'The twelve-bar blues', 2, 'The same chart in G major: write the letter of each chord (I = G).', '<div class="bl12">' + ''.join(f'<span><i>{n}</i>{BOX}</span>' for n in ['I', 'I', 'I', 'I', 'IV', 'IV', 'I', 'I', 'V', 'IV', 'I', 'V']) + '</div>')}
+{ex(4, 'Chords in A minor', 2, 'Write the notes of i, iv and V in A minor. Remember the raised 7th, G♯, in V.', tbl(['Chord', 'Notes'], [['<b>i (A minor)</b>', LINE], ['<b>iv (D minor)</b>', LINE], ['<b>V (E major)</b>', LINE]], ['34%', '66%'], 'bld'))}
+{ex(5, 'Play the blues', 2, 'Play the twelve bars in C and in G with your left hand, four steady beats on each chord. Tick a circle each time you reach the end without stopping.', ticks(5))}""", 6, 69)
 hans = [('p. 1', 'Build it: C E G · D F A · F A C · G B D · A C E · B D F. Keyboard: F A C. Name the triad: C, F, G, D, A, E.'),
         ('p. 2', 'Lines or spaces: lines, spaces, lines. Is it a triad: ✓, ✗, ✓, ✗. Draw it: C E G, F A C, G B D, D F A, A C E, E G B. Solid or broken: solid, broken, solid, broken.'),
         ('p. 3', 'Keys between: C E G 3 + 2 major · A C E 2 + 3 minor · G B D 3 + 2 major · E G B 2 + 3 minor · B D F 2 + 2 diminished. Which kind: minor, major, dim, aug, minor, major. Major to minor: C E♭ G · F A♭ C · G B♭ D · D F A.'),
-        ('p. 4', 'Draw: major D F♯ A, A C♯ E, E G♯ B; minor C E♭ G, G B♭ D, F A♭ C. Bright or dark: bright, dark, bright, dark. White keys: C major, D minor, E minor, F major, G major, A minor, B diminished.')]
+        ('p. 4', 'Draw: major D F♯ A, A C♯ E, E G♯ B; minor C E♭ G, G B♭ D, F A♭ C. Bright or dark: bright, dark, bright, dark. White keys: C major, D minor, E minor, F major, G major, A minor, B diminished.'),
+        ('p. 5', 'Numerals: I, ii, iii, IV, V, vi, vii°. I IV V: G C D · F B♭ C · D G A. In G: G B D · C E G · D F♯ A. On the staff: IV, V, ii, vi.'),
+        ('p. 6', 'Which chord: C I or IV · D V · E I · F IV · G I or V · A IV · B V. Twinkle: I · IV I · IV I · V I. Blues in G: G G G G · C C G G · D C G D. A minor: A C E · D F A · E G♯ B.')]
 HAN = hpage2(f'''<div class="kick">Harmony · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in hans], ['12%', '88%'], 'ansT')}
-<p class="sm">“Play it” has no single answer to copy: check it at the piano with your teacher, or with the online lessons.</p>''', 5, None)
+<p class="sm">“Play it” has no single answer to copy: check it at the piano with your teacher, or with the online lessons.</p>''', 7, None)
 css += '''
-.bld td{text-align:center} .bld td b{font-size:16px} .bld .ab{margin:0 auto}
+.tight .fc .px{padding-top:0;padding-bottom:0} .bl12{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 14px;max-width:520px;margin:6px auto} .bl12 span{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #e2ddd0;padding:6px} .bl12 i{font-style:normal;font-weight:700;color:#6d6f9c;min-width:22px} .bld td,.bld th{text-align:center} .bld td{padding-top:3px;padding-bottom:3px} .bld td b{font-size:16px} .bld .ab{margin:0 auto}
 '''
-HFIRST = {'Which kind?': [('fill', 'minor')], 'Bright or dark?': [('ring', 'bright')], 'Name the triad': [('fill', 'C')], 'Lines or spaces?': [('ring', 'lines')], 'Is it a triad?': [('ring', '✓')], 'Solid or broken?': [('ring', 'solid')]}
-open('/mnt/user-data/outputs/house-rooms/workbook-harmony.html', 'w').write(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{HA1}{HB1}{HA2}{HB2}{HAN}{SIZEJS}</body></html>', HFIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1))
+HFIRST = {'Which chord holds it?': [('fill', 'I, IV')], 'Numerals on the staff': [('fill', 'IV')], 'Chords in A minor': [('fill', 'A C E')], 'Chords for Twinkle': [('fill', 'I')], 'The twelve-bar blues': [('fill', 'G')], 'Which kind?': [('fill', 'minor')], 'Bright or dark?': [('ring', 'bright')], 'Name the triad': [('fill', 'C')], 'Lines or spaces?': [('ring', 'lines')], 'Is it a triad?': [('ring', '✓')], 'Solid or broken?': [('ring', 'solid')]}
+open('/mnt/user-data/outputs/house-rooms/workbook-harmony.html', 'w').write(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{HA1}{HB1}{HA2}{HB2}{HA3}{HB3}{HAN}{SIZEJS}</body></html>', HFIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1))
 print('ok')
