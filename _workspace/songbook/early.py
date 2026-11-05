@@ -44,7 +44,7 @@ def blackkb(width=330, fing=None):   # F up to E: the three black keys side by s
 
 def ready_pages():   # the two pages before Lesson 1
     p1 = page(f'''<div class="kick">Before the songs</div><h1>Getting ready</h1>
-<p class="lead">Two pages to do before Lesson 1, at the piano and away from it: your hands, how to sit, and the keyboard’s own map.</p>
+<p class="lead">Three pages to do before Lesson 1, at the piano and away from it: your hands, how to sit, the keyboard’s own map, and a warm-up for fingers 2, 3 and 4.</p>
 <div class="sp"></div>{part(1, 'Your fingers have numbers', 'Thumbs are 1 and little fingers are 5, in both hands. Pianists use the numbers to say which finger plays.')}
 <div class="sp"></div>{hands(360)}
 <div class="sp"></div><div class="act"><b>Number game.</b> Your teacher calls a number; wiggle that finger on both hands. Then thumbs tap together, then the 3s, then the 5s: your hands are mirrors.</div>

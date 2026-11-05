@@ -173,9 +173,9 @@ if SONG.get('more'):
         "<div class=\"sp\"></div>" + SUB('Your own tune', SONG.get('more_own_how', 'Write a letter in each box, then play your tune. Give it a name:') + ' <span class=\"ib\" style=\"width:180px\"></span>') + '<div class="sp"></div>' + own_tune(SONG.get('more_own', [])))
     P4 = page(f'''{part('+', 'More to play', SONG.get('more_how', 'The same keys, the same fingers, the same note values: two new tunes. Then make your own.'))}
 <div class="sp"></div>{SUB(M[0]['title'], M[0].get('how', 'Sing it on the words, then play it.'))}
-<div class="sp"></div>{mus('moreA1')}{mus('moreA2')}
+<div class="sp"></div>{''.join(mus(k) for k in sorted((k for k in V if k.startswith('moreA') and k[5:].isdigit()), key=lambda k: int(k[5:])))}
 <div class="sp"></div>{SUB(M[1]['title'], M[1].get('how', 'Say the words in rhythm first, then play it.'))}
-<div class="sp"></div>{mus('moreB1')}{mus('moreB2')}
+<div class="sp"></div>{''.join(mus(k) for k in sorted((k for k in V if k.startswith('moreB') and k[5:].isdigit()), key=lambda k: int(k[5:])))}
 {TASK}
 <div class="sp"></div><div class="end">{ticks(SONG.get('more_ticks', ['Played the first tune', 'Played the second tune', 'Played my own tune']), True)}</div>''', 4)
 BODY = ready_pages() if SONG.get('kind') == 'ready' else P1 + P2 + P3 + P4
