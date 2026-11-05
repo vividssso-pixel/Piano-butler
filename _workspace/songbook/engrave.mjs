@@ -25,7 +25,8 @@ function mei(b0, b1, o) {
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp, fo, lfo]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, lh: !o.staff5 && (o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L')) });
+    bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; return; }   // a rest (Lesson 8 on)
+      const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, lh: !o.staff5 && (o.lhfing || o.lhdown || (o.mix && (S.hand || {})[p] === 'L')) });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
       if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${fo != null && !o.fk ? fo : (o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);   // fo: this note's own finger (G with 4 next to A)
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${lfo != null ? lfo : S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
@@ -38,7 +39,7 @@ function mei(b0, b1, o) {
     const right = b === S.bars.length - 1 ? ' right="end"' : '';
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff>${st2}${ctrl.splice(0).join('')}</measure>`;
   }
-  const met = (o.key ? ` keysig="${o.key}"` : '') + (o.meter ? ` meter.count="4" meter.unit="4"` : '');
+  const met = (o.key ? ` keysig="${o.key}"` : '') + (o.meter ? ` meter.count="${(S.meter || '4/4').split('/')[0]}" meter.unit="${(S.meter || '4/4').split('/')[1]}"` : '');
   const sd = o.staff5 ? `<staffDef n="1" lines="1" clef.shape="${o.bass ? 'F' : 'G'}" clef.line="1"${met}/>`   // a staff drawn to the lettered heads (her 4 Nov 18:11): Verovio gives the clef, we draw the lines
     : o.rhythm || o.pre ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
     : o.lh ? `<staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp>`
@@ -53,7 +54,7 @@ function duetMei(b0, b1, o) {
     const rh = last ? chordXml(D.end.rh, 's')[1] : D.rh[ch].map(p => noteXml(p, 'c')[1]).join('');
     const lh = last ? chordXml(D.end.lh, 's')[1] : [0, 1].map(() => chordXml(D.lh[ch], 'm')[1]).join('');
     ms += `<measure n="${b + 1}"${last ? ' right="end"' : ''}><staff n="1"><layer n="1">${rh}</layer></staff><staff n="2"><layer n="1">${lh}</layer></staff>${o.chords ? `<harm staff="1" tstamp="1" place="above">${ch}</harm>` : ''}</measure>`; }
-  const met = o.meter ? ` meter.count="4" meter.unit="4"` : '';
+  const met = o.meter ? ` meter.count="${(S.meter || '4/4').split('/')[0]}" meter.unit="${(S.meter || '4/4').split('/')[1]}"` : '';
   return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef><staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="G" clef.line="2"${met}/></staffGrp></scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
 }
 let INFO = {};
@@ -221,7 +222,7 @@ function zigMei(b0, b1, o) {
     const right = b === S.bars.length - 1 ? ' right="end"' : '';
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff><staff n="2"><layer n="1"><mSpace/></layer></staff>${ctrl.join('')}</measure>`;
   }
-  const met = o.meter ? ' meter.count="4" meter.unit="4"' : '';
+  const met = o.meter ? ` meter.count="${(S.meter || '4/4').split('/')[0]}" meter.unit="${(S.meter || '4/4').split('/')[1]}"` : '';
   return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef><staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp></scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
 }
 const JOBS = S.jobs || {
