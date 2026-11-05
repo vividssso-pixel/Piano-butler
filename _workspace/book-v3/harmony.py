@@ -17,17 +17,21 @@ HOPEN = f"""<section class="pg part2"><div class="pframe"><div class="pk">Part I
 <div class="flow">{hflow}</div>
 <div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p}</span></div>' for x, p in HTOC)}</div></div></section>"""
 
+BIGSNOW = ('<svg viewBox="0 0 260 300" style="width:100%;max-width:250px;height:auto;display:block;margin:0 auto">'
+    '<circle cx="100" cy="232" r="56" fill="#fde6dd" stroke="#e4572e" stroke-width="3"/><circle cx="100" cy="134" r="42" fill="#fff" stroke="#26296b" stroke-width="3"/><circle cx="100" cy="60" r="31" fill="#fff" stroke="#26296b" stroke-width="3"/>'
+    '<path d="M76,32 L124,32 L118,4 L82,4 Z" fill="#26296b"/><line x1="66" x2="134" y1="32" y2="32" stroke="#26296b" stroke-width="5" stroke-linecap="round"/>'
+    '<text x="100" y="244" text-anchor="middle" font-family="PF,serif" font-size="36" font-weight="700" fill="#e4572e">C</text><text x="100" y="146" text-anchor="middle" font-family="PF,serif" font-size="32" font-weight="700" fill="#26296b">E</text><text x="100" y="70" text-anchor="middle" font-family="PF,serif" font-size="28" font-weight="700" fill="#26296b">G</text>'
+    '<text x="170" y="238" font-family="AH,Arial" font-size="17" font-weight="700" fill="#e4572e">root</text><text x="156" y="140" font-family="AH,Arial" font-size="17" font-weight="700" fill="#26296b">3rd</text><text x="145" y="66" font-family="AH,Arial" font-size="17" font-weight="700" fill="#26296b">5th</text>'
+    '<text x="196" y="186" font-family="AH,Arial" font-size="13" fill="#8d8fb3">skip D</text><text x="178" y="100" font-family="AH,Arial" font-size="13" fill="#8d8fb3">skip F</text></svg>')
 # ---------- Harmony 1 · Chords and triads ----------
 WHITE = [('C', 'E', 'G'), ('D', 'F', 'A'), ('E', 'G', 'B'), ('F', 'A', 'C'), ('G', 'B', 'D'), ('A', 'C', 'E'), ('B', 'D', 'F')]
 SNOW = ('<svg viewBox="0 0 120 150" style="width:58px;height:auto;display:block;margin:0 auto">'
         '<circle cx="60" cy="118" r="28" fill="#fff" stroke="#26296b" stroke-width="2.5"/><circle cx="60" cy="70" r="21" fill="#fff" stroke="#26296b" stroke-width="2.5"/><circle cx="60" cy="33" r="15" fill="#fff" stroke="#26296b" stroke-width="2.5"/>'
         '<text x="60" y="123" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="#e4572e">C</text><text x="60" y="75" text-anchor="middle" font-family="AH,Arial" font-size="14" font-weight="700" fill="#26296b">E</text><text x="60" y="38" text-anchor="middle" font-family="AH,Arial" font-size="13" font-weight="700" fill="#26296b">G</text></svg>')
-H1 = hpage(f"""{head('Part IV · Harmony · 1', 'Chords and triads', 'Press two or more notes at once and you have a <b>chord</b>. The favourite of all is the <b>triad</b>: three notes stacked in 3rds, like a snowman. Stacked like that, the bottom note is the <b>root</b>, and it names the chord.')}
-{two(h3('Root, 3rd and 5th') + '<p>Start on any note: that is the <b>root</b>. Add the note a <b>3rd</b> above it, then the note a <b>5th</b> above the root. On the staff each note sits on the next line up, or in the next space up. C, E and G make the triad of C.</p><p class="sm">First met: Level ½ (the tonic triad of C, G and F major).</p>', px('h_build', 104, 'The root, then a 3rd above it, then a 5th above the root.'), '1.15fr 1fr')}
-{h3('Play one, skip one')}
-<div class="fk"><div class="fkf">{kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), dot(2, '3'), dot(4, '5')], scale=1.0)}</div><div>On the white keys a triad is <b>play one, skip one, play one, skip one, play one</b>: C (skip D) E (skip F) G. The red keys are the root, the 3rd and the 5th; the skipped keys are shaded.</div></div>
+H1 = hpage(f"""{head('Part IV · Harmony · 1', 'Chords and triads', 'Press two or more notes at once and you have a <b>chord</b>. The favourite of all is the <b>triad</b>: three notes stacked like a snowman.')}
+{two(BIGSNOW, '<div class="big3"><div><span>1</span><p>Pick a note: the <b class="co">root</b>, the big ball at the bottom. It holds the chord up and gives it its name.</p></div><div><span>2</span><p>Skip one letter, take the next: <b>E</b>, the <b>3rd</b>.</p></div><div><span>3</span><p>Skip again: <b>G</b>, the <b>5th</b>. C E G is the triad of C.</p></div></div>' + kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), dot(2, '3'), dot(4, '5')], scale=1.0) + '<p class="sm" style="text-align:center;margin:4px 0 0">On the keys: play one, skip one (shaded), play one, skip one, play one.</p>', '0.9fr 1.1fr')}
+{two(px('h_build', 104, 'The snowman on the staff: three lines in a row (or three spaces).'), '<p>On the staff, each ball sits on the <b>next line up</b> (or the next space up): the root, a <b>3rd</b> above it, a <b>5th</b> above the root.</p><p class="sm">First met: Level ½ (the tonic triad of C, G and F major).</p>', '1fr 1.15fr')}
 {inaction('Build a triad on G', kbx('C', 10, W_, 92, label=True, shade={5: '#eef0f8', 7: '#eef0f8'}, marks=[dot(4, '1', y=67), dot(6, '3', y=67), dot(8, '5', y=67)], scale=1.0), ['<b>Start on G:</b> the root.', '<b>Skip A, play B:</b> the 3rd.', '<b>Skip C, play D:</b> the 5th.'], 'G B D: the triad of <b>G</b>. Same shape as C E G, just moved up.')}
-{two(SNOW, '<p class="snowc"><b>Like a snowman:</b> three balls stacked, each one on the next, with one note skipped between them. The bottom ball, the root, holds it up and gives it its name.</p>', '70px 1fr')}
 <!--SPLIT-->
 {two(h3('All lines or all spaces') + '<p>A stacked triad sits on <b>three lines in a row</b> or in <b>three spaces in a row</b>, in a neat stack. If one note breaks the pattern, it is not a triad.</p>', px('h_ls', 64, 'Lines, spaces, lines, spaces: every one a triad.'), '1fr 1.15fr')}
 {two(h3('Solid and broken') + '<p>Played together, a chord is <b>solid</b> (or blocked). Played one note at a time, it is <b>broken</b>. Spread up and down the keyboard, a broken chord becomes an <b>arpeggio</b>. Left-hand accompaniments, the arpeggios in technical work and the chord names over a song are all triads.</p><p class="sm">First met: Level 0; arpeggios from Level 1.</p>', px('h_sb', 66, 'The same three notes, solid then broken.'), '1fr 1.15fr')}
@@ -209,7 +213,7 @@ H6A = hpage(f"""{head('Part IV · Harmony · 6', 'Colour chords', 'The 3rd is th
 {h3('On any root, the counts stay the same')}
 {tbl(['Colour', 'Keys between', 'On C', 'On G', 'On F', 'On D'], ANY, ['13%', '17%', '17.5%', '17.5%', '17.5%', '17.5%'])}""", 76)
 H6B = hpage(f"""<div class="kick">Part IV · Harmony · 6 · continued</div>
-{inaction('Which colour is it? G C D', px('h6_mys', 100), ['<b>Count the keys between:</b> G to C is 4, C to D is 1.', '<b>4 + 1</b> is the sus4 card: no B (no 3rd), and C has taken its place.', '<b>The root is G:</b> Gsus4.'], 'G C D is <b>Gsus4</b>. Let the C fall to <b class="co">B</b> and you have G major.')}
+{inaction('Which colour is it? G C D', pxr('h6_mys', (), 100), ['<b>Count the keys between:</b> G to C is 4, C to D is 1.', '<b>4 + 1</b> is the sus4 card: no B (no 3rd), and C has taken its place.', '<b>The root is G:</b> Gsus4.'], 'G C D is <b>Gsus4</b>. Let the C fall to <b class="co">B</b> and you have G major.')}
 {h3('Spot the difference')}
 {pxr('h6_diff', ('n3', 'n8'), 96, 'The same red D, two jobs. Csus2 throws the E out; Cadd9 keeps the E and puts the D on top.')}
 {two(pxr('h6_power', (), 96), '<p><b>The power chord:</b> just the root and the 5th, played low in the left hand. With no 3rd it is neither happy nor sad, only <b class="co">strong</b>: the sound of rock guitar. Play C5, F5, G5, C5 and drum the rhythm.</p>', '1.1fr 1fr')}
@@ -217,6 +221,53 @@ H6B = hpage(f"""<div class="kick">Part IV · Harmony · 6 · continued</div>
 {thinkt('Dressing the snowman: a scarf (the 6th) or a hat (the 9th) and it is still the same snowman. Sus moves its middle ball; a power chord takes the middle ball away.')}
 {watch(['Writing C2: some books mean Csus2, others Cadd9. Check whether the E is there.', 'Calling Cadd9 a ninth chord: C9 also has the 7th (B♭). Add9 is just the triad plus the 9th (D on C), nothing else (The tower, p. 78).'])}
 {foot('Four kinds of triad p. 68 · Seventh chords p. 74', 'Workbook Harmony 6 · Online: Library › Chords')}""", 77)
+
+# ---------- Harmony 7 · The tower: 9, 11, 13 (picture-first, her 5 Nov: 'triad on the scale's land, sevenths a floor up, and beyond?') ----------
+def tower(w=150, h=34):
+    fl = [('C', 'root', 0), ('E', '3rd', 0), ('G', '5th', 0), ('B♭', '7th', 1), ('D', '9th', 2), ('F', '11th', 2), ('A', '13th', 2)]
+    n = len(fl); H = n * h + 60
+    o = f'<svg viewBox="0 0 {w + 170} {H}" style="width:100%;max-width:{w + 170}px;height:auto;display:block;margin:0 auto">'
+    o += f'<path d="M6,{H - n * h - 30} L{w / 2 + 6},{H - n * h - 54} L{w + 6},{H - n * h - 30}" fill="none" stroke="{N}" stroke-width="2.5"/>'
+    for i, (nt, lb, k) in enumerate(fl):
+        y = H - 30 - (i + 1) * h
+        fill, st = (PINK, N) if k == 0 else (('#f1effa', N) if k == 1 else ('#fbd2c2', R))
+        o += f'<rect x="10" y="{y}" width="{w - 8}" height="{h - 4}" rx="4" fill="{fill}" stroke="{st}" stroke-width="{2.4 if k == 2 else 2}"/>'
+        o += f'<text x="28" y="{y + 20}" font-family="AH,Arial" font-size="17" font-weight="700" fill="{R if k == 2 else N}">{nt}</text><text x="66" y="{y + 19}" font-family="AH,Arial" font-size="13" fill="{N}">{lb}</text>'
+    def br(a, b, t, col):
+        y1, y2 = H - 30 - a * h - 3, H - 30 - (b + 1) * h + 1
+        return f'<path d="M{w + 12},{y1} L{w + 20},{y1} L{w + 20},{y2} L{w + 12},{y2}" fill="none" stroke="{col}" stroke-width="2"/><text x="{w + 28}" y="{(y1 + y2) / 2 + 5}" font-family="AH,Arial" font-size="13" font-weight="700" fill="{col}">{t}</text>'
+    o += br(0, 2, 'triad', N) + br(3, 3, '+ 7th', N) + br(4, 6, 'top floors', R)
+    o += f'<line x1="0" x2="{w + 20}" y1="{H - 28}" y2="{H - 28}" stroke="{N}" stroke-width="3"/>'
+    return o + '</svg>'
+def strip():   # two octaves of letters; every other one is a floor of the tower
+    L = 'CDEFGABCDEFGA'; W = 34; o = f'<svg viewBox="-2 -4 {len(L) * W + 4} 74" style="width:100%;max-width:{len(L) * W + 4}px;height:auto;display:block;margin:0 auto">'
+    for i, c in enumerate(L):
+        on = i % 2 == 0; tall = i >= 8
+        o += f'<rect x="{i * W + 2}" y="18" width="{W - 4}" height="28" rx="4" fill="{("#fbd2c2" if tall else PINK) if on else "#fff"}" stroke="{(R if tall else N) if on else "#c9c7dc"}" stroke-width="{2 if on else 1.2}"/>'
+        o += f'<text x="{i * W + W / 2}" y="37" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="{(R if tall else N) if on else "#a9a7c4"}">{c}</text>'
+        if on: o += f'<text x="{i * W + W / 2}" y="64" text-anchor="middle" font-family="AH,Arial" font-size="13" font-weight="700" fill="{R if tall else N}">{i + 1}</text>'
+        if on and i + 2 < len(L): o += f'<path d="M{i * W + W / 2 + 6},16 Q{i * W + W},2 {i * W + 1.5 * W + W / 2 - 6},16" fill="none" stroke="#b9bbd3" stroke-width="1.5"/>'
+    return o + '</svg>'
+TALL = [['<b>C9</b>', 'C7 + 9th', 'C E G B♭ <b class="co">D</b>', 'soulful', 'funk, soul'], ['<b>Cmaj9</b>', 'Cmaj7 + 9th', 'C E G B <b class="co">D</b>', 'dreamy', 'film, ballads'],
+        ['<b>Cm9</b>', 'Cm7 + 9th', 'C E♭ G B♭ <b class="co">D</b>', 'smooth', 'neo-soul, R&amp;B'], ['<b>C11</b>', 'C9 + 11th, no 3rd', 'C G B♭ D <b class="co">F</b>', 'airy', 'gospel, pop'],
+        ['<b>C13</b>', 'C7 + 13th', 'C E B♭ (D) <b class="co">A</b>', 'rich', 'jazz, blues endings']]
+H7A = hpage(f"""{head('Part IV · Harmony · 7', 'The tower: 9, 11, 13', 'Why stop at the 7th? Keep stacking 3rds and the building grows three more floors: the 9th, the 11th and the 13th. At the top you have used <b>all seven letters, A to G</b>.')}
+{two(tower(), '<div class="big3"><div><span>1</span><p>Build the seventh chord: <b>C E G B♭</b> (C7).</p></div><div><span>2</span><p>Keep skipping one letter: <b class="co">D</b>, <b class="co">F</b>, <b class="co">A</b>. Those floors are the <b>9th, 11th and 13th</b>.</p></div><div><span>3</span><p>Take 7 away to find the letter: 9 → 2nd (D), 11 → 4th (F), 13 → 6th (A). Same letters, an octave up.</p></div></div>', '1.05fr 1fr')}
+{h3('Skip a letter, all the way up')}
+<figure class="vx px">{strip()}<figcaption>Start on C and take every other letter: C E G B D F A (letters only: in C7 the B is B♭). After the 13th comes C again: the tower is full.</figcaption></figure>
+{h3('Five tall chords on C')}
+{pxr('h8_tall', ('n5', 'n10', 'n15', 'n20', 'n25'), 100, 'The red note is the top floor that gives each chord its name. C11 and C13 leave some notes out: see p. 79.')}
+{tbl(['Chord', 'Built as', 'Notes', 'Sounds', 'Heard in'], TALL, ['14%', '24%', '24%', '14%', '24%'])}""", 78)
+H7B = hpage(f"""<div class="kick">Part IV · Harmony · 7 · continued</div>
+{h3('Too many notes? Leave some out')}
+{two(pxr('h8_hand', ('n11',), 170, 'All seven notes sound muddy. Two hands play C13 with four: C in the left hand, B♭ E A in the right.'), '<p>Ten fingers, seven floors: you choose. <b>Keep</b> the 3rd and the 7th (they say what kind of chord it is) and the red top note (its colour). <b>Leave out</b> the 5th first. The right hand can drop the root too, when the left hand or a bass player plays it.</p><p class="sm">With a major 3rd, the 11th (F) rubs against E. So C13 leaves out the F. C11 does the opposite: it keeps the F and leaves out the E.</p>', '1fr 1fr')}
+{h3('6 or 13? add9 or 9?')}
+{tbl(['Same top note', 'Without the 7th', 'With the 7th (B♭)'], [['A on C', '<b>C6</b>: C E G A', '<b>C13</b>: C E B♭ A'], ['D on C', '<b>Cadd9</b>: C E G D', '<b>C9</b>: C E G B♭ D']], ['24%', '38%', '38%'])}
+<p class="sm">Look for the 7th. No 7th: a colour chord (p. 76). A 7th: a tower chord.</p>
+{inaction('Name this tall chord: G B D F A', pxr('h8_mys', ('n5',), 110), ['<b>Find the root:</b> each note skips one letter, so the bottom note, G, is the root.', '<b>The first four floors</b>, G B D F, count 3 + 2 + 2: G7.', '<b>One more floor:</b> A is the 2nd above G, an octave up: the 9th.'], 'G B D F A is <b>G9</b>: G7 with the 9th on top.')}
+{thinkt('A tower block has a lift: you don’t stop at every floor. Get out at the 3rd, the 7th and the top floor with the view.')}
+{watch(['Hunting far up for the 9th: it is just the 2nd, an octave higher (D on C).', 'Calling C13 a C6: the 13th chord has the 7th (B♭) as well.', 'Playing F and E together in C13 or C11: they clash. C13 drops the F; C11 drops the E.'])}
+{foot('Seventh chords p. 74 · Colour chords p. 76', 'Workbook Harmony 7 · Online: Library › Chords')}""", 79)
 
 css += """
 .big3{display:flex;flex-direction:column;gap:12px;font-size:16px;line-height:1.4} .big3 div{display:flex;gap:10px;align-items:flex-start} .big3 p{margin:0} .big3 span{flex:none;width:26px;height:26px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
@@ -232,7 +283,7 @@ for _old, _pg in ((64, H1), (66, H2), (68, H3), (70, H4)):
     _foot = _pg[_pg.rindex('<div class="foot">'):]
     _secs.append((_a + '</div>' + _foot).replace('<section class="pg"', f'<section class="pg" data-flow="A{_old}"', 1))
     _secs.append((_a[:_head_end] + f'<div class="kick fk2">{_kick} · continued</div>' + _b).replace('<section class="pg"', f'<section class="pg" data-flow="B{_old}"', 1))
-_secs += [H5A, H5B, H6A, H6B]
+_secs += [H5A, H5B, H6A, H6B, H7A, H7B]
 _secs = [_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{66 + i}</span></div>', x) for i, x in enumerate(_secs)]
 html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{HOPEN}{"".join(_secs)}{_flowjs}</body></html>'
 open('/mnt/user-data/outputs/house-rooms/handbook-harmony.html', 'w').write(html)
