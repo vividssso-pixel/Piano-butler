@@ -348,9 +348,19 @@ for (const g of new Set(Object.keys(out).map(group))) {
 // Stems back on their heads (her 5 Nov 13:14: 'stems barely hanging on'): the spacing passes move a head and its stem
 // through different stretches of the line, so each stem is set again on its own head's edge, up on the right, down on the left
 function reattach(svg) {
-  return svg.replace(/(<ellipse cx="(-?[\d.]+)" cy="(-?[\d.]+)" rx="([\d.]+)"[^>]*class="lhead"\/>\s*<text[^>]*>[^<]*<\/text>\s*<\/g>\s*<g id="[^"]+" class="stem">\s*<path d="M)(-?[\d.]+) (-?[\d.]+) L(-?[\d.]+) (-?[\d.]+)"/g,
-    (m, pre, cx, cy, rx, x1, y1, x2, y2) => { const up = +y2 < +y1, x = Math.round((+cx + (up ? 1 : -1) * (+rx - 10)) * 10) / 10;
-      return `${pre}${x} ${y1} L${x} ${y2}"`; });
+  const W = 24;   // one stem weight everywhere, a little heavier so it prints the same at every size (her 5 Nov 13:19)
+  svg = svg.replace(/(<ellipse cx="(-?[\d.]+)" cy="(-?[\d.]+)" rx="([\d.]+)"[^>]*class="lhead"\/>\s*<text[^>]*>[^<]*<\/text>\s*<\/g>\s*<g id="[^"]+" class="stem">\s*<path d=")M(-?[\d.]+) (-?[\d.]+) L(-?[\d.]+) (-?[\d.]+)"/g,
+    (m, pre, cx, cy, rx, x1, y1, x2, y2) => { const up = +y2 < +y1, x = Math.round(+cx + (up ? 1 : -1) * (+rx - W / 2));
+      return `${pre}M${x} ${y1} L${x} ${y2}"`; });
+  svg = svg.replace(/(class="stem">\s*<path d="[^"]+" stroke-width=")\d+"/g, `$1${W}"`);
+  // a beam reaches from its first stem to its last, edge to edge
+  const stems = [...svg.matchAll(/class="stem">\s*<path d="M(-?[\d.]+) (-?[\d.]+) L-?[\d.]+ (-?[\d.]+)"/g)].map(m => ({ x: +m[1], tip: +m[3] }));
+  return svg.replace(/(class="beam">\s*<polygon points=")([^"]+)"/g, (m, pre, pts) => {
+    const P = pts.trim().split(/\s+/).map(q => q.split(',').map(Number)), xs = P.map(p => p[0]), ys = P.map(p => p[1]);
+    const lo = Math.min(...xs), hi = Math.max(...xs), yt = Math.min(...ys), yb = Math.max(...ys);
+    const mine = stems.filter(t => t.x > lo - 120 && t.x < hi + 120 && t.tip >= yt - 60 && t.tip <= yb + 60); if (mine.length < 2) return m;
+    const nlo = Math.min(...mine.map(t => t.x)) - W / 2, nhi = Math.max(...mine.map(t => t.x)) + W / 2;
+    return pre + P.map(([x, y]) => `${x === lo ? nlo : x === hi ? nhi : x},${y}`).join(' ') + '"'; });
 }
 for (const k of Object.keys(out)) out[k] = reattach(out[k]);
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
