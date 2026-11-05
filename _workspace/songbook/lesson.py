@@ -35,7 +35,7 @@ def trp(p, k): i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p.lstrip('abcd
 # a keyboard from middle C: the five white keys under the right hand (from `start`), the song's notes lit, the fingers on
 # them; `sharp` marks the key's black key in coral, named above it
 def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
-    used = {trp(p, tr)[0] for bar in SONG['bars'] for p, *_ in bar}; H, w = 150, 42
+    used = {trp(p, tr)[0] for bar in SONG['bars'] for p, *_ in bar if p != 'r'}; H, w = 150, 42
     whites = ['c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd', 'e'][:SONG.get('kb_whites', 7)]; out = ''; top = 24 if sharp is not None else 0   # C to B is enough (her 4 Nov 13:35)
     W = len(whites) * w; width = width * len(whites) / 10 * 1.05
     for i, l in enumerate(whites):
@@ -48,7 +48,7 @@ def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
     for i in [i for i in (0, 1, 3, 4, 5, 7, 8) if i < len(whites) - 1]:
         out += f'<rect x="{(i + 1) * w - 13}" y="0" width="26" height="{H * 0.6}" rx="2" fill="{C if i == sharp else N}"/>'
         if i == sharp: out += f'<text x="{(i + 1) * w}" y="-8" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{C}">F♯</text>'
-    out += f'<text x="1" y="{H + 50}" text-anchor="start" font-family="AH" font-weight="700" font-size="12" fill="{MUTE}">middle C</text>'   # the finger numbers under the keys, clear of the black keys (her 4 Nov 19:58)
+    out += f'<text x="1" y="{H + 50}" text-anchor="start" font-family="AH" font-weight="700" font-size="12" fill="{MUTE}">{SONG.get("kb_c", "middle C")}</text>'   # the finger numbers under the keys, clear of the black keys (her 4 Nov 19:58)
     return f'<svg viewBox="-2 {-2 - top} {W + 4} {H + 58 + top}" style="width:{width:.0f}px;max-width:100%;display:block">{out}</svg>'
 
 # a left-hand keyboard from G below to G (the C chord under C to G, the G chord's hand moved down to G), the way's notes for
@@ -80,6 +80,8 @@ def note(kind, s=1.0):
         return (f'<svg viewBox="0 0 54 50" style="width:{43 * s}px;height:{40 * s}px">{hd(14)}{hd(40)}'
                 f'<line x1="22.3" y1="38" x2="22.3" y2="6" stroke="{N}" stroke-width="2.2"/><line x1="48.3" y1="38" x2="48.3" y2="6" stroke="{N}" stroke-width="2.2"/>'
                 f'<rect x="21.2" y="4" width="28.2" height="6" fill="{N}"/></svg>')
+    if kind == 'r':   # a crotchet rest
+        return (f'<svg viewBox="0 0 30 50" style="width:{24 * s}px;height:{40 * s}px"><path d="M11 5 L19 15 Q13 20 14 25 L20 33 Q12 30 11 35 Q11 41 16 45 Q6 41 8 34 Q10 29 15 31 L9 24 Q14 19 13 14 Z" fill="{N}"/></svg>')
     head = f'<ellipse cx="14" cy="40" rx="9" ry="6.3" transform="rotate(-22 14 40)" fill="{N if kind == "c" else "#fff"}" stroke="{N}" stroke-width="{0 if kind == "c" else 2.6}"/>'
     stem = '' if kind == 's' else f'<line x1="22.3" y1="38" x2="22.3" y2="6" stroke="{N}" stroke-width="2.2"/>'
     return f'<svg viewBox="0 0 30 50" style="width:{24 * s}px;height:{40 * s}px">{head}{stem}</svg>'
@@ -124,7 +126,7 @@ NEW = (f'<div class="nws"><div class="nws-p">{KBS(NW["kbw"]) if NW.get("kbs") el
        + (f'<p class="nws-b">More in the Handbook: {NW["hb"]}</p>' if NW.get('hb') else '') + '</div></div>') if NW else ''
 P2 = page(f'''{part(2, 'Take it apart', 'The same song, one piece at a time: first its rhythm, then its notes.')}
 {NEW}
-{SUB('The rhythm', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
+{SUB('The rhythm', SONG.get('rhy_how', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.'))}
 <div class="mat"><div class="mh">{SONG.get("time_label", "The time")}</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
 <div class="sp"></div>{LINES('rhy')}
 {(SUB('The notes', SONG.get('names_how', 'Write the letter name of every note in the boxes; the first one is done.')) + '<div class="sp"></div>' + NAMES) if NAMES else ''}

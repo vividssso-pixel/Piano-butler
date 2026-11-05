@@ -25,7 +25,7 @@ function mei(b0, b1, o) {
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; return; }   // a rest (Lesson 8 on)
+    bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; INFO[i] = { len: LEN[d], rest: true }; return; }   // a rest (Lesson 8 on)
       const HL = o.mix && (S.hand || {})[p] === 'L';   // a left-hand note in a right-hand line: stem down, finger below
       if (HL && o.lh) { flush(); const i = nid(); l1 += `<note xml:id="${i}" dur="${DUR[d]}" pname="b" oct="4" head.visible="false" stem.visible="false" class="ghost">${o.words && syl ? `<verse n="1"><syl${wp ? ` wordpos="${wp}" con="d"` : ''}>${syl}</syl></verse>` : ''}</note>`; return; }   // both hands (her 6 Nov 10:09): the left hand's note sits on its own staff, written in S.lh
       const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, hand: HL ? 'LU' : '', lh: !o.staff5 && (o.lhfing || o.lhdown || HL) });
@@ -46,6 +46,7 @@ function mei(b0, b1, o) {
   const sd = o.staff5 ? `<staffDef n="1" lines="1" clef.shape="${o.bass ? 'F' : 'G'}" clef.line="1"${met}/>`   // a staff drawn to the lettered heads (her 4 Nov 18:11): Verovio gives the clef, we draw the lines
     : o.rhythm || o.pre ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
     : o.lh ? `<staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp>`
+    : o.bass ? `<staffDef n="1" lines="5" clef.shape="F" clef.line="4"${met}/>`   // the left hand alone on the King's staff, plain notes (Lesson 8 on)
     : `<staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/>`;
   return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef>${o.rhythm || !o.lh ? `<staffGrp>${sd}</staffGrp>` : sd}</scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
 }
@@ -64,11 +65,11 @@ let INFO = {};
 // counts under the rhythm line: the beat a note starts on (coral), the beats it is held (grey, joined by a dash)
 const ON = '#e4572e', HELD = '#9a9cc4';
 function addCounts(svg) {
-  const ev = []; let m; const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use xlink:href="#[^"]+" transform="translate\((\d+), (\d+)\)|<g id="[^"]+" class="barLine"[^>]*>\s*<path d="M(\d+) /g;
-  while ((m = re.exec(svg))) { if (m[1]) ev.push({ id: m[1], x: +m[2] }); else ev.push({ bar: true, x: +m[4] }); }
+  const ev = []; let m; const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use xlink:href="#[^"]+" transform="translate\((\d+), (\d+)\)|<g id="[^"]+" class="barLine"[^>]*>\s*<path d="M(\d+) |<g id="(x\d+)" class="rest">\s*<use [^>]*translate\((\d+), /g;
+  while ((m = re.exec(svg))) { if (m[1]) ev.push({ id: m[1], x: +m[2] }); else if (m[5]) ev.push({ id: m[5], x: +m[6] - 20 }); else ev.push({ bar: true, x: +m[4] }); }   // a rest is counted too (in grey: count it, don't clap)
   const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
   const HW = 212;   // a black notehead (E0A4 at scale 0.72)
-  const per = []; ev.forEach((e, i) => { const n = ev[i + 1]; if (!e.bar && n && !n.bar) per.push((n.x - e.x) / INFO[e.id].len); });
+  const per = []; ev.forEach((e, i) => { const n = ev[i + 1]; if (!e.bar && n && !n.bar && !INFO[e.id].rest && !INFO[n.id].rest) per.push((n.x - e.x) / INFO[e.id].len); });
   per.sort((a, b) => a - b); const U = per[Math.floor(per.length / 2)];
   const sylY = [...svg.matchAll(/class="syl">\s*<text x="[\d.]+" y="(\d+)"/g)].map(m => +m[1]); let out = '', beat = 0; const Y = sylY.length ? Math.max(...sylY) : sy + 640, FS = 300;   // the counts first, right under the notes; the words go below them (her 5 Nov 13:15)
   ev.forEach((e, ei) => { if (e.bar) { beat = 0; return; } const L = INFO[e.id].len, x0 = e.x + HW / 2;
@@ -76,7 +77,7 @@ function addCounts(svg) {
     if (L < 1) {   // a quaver: the beat's number on the beat, '+' (and) between
       out += `<text x="${x0.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${ON}" class="cnt">${Number.isInteger(beat) ? beat + 1 : '+'}</text>`; beat += L; return; }
     for (let k = 0; k < L; k++) { const x = x0 + k * step, held = k > 0;
-      out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${held ? HELD : ON}" class="cnt">${beat + k + 1}</text>`;
+      out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${held || INFO[e.id].rest ? HELD : ON}" class="cnt">${beat + k + 1}</text>`;
       if (held) { const xa = x - step + 150, xb = x - 150; if (xb > xa) out += `<line x1="${xa.toFixed(0)}" x2="${xb.toFixed(0)}" y1="${Y - 95}" y2="${Y - 95}" stroke="${HELD}" stroke-width="26" stroke-linecap="round"/>`; } }
     beat += L; });
   if (sylY.length) svg = svg.replace(/class="verse">/g, 'class="verse" transform="translate(0,420)">');
@@ -103,8 +104,8 @@ function addBoxes(svg, ex, names, boxSize, pre) {   // names: every box filled i
 // A single note shows its finger number (coral); two notes together show a coral dot; a note held past its beat runs on
 // as a grey line to the end of its length.
 function addWhen(svg, way, b0, pic, Y0) {
-  const ev = []; let m; const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use xlink:href="#[^"]+" transform="translate\((\d+), (\d+)\)|<g id="[^"]+" class="barLine"[^>]*>\s*<path d="M(\d+) /g;
-  while ((m = re.exec(svg))) { if (m[1]) ev.push({ id: m[1], x: +m[2] }); else ev.push({ bar: true, x: +m[4] }); }
+  const ev = []; let m; const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use xlink:href="#[^"]+" transform="translate\((\d+), (\d+)\)|<g id="[^"]+" class="barLine"[^>]*>\s*<path d="M(\d+) |<g id="(x\d+)" class="rest">\s*<use [^>]*translate\((\d+), /g;
+  while ((m = re.exec(svg))) { if (m[1]) ev.push({ id: m[1], x: +m[2] }); else if (m[5]) ev.push({ id: m[5], x: +m[6] - 20 }); else ev.push({ bar: true, x: +m[4] }); }   // a rest is counted too (in grey: count it, don't clap)
   const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1], HW = 212, Y = Y0 || sy + 1330;
   // the x of every beat in every bar, from the notes' own onsets (a held note's later beats spaced evenly to the next event)
   const bars = [[]]; ev.forEach((e, i) => { if (e.bar) { bars.push([]); return; } const L = INFO[e.id].len, x0 = e.x + HW / 2, nx = (ev[i + 1] || { x: x0 + 600 }).x;
