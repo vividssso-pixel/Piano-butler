@@ -2,7 +2,13 @@
 exec(open('/tmp/claude-0/pk/wbtime.py').read())   # helpers, css, W (snippets), old pages
 N_ = N
 import sys as _sy2, re as _re2; _sy2.path.insert(0, '/tmp/claude-0/pk'); import importlib as _il2, pagemap as PM; _il2.reload(PM)
+WMINCSS = """
+/* her 5 Nov: the Workbook keeps the Handbook's minimum sizes: nothing under 14px except tiny labels */
+.ht{font-size:15px!important} .ht td{font-size:15px!important} .ansT td{font-size:14px!important} .fc .add,.add{font-size:14.5px!important} .mu2{font-size:14px!important} .pzl{font-size:14px!important}
+.add:has(.wl ~ .wl) .wl{width:50px!important} .rem2{font-size:15px!important} .how{font-size:15px!important;margin:2px 0 6px!important} .row{font-size:15px!important} .sent p{font-size:15px!important}
+"""
 def _LG(h):   # workbook pages still name Handbook pages in the pre-5-Nov numbering; map them to the live page map
+    h = h.replace('</style></head>', WMINCSS + '</style></head>', 1)
     return _re2.sub(r'\b([Pp]\.(?: |&nbsp;|\u00a0))(\d\d)\b', lambda m: m.group(1) + str(PM.legacy(int(m.group(2))) if int(m.group(2)) >= 22 else m.group(2)), h)
 def star(n): return '★' * n + '<span class="so">' + '★' * (3 - n) + '</span>'
 def ex(n, title, stars, how, body):
