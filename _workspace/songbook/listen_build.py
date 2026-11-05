@@ -1,7 +1,7 @@
 # Build listen.html: the page the lesson book's QR codes open (thepianobutler.com/listen.html#<song>).
 # It plays each lesson's tune (and its More to play tunes) from the same data the book is engraved from.
 import json, re, sys
-SONGS = ['buns', 'clair', 'mary', 'ode', 'jingle', 'rain6', 'hb']
+SONGS = ['buns', 'clair', 'mary', 'ode', 'jingle', 'rain6']   # hb.json (Happy Birthday) waits for Level 1, the G position
 TEMPO = {'hb': 96, 'jingle': 116, 'clair': 92, 'ode': 100, 'rain6': 96}
 data = []
 for f in SONGS:
