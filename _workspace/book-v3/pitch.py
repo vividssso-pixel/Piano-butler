@@ -28,7 +28,7 @@ P['ex_key'] = ringsvg(P['ex_key'], 0)
 def ppage(inner, n): return page(inner, n, 'PART I · PITCH')
 def kbx(*a, **k): return '<figure class="vx kbf">' + keyboard(*a, **k) + '</figure>'
 NC = '#26296b'
-def inaction(title, fig, steps, result): return '<div class="inact"><div class="bh">In action</div><b class="it">' + title + '</b>' + fig + '<div class="isteps">' + ''.join(f'<div><span class="in">{i + 1}</span><span>{t}</span></div>' for i, t in enumerate(steps)) + '</div><div class="ires">' + result + '</div></div>'
+def inaction(title, fig, steps, result): return '<div class="inact"><div class="bh">Step by step</div><b class="it">' + title + '</b>' + fig + '<div class="isteps">' + ''.join(f'<div><span class="in">{i + 1}</span><span>{t}</span></div>' for i, t in enumerate(steps)) + '</div><div class="ires">' + result + '</div></div>'
 def howto(title, steps): return '<div class="howto"><div class="bh">How to</div><b>' + title + '</b><ol>' + ''.join(f'<li>{x}</li>' for x in steps) + '</ol></div>'
 flow = ''.join(f'<div class="fl"><b>{a}</b><span>{b}</span></div>' + ('<span class="fa">›</span>' if i < 5 else '') for i, (a, b) in enumerate([('Keyboard', 'high and low, the patterns'), ('Staff', 'lines, spaces and clefs'), ('Reading the notes', 'every note on the staff'), ('Sharps and flats', 'the black keys'), ('Intervals', 'the distance between notes'), ('Scales and keys', 'notes in families')]))
 TOC = [('The keyboard', 22), ('The staff and the clefs', 23), ('Reading the notes', 24), ('The staff and the keyboard', 25), ('Sharps, flats and naturals', 26), ('Counting intervals', 27), ('Major, minor and perfect', 28), ('Major scales', 29), ('Minor scales', 30), ('Keys and key signatures', 31), ('Finding the key', 32), ('The circle of fifths', 33), ('Tips: when a note sounds wrong', 46)]
@@ -60,9 +60,9 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Keys to the <b>le
 {inaction('Find G4 on the keyboard', kbx('C', 15, 28, 100, label=True, shade={7: '#fde6dd', 11: '#fde6dd'}, marks=[f'<circle cx="{(7 + i) * 28 + 14}" cy="71" r="8" fill="#fff" stroke="#26296b" stroke-width="1.8"/><text x="{(7 + i) * 28 + 14}" y="74.6" text-anchor="middle" font-family="AH,Arial" font-size="10" font-weight="700" fill="#26296b">{i + 1}</text>' for i in range(5)], scale=1.0), ['<b>Find middle C (C4):</b> the C just left of the two black keys nearest the middle.', '<b>Count up the letters</b>, one white key each: C D E F G is five keys.', '<b>Same octave</b>, so the number stays 4.'], 'The key: <b>G4</b>. One octave higher, the next G, is G5.')}
 <!--SPLIT-->
 {youknow('Amazing Grace, on the black keys only', '<figure class="vx kbf">' + keyboard('C', 8, 30, 92, label=True, marks=[f'<circle cx="{x * 30}" cy="40" r="8" fill="#e4572e"/>' for x in (1, 2, 4, 5, 6)], scale=1.0) + '</figure>', 'The whole tune fits on the <b class="co">five black keys</b>: D♭ G♭ B♭ G♭ B♭ A♭ G♭ E♭ D♭. The groups of two and three are a little melody machine.', 'Start on the lower key of a pair of black keys and find the tune by ear.')}
-{inaction('Find F♯4', kbx('C', 8, 34, 100, label=True, shade={3: '#fde6dd', 4: '#fde6dd'}, marks=['<circle cx="136" cy="44" r="10" fill="#e4572e"/>'], scale=1.0), ['<b>Find F4:</b> the white key just left of the group of three black keys above middle C.', '<b>Sharp means up:</b> move one key to the right.', '<b>The very next key</b> is black: that is F♯.'], 'F♯4 is the <b>black key</b> just right of F4, the first of the group of three.')}
+{inaction('Find F♯4', kbx('C', 8, 34, 100, label=True, shade={3: '#fde6dd', 4: '#fde6dd'}, marks=['<circle cx="136" cy="44" r="10" fill="#e4572e"/>'], scale=0.8), ['<b>Find F4:</b> the white key just left of the group of three black keys above middle C.', '<b>Sharp means up:</b> move one key to the right.', '<b>The very next key</b> is black: that is F♯.'], 'F♯4 is the <b>black key</b> just right of F4, the first of the group of three.')}
 {watch(['Counting octaves from the left end of the piano: octave numbers always change at C, not A.', 'Calling every black key a sharp: each one has a flat name too (p. 26).'])}
-{inaction('Find C3, C4 and C5', kbx('C', 15, 28, 100, label=True, shade={0: '#fde6dd', 7: '#fde6dd', 14: '#fde6dd'}, marks=[f'<circle cx="{i * 28 + 14}" cy="56" r="9" fill="#e4572e"/>' for i in (0, 7, 14)], scale=1.0), ['<b>Find middle C (C4):</b> just left of the two black keys in the middle.', '<b>Count seven white keys down:</b> C3.', '<b>Count seven white keys up:</b> C5.'], 'Every C sits just left of a group of <b>two</b> black keys, an octave apart.')}
+{inaction('Find C3, C4 and C5', kbx('C', 15, 28, 100, label=True, shade={0: '#fde6dd', 7: '#fde6dd', 14: '#fde6dd'}, marks=[f'<circle cx="{i * 28 + 14}" cy="56" r="9" fill="#e4572e"/>' for i in (0, 7, 14)], scale=0.8), ['<b>Find middle C (C4):</b> just left of the two black keys in the middle.', '<b>Count seven white keys down:</b> C3.', '<b>Count seven white keys up:</b> C5.'], 'Every C sits just left of a group of <b>two</b> black keys, an octave apart.')}
 {thinkt('The black keys are like the little bumps on F and J of a computer keyboard: feel them and you know where you are without looking.')}
 {foot('The staff and the clefs p. 23 · The staff and the keyboard p. 25', 'Workbook Pitch 1 · Online: Library › Keyboard')}""", 22)
 
@@ -94,9 +94,8 @@ P24 = ppage(f"""{head('Part I · Pitch · 3', 'Reading the notes', 'Each line an
 <!--SPLIT-->
 {thinkt('Landmark notes are like lamp posts on a dark road: walk from one to the next and you are never lost.')}
 {youknow('Mary Had a Little Lamb', ykfig('yk_mary', ('n1','n2','n3'), 96), 'E D C: <b class="co">line, space, ledger line</b>, one step down each time. Read the shape and the tune walks down with it.', 'Read the notes aloud before you play them.')}
-{watch(['Naming bass-clef notes with treble names: in the bass, the bottom line is G, not E.', 'Counting ledger lines from the wrong end: start from the staff and count outwards.'])}
+{watch(['Naming bass-clef notes with treble names: in the bass, the bottom line is G, not E.', 'Counting ledger lines from the wrong end: start from the staff and count outwards.', 'Counting lines from the top: lines and spaces are always counted from the bottom.'])}
 {inaction('Read a ledger-line note', px('ledger', 86), ['<b>Start at the staff edge:</b> the top line of the treble staff is F.', '<b>Step up</b> one note at a time: G (space), A (first ledger line).', '<b>Below the staff</b> count down the same way: D, C, B, A.'], 'Ledger lines are the staff carried on: count by steps from the nearest line.')}
-{watch(['Reading the bass staff with treble names: check the clef first, every time.', 'Counting lines from the top: lines and spaces are always counted from the bottom.'])}
 {foot('The staff and the clefs p. 23 · The staff and the keyboard p. 25', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 24)
 
 P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Every line and space of the grand staff is one white key. Read from left to right, the notes climb the staff exactly as the keys climb the keyboard: two octaves from C3 to C5, with middle C in red where the two staves meet.')}
@@ -106,10 +105,9 @@ P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Eve
 <!--SPLIT-->
 {inaction('From the page to the key', px('lm_b', 80), ['<b>Name the note on the staff:</b> line 4 of the bass staff, between the clef’s dots, is F.', '<b>Count down from middle C:</b> C B A G F, the fifth white key down.', '<b>Play it</b> with the left hand: that is F3.'], 'The bass-clef F is <b>F3</b>, five white keys below middle C.')}
 {thinkt('The staff is a ladder laid on its side beside the keyboard: each rung, a line or a space, is the next white key.')}
-{youknow('Frère Jacques, in both hands', ykfig('yk_frere', ('n5','n6','n7','n8'), 130), 'The left hand plays the <b class="co">same letters</b>, C D E C, one octave lower, written in the bass clef.', 'Play it right hand, then left hand, then both together.')}
+{youknow('Frère Jacques, in both hands', ykfig('yk_frere', ('n5','n6','n7','n8'), 116), 'The left hand plays the <b class="co">same letters</b>, C D E C, one octave lower, written in the bass clef.', 'Play it right hand, then left hand, then both together.')}
 {watch(['Thinking the black keys have their own lines: they borrow a white key’s line or space with a sharp or flat.'])}
-{thinkt('Reading music is like reading a map while driving: glance at the page, trust your hands to know the distances.')}
-{inaction('Landmarks either side of middle C', px('landmarks', 120), ['<b>Find middle C</b> on the map: between the two staves.', '<b>Treble G</b> is five white keys above it.', '<b>Bass F</b> is five white keys below it.'], 'The landmarks sit at the same distance either side of middle C.')}
+{inaction('Landmarks either side of middle C', px('landmarks', 104), ['<b>Find middle C</b> on the map: between the two staves.', '<b>Treble G</b> is five white keys above it.', '<b>Bass F</b> is five white keys below it.'], 'The landmarks sit at the same distance either side of middle C.')}
 {foot('The keyboard p. 22 · Reading the notes p. 24', 'Workbook Pitch 1–2 · Online: Library › Staff and clefs')}""", 25)
 
 acc = [[gsym('♯', 28), 'sharp', 'raises a note by a semitone', 'Level 0'], [gsym('♭', 28), 'flat', 'lowers a note by a semitone', 'Level 0'], [gsym('♮', 28), 'natural', 'cancels a sharp or flat', 'Level ½'], [gsym('𝄪', 16), 'double sharp', 'raises by two semitones', 'Level 4'], [gsym('𝄫', 28), 'double flat', 'lowers by two semitones', 'Level 4']]
@@ -139,14 +137,28 @@ def semis(start, n, hi=(), W=36):   # numbered semitones from a key: 0 on the st
         col = '#e4572e' if k in hi else ('#26296b' if t == 'w' else '#fff')
         out.append(f'<text x="{x}" y="{y}" text-anchor="middle" font-family="AH,Arial" font-size="12" font-weight="700" fill="{col}">{k}</text>')
     return out
+def ivkb(n, cap, W=36, H=120):   # her 5 Nov: show where the interval starts and ends: both end keys red, the keys between tinted, a bracket from end to end
+    WH = 'CDEFGAB'; keys = []
+    for i in range(10):
+        keys.append(('w', i))
+        if WH[i % 7] in 'CDFGA': keys.append(('b', i))
+    t, i = keys[n]; shade = {j: '#fdf1ec' for j in range(0, i + 1)}; shade[0] = '#f6c2b0'
+    marks = []
+    if t == 'w': shade[i] = '#f6c2b0'; xe = (i + 0.5) * W
+    else:
+        BW, BH = W * 0.58, H * 0.6; xe = (i + 1) * W
+        marks.append(f'<rect x="{xe - BW / 2:.1f}" y="0" width="{BW:.1f}" height="{BH:.1f}" rx="1.5" fill="#e4572e"/>')
+    marks += [m.replace('fill="#e4572e"', 'fill="#26296b"') if ' y="84"' in m else m.replace('fill="#e4572e"', 'fill="#fff"') for m in semis('C', n, hi=(0, n))]
+    a, b = (0.5 * W - 3) / W, (xe + 3) / W - 1
+    return kbx('C', 7, W, H, label=True, shade=shade, marks=marks, brackets=[(a, b, f'{n} semitones', True)], scale=1.0) + f'<p class="sm">{cap}</p>'
 P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'How far apart are two notes? That gap is an <b>interval</b>. The very next key is a <b>semitone</b>; two make a <b>tone</b>. To number it, count the letter names, both ends included.')}
 {two(px('tones', 78, 'E–F and B–C are semitones; C–D and F–G are tones.'), px('mel_harm', 78, 'Melodic: one note after the other. Harmonic: together.'))}
 {h3('Counting the number')}
-{px('ex_iv', 70, 'D up to A: D E F G A is five letters, so the interval is a 5th, whether the notes come one after the other or together.')}
+{ykfig('ex_iv', ('n1', 'n5', 'n7', 'n8'), 78).replace('</div></figure>', '</div><figcaption>From <b class="co">D</b> up to <b class="co">A</b> (the red notes): D E F G A is five letters, so the interval is a 5th, whether the notes come one after the other or together.</figcaption></figure>')}
 {h3('Interval numbers from C')}
 {px('intv', 88)}
 {inaction('How far apart are these notes?', px('ia_iv', 90), ['<b>Call the first note 1:</b> F is 1.', '<b>Count every letter to the second note:</b> F G A is 3 letters: a 3rd.', '<b>Going down works the same:</b> C B A G is 4 letters: a 4th.'], 'F up to A is a <b>3rd</b>; C down to G is a <b>4th</b>. Sharps and flats never change the number.')}
-<p class="think"><span>Think of it</span>Put your thumb on C and your little finger on G: five fingers on five white keys, a 5th. Your hand measures intervals for you.</p>
+<p class="sm"><b>Your hand is a ruler:</b> thumb on C, little finger on G: five fingers on five white keys, a 5th.</p>
 <!--SPLIT-->
 {youknow('Twinkle, Twinkle, Little Star', ykfig('yk_twk5', ('n1','n3'), 70), 'The leap from “twin-” to “kle” is C up to G: C D E F G, <b class="co">five letters, a 5th</b>.', 'Sing the first two notes of any song, then count the letters between them.')}
 {inaction('Name an interval on the keyboard', kbx('C', 8, 34, 100, label=True, shade={2: '#fde6dd', 7: '#fde6dd'}, marks=[], scale=1.0), ['<b>Find both notes:</b> E and the C above it.', '<b>Count the letters:</b> E F G A B C is six.', '<b>Both ends count:</b> so the interval is a 6th.'], 'E up to C is a <b>6th</b>.')}
@@ -157,7 +169,7 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'How far apa
 
 iv = [['unison', '', '0 (perfect)', '', 'Level 1'], ['2nd', '1 (minor)', '2 (major)', '', 'Level 1'], ['3rd', '3 (minor)', '4 (major)', '', 'Level ½'], ['4th', '', '5 (perfect)', '6 (augmented)', 'Level 1'], ['5th', '6 (diminished)', '7 (perfect)', '', 'Level 1'], ['6th', '8 (minor)', '9 (major)', '', 'Level 2'], ['7th', '10 (minor)', '11 (major)', '', 'Level 2'], ['octave', '', '12 (perfect)', '', 'Level 1']]
 P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'Two intervals with the same number can differ in size. C–E and C–E♭ are both 3rds, but one is a semitone wider. The <b>quality</b> (major, minor, perfect…) comes from counting <b>semitones</b>.')}
-{two(kbx('C', 7, 36, 120, label=True, marks=semis('C', 4, hi=(0, 4)), scale=1.0) + '<p class="sm">C to E: count every key, black and white. 4 semitones: a major 3rd.</p>', kbx('C', 7, 36, 120, label=True, marks=semis('C', 3, hi=(0, 3)), scale=1.0) + '<p class="sm">C to E♭: 3 semitones: a minor 3rd.</p>')}
+{two(ivkb(4, 'From <b class="co">C</b> to <b class="co">E</b>: count every key, black and white. 4 semitones: a major 3rd.'), ivkb(3, 'From <b class="co">C</b> to <b class="co">E♭</b>: 3 semitones, one fewer: a minor 3rd.'))}
 {px('q3', 92)}
 {h3('Size in semitones')}
 {tbl(['Number', 'Smaller', 'Main', 'Wider', 'First met'], iv, ['16%', '22%', '22%', '22%', '18%'])}
@@ -225,9 +237,8 @@ P31 = ppage(f"""{head('Part I · Pitch · 11', 'Finding the key', 'A key signatu
 <!--SPLIT-->
 {youknow('Für Elise (Beethoven)', ykfig('yk_elise2', ('n1','n9'), 70), 'No key signature, a <b class="co">G♯</b> as the clue, and the music keeps coming home to <b class="co">A</b>: <b>A minor</b>.', 'Play A, then G♯ A: hear the G♯ lean into home.')}
 {h3('Minor keys and their clue notes')}
-{tbl(['Minor key', 'Signature', 'Clue note (raised 7th)'], [['A minor', 'none', '<b class="co">G♯</b>'], ['E minor', '1♯', '<b class="co">D♯</b>'], ['D minor', '1♭', '<b class="co">C♯</b>'], ['B minor', '2♯', '<b class="co">A♯</b>']], ['34%', '28%', '38%'])}
+{tbl(['Minor key', 'Signature', 'Clue note (raised 7th)'], [['A minor', 'none', '<b class="co">G♯</b>'], ['E minor', '1♯', '<b class="co">D♯</b>'], ['D minor', '1♭', '<b class="co">C♯</b>'], ['B minor', '2♯', '<b class="co">A♯</b>'], ['G minor', '2♭', '<b class="co">F♯</b>']], ['34%', '28%', '38%'])}
 {inaction('Major or minor? No sharps or flats', kbx('C', 8, 34, 100, label=True, shade={5: '#fde6dd'}, marks=['<circle cx="170" cy="44" r="10" fill="#e4572e"/>'], scale=1.0), ['<b>The signature:</b> none, so C major or A minor.', '<b>The clue notes:</b> G♯ appears. G♯ is the raised 7th of A minor.', '<b>The last note:</b> A.'], 'No sharps or flats, G♯ clues, ending on A: <b>A minor</b>.')}
-{inaction('Read a sharp key signature', ringks('ks_1s', -1, 62), ['<b>Count the sharps:</b> one, F♯.', '<b>The last sharp</b> is F♯; one semitone up is G.', '<b>Its relative minor,</b> three semitones below G, is E.'], 'One sharp: <b>G major</b> or <b>E minor</b>.')}
 {thinkt('Detective work: the key signature narrows it to two suspects; the clue note and the last note name the culprit.')}
 {foot('Keys and key signatures p. 31 · The circle of fifths p. 33', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 32)
 
