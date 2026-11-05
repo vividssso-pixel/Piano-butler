@@ -177,7 +177,7 @@ SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the t
  'S7': 'Clockwise adds a sharp, anticlockwise adds a flat: every key on one clock.',
  'H1': 'Play one, skip one, play one: the snowman rule.', 'H2': 'Count the keys between: 3 + 2 is major, 2 + 3 is minor.', 'H3': 'Build a snowman on every note of the scale: I, IV and V are the strongest.',
  'H4': 'Move the bottom note to the top: same chord, new bass.', 'H5': 'One more floor on the snowman and the chord changes colour.', 'H6': 'Move the 3rd, take it away, or add one note: five new colours.',
- 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'H9': 'A note from outside the key is a guest: it always wants to go somewhere.'}
+ 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'H9': 'A note from outside the key is a guest: it always wants to go somewhere.', 'H10': 'Music has full stops and commas too: listen to the last two chords of a phrase.'}
 def secret_box(t): return f'<div class="secret1"><span class="sl">The secret</span><span>{t}</span></div>'
 def hand(t, cls=''): return f'<span class="hand3 {cls}">{t}</span>'
 def assemble(key, pg):   # her 5 Nov: a topic is 2 pages, or 3 when it needs room; page numbers come from the page map
