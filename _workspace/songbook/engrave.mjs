@@ -66,7 +66,7 @@ function addCounts(svg) {
   const HW = 212;   // a black notehead (E0A4 at scale 0.72)
   const per = []; ev.forEach((e, i) => { const n = ev[i + 1]; if (!e.bar && n && !n.bar) per.push((n.x - e.x) / INFO[e.id].len); });
   per.sort((a, b) => a - b); const U = per[Math.floor(per.length / 2)];
-  const sylY = [...svg.matchAll(/class="syl">\s*<text x="[\d.]+" y="(\d+)"/g)].map(m => +m[1]); let out = '', beat = 0; const Y = (sylY.length ? Math.max(...sylY) : sy + 640) + 420, FS = 300;
+  const sylY = [...svg.matchAll(/class="syl">\s*<text x="[\d.]+" y="(\d+)"/g)].map(m => +m[1]); let out = '', beat = 0; const Y = sylY.length ? Math.max(...sylY) : sy + 640, FS = 300;   // the counts first, right under the notes; the words go below them (her 5 Nov 13:15)
   ev.forEach((e, ei) => { if (e.bar) { beat = 0; return; } const L = INFO[e.id].len, x0 = e.x + HW / 2;
     const nx = (ev[ei + 1] || { x: x0 + L * U }).x, step = L > 1 ? Math.min(U, (nx - 120 - x0) / (L - 0.5)) : U;
     if (L < 1) {   // a quaver: the beat's number on the beat, '+' (and) between
@@ -75,6 +75,7 @@ function addCounts(svg) {
       out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${held ? HELD : ON}" class="cnt">${beat + k + 1}</text>`;
       if (held) { const xa = x - step + 150, xb = x - 150; if (xb > xa) out += `<line x1="${xa.toFixed(0)}" x2="${xb.toFixed(0)}" y1="${Y - 95}" y2="${Y - 95}" stroke="${HELD}" stroke-width="26" stroke-linecap="round"/>`; } }
     beat += L; });
+  if (sylY.length) svg = svg.replace(/class="verse">/g, 'class="verse" transform="translate(0,420)">');
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
 function addBoxes(svg, ex, names, boxSize, pre) {   // names: every box filled in (before the staff the place can't tell the note)
@@ -337,10 +338,19 @@ for (const g of new Set(Object.keys(out).map(group))) {
     if (EVEN && !oo.noEven && !oo.rhythm && data.flat().length === info[j].heads.length && data.length === bars.length) {
       let h = 0;
       data.forEach((bar, bi) => { const os = bi ? bars[bi - 1] : a1, oe = bars[bi], ns = nw[bi], ne = nw[bi + 1];
-        const T = bar.reduce((a, n) => a + LEN[n[1]], 0), lead = (info[j].heads[h] - os) * (ne - ns) / (oe - os), u = (ne - ns - lead) / T; let t = 0;
+        const T = bar.reduce((a, n) => a + LEN[n[1]], 0), lead = Math.max(360, (info[j].heads[h] - os) * (ne - ns) / (oe - os)),   // a head never crowds the bar line before it
+          u = (ne - ns - lead) / T; let t = 0;
         bar.forEach(n => { const hx = info[j].heads[h++], ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + EVEN_K * (ns + lead + t * u - ox); if (hx > ko[ko.length - 1] && nx > kn[kn.length - 1]) { ko.push(hx); kn.push(nx); } t += LEN[n[1]]; });
         ko.push(oe); kn.push(ne); });
     } else { ko = [a1, ...bars]; kn = nw; }
     out[k] = mapX(out[k], ko, kn); });
 }
+// Stems back on their heads (her 5 Nov 13:14: 'stems barely hanging on'): the spacing passes move a head and its stem
+// through different stretches of the line, so each stem is set again on its own head's edge, up on the right, down on the left
+function reattach(svg) {
+  return svg.replace(/(<ellipse cx="(-?[\d.]+)" cy="(-?[\d.]+)" rx="([\d.]+)"[^>]*class="lhead"\/>\s*<text[^>]*>[^<]*<\/text>\s*<\/g>\s*<g id="[^"]+" class="stem">\s*<path d="M)(-?[\d.]+) (-?[\d.]+) L(-?[\d.]+) (-?[\d.]+)"/g,
+    (m, pre, cx, cy, rx, x1, y1, x2, y2) => { const up = +y2 < +y1, x = Math.round((+cx + (up ? 1 : -1) * (+rx - 10)) * 10) / 10;
+      return `${pre}${x} ${y1} L${x} ${y2}"`; });
+}
+for (const k of Object.keys(out)) out[k] = reattach(out[k]);
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
