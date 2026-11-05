@@ -168,9 +168,10 @@ def own_tune(bars):   # her 4 Nov 15:00: make your own -- the rhythm given, a bo
 P4 = ''
 if SONG.get('more'):
     M = SONG['more']
-    T = SONG.get('more_task')   # her 4 Nov 21:25: make-your-own only in the first lessons; later another activity
+    T = SONG.get('more_task'); NO_OWN = SONG.get('no_own')   # her 4 Nov 21:25: make-your-own only in the first lessons; later another activity
     TASK = (f'<div class="sp"></div>' + SUB(T['title'], T['how']) + '<div class="sp"></div>' + (lambda ms: f'<div class="trow">{ms}</div>' if T.get('row') else ms)(''.join(mus(k, 'ghost' if T.get('kind') == 'draw' else '') for k in T.get('jobs', ['task1'])))) if T else (
         "<div class=\"sp\"></div>" + SUB('Your own tune', SONG.get('more_own_how', 'Write a letter in each box, then play your tune. Give it a name:') + ' <span class=\"ib\" style=\"width:180px\"></span>') + '<div class="sp"></div>' + own_tune(SONG.get('more_own', [])))
+    if NO_OWN and not T: TASK = ''   # her 5 Nov 13:47: no make-your-own here
     P4 = page(f'''{part('+', 'More to play', SONG.get('more_how', 'The same keys, the same fingers, the same note values: two new tunes. Then make your own.'))}
 <div class="sp"></div>{SUB(M[0]['title'], M[0].get('how', 'Sing it on the words, then play it.'))}
 <div class="sp"></div>{''.join(mus(k) for k in sorted((k for k in V if k.startswith('moreA') and k[5:].isdigit()), key=lambda k: int(k[5:])))}
