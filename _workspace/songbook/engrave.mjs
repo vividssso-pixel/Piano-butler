@@ -36,7 +36,7 @@ function mei(b0, b1, o) {
     flush();
     let st2 = '';
     if (o.lh) { const ch = S.chords[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';
-      pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d, 'up') : noteXml(ps[0], d, { stem: 'up' }); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
+      pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d) : noteXml(ps[0], d); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
       st2 = `<staff n="2"><layer n="1">${l2}</layer></staff>`; }
     if (o.chords) ctrl.push(`<harm staff="1" tstamp="1" place="above">${trChord(S.chords[b], o.tr)}</harm>`);
     const right = b === S.bars.length - 1 ? ' right="end"' : '';
@@ -218,13 +218,14 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5, bass) {
 }
 // Hands take turns (her 5 Nov 00:39: the zigzag pieces): one line of notes that steps between the two staves, the right
 // hand's on the Queen's staff, the left hand's on the King's (note[6] === 'L'), quavers beamed in fours across both
+const STEP = p => 'cdefgab'.indexOf(p[0]) + 7 * +p.replace(/[^0-9]/g, '');   // a diatonic step number, to find the middle line
 function zigMei(b0, b1, o) {
   let ms = '';
   for (let b = b0; b < b1; b++) {
     let l1 = '', run = [], ctrl = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };
     S.bars[b].forEach(([p, d, syl, wp, f, lf, h]) => { const [pname, oct] = pn(p), i = nid(), L = h === 'L';
-      const x = `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${L ? ' staff="2"' + (o.lhup ? ' stem.dir="up"' : '') : ''}/>`;   // the left hand's stems up, so its fingers below stay clear
+      const x = `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${L ? ' staff="2"' : ''} stem.dir="${STEP(p) >= (L ? STEP('d3') : STEP('b4')) ? 'down' : 'up'}"/>`;   // the stem rule on each hand's own staff (her 6 Nov 10:24)   // the left hand's stems up, so its fingers below stay clear
       if (d === 'q') { run.push(x); if (run.length === 4) flush(); } else { flush(); l1 += x; }
       if (o.fing && f != null) ctrl.push(`<fing startid="#${i}" staff="${L ? 2 : 1}" place="${L ? 'below' : 'above'}">${f}</fing>`);
       INFO[i] = { len: LEN[d] }; });
@@ -328,6 +329,15 @@ function mapX(svg, knotsOld, knotsNew) {
   body = body.replace(/@@R(\d+)@@/g, (m, i) => rects[+i]);
   return head + body;
 }
+// A stem stays on its own head (her 6 Nov 10:24: 'stems right on the side of the head'): the spacing moves head and stem
+// through different stretches of the line, so after it each plain head gets its stem back at the distance Verovio set
+// (up: on the right edge, down: on the left), and a quaver's flag goes with its stem
+const NOTE_STEM = /(<g id="([^"]+)" class="note">\s*<g class="notehead">\s*<use [^>]*translate\()(-?[\d.]+)(,[^>]*\/>\s*<\/g>\s*<g id="[^"]+" class="stem">\s*<path d="M)(-?[\d.]+)( -?[\d.]+ L)(-?[\d.]+)( -?[\d.]+"[^>]*\/>(?:\s*<g class="flag">\s*<use [^>]*translate\()?)(-?[\d.]+)?/g;
+function keepStems(before, after) {
+  const off = {}; for (const m of before.matchAll(NOTE_STEM)) off[m[2]] = [+m[5] - +m[3], m[9] != null ? +m[9] - +m[5] : null];
+  return after.replace(NOTE_STEM, (m, a, id, hx, b, sx, c, sx2, d, fx) => { if (!off[id]) return m; const x = Math.round((+hx + off[id][0]) * 10) / 10;
+    return a + hx + b + x + c + x + d + (fx != null && off[id][1] != null ? Math.round((x + off[id][1]) * 10) / 10 : (fx ?? '')); });
+}
 // each note's word (syllable) width, in the line's own units, from its letters and size
 function sylWidths(svg) {
   svg = staff1(svg); const starts = [...svg.matchAll(/<g id="x\d+" class="note">/g)].map(m => m.index); starts.push(svg.length);
@@ -378,7 +388,7 @@ for (const g of new Set(Object.keys(out).map(group))) {
       let best = null; for (const K of [1, 0.85, 0.7, 0.55, 0.4, 0.25, 0]) { const c = build(K); if (fits(c)) { best = c; break; } }
       if (best) { ko = best.o; kn = best.nn; } else { ko = [a1, ...bars]; kn = nw; }
     } else { ko = [a1, ...bars]; kn = nw; }
-    out[k] = mapX(out[k], ko, kn); });
+    out[k] = keepStems(out[k], mapX(out[k], ko, kn)); });
 }
 // Stems back on their heads (her 5 Nov 13:14: 'stems barely hanging on'): the spacing passes move a head and its stem
 // through different stretches of the line, so each stem is set again on its own head's edge, up on the right, down on the left
@@ -397,5 +407,22 @@ function reattach(svg) {
     const nlo = Math.min(...mine.map(t => t.x)) - W / 2, nhi = Math.max(...mine.map(t => t.x)) + W / 2;
     return pre + P.map(([x, y]) => `${x === lo ? nlo : x === hi ? nhi : x},${y}`).join(' ') + '"'; });
 }
-for (const k of Object.keys(out)) out[k] = reattach(out[k]);
+// A finger number never sits on a stem (with stems by the rule, the left hand's go down into its numbers): it moves off the stem's end
+function clearFingers(svg) {
+  const stems = [...svg.matchAll(/class="stem">\s*<path d="M(-?[\d.]+) (-?[\d.]+) L-?[\d.]+ (-?[\d.]+)"/g)].map(m => ({ x: +m[1], lo: Math.min(+m[2], +m[3]), hi: Math.max(+m[2], +m[3]) }));
+  const RE = /(<g id="[^"]+" class="fing"(?: transform="translate\(0,(-?[\d.]+)\)")?>\s*<text x=")(-?[\d.]+)(" y=")(-?[\d.]+)("[\s\S]*?<tspan font-size=")(\d+)/g;
+  // first where each number would have to go; then every number of that row moves together, so the row stays one straight line
+  const F = [...svg.matchAll(RE)].map(m => { const dy = +(m[2] || 0), y = +m[5] + dy, fs = +m[7], x = +m[3];
+    const hit = stems.filter(t => Math.abs(t.x - x) < fs * 0.55 && t.hi > y - fs * 0.75 && t.lo < y + 20);
+    if (!hit.length) return { y, ny: y };
+    const mid = (Math.min(...hit.map(t => t.lo)) + Math.max(...hit.map(t => t.hi))) / 2, down = y > mid;
+    return { y, ny: down ? Math.max(...hit.map(t => t.hi)) + fs * 0.85 : Math.min(...hit.map(t => t.lo)) - 60, down, up: !down }; });
+  // numbers within a head's height of each other are one row: if one had to move, the whole row takes the furthest place
+  const row = {}, ys = [...new Set(F.map(f => f.y))].sort((a, b) => a - b), rows = [];
+  ys.forEach(y => { const r = rows[rows.length - 1]; if (r && y - r[r.length - 1] < 450) r.push(y); else rows.push([y]); });
+  rows.forEach(r => { const fs = F.filter(f => r.includes(f.y)); if (!fs.some(f => f.down || f.up)) return;
+    const v = fs.some(f => f.down) ? Math.max(...fs.map(f => f.ny)) : Math.min(...fs.map(f => f.ny)); r.forEach(y => { row[y] = v; }); });
+  return svg.replace(RE, (m, a, dy, x, c, y, d, fs) => { dy = +(dy || 0); const r = row[+y + dy]; return r == null ? m : a + x + c + Math.round(r - dy) + d + fs; });
+}
+for (const k of Object.keys(out)) out[k] = clearFingers(reattach(out[k]));
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
