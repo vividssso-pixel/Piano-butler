@@ -9,12 +9,12 @@ def DONE(k, lab=''):   # a worked first answer drawn on the staff, in red
     f = wpx(k, 84, 26).replace('class="chord">', 'class="chord" style="fill:#e4572e;color:#e4572e">')
     return f'<div class="fc">{f}<div class="add">{lab}</div></div>'
 KW = 30
-def kdot(i, t, y=62): return f'<circle cx="{i * KW + KW / 2}" cy="{y}" r="9" fill="#e4572e"/><text x="{i * KW + KW / 2}" y="{y + 4}" text-anchor="middle" font-family="AH,Arial" font-size="10" font-weight="700" fill="#fff">{t}</text>'
+def kdot(i, t, y=64): return f'<circle cx="{i * KW + KW / 2}" cy="{y}" r="8" fill="#fff" stroke="#e4572e" stroke-width="2"/><text x="{i * KW + KW / 2}" y="{y + 3.6}" text-anchor="middle" font-family="AH,Arial" font-size="10" font-weight="700" fill="#e4572e">{t}</text>'
 
 # ---------- 1 Chords and triads (Handbook pp. 64–65) ----------
 HA1 = th('Learn', 'Chords and triads', 'Chords and triads', 'A triad is three notes stacked in 3rds: root, 3rd, 5th. Play one, skip one.', f'''
 {ex(1, 'Build it', 1, 'Write the 3rd and the 5th above each root: play one, skip one. The first row is done.', tbl(['Root', '3rd', '5th', 'Root', '3rd', '5th'], [['<b>C</b>', '<b class="done2">E</b>', '<b class="done2">G</b>', '<b>G</b>', BOX, BOX], ['<b>D</b>', BOX, BOX, '<b>A</b>', BOX, BOX], ['<b>F</b>', BOX, BOX, '<b>B</b>', BOX, BOX]], ['14%', '18%', '18%', '14%', '18%', '18%'], 'bld'))}
-{ex(2, 'On the keyboard', 1, 'Mark the root, 3rd and 5th of the F triad with 1, 3 and 5. The C triad is done.', '<div class="two" style="grid-template-columns:1fr 1fr">' + kbd('C', 8, KW, 78, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[kdot(0, '1', 52), kdot(2, '3', 52), kdot(4, '5', 52)]) + kbd('C', 8, KW, 78, label=True) + '</div><div class="anrow"><span><b>C triad</b> C E G</span><span><b>F triad</b>' + BOX + BOX + BOX + '</span></div>')}
+{ex(2, 'On the keyboard', 1, 'Mark the root, 3rd and 5th of the F triad with 1, 3 and 5. The C triad is done.', '<div class="two" style="grid-template-columns:1fr 1fr">' + kbd('C', 8, KW, 78, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[kdot(0, '1', 57), kdot(2, '3', 57), kdot(4, '5', 57)]) + kbd('C', 8, KW, 78, label=True) + '</div><div class="anrow"><span><b>C triad</b> C E G</span><span><b>F triad</b>' + BOX + BOX + BOX + '</span></div>')}
 {ex(3, 'Name the triad', 1, 'Write the root of each triad: the bottom note names it.', grid([pc('hn%d' % i, BOX, 58) for i in range(6)], 3))}
 {ex(4, 'Play it', 1, 'Play C, F and G triads, solid then broken, each hand alone. Tick a circle each clean day.', '<div class="ts6">' + ''.join(f'<div><b>{s}</b>{ticks(4)}</div>' for s in ('C triad', 'F triad', 'G triad')) + '</div>')}''', 1, 64)
 HB1 = th('Use', 'Chords and triads', 'Chords and triads', 'A stacked triad sits on three lines in a row or in three spaces in a row.', f'''

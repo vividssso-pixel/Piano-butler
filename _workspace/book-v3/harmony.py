@@ -3,7 +3,9 @@ import re as _re
 exec(open('/tmp/claude-0/pk/pitch.py').read())   # helpers, css, px / kbx / inaction / howto (rewrites the Pitch draft, harmless)
 def hpage(inner, n): return page(inner, n, 'PART III · HARMONY')
 W_ = 34   # white-key width in the keyboard pictures
-def dot(i, t='', col='#e4572e', y=74): return f'<circle cx="{i * W_ + W_ / 2}" cy="{y}" r="11" fill="{col}"/>' + (f'<text x="{i * W_ + W_ / 2}" y="{y + 4}" text-anchor="middle" font-family="AH,Arial" font-size="11" font-weight="700" fill="#fff">{t}</text>' if t else '')
+def dot(i, t='', col='#e4572e', y=73):   # her 5 Nov: key markers are outlined (white inside), so they never look like the filled step badges, and sit clear of the black keys
+    if not t: return f'<circle cx="{i * W_ + W_ / 2}" cy="{y}" r="8" fill="{col}"/>'
+    return f'<circle cx="{i * W_ + W_ / 2}" cy="{y}" r="8.5" fill="#fff" stroke="{col}" stroke-width="2"/><text x="{i * W_ + W_ / 2}" y="{y + 3.8}" text-anchor="middle" font-family="AH,Arial" font-size="10.5" font-weight="700" fill="{col}">{t}</text>'
 
 YKDAN = '<figure class="vx"><div class="vs">' + P['yk_dan'].replace('<svg ', '<svg style="max-height:72px" ', 1) + '</div></figure>'   # (K. 545 and the Alberti bass wait for Harmony 6, in the bass clef: her 4 Nov)
 for _n in ('n1', 'n2', 'n3', 'n4', 'n5'): YKDAN = YKDAN.replace(f'<g id="{_n}" class="note">', f'<g id="{_n}" class="note" style="fill:#e4572e;color:#e4572e">', 1)
@@ -24,7 +26,7 @@ H1 = hpage(f"""{head('Part III · Harmony · 1', 'Chords and triads', 'Press two
 {two(h3('Root, 3rd and 5th') + '<p>Start on any note: that is the <b>root</b>. Add the note a <b>3rd</b> above it, then the note a <b>5th</b> above the root. On the staff each note sits on the next line up, or in the next space up. C, E and G make the triad of C.</p><p class="sm">First met: Level ½ (the tonic triad of C, G and F major).</p>', px('h_build', 104, 'The root, then a 3rd above it, then a 5th above the root.'), '1.15fr 1fr')}
 {h3('Play one, skip one')}
 <div class="fk"><div class="fkf">{kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), dot(2, '3'), dot(4, '5')], scale=1.0)}</div><div>On the white keys a triad is <b>play one, skip one, play one, skip one, play one</b>: C (skip D) E (skip F) G. The red keys are the root, the 3rd and the 5th; the skipped keys are shaded.</div></div>
-{inaction('Build a triad on G', kbx('C', 10, W_, 92, label=True, shade={5: '#eef0f8', 7: '#eef0f8'}, marks=[dot(4, '1', y=62), dot(6, '3', y=62), dot(8, '5', y=62)], scale=1.0), ['<b>Start on G:</b> the root.', '<b>Skip A, play B:</b> the 3rd.', '<b>Skip C, play D:</b> the 5th.'], 'G B D: the triad of <b>G</b>. Same shape as C E G, just moved up.')}
+{inaction('Build a triad on G', kbx('C', 10, W_, 92, label=True, shade={5: '#eef0f8', 7: '#eef0f8'}, marks=[dot(4, '1', y=67), dot(6, '3', y=67), dot(8, '5', y=67)], scale=1.0), ['<b>Start on G:</b> the root.', '<b>Skip A, play B:</b> the 3rd.', '<b>Skip C, play D:</b> the 5th.'], 'G B D: the triad of <b>G</b>. Same shape as C E G, just moved up.')}
 {two(SNOW, thinkt('A snowman: three balls stacked, each one on the next, with one note skipped between them. The bottom ball, the root, holds it up and gives it its name.'), '70px 1fr')}
 <!--SPLIT-->
 {two(h3('All lines or all spaces') + '<p>A stacked triad sits on <b>three lines in a row</b> or in <b>three spaces in a row</b>, in a neat stack. If one note breaks the pattern, it is not a triad.</p>', px('h_ls', 64, 'Lines, spaces, lines, spaces: every one a triad.'), '1fr 1.15fr')}
@@ -50,7 +52,7 @@ H2 = hpage(f"""{head('Part III · Harmony · 2', 'Four kinds of triad', 'Every t
 {px('h2_four', 96, 'The four kinds on C. Only the 3rd and the 5th move; the root stays.')}
 {h3('Count the keys in between')}
 <div class="fk"><div class="fkf">{kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), semi(W_, '1', 46, '#fff'), semi(W_ * 1.5, '2'), semi(W_ * 2, '3', 46, '#fff'), dot(2, '3'), semi(W_ * 3.5, '1'), semi(W_ * 4, '2', 46, '#fff'), dot(4, '5')], scale=1.0)}</div><div>Play C and E and count the keys you skip, black and white: C♯, D, D♯ is <b class="co">3</b>. Then E to G: F, F♯ is <b class="co">2</b>. <b>3 + 2 is major.</b> Any root works the same way: from D, skip 3 to F♯, then 2 to A: D F♯ A, D major.</div></div>
-{inaction('Major or minor? D F A', kbx('C', 8, W_, 92, label=True, shade={1: '#fde6dd', 3: '#fde6dd', 5: '#fde6dd'}, marks=[dot(1, '1', y=62), dot(3, '3', y=62), dot(5, '5', y=62)], scale=1.0), ['<b>Root to 3rd:</b> D to F skips D♯ and E: <b>2</b>.', '<b>3rd to 5th:</b> F to A skips F♯, G and G♯: <b>3</b>.', '<b>2 + 3</b> is minor.'], 'D F A is <b>D minor</b> (Dm). Three of the white-key triads are minor: D, E and A.')}
+{inaction('Major or minor? D F A', kbx('C', 8, W_, 92, label=True, shade={1: '#fde6dd', 3: '#fde6dd', 5: '#fde6dd'}, marks=[dot(1, '1', y=67), dot(3, '3', y=67), dot(5, '5', y=67)], scale=1.0), ['<b>Root to 3rd:</b> D to F skips D♯ and E: <b>2</b>.', '<b>3rd to 5th:</b> F to A skips F♯, G and G♯: <b>3</b>.', '<b>2 + 3</b> is minor.'], 'D F A is <b>D minor</b> (Dm). Three of the white-key triads are minor: D, E and A.')}
 {thinkt('Two floors of a building: a tall floor (3 keys between) and a short one (2). Major: tall, then short, 3 + 2. Minor: short, then tall, 2 + 3. Diminished: two short, 2 + 2. Augmented: two tall, 3 + 3.')}
 <!--SPLIT-->
 {h3('The seven white-key triads, sorted')}
