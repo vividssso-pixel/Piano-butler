@@ -21,7 +21,7 @@ function noteXml(p, d, o = {}) {
 function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${DOTS[d] || ''}${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b, c] = pn(p); return `<note pname="${a}" oct="${b}"${c ? ` accid="${c}"` : ''}/>`; }).join('') + '</chord>']; }
 // one line of bars [b0, b1): opts.words, opts.fing, opts.chords, opts.lh (a way), opts.rhythm (one-line staff), opts.meter
 function mei(b0, b1, o) {
-  let ms = '', ctrl = [];
+  let ms = '', ctrl = [], firstF = true;   // fing1: page 1's long songs show a finger only on each line's first note (and the left hand's notes), so the notes can be bigger
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
@@ -35,7 +35,8 @@ function mei(b0, b1, o) {
       const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, hand: HL ? 'LU' : '', lh: !o.staff5 && (o.lhfing || o.lhdown || HL) });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
       if (o.fing && HL) ctrl.push(`<fing startid="#${i}" place="${o.lh ? 'below' : 'above'}">${lfo != null ? lfo : (S.lh_finger || {})[p]}</fing>`);
-      else if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${fo != null && !o.fk ? fo : (o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);   // fo: this note's own finger (G with 4 next to A)
+      else if (o.fing && (!o.fing1 || firstF)) ctrl.push(`<fing startid="#${i}" place="above">${fo != null && !o.fk ? fo : (o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);
+      firstF = false;   // fo: this note's own finger (G with 4 next to A)
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${lfo != null ? lfo : S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
     flush();
     { const seen = new Set(); l1 = l1.replace(/pname="([a-g])" oct="(\d)" accid="([sf])"/g, (m, a, b, c) => { const k = a + b + c; if (seen.has(k)) return `pname="${a}" oct="${b}" accid.ges="${c}"`; seen.add(k); return m; }); }   // a sharp lasts the bar: written once
