@@ -379,14 +379,17 @@ def _opener(kick, title, line, boxes, toc):
 <p class="pl">{line}</p>
 <div class="flow">{fl}</div>
 <div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p}</span></div>' for x, p in toc)}</div></div></section>"""
-OPEN2 = _opener('Part I · Which note', 'Pitch', 'High or low? That is the first question every note answers. Start with the keys under your fingers, then find where they live on the staff and how sharps and flats move them.',
+OPEN2_OLD = _opener('Part I · Which note', 'Pitch', 'High or low? That is the first question every note answers. Start with the keys under your fingers, then find where they live on the staff and how sharps and flats move them.',
     [('Keyboard', 'high and low, the patterns'), ('Staff', 'lines, spaces and clefs'), ('Reading the notes', 'every note on the staff'), ('Sharps and flats', 'the black keys')],
     [(t, PM.PAGE[k]) for t, k in (('The keyboard', 'P1'), ('The staff and the clefs', 'P2'), ('Reading the notes', 'P3'), ('The staff and the keyboard', 'P4'), ('Sharps, flats and naturals', 'P5'), ('Tips: when a note reads wrong', 'PT'))])
-OPEN3 = _opener('Part III · The ground under the chords', 'Scales and keys', 'Notes travel in families. Measure the distance between two notes, build the scales that whole pieces are made from, then learn to read the key a piece lives in.',
+OPEN3_OLD = _opener('Part III · The ground under the chords', 'Scales and keys', 'Notes travel in families. Measure the distance between two notes, build the scales that whole pieces are made from, then learn to read the key a piece lives in.',
     [('Intervals', 'the distance between notes'), ('Scales', 'major and minor'), ('Keys', 'signatures and the circle')],
     [(t, PM.PAGE[k]) for t, k in (('Counting intervals', 'S1'), ('Major, minor and perfect', 'S2'), ('Major scales', 'S3'), ('Minor scales', 'S4'), ('Keys and key signatures', 'S5'), ('Finding the key', 'S6'), ('The circle of fifths', 'S7'), ('Tips: when a note sounds wrong', 'ST'))])
+exec(open('/tmp/claude-0/pk/openart.py').read())
+OPEN2 = opener_art('Part I · Which note', 'Pitch', 'High or low? That is the first question every note answers. Start with the keys under your fingers, then find where they live on the staff and how sharps and flats move them. Everything in this part is in this one picture.', 'P', PM.PAGE)
+OPEN3 = opener_art('Part III · The ground under the chords', 'Scales and keys', 'Notes travel in families. Measure the distance between two notes, build the scales that whole pieces are made from, then learn to read the key a piece lives in. All of it is in one scale.', 'S', PM.PAGE)
 def _write(name, body):
-    html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}</style></head><body>{body}{_flowjs}</body></html>'
+    html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS}</style></head><body>{body}{_flowjs}</body></html>'
     open('/mnt/user-data/outputs/house-rooms/' + name, 'w').write(html)
 _write('handbook-pitch.html', OPEN2 + _remap(_P1) + PT1)
 _write('handbook-scales.html', OPEN3 + _remap(_P3) + PT)
