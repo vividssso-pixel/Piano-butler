@@ -1,10 +1,10 @@
 # One page map for the whole Handbook (her 5 Nov: topics may take 2 or 3 pages, so page numbers are computed, never typed).
 # Write a reference as {{H3}} (first page of Harmony 3) or {{H3+1}} (its second page); page() fills in the number.
 import re
-PARTS = [('P', 'Pitch', 5), ('T', 'Time', 7), ('S', 'Scales and keys', 7), ('H', 'Harmony', 8)]
+PARTS = [('P', 'Pitch', 5), ('T', 'Time', 7), ('S', 'Scales and keys', 7), ('H', 'Harmony', 10)]
 PLANNED = {'H': 12}   # chapters planned but not built yet: their numbers follow on, for forward references
 TIPS = {'P': True, 'T': True, 'S': True, 'H': False}
-COUNT = {'T2': 3, 'H1': 3}          # pages per topic; 2 unless set here
+COUNT = {'T2': 3, 'H1': 3, 'H9': 3}          # pages per topic; 2 unless set here
 START = 21          # the Pitch opener
 def build(count=None, legacy=False):
     c = {} if legacy else dict(COUNT, **(count or {})); page, n = {}, START
