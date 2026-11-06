@@ -253,8 +253,9 @@ const JOBS = S.jobs || {
 // margin: first each line's natural width, then every line of the group justified to the group's widest.
 const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
   pageMarginTop: 30, pageMarginBottom: o.rows ? 500 : o.counts || o.boxes ? 300 : 40, pageMarginLeft: o.pml || 20, pageMarginRight: 20,
-  spacingLinear: o.sl || 0.25, spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.ltm || (o.rhythm ? 2 : 5),
-  lyricWordSpace: o.lws || 3.4, lyricSize: o.lys || 4.0, fingeringScale: 0.9,
+  spacingLinear: o.words && o.rhythm ? Math.min(o.sl || 0.25, +(process.env.WSL || 0.4)) : (o.sl || 0.25),   // a line with words: as tight as Verovio likes, the words then set the room (her 6 Nov 15:00: bigger notes)
+  spacingNonLinear: o.snl || 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.ltm || (o.rhythm ? 2 : 5),
+  lyricWordSpace: o.lws || 3.4, lyricSize: o.lys || +(process.env.LYS || 3.6), fingeringScale: 0.9,
   ...(o.staff5 ? { rightMarginClef: 2, leftMarginMeterSig: 2, rightMarginMeterSig: 2 } : { rightMarginClef: 1, leftMarginMeterSig: 1, rightMarginMeterSig: 1 }),   // room round the clef and the time on our big staff (her 4 Nov 21:11)
   ...(o.letters ? { leftMarginNote: 2, rightMarginNote: 1.5, leftMarginBarLine: 1.5, rightMarginBarLine: 2 } : { leftMarginNote: 1, rightMarginNote: 0, leftMarginBarLine: 0, rightMarginBarLine: 0 }),   // set every time: the toolkit keeps options between jobs   // big lettered heads: room round each and off the bar lines (her 4 Nov 13:22)
   ...extra });
@@ -341,16 +342,29 @@ function mapX(svg, knotsOld, knotsNew) {
 // through different stretches of the line, so after it each plain head gets its stem back at the distance Verovio set
 // (up: on the right edge, down: on the left), and a quaver's flag goes with its stem
 const NOTE_STEM = /(<g id="([^"]+)" class="note">\s*<g class="notehead">\s*<use [^>]*translate\()(-?[\d.]+)(,[^>]*\/>\s*<\/g>\s*<g id="[^"]+" class="stem">\s*<path d="M)(-?[\d.]+)( -?[\d.]+ L)(-?[\d.]+)( -?[\d.]+"[^>]*\/>(?:\s*<g class="flag">\s*<use [^>]*translate\()?)(-?[\d.]+)?/g;
+// a word goes with its own note (her 6 Nov 14:59): a word's left edge can sit in the stretch before its note, so it is set
+// again at the distance from its head that Verovio gave it
+function keepWords(before, after) {
+  const HEAD = /class="notehead">(?:\s*<line [^>]*\/>)*\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/;
+  const parts = (svg) => svg.split(/(?=<g id="[^"]+" class="note")/);
+  const off = {}; parts(before).forEach(p => { const id = (p.match(/^<g id="([^"]+)" class="note"/) || [])[1]; if (!id) return; const h = p.match(HEAD), t = p.match(/class="syl">\s*<text x="(-?[\d.]+)"/); if (h && t) off[id] = +t[1] - +(h[1] || h[2]); });
+  return parts(after).map(p => { const id = (p.match(/^<g id="([^"]+)" class="note"/) || [])[1]; if (!id || off[id] == null) return p; const h = p.match(HEAD); if (!h) return p;
+    const x = Math.round((+(h[1] || h[2]) + off[id]) * 10) / 10; return p.replace(/(class="syl">\s*<text x=")(-?[\d.]+)/, `$1${x}`); }).join('');
+}
 function keepStems(before, after) {
   const off = {}; for (const m of before.matchAll(NOTE_STEM)) off[m[2]] = [+m[5] - +m[3], m[9] != null ? +m[9] - +m[5] : null];
   return after.replace(NOTE_STEM, (m, a, id, hx, b, sx, c, sx2, d, fx) => { if (!off[id]) return m; const x = Math.round((+hx + off[id][0]) * 10) / 10;
     return a + hx + b + x + c + x + d + (fx != null && off[id][1] != null ? Math.round((x + off[id][1]) * 10) / 10 : (fx ?? '')); });
 }
-// each note's word (syllable) width, in the line's own units, from its letters and size
+// each note's word (syllable) width, in the line's own units, from its letters (each its own width) and size
+function sylOffs(svg) {   // where each note's word starts, from its head (Verovio moves a word with a hyphen further left)
+  svg = staff1(svg); const HEAD = /class="notehead">(?:\s*<line [^>]*\/>)*\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/;
+  return svg.split(/(?=<g id="x\d+" class="note">)/).filter(p => /^<g id="x\d+" class="note">/.test(p)).map(p => { const h = p.match(HEAD), t = p.match(/class="syl">\s*<text x="(-?[\d.]+)"/); return h && t ? +t[1] - +(h[1] || h[2]) : -144; });
+}
 function sylWidths(svg) {
   svg = staff1(svg); const starts = [...svg.matchAll(/<g id="x\d+" class="note">/g)].map(m => m.index); starts.push(svg.length);
   return starts.slice(0, -1).map((st, i) => { const seg = svg.slice(st, starts[i + 1]); const m = seg.match(/class="syl">[\s\S]*?<tspan font-size="(\d+)px">([^<]*)<\/tspan>/);
-    return m ? m[2].length * +m[1] * 0.56 + (/class="syl">[\s\S]*?<rect/.test(seg) ? +m[1] * 0.5 : 0) : 0; });
+    return m ? [...m[2]].reduce((a, ch) => a + (/[mwMW]/.test(ch) ? 0.78 : /[iljtfrI.,;:!'’ ]/.test(ch) ? 0.3 : /[A-Z]/.test(ch) ? 0.66 : 0.53), 0) * +m[1] + (/class="syl">[\s\S]*?<rect/.test(seg) ? +m[1] * 0.5 : 0) : 0; });
 }
 const MIN_FIT = 0.9, EVEN = true, EVEN_K = +(process.env.EVEN_K || 0.6);   // how far toward even beats (1 = all the way)
 for (const g of new Set(Object.keys(out).map(group))) {
@@ -361,11 +375,26 @@ for (const g of new Set(Object.keys(out).map(group))) {
   const n = Math.max(...info.map(i => i.bars.length)), same = info.every(i => i.bars.length === n);
   const wid = info.map(i => i.bars.map((b, j) => b - (j ? i.bars[j - 1] : i.first - 260)));   // natural widths, as engraved
   const wordy = ks.some(k => JOBS[k][2].words);   // without words every bar of the same length gets the same width (her 6 Nov 14:24)
-  const col = [...Array(n)].map((_, j) => same && wordy ? Math.max(...wid.map(w => w[j])) : 1), tot = col.reduce((a, b) => a + b, 0);
-  const span0 = Math.min(...info.map(i => i.bars[i.bars.length - 1])) - s, fit = span0 / tot;
-  const keep = same && fit < MIN_FIT;   // never crowd the words: the bars stay as engraved (only the beats evened inside them)
+  // with words (her 6 Nov 14:59: 'notes leaning to one side'): each bar gets the room its words need, and otherwise every bar
+  // the same share (the bars needing more take it, the rest share what is left evenly)
+  const needOf = (k) => { const [b0, b1, oo] = JOBS[k], data = (oo.src != null ? S.more[oo.src].bars : S.bars).slice(b0, b1);
+    const SK = n => n[0] === 'r' || (oo.lh && oo.mix && (S.hand || {})[n[0]] === 'L'); const sy = sylWidths(out[k]), so = sylOffs(out[k]); let h = 0;
+    return data.map(bar => { const it = []; let t = 0; bar.forEach(n => { if (n[0] === 'r') it.push({ r: 1, w: 0, f: 0, t }); else { it.push({ w: sy[h] || 0, f: sy[h] ? so[h] : 0, t }); h++; } t += LEN[n[1]]; });
+      if (!it.length) return 600; const a = it[0], z = it[it.length - 1], fix = Math.max(330, 100 - a.f) + Math.max(z.r ? 400 : 330, z.f + z.w - 90) + 212;
+      let g = 0, u = 0; for (let i = 1; i < it.length; i++) { const wg = Math.max(300, it[i - 1].f + it[i - 1].w - it[i].f + 150); g += wg; u = Math.max(u, wg / (it[i].t - it[i - 1].t)); }
+      return EVENNEED ? fix + u * (z.t - a.t) : fix + g; }); };   // even: every beat as wide as the widest word needs   // the words' room; the beats take what is left
+  let col = [...Array(n)].map(() => 1), keep = false;
+  const spanAll = Math.min(...info.map(i => i.bars[i.bars.length - 1])) - s;
+  let EVENNEED = true; if (same && wordy) { const ev = ks.map(needOf), evTot = [...Array(n)].reduce((a, _, j) => a + Math.max(...ev.map(r => r[j] || 0)), 0); if (evTot > spanAll * +(process.env.EVG || 0)) EVENNEED = false; if (process.env.DBG6) console.log(g, Math.round(evTot), Math.round(spanAll), EVENNEED); }   // all even if the line has room, else only what the words need
+  if (same && wordy) { const nd = ks.map(needOf), need = [...Array(n)].map((_, j) => Math.max(...nd.map(r => r[j] || 0)));
+    let fixed = new Set(), q = 0;
+    for (let it = 0; it < n; it++) { const free = [...Array(n).keys()].filter(j => !fixed.has(j)); q = (spanAll - [...fixed].reduce((a, j) => a + need[j], 0)) / free.length;
+      const more = free.filter(j => need[j] > q); if (!more.length) break; more.forEach(j => fixed.add(j)); }
+    col = need.map((v, j) => fixed.has(j) ? v : Math.max(q, 1)); if (process.env.DBG5) console.log(g, ks.join(','), JSON.stringify(need.map(Math.round)), Math.round(spanAll), JSON.stringify(col.map(Math.round))); }
+  const tot = col.reduce((a, b) => a + b, 0);
+  const grow = same && wordy && tot > spanAll ? tot - spanAll : 0;   // the words need more room than the line has: the line grows (the page scales it back), the gaps stay even   // never crowd the words: the bars stay as engraved (only the beats evened inside them)
   if (keep) console.log('bars left as engraved in ' + g + ' (would squeeze to ' + fit.toFixed(2) + ')');
-  const E = Math.min(...info.map(i => i.bars[i.bars.length - 1]));   // one right edge for every line, so the last bar lines stand together too
+  const E = Math.min(...info.map(i => i.bars[i.bars.length - 1])) + grow;   // one right edge for every line, so the last bar lines stand together too
   ks.forEach((k, j) => { const { bars, first } = info[j], a1 = first - 260, end = E;
     if (keep && JOBS[k][2].noEven) return;
     const span = end - s; let x = s; const nw = keep ? [a1, ...bars] : [s, ...bars.map((b, i) => (x += span * (same ? col[i] / tot : 1 / bars.length)))];
@@ -378,8 +407,8 @@ for (const g of new Set(Object.keys(out).map(group))) {
     if (process.env.DBG) console.log(k, JSON.stringify(sylWidths(out[k]).map(Math.round)), JSON.stringify(info[j].bars), data.flat().filter(n => !SKIP(n)).length, info[j].heads.length, data.length, bars.length);
     if (EVEN && !oo.rhythm && data.flat().filter(n => !SKIP(n)).length === info[j].heads.length && data.length === bars.length) {
       // as even by the beat as the words allow (her 5 Nov 13:50): try all the way first, then less, until no two words touch
-      const sy = sylWidths(out[k]);
-      const build = (K) => { const o = [a1], nn = [s0], hx2 = []; let h = 0, rr = 0;
+      const sy = sylWidths(out[k]), so = sylOffs(out[k]);
+      const build = (K) => { const o = [a1], nn = [s0], hx2 = []; let h = 0, rr = 0, si = 0;   // h: heads seen, si: words (a hidden left-hand note has a word but no head)
         data.forEach((bar, bi) => { const os = bi ? bars[bi - 1] : a1, oe = bars[bi], ns = nw[bi], ne = nw[bi + 1];
           // by the beat, and the notes as a whole centred in the bar (her 6 Nov 10:09: 'never leaning to one side'):
           // the gap after the bar line and the gap before the next one are the same
@@ -387,26 +416,33 @@ for (const g of new Set(Object.keys(out).map(group))) {
           // the notes as a whole are then centred, the gap after the bar line the same as the gap before the next one
           const T = bar.reduce((a, n) => a + LEN[n[1]], 0), W = ne - ns;
           // the items in the bar: notes and rests (a rest takes its place like a note, so it never crowds one)
-          const it = []; { let t = 0, hh = h; bar.forEach(n => { if (n[0] === 'r') it.push({ t, r: true, w: 0 }); else if (!SKIP(n)) it.push({ t, w: sy[hh++] || 0 }); t += LEN[n[1]]; }); }
-          const ni = it.length, Lm = Math.max(330, it[0] ? it[0].w / 2 + 200 : 0), Rm = Math.max(ni && it[ni - 1].r ? 400 : 330, ni ? it[ni - 1].w / 2 + 200 : 0);   // a rest is wider than a head   // a head, and its word, never crowd a bar line
-          const u0 = W / T, gap = it.map((x, i) => i ? Math.max((x.t - it[i - 1].t) * u0, (it[i - 1].w + x.w) / 2 + 140, 300) : 0);
-          let span = gap.reduce((a, g) => a + g, 0), sc = 1; const room = W - Lm - Rm;
+          const it = []; { let t = 0; bar.forEach(n => { if (n[0] === 'r') it.push({ t, r: true, w: 0, f: 0 }); else { it.push({ t, w: sy[si] || 0, f: sy[si] ? so[si] : 0, gh: SKIP(n) }); si++; } t += LEN[n[1]]; }); }
+          const ni = it.length, Lm = Math.max(330, ni ? 100 - it[0].f : 0), Rm = Math.max(ni && it[ni - 1].r ? 400 : 330, ni ? it[ni - 1].f + it[ni - 1].w - 90 : 0);   // a word's own start and end, not only its note's   // a word starts at its note and runs to the right   // a rest is wider than a head   // a head, and its word, never crowd a bar line
+          // the beat's step: as big as the bar allows (up to an even quarter of it), found so beats and words fill the room exactly
+          const room = W - Lm - Rm, gapAt = (u) => it.map((x, i) => i ? Math.max((x.t - it[i - 1].t) * u, it[i - 1].f + it[i - 1].w - x.f + 150, 300) : 0), sum = (u) => gapAt(u).reduce((a, g) => a + g, 0);
+          let lo = 0, hi = W / T; if (sum(hi) > room - 212) { for (let r = 0; r < 30; r++) { const md = (lo + hi) / 2; if (sum(md) > room - 212) hi = md; else lo = md; } hi = lo; }
+          const gap = gapAt(hi); if (process.env.DBG7 && bi === 0) console.log(k, JSON.stringify(it.map(x => [x.t, Math.round(x.w), Math.round(x.f)])), JSON.stringify(gap.map(Math.round)), Math.round(hi), Math.round(room));
+          let span = gap.reduce((a, g) => a + g, 0), sc = 1;
           if (span > room - 212) { sc = (room - 212) / span; span = room - 212; }
           const gw = ni && it[ni - 1].r ? 270 : 212, lead = Math.max(Lm, (W - span - gw) / 2);   // centred by what is seen: the last glyph's own width counts
           let px = ns + lead; if (process.env.DBG2 && bi === 0) console.log(k, K, 'ns', ns, 'ne', ne, 'os', os, 'oe', oe, 'lead', lead, 'span', span, 'sc', sc, 'heads', info[j].heads.slice(h, h + 4));
           it.forEach((x, i) => { px += i ? gap[i] * sc : 0;
+            if (x.gh) { hx2.push(px); return; }   // the hidden note: its word's place, no head to move
             const hx = x.r ? info[j].rests[rr++] : info[j].heads[h++]; if (hx == null) return;
             const ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + K * (px - ox);
             if (!x.r) hx2.push(nx); if (hx > o[o.length - 1] && nx > nn[nn.length - 1]) { o.push(hx); nn.push(nx); } });
           o.push(oe); nn.push(ne); });
         return { o, nn, hx2 }; };
-      const fits = ({ hx2 }) => hx2.every((x, i) => i === 0 || !sy.length || (x - hx2[i - 1]) >= ((sy[i - 1] || 0) + (sy[i] || 0)) / 2 + 120);
+      const fits = ({ hx2 }) => hx2.every((x, i) => i === 0 || !sy.length || (x - hx2[i - 1]) >= (sy[i - 1] ? so[i - 1] + sy[i - 1] - (sy[i] ? so[i] : 0) + 120 : 0));
       const worst = ({ hx2 }) => Math.min(...hx2.map((x, i) => i === 0 || !sy.length ? 1e9 : (x - hx2[i - 1]) - ((sy[i - 1] || 0) + (sy[i] || 0)) / 2 - 120));
-      let best = null; for (const K of [1, 0.85, 0.7, 0.55, 0.4, 0.25, 0]) { const c = build(K); if (fits(c)) { best = c; break; } }
+      let best = null; for (const K of [1, 0.85, 0.7, 0.55, 0.4, 0.25, 0]) { const c = build(K); if (fits(c)) { best = c; if (process.env.DBG4) console.log(k, 'K', K); break; } }
+      if (!best && process.env.DBG4) { const c = build(1); console.log(k, 'no K fits', JSON.stringify(c.hx2.map((x, i) => i && sy[i - 1] ? Math.round((x - c.hx2[i - 1]) - (so[i - 1] + sy[i - 1] - (sy[i] ? so[i] : 0) + 120)) : 0))); }
       if (best) { ko = best.o; kn = best.nn; } else { ko = [a1, ...bars]; kn = nw; }
     } else { ko = [a1, ...bars]; kn = nw; }
     if (process.env.DBG3) console.log(k, JSON.stringify(ko.map(Math.round)), JSON.stringify(kn.map(Math.round)));
-    out[k] = keepStems(out[k], mapX(out[k], ko, kn)); });
+    out[k] = keepWords(out[k], keepStems(out[k], mapX(out[k], ko, kn)));
+    if (grow) out[k] = out[k].replace(/<svg viewBox="0 0 ([\d.]+) ([\d.]+)"/, (m, w, h) => { const inner = +(out[k].match(/class="definition-scale"[^>]*viewBox="0 0 ([\d.]+)/) || [0, 0])[1];
+      return `<svg viewBox="0 0 ${(+w * (inner + grow) / inner).toFixed(1)} ${h}"`; }).replace(/(class="definition-scale"[^>]*viewBox="0 0 )([\d.]+)/, (m, a, w) => a + (+w + grow)); });   // the page grows with the line
 }
 // Stems back on their heads (her 5 Nov 13:14: 'stems barely hanging on'): the spacing passes move a head and its stem
 // through different stretches of the line, so each stem is set again on its own head's edge, up on the right, down on the left
