@@ -7,8 +7,22 @@ WMINCSS = """
 .ht{font-size:15px!important} .ht td{font-size:15px!important} .ansT td{font-size:14px!important} .fc .add,.add{font-size:14.5px!important} .mu2{font-size:14px!important} .pzl{font-size:14px!important}
 .add:has(.wl ~ .wl) .wl{width:50px!important} .rem2{font-size:15px!important} .how{font-size:15px!important;margin:2px 0 6px!important} .row{font-size:15px!important} .sent p{font-size:15px!important}
 """
+import base64 as _b64h, os as _osh
+_WBH = {'Pulse and the bar': 'T1', 'Notes and rests': 'T2', 'How long is a note?': 'T3', 'Time signatures': 'T4', 'Compound and irregular time': 'T5', 'Groups and upbeats': 'T6', 'Off the beat': 'T7',
+        'The keyboard': 'P1', 'Reading the notes': 'P3', 'Sharps, flats and naturals': 'P5', 'Scales': 'S3',
+        'Chords and triads': 'H1', 'Four kinds of triad': 'H2', 'Chords in a key': 'H3', 'Seventh chords': 'H5', 'Colour chords': 'H6', 'The tower': 'H7', 'Slash chords': 'H8', 'Chords from outside the key': 'H9', 'Cadences': 'H10', 'Chords under a melody': 'H11'}
+def _wbheroes(h):   # her 6 Nov: each Learn page shows the Handbook chapter's opening picture beside its Remember line (heroes/ from heroshot.js)
+    def rep(m):
+        k = _WBH.get(m.group(2).split(' · ')[1].strip()) if m.group(2).count(' · ') >= 2 else None; f = f'/tmp/claude-0/pk/heroes/{k}.png' if k else None
+        if not f or not _osh.path.exists(f): return m.group(0)
+        img = 'data:image/png;base64,' + _b64h.b64encode(open(f, 'rb').read()).decode()
+        mh = {'T2': 64, 'H1': 66, 'H2': 82, 'H7': 92, 'S1': 76}.get(k, 108)   # a smaller picture where the page is already full
+        return f'<div class="wbhd"><div>{m.group(1)}</div><img src="{img}" alt="" style="max-height:{mh}px;max-width:{32 if k == 'S1' else 46}%"></div><p class="rem2">{m.group(4)}</p>'
+    h = _re2.sub(r'(<div class="kick">([^<]*?)</div><h1>.*?</h1>)<p class="rem2">(?P<x>)(.*?)</p>', lambda m: rep(m) if m.group(2).endswith('· Learn') else m.group(0), h, flags=_re2.S)
+    return h.replace('</style></head>', '.wbhd{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-bottom:4px} .wbhd>div{flex:1;min-width:0} .wbhd img{height:auto;max-height:108px;max-width:46%;object-fit:contain;flex:0 1 auto;margin-bottom:2px}</style></head>', 1)
 def _LG(h):   # workbook pages still name Handbook pages in the pre-5-Nov numbering; map them to the live page map
     h = h.replace('</style></head>', WMINCSS + '</style></head>', 1)
+    h = _wbheroes(h)
     return _re2.sub(r'\b([Pp]\.(?: |&nbsp;|\u00a0))(\d\d)\b', lambda m: m.group(1) + str(PM.legacy(int(m.group(2))) if int(m.group(2)) >= 22 else m.group(2)), h)
 def star(n): return '★' * n + '<span class="so">' + '★' * (3 - n) + '</span>'
 def ex(n, title, stars, how, body):
