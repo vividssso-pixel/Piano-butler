@@ -40,7 +40,7 @@ function mei(b0, b1, o) {
     { const seen = new Set(); l1 = l1.replace(/pname="([a-g])" oct="(\d)" accid="([sf])"/g, (m, a, b, c) => { const k = a + b + c; if (seen.has(k)) return `pname="${a}" oct="${b}" accid.ges="${c}"`; seen.add(k); return m; }); }   // a sharp lasts the bar: written once
     let st2 = '';
     const CH = (o.src != null && S.more[o.src].chords) || S.chords;   // a tune of its own brings its own chords
-    if (o.lh) { const ch = CH[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';
+    if (o.lh) { const ch = CH[b], last = b === S.bars.length - 1, pat = (S.lhpat && o.src == null && S.lhpat[b] && S.lh[o.lh][S.lhpat[b]]) || (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';   // a bar may have its own left-hand part (the answer, the BANG)
       pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d) : noteXml(ps[0], d); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
       st2 = `<staff n="2"><layer n="1">${l2}</layer></staff>`; }
     const DY = (o.src != null ? S.more[o.src].dyn : S.dyn) || {};   // p, pp, f, ff under the right hand's staff (Lesson 9's surprise)
