@@ -225,10 +225,12 @@ def foot(see, practise):
 def two(a, b, r='1fr 1fr'): return f'<div class="two" style="grid-template-columns:{r}"><div>{a}</div><div>{b}</div></div>'
 
 flow = ''.join(f'<div class="fl"><b>{a}</b><span>{b}</span></div>' + ('<span class="fa">›</span>' if i < 4 else '') for i, (a, b) in enumerate([('Pulse and bar', 'the steady beat, in groups of 2, 3 or 4'), ('Note values', 'how long each sound and silence lasts'), ('Longer notes', 'dots and ties'), ('Time signature', 'how many beats, and which note is one beat'), ('Rhythm', 'long and short, on and off the beat')]))
-OPEN = f'''<section class="pg part2"><div class="pframe"><div class="pk">Part II · When, and for how long</div><div class="pt">Time</div><div class="pdv"></div>
+exec(open('/tmp/claude-0/pk/openart.py').read())   # her 6 Nov (A): the part opener is one piece of music, taken apart
+OPEN_OLD = f'''<section class="pg part2"><div class="pframe"><div class="pk">Part II · When, and for how long</div><div class="pt">Time</div><div class="pdv"></div>
 <p class="pl">Music never stands still. Underneath runs a steady <b>pulse</b>, packed into <b>bars</b>, and every note and rest gets its fair share. We start with the big beat and zoom in to a single note.</p>
 <div class="flow">{flow}</div>
 <div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{PM.PAGE[p]}</span></div>' for x, p in (('Pulse, tempo and the bar', 'T1'), ('Notes and rests', 'T2'), ('How long is a note?', 'T3'), ('Time signatures', 'T4'), ('Compound and irregular time', 'T5'), ('Rhythm: groups and upbeats', 'T6'), ('Rhythm: off the beat', 'T7'), ('Tips: when the rhythm slips', 'TT')))}</div></div></section>'''
+OPEN = opener_art('Part II · When, and for how long', 'Time', 'Music never stands still. Underneath runs a steady <b>pulse</b>, packed into <b>bars</b>, and every note and rest gets its fair share. Everything in this part is in these two bars.', 'T', PM.PAGE)
 
 
 # ---------- her 6 Nov: one big picture opens each Time chapter ----------
@@ -477,7 +479,7 @@ FLOWJS = '''<script>
   document.body.dataset.flowed = '1';
 })();
 </script>'''
-html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}</style></head><body>{OPEN}{_body}{FLOWJS}</body></html>'
+html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS}</style></head><body>{OPEN}{_body}{FLOWJS}</body></html>'
 
 open('/mnt/user-data/outputs/house-rooms/handbook-time2.html', 'w').write(html)
 print('ok')

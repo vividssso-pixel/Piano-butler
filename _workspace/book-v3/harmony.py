@@ -12,10 +12,11 @@ for _n in ('n1', 'n2', 'n3', 'n4', 'n5'): YKDAN = YKDAN.replace(f'<g id="{_n}" c
 # ---------- Part III opener ----------
 HTOC = [(t, PM.PAGE[k]) for t, k in (('Chords and triads', 'H1'), ('Four kinds of triad', 'H2'), ('Chords in a key', 'H3'), ('Inversions', 'H4'), ('Seventh chords', 'H5'), ('Colour chords', 'H6'), ('The tower: 9, 11, 13', 'H7'), ('Slash chords', 'H8'), ('Chords from outside the key', 'H9'), ('Cadences', 'H10'), ('Chords under a melody', 'H11'), ('Progressions everywhere', 'H12'), ('Tips: when a chord sounds wrong', 'HT'))]
 hflow = ''.join(f'<div class="fl"><b>{a}</b><span>{b}</span></div>' + ('<span class="fa">›</span>' if i < 4 else '') for i, (a, b) in enumerate([('Triads', 'the house'), ('Sevenths', 'one more floor'), ('The tower', '9, 11, 13'), ('Slash chords', 'a new bass'), ('Progressions', 'chords that travel')]))
-HOPEN = f"""<section class="pg part2"><div class="pframe"><div class="pk">Part IV · Which notes sound together</div><div class="pt">Harmony</div><div class="pdv"></div>
+HOPEN_OLD = f"""<section class="pg part2"><div class="pframe"><div class="pk">Part IV · Which notes sound together</div><div class="pt">Harmony</div><div class="pdv"></div>
 <p class="pl">A melody is the singer; harmony is the band behind it: the chords underneath. Start with the triad, a house of three notes, then build it higher floor by floor, and finish with the chords that close a phrase and carry a song.</p>
 <div class="flow">{hflow}</div>
 <div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p}</span></div>' for x, p in HTOC)}</div></div></section>"""
+HOPEN = opener_art('Part IV · Which notes sound together', 'Harmony', 'A melody is the singer; harmony is the band behind it: the chords underneath. Every chapter of this part is in these four bars of Twinkle.', 'H', PM.PAGE)
 
 BIGSNOW = ('<svg viewBox="0 0 260 300" style="width:100%;max-width:330px;height:auto;display:block;margin:0 auto">'
     '<circle cx="100" cy="232" r="56" fill="#fde6dd" stroke="#e4572e" stroke-width="3"/><circle cx="100" cy="134" r="42" fill="#fff" stroke="#26296b" stroke-width="3"/><circle cx="100" cy="60" r="31" fill="#fff" stroke="#26296b" stroke-width="3"/>'
@@ -506,6 +507,6 @@ css += """
 
 _secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)), ('H9', H9), ('H10', H10), ('H11', H11), ('H12', H12))]
 _secs.append(_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{PM.PAGE["HT"]}</span></div>', HT))
-html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}</style></head><body>{HOPEN}{"".join(_secs)}{_flowjs}</body></html>'
+html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS}</style></head><body>{HOPEN}{"".join(_secs)}{_flowjs}</body></html>'
 open('/mnt/user-data/outputs/house-rooms/handbook-harmony.html', 'w').write(html)
 print('ok')
