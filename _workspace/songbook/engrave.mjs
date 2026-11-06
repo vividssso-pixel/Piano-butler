@@ -309,8 +309,9 @@ function barsOf(svg) {
   const body = svg.slice(svg.indexOf('</defs>') > 0 ? svg.indexOf('</defs>') : 0);
   const bars = [...body.matchAll(/class="barLine">\s*<path d="M(-?[\d.]+) /g)].map(m => +m[1]);
   const one = staff1(body);
-  const heads = [...one.matchAll(/class="notehead">\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/g)].map(m => +(m[1] || m[2]));
-  return { bars, heads, first: heads.length ? Math.min(...heads) : null };
+  const heads = [...one.matchAll(/class="notehead">(?:\s*<line [^>]*\/>)*\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/g)].map(m => +(m[1] || m[2]));   // a head's own ledger lines come first
+  const rests = [...one.matchAll(/class="rest">\s*<use [^>]*translate\((-?[\d.]+),/g)].map(m => +m[1]);
+  return { bars, heads, rests, first: heads.length ? Math.min(...heads) : null };
 }
 function mapX(svg, knotsOld, knotsNew) {
   const f = (x) => { x = +x; if (x <= knotsOld[0]) return x;
@@ -353,7 +354,8 @@ for (const g of new Set(Object.keys(out).map(group))) {
   // each bar column as wide as its widest bar in the group (so words never crowd), then all of them fill the line
   const n = Math.max(...info.map(i => i.bars.length)), same = info.every(i => i.bars.length === n);
   const wid = info.map(i => i.bars.map((b, j) => b - (j ? i.bars[j - 1] : i.first - 260)));   // natural widths, as engraved
-  const col = [...Array(n)].map((_, j) => same ? Math.max(...wid.map(w => w[j])) : 1), tot = col.reduce((a, b) => a + b, 0);
+  const wordy = ks.some(k => JOBS[k][2].words);   // without words every bar of the same length gets the same width (her 6 Nov 14:24)
+  const col = [...Array(n)].map((_, j) => same && wordy ? Math.max(...wid.map(w => w[j])) : 1), tot = col.reduce((a, b) => a + b, 0);
   const span0 = Math.min(...info.map(i => i.bars[i.bars.length - 1])) - s, fit = span0 / tot;
   const keep = same && fit < MIN_FIT;   // never crowd the words: the bars stay as engraved (only the beats evened inside them)
   if (keep) console.log('bars left as engraved in ' + g + ' (would squeeze to ' + fit.toFixed(2) + ')');
@@ -371,17 +373,25 @@ for (const g of new Set(Object.keys(out).map(group))) {
     if (EVEN && !oo.rhythm && data.flat().filter(n => !SKIP(n)).length === info[j].heads.length && data.length === bars.length) {
       // as even by the beat as the words allow (her 5 Nov 13:50): try all the way first, then less, until no two words touch
       const sy = sylWidths(out[k]);
-      const build = (K) => { const o = [a1], nn = [s0], hx2 = []; let h = 0;
+      const build = (K) => { const o = [a1], nn = [s0], hx2 = []; let h = 0, rr = 0;
         data.forEach((bar, bi) => { const os = bi ? bars[bi - 1] : a1, oe = bars[bi], ns = nw[bi], ne = nw[bi + 1];
           // by the beat, and the notes as a whole centred in the bar (her 6 Nov 10:09: 'never leaning to one side'):
           // the gap after the bar line and the gap before the next one are the same
-          const T = bar.reduce((a, n) => a + LEN[n[1]], 0), W = ne - ns, tl = T - LEN[bar[bar.length - 1][1]];
-          const nh = bar.filter(n => !SKIP(n)).length, Lm = Math.max(360, (sy[h] || 0) / 2 + 280), Rm = Math.max(360, (sy[h + nh - 1] || 0) / 2 + 280);   // a head, and its word, never crowd a bar line
-          let u = W / T, lead = (W - tl * u) / 2; if (lead < Math.max(Lm, Rm)) { lead = Lm; u = tl ? (W - Lm - Rm) / tl : 0; }
-          let t = 0;
-          bar.forEach(n => { if (SKIP(n)) { t += LEN[n[1]]; return; }
-            const hx = info[j].heads[h++], ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + K * (ns + lead + t * u - ox);
-            hx2.push(nx); if (hx > o[o.length - 1] && nx > nn[nn.length - 1]) { o.push(hx); nn.push(nx); } t += LEN[n[1]]; });
+          // her 6 Nov 14:24 ('check every gap'): each gap is its beats' share of the bar, but never less than its two words need;
+          // the notes as a whole are then centred, the gap after the bar line the same as the gap before the next one
+          const T = bar.reduce((a, n) => a + LEN[n[1]], 0), W = ne - ns;
+          // the items in the bar: notes and rests (a rest takes its place like a note, so it never crowds one)
+          const it = []; { let t = 0, hh = h; bar.forEach(n => { if (n[0] === 'r') it.push({ t, r: true, w: 0 }); else if (!SKIP(n)) it.push({ t, w: sy[hh++] || 0 }); t += LEN[n[1]]; }); }
+          const ni = it.length, Lm = Math.max(330, it[0] ? it[0].w / 2 + 200 : 0), Rm = Math.max(ni && it[ni - 1].r ? 400 : 330, ni ? it[ni - 1].w / 2 + 200 : 0);   // a rest is wider than a head   // a head, and its word, never crowd a bar line
+          const u0 = W / T, gap = it.map((x, i) => i ? Math.max((x.t - it[i - 1].t) * u0, (it[i - 1].w + x.w) / 2 + 140, 300) : 0);
+          let span = gap.reduce((a, g) => a + g, 0), sc = 1; const room = W - Lm - Rm;
+          if (span > room - 212) { sc = (room - 212) / span; span = room - 212; }
+          const gw = ni && it[ni - 1].r ? 270 : 212, lead = Math.max(Lm, (W - span - gw) / 2);   // centred by what is seen: the last glyph's own width counts
+          let px = ns + lead; if (process.env.DBG2 && bi === 0) console.log(k, K, 'ns', ns, 'ne', ne, 'os', os, 'oe', oe, 'lead', lead, 'span', span, 'sc', sc, 'heads', info[j].heads.slice(h, h + 4));
+          it.forEach((x, i) => { px += i ? gap[i] * sc : 0;
+            const hx = x.r ? info[j].rests[rr++] : info[j].heads[h++]; if (hx == null) return;
+            const ox = ns + (hx - os) * (ne - ns) / (oe - os), nx = ox + K * (px - ox);
+            if (!x.r) hx2.push(nx); if (hx > o[o.length - 1] && nx > nn[nn.length - 1]) { o.push(hx); nn.push(nx); } });
           o.push(oe); nn.push(ne); });
         return { o, nn, hx2 }; };
       const fits = ({ hx2 }) => hx2.every((x, i) => i === 0 || !sy.length || (x - hx2[i - 1]) >= ((sy[i - 1] || 0) + (sy[i] || 0)) / 2 + 120);
@@ -389,6 +399,7 @@ for (const g of new Set(Object.keys(out).map(group))) {
       let best = null; for (const K of [1, 0.85, 0.7, 0.55, 0.4, 0.25, 0]) { const c = build(K); if (fits(c)) { best = c; break; } }
       if (best) { ko = best.o; kn = best.nn; } else { ko = [a1, ...bars]; kn = nw; }
     } else { ko = [a1, ...bars]; kn = nw; }
+    if (process.env.DBG3) console.log(k, JSON.stringify(ko.map(Math.round)), JSON.stringify(kn.map(Math.round)));
     out[k] = keepStems(out[k], mapX(out[k], ko, kn)); });
 }
 // Stems back on their heads (her 5 Nov 13:14: 'stems barely hanging on'): the spacing passes move a head and its stem
