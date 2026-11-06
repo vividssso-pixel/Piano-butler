@@ -648,10 +648,12 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain, names }) {
   const segmentAt = {};
   offsets.forEach((off, idx) => { segmentAt[off] = segmentLabels[idx]; });
 
+  const anyOn = Object.keys(fingerAt).length + Object.keys(lit).length > 0;
   return (
     <svg viewBox={(-blackW/2)+' 0 '+(whiteCount*whiteW+blackW)+' '+whiteH} style={{width:'100%',display:'block',margin:'0 auto'}}>
+      <defs><pattern id="tkOffW" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f6f3ea"/><line x1="0" y1="0" x2="0" y2="7" stroke="#26296b" strokeWidth="1.3" opacity="0.2"/></pattern><pattern id="tkOffB" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#5b5e93"/><line x1="0" y1="0" x2="0" y2="6" stroke="#fff" strokeWidth="1.2" opacity="0.3"/></pattern></defs>
       {keys.filter(k => k.isWhite).map(k => {
-        const played = fingerAt[k.i];
+        const played = fingerAt[k.i], skip = anyOn && played == null && !lit[k.i];   // her 6 Nov: keys the scale skips, faintly hatched
         // Finger 5 only ever bookends the very top (RH) or very bottom (LH) note of the
         // whole scale -- it's not part of the repeating 1-2-3 / 1-2-3-4 cycle, so it's left
         // in the default, uncolored key style rather than joining either segment color.
@@ -659,7 +661,7 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain, names }) {
         return (
         <g key={'w'+k.i}>
           <rect x={k.whiteIndex*whiteW} y="0" width={whiteW} height={whiteH}
-            fill={seg ? seg.fill : (plain && lit[k.i] ? '#dfe2f6' : '#fff')}
+            fill={seg ? seg.fill : (plain && lit[k.i] ? '#dfe2f6' : skip ? 'url(#tkOffW)' : '#fff')}
             stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#4a4d86' : 'var(--muted)')}
             strokeWidth="2"/>
           {nameAt[k.i] && <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-24} textAnchor="middle" fontSize="13" fontWeight="900" fill="#26296b">{prettyAny(nameAt[k.i])}</text>}
@@ -682,7 +684,7 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain, names }) {
           {/* A black key always stays black (so a run of black keys is easy to see); its group
               colour shows as the outline and a stripe at the bottom (Sohyun, Phase 135). */}
           <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2} y="0" width={blackW} height={blackH}
-            fill="#1d1c22" stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#8c90d9' : 'none')} strokeWidth={seg || (plain && lit[k.i]) ? 3 : 0}/>
+            fill={anyOn && played == null && !lit[k.i] ? 'url(#tkOffB)' : '#1d1c22'} stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#8c90d9' : 'none')} strokeWidth={seg || (plain && lit[k.i]) ? 3 : 0}/>
           {seg && <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2 + 2} y={blackH - 9} width={blackW - 4} height="7" rx="1.5" fill={seg.fill}/>}
           {nameAt[k.i] && <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-36} textAnchor="middle" fontSize="11" fontWeight="900" fill="#fffefa">{prettyAny(nameAt[k.i])}</text>}
           {played && (
@@ -1077,7 +1079,7 @@ const GROUP_TINT = { two: '#fbe9e2', three: '#e9eaf4' };   // the book's members
 
 // Tappable keyboard. Key index i = octave*12 + pc, starting on C.
 // marks: { [i]: 'target'|'good'|'bad' }, labels: null | 'white' | 'all', tint: shade C-D-E / F-G-A-B groups.
-function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null, bigLabels = false, extraC = false, extraB = false, trail = null, trailLabels = null, overlay = null, top = 0, vx = null, clean = false, nameCol = null, numIn = false }) {   // numIn: numbers low in the key, a ring round each 1   // clean: thin quiet outlines, the colour is in the fill only   // Phase 512: extraB = one more B at the left end (C♭ sits there)   // Phase 499: extraC = one more C at the right end; trail = numbered dots above the keys, joined in order   // outline (Phase 462): [first, last] white key index, one navy frame round them
+function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null, bigLabels = false, extraC = false, extraB = false, trail = null, trailLabels = null, overlay = null, top = 0, vx = null, clean = false, nameCol = null, numIn = false, skip = null }) {   // skip (her 6 Nov): keys the scale skips, faintly hatched so children stop pressing them   // numIn: numbers low in the key, a ring round each 1   // clean: thin quiet outlines, the colour is in the fill only   // Phase 512: extraB = one more B at the left end (C♭ sits there)   // Phase 499: extraC = one more C at the right end; trail = numbered dots above the keys, joined in order   // outline (Phase 462): [first, last] white key index, one navy frame round them
   const whiteW = 36, whiteH = 132, blackW = 22, blackH = 82;
   const whites = [], blacks = [];
   let w = 0;
@@ -1097,9 +1099,10 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
   return (
     <svg viewBox={(vx ? vx[0] : -1) + ' ' + (-1 - TR) + ' ' + (vx ? vx[1] - vx[0] : width + 2) + ' ' + (whiteH + 2 + TR)} shapeRendering={edge}
       style={{width:'100%',display:'block',touchAction:'manipulation',userSelect:'none'}}>
+      {skip && <defs><pattern id="tkOffW" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f6f3ea"/><line x1="0" y1="0" x2="0" y2="7" stroke="#26296b" strokeWidth="1.3" opacity="0.2"/></pattern><pattern id="tkOffB" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#5b5e93"/><line x1="0" y1="0" x2="0" y2="6" stroke="#fff" strokeWidth="1.2" opacity="0.3"/></pattern></defs>}
       {whites.map(k => {
         const m = marks[k.i] && MARK_STYLE[marks[k.i]];
-        const fill = m ? m.white : (tint ? GROUP_TINT[whiteGroup(k.info.pc)] : '#fff');
+        const fill = m ? m.white : skip && skip.has(k.i) ? 'url(#tkOffW)' : (tint ? GROUP_TINT[whiteGroup(k.info.pc)] : '#fff');
         return (
           <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
             <rect x={k.x} y="0" width={whiteW} height={whiteH} fill={fill} style={{transition:'fill 0.25s'}}
@@ -1130,7 +1133,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
         const m = marks[k.i] && MARK_STYLE[marks[k.i]];
         return (
           <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
-            <rect x={k.x} y="0" width={blackW} height={blackH} fill={m ? m.black : '#1d1c22'}
+            <rect x={k.x} y="0" width={blackW} height={blackH} fill={m ? m.black : skip && skip.has(k.i) ? 'url(#tkOffB)' : '#1d1c22'}
               stroke={clean ? (m ? m.black : '#1d1c22') : m ? m.stroke : '#26296b'} strokeWidth={clean ? 1 : m ? (m.sw ? Math.min(m.sw, 2) : 2) : 1} rx={pixel ? 0 : 2}/>
             {numIn && names && names[k.i] === '1' && <circle cx={k.x + blackW / 2} cy={16} r={11} fill="none" stroke="#fff" strokeWidth="2" style={{pointerEvents:'none'}}/>}
             {names && names[k.i] && (
@@ -8473,14 +8476,15 @@ function ScaleTapKeyboard({ keyName, hand, showFingers, marks = {}, onTap, pixel
   const fingerAt = {}; entry.offsets.forEach((off, i) => { fingerAt[off] = entry[hand][i]; });
   const inScale = new Set(hideDots ? [] : entry.offsets);
   const ms = (m) => MARK_STYLE[m === 'picked' ? 'fof' : m];
-  const col = (m, white) => ms(m) ? (white ? ms(m).white : ms(m).black) : (white ? '#fff' : '#1d1c22');
+  const col = (m, white, i) => ms(m) ? (white ? ms(m).white : ms(m).black) : inScale.size && !inScale.has(i) ? (white ? 'url(#tkOffW)' : 'url(#tkOffB)') : (white ? '#fff' : '#1d1c22');   // her 6 Nov: keys the scale skips, faintly hatched
   const tap = (i) => (onTap ? () => onTap(i) : undefined);
   return (
     <svg viewBox={(-blackW / 2) + ' 0 ' + (whiteCount * whiteW + blackW) + ' ' + whiteH} shapeRendering={pixel ? 'crispEdges' : 'auto'}
       style={{width:'100%',display:'block',touchAction:'manipulation'}}>
+      <defs><pattern id="tkOffW" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f6f3ea"/><line x1="0" y1="0" x2="0" y2="7" stroke="#26296b" strokeWidth="1.3" opacity="0.2"/></pattern><pattern id="tkOffB" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#5b5e93"/><line x1="0" y1="0" x2="0" y2="6" stroke="#fff" strokeWidth="1.2" opacity="0.3"/></pattern></defs>
       {keys.filter(k => k.isWhite).map(k => (
         <g key={'w' + k.i} onClick={tap(k.i)} style={{cursor:onTap ? 'pointer' : 'default'}} data-off={k.i}>
-          <rect x={k.whiteIndex * whiteW} y="0" width={whiteW} height={whiteH} fill={col(marks[k.i], true)} stroke={ms(marks[k.i]) ? ms(marks[k.i]).stroke : '#a3a5c2'} strokeWidth={ms(marks[k.i]) ? 2.5 : 1.5}/>
+          <rect x={k.whiteIndex * whiteW} y="0" width={whiteW} height={whiteH} fill={col(marks[k.i], true, k.i)} stroke={ms(marks[k.i]) ? ms(marks[k.i]).stroke : '#a3a5c2'} strokeWidth={ms(marks[k.i]) ? 2.5 : 1.5}/>
           {inScale.has(k.i) && !marks[k.i] && <circle cx={k.whiteIndex * whiteW + whiteW / 2} cy={whiteH - 34} r="3" fill="#e4572e" opacity="0.5"/>}
           {showFingers && fingerAt[k.i] && <text x={k.whiteIndex * whiteW + whiteW / 2} y={whiteH - 12} textAnchor="middle" fontSize="15" fontWeight="800" fill="#26296b">{fingerAt[k.i]}</text>}
         </g>
@@ -8489,7 +8493,7 @@ function ScaleTapKeyboard({ keyName, hand, showFingers, marks = {}, onTap, pixel
         const x = (k.precedingWhiteIndex + 1) * whiteW - blackW / 2;
         return (
           <g key={'b' + k.i} onClick={tap(k.i)} style={{cursor:onTap ? 'pointer' : 'default'}} data-off={k.i}>
-            <rect x={x} y="0" width={blackW} height={blackH} fill={col(marks[k.i], false)} stroke="#26296b" strokeWidth="1"/>
+            <rect x={x} y="0" width={blackW} height={blackH} fill={col(marks[k.i], false, k.i)} stroke="#26296b" strokeWidth="1"/>
             {inScale.has(k.i) && !marks[k.i] && <circle cx={x + blackW / 2} cy={blackH - 26} r="3" fill="#e4572e"/>}
             {showFingers && fingerAt[k.i] && <text x={x + blackW / 2} y={blackH - 8} textAnchor="middle" fontSize="12" fontWeight="800" fill="#fff">{fingerAt[k.i]}</text>}
           </g>
@@ -61187,12 +61191,13 @@ function SscKeys({ start = 'C', o = {}, label, onTap }) {
   const VW = x0 * 2 + n * W, VH = T + H + B;
   const done = new Set(o.done || []), coral = new Set(o.coral || []), lit = new Set([].concat(o.lit == null ? [] : o.lit));
   const st = (k) => { const s = byId[k.id]; if (!s) return 'off'; if (lit.has(s.d)) return 'lit'; if (done.has(s.d)) return 'done'; if (coral.has(s.d)) return 'coral'; return 'on'; };
-  const fillW = { lit: '#f6c4b2', done: '#e4e5f3', coral: '#fbe3da', on: '#fff', off: '#fff' }, fillB = { lit: '#f08c70', done: '#6d6f9c', coral: PEN_C, on: PEN_N, off: PEN_N };
+  const fillW = { lit: '#f6c4b2', done: '#e4e5f3', coral: '#fbe3da', on: '#fff', off: 'url(#tkOffW)' }, fillB = { lit: '#f08c70', done: '#6d6f9c', coral: PEN_C, on: PEN_N, off: 'url(#tkOffB)' };   // off: keys the scale skips, faintly hatched (her 6 Nov)
   const tap = (k) => onTap ? () => onTap(k) : undefined;
   const nm = (s, y, size, fill) => <text x={cx(s)} y={y} textAnchor="middle" fontSize={size} fontWeight="900" fill={fill} style={{pointerEvents:'none'}}>{sscNameSvg(s.name, size)}</text>;
   const bx = (s) => s.white ? cx(s) : cx(keys.find(k => k.white && k.L === s.name[0]));   // a black note's box: over its letter's white key
   return (
     <svg viewBox={`0 0 ${VW} ${VH}`} role="img" aria-label={label} style={{width:'100%',display:'block',touchAction:'manipulation',userSelect:'none'}}>
+      <defs><pattern id="tkOffW" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f6f3ea"/><line x1="0" y1="0" x2="0" y2="7" stroke="#26296b" strokeWidth="1.3" opacity="0.2"/></pattern><pattern id="tkOffB" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#5b5e93"/><line x1="0" y1="0" x2="0" y2="6" stroke="#fff" strokeWidth="1.2" opacity="0.3"/></pattern></defs>
       {keys.filter(k => k.white).map(k => { const s = byId[k.id], state = st(k), miss = o.miss === k.id, y = T + H - (o.nums ? 46 : 16);
         return <g key={k.id} onClick={tap(k)} style={{cursor:onTap ? 'pointer' : 'default'}} data-ssc={k.id}>
           <rect x={x0 + k.i * W} y={T} width={W} height={H} rx="3" fill={fillW[state]} stroke={miss ? PEN_C : PEN_N} strokeWidth={miss ? 3.2 : 1.6}/>
@@ -75742,7 +75747,7 @@ function ScKeys({ marks, onTap, arcs, spans, nonce, names, ks, ncol, nums, ring,
       {b >= a && <path d={'M' + xa + ',-3 V-12 H' + xb + ' V-3'} fill="none" stroke={c} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>}
       <text x={xm} y="-17" textAnchor="middle" fontSize="18" fontWeight="900" fill={c} style={{fontVariantNumeric:'tabular-nums'}}>{lab}</text></g>; });
   return (<div style={{maxWidth:mw || 330,margin:'0 auto'}}>
-    <TapKeyboard octaves={oct || 2} extraC clean={clean} names={inKey ? names : null} nameCol={inKey ? ncol : null} numIn={!!inKey} labels={plain ? null : arcs.length ? 'white' : 'all'} marks={marks} onTap={onTap} top={inKey ? 0 : 46} vx={[x0, x1]} overlay={<g aria-hidden="true">{brackets}{arrows}{Object.entries(inKey ? {} : (names || {})).map(([k, txt]) => { const col = (ncol && ncol[k]) || '#c0431f';
+    <TapKeyboard skip={ks.length >= 7 ? new Set(Array.from({ length: hi - lo + 1 }, (_, j) => lo + j).filter(i => !ks.includes(i) && !(marks && marks[i]))) : null} octaves={oct || 2} extraC clean={clean} names={inKey ? names : null} nameCol={inKey ? ncol : null} numIn={!!inKey} labels={plain ? null : arcs.length ? 'white' : 'all'} marks={marks} onTap={onTap} top={inKey ? 0 : 46} vx={[x0, x1]} overlay={<g aria-hidden="true">{brackets}{arrows}{Object.entries(inKey ? {} : (names || {})).map(([k, txt]) => { const col = (ncol && ncol[k]) || '#c0431f';
       return <g key={'n' + k + txt} style={{animation:'fadeUp 0.3s both'}}>
         {(nums || ring) && txt === '1' && <circle cx={kx(+k)} cy={nums ? -18 : white(+k) ? -13 : -31} r={nums ? 13 : 10} fill="none" stroke={col} strokeWidth="2.4"/>}
         <text x={kx(+k)} y={nums ? -12 : (white(+k) ? -9 : -27)} textAnchor="middle" fontSize="17" fontWeight="900" fill={col}>{txt}</text>
