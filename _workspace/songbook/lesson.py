@@ -31,7 +31,9 @@ def way(n, t, stars, how, a, b):
 
 # the keyboard in C position: five white keys under the right hand, the song's notes lit, the finger numbers on them
 L7 = 'cdefgab'
-def trp(p, k): i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p.lstrip('abcdefgs')) + i // 7)   # 'cs5' (a sharp) keeps its octave
+def trp(p, k):   # 'cs5' (a sharp) keeps its octave; a chord 'c4+e4+g4' moves note by note
+    if '+' in p: return '+'.join(trp(q, k) for q in p.split('+'))
+    i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p.lstrip('abcdefgs')) + i // 7)
 # a keyboard from middle C: the five white keys under the right hand (from `start`), the song's notes lit, the fingers on
 # them; `sharp` marks the key's black key in coral, named above it
 def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
@@ -95,7 +97,7 @@ tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
   '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G.</p></div></div>')
 exec(open('early.py').read())
-KBS = lambda w: '<div class="kbs">' + ''.join(f'<div><div class="kbl">{t}</div>{kb(width=w, fmap=fm)}</div>' for t, fm in SONG['kbs']) + '</div>'
+KBS = lambda w: '<div class="kbs">' + ''.join(f'<div><div class="kbl">{t}</div>{kb(width=w, fmap=fm, sharp=(x[0] if x else None))}</div>' for t, fm, *x in SONG['kbs']) + '</div>'   # a third item: the black key to mark (3 = F sharp)
 if 'pos' in SONG and not SONG.get('pos_html'): POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else KBS(SONG.get('kb_w', 300)) if SONG.get('kbs') else kb(width=SONG.get('kb_w', 300), fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
 # her 5 Nov 21:19: the five ideas for teaching it like your own child -- a wow moment, a spot-the-mistake game, a turtle-to-bird ladder, make it yours, a 5-minute menu
 STAR = '<svg width="26" height="26" viewBox="0 0 26 26"><path d="M13 2.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L13 18.6l-6.4 3.5 1.4-7.1-5.3-5 7.2-.9z" fill="none" stroke="#e4572e" stroke-width="2" stroke-linejoin="round"/></svg>'

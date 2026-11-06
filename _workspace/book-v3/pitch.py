@@ -279,8 +279,8 @@ P31 = ppage(f"""{head('Part I · Pitch · 11', 'Finding the key', 'A key signatu
 
 def circle():
     import math
-    MAJ = ['C', 'G', 'D', 'A', 'E', 'B', 'F♯/G♭', 'D♭', 'A♭', 'E♭', 'B♭', 'F']; MIN = ['a', 'e', 'b', 'f♯', 'c♯', 'g♯', 'd♯/e♭', 'b♭', 'f', 'c', 'g', 'd']
-    SIG = ['', '1♯', '2♯', '3♯', '4♯', '5♯', '6♯/6♭', '5♭', '4♭', '3♭', '2♭', '1♭']
+    MAJ = ['C', 'G', 'D', 'A', 'E', 'B/C♭', 'F♯/G♭', 'C♯/D♭', 'A♭', 'E♭', 'B♭', 'F']; MIN = ['a', 'e', 'b', 'f♯', 'c♯', 'g♯/a♭', 'd♯/e♭', 'a♯/b♭', 'f', 'c', 'g', 'd']   # her 6 Nov: the 7♯ and 7♭ keys show too
+    SIG = ['', '1♯', '2♯', '3♯', '4♯', '5♯/7♭', '6♯/6♭', '7♯/5♭', '4♭', '3♭', '2♭', '1♭']
     cx, cy, R1, R2, R3 = 230, 230, 200, 140, 95; s = f'<circle cx="{cx}" cy="{cy}" r="{R1 + 20}" fill="#fff" stroke="#26296b" stroke-width="2"/><circle cx="{cx}" cy="{cy}" r="{R2 + 26}" fill="none" stroke="#c9cbe0" stroke-width="1.2"/><circle cx="{cx}" cy="{cy}" r="{R3 + 22}" fill="none" stroke="#c9cbe0" stroke-width="1.2"/>'
     for i in range(12):
         a = math.radians(i * 30 - 90); c, sn = math.cos(a), math.sin(a)
@@ -290,14 +290,36 @@ def circle():
         s += f'<text x="{cx + c * R3}" y="{cy + sn * R3 + 5}" text-anchor="middle" font-family="AH,Arial" font-size="12" fill="#6d6f9c">{SIG[i]}</text>'
     s += f'<text x="{cx}" y="{cy - 4}" text-anchor="middle" font-family="AH,Arial" font-size="11" font-weight="700" letter-spacing="1.5" fill="#6d6f9c">MAJOR</text><text x="{cx}" y="{cy + 12}" text-anchor="middle" font-family="AH,Arial" font-size="11" letter-spacing="1.5" fill="#6d6f9c">minor · signature</text>'
     return f'<figure class="vx cof"><svg viewBox="0 0 460 460" style="width:100%;max-width:284px;height:auto;display:block;margin:0 auto">{s}</svg></figure>'
-def circle_hero():
+def circle_hero():   # her 6 Nov (A): the two-band wheel, as in the app's Scale finder. Majors outside, minors inside; sharp keys warm, flat keys cool
     import math
-    c = circle().replace('<figure class="vx cof">', '').replace('</figure>', '').replace('max-width:284px', 'max-width:450px')
-    a0, a1, R = math.radians(-84), math.radians(-66), 236
-    arc = f'<path d="M{230 + R * math.cos(a0):.1f},{230 + R * math.sin(a0):.1f} A{R},{R} 0 0 1 {230 + R * math.cos(a1):.1f},{230 + R * math.sin(a1):.1f}" fill="none" stroke="#e4572e" stroke-width="5" stroke-linecap="round"/>'
-    hx, hy = 230 + R * math.cos(a1), 230 + R * math.sin(a1)
-    arc += f'<path d="M{hx - 12:.1f},{hy - 9:.1f} L{hx + 3:.1f},{hy + 2:.1f} L{hx - 9:.1f},{hy + 13:.1f}" fill="none" stroke="#e4572e" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><text x="{230 + 252 * math.cos(math.radians(-75)):.1f}" y="{230 + 252 * math.sin(math.radians(-75)):.1f}" font-family="AH,Arial" font-size="17" font-weight="700" fill="#e4572e">+1♯</text>'
-    return c.replace('viewBox="0 0 460 460"', 'viewBox="-30 -30 520 520"', 1).replace('</svg>', arc + '</svg>', 1)
+    NV, CO, C = '#26296b', '#e4572e', 200
+    MJ = ['C', 'G', 'D', 'A', 'E', 'B/C♭', 'F♯/G♭', 'C♯/D♭', 'A♭', 'E♭', 'B♭', 'F']
+    MN = ['Am', 'Em', 'Bm', 'F♯m', 'C♯m', 'G♯m/A♭m', 'D♯m/E♭m', 'A♯m/B♭m', 'Fm', 'Cm', 'Gm', 'Dm']
+    SG = ['', '1♯', '2♯', '3♯', '4♯', '5♯/7♭', '6♯/6♭', '7♯/5♭', '4♭', '3♭', '2♭', '1♭']
+    pol = lambda r, i: (C + r * math.cos(math.radians(-90 + i * 30)), C + r * math.sin(math.radians(-90 + i * 30)))
+    def wedge(r0, r1, i, fill, stroke, sw):
+        a0, a1 = math.radians(-90 + i * 30 - 15), math.radians(-90 + i * 30 + 15); q = lambda r, a: f'{C + r * math.cos(a):.1f},{C + r * math.sin(a):.1f}'
+        return f'<path d="M{q(r1, a0)} A{r1},{r1} 0 0 1 {q(r1, a1)} L{q(r0, a1)} A{r0},{r0} 0 0 0 {q(r0, a0)} Z" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
+    def tx(x, y, t, fs, fill, fam, cols=None):
+        if '/' in t:
+            a, b = t.split('/'); c1, c2 = cols or (fill, fill)
+            return tx(x, y - fs * .42, a, fs * .7, c1, fam) + tx(x, y + fs * .48, b, fs * .7, c2, fam)
+        return f'<text x="{x:.1f}" y="{y + fs * .35:.1f}" text-anchor="middle" font-family="{fam}" font-size="{fs}" font-weight="700" fill="{fill}">{t}</text>'
+    s = ''
+    for i in range(12):
+        base = '#f4f1e8' if i in (0, 6) else '#fbe3da' if i < 6 else '#e6e7f3'
+        s += wedge(118, 182, i, NV if i == 0 else base, '#fff', 3) + wedge(68, 118, i, CO if i == 0 else '#fff', '#efe9dc', 2)
+        x, y = pol(150, i); s += tx(x, y, MJ[i], 24, '#fff' if i == 0 else NV, 'PF,serif')
+        x, y = pol(93, i); s += tx(x, y, MN[i], 14, '#fff' if i == 0 else NV, 'AH,Arial')
+        if SG[i]:
+            x, y = pol(204, i); s += tx(x, y, SG[i], 14, CO if i < 6 else NV, 'AH,Arial', (CO, NV))
+    s += f'<circle cx="{C}" cy="{C}" r="66" fill="#fff"/>' + tx(C, C - 14, 'C', 36, NV, 'PF,serif') + tx(C, C + 14, 'MAJOR', 10, '#7c7ea8', 'AH,Arial') + tx(C, C + 32, 'A minor inside', 11, CO, 'AH,Arial')
+    a0, a1, R = math.radians(-84), math.radians(-64), 226
+    s += f'<path d="M{C + R * math.cos(a0):.1f},{C + R * math.sin(a0):.1f} A{R},{R} 0 0 1 {C + R * math.cos(a1):.1f},{C + R * math.sin(a1):.1f}" fill="none" stroke="{CO}" stroke-width="5" stroke-linecap="round"/>'
+    hx, hy = C + R * math.cos(a1), C + R * math.sin(a1)
+    s += f'<path d="M{hx - 13:.1f},{hy - 7:.1f} L{hx + 2:.1f},{hy + 2:.1f} L{hx - 7:.1f},{hy + 14:.1f}" fill="none" stroke="{CO}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    s += tx(C + 246 * math.cos(math.radians(-76)), C + 246 * math.sin(math.radians(-76)), '+1♯', 16, CO, 'AH,Arial')
+    return f'<svg viewBox="-34 -46 468 486" style="width:100%;max-width:430px;display:block;margin:0 auto">{s}</svg>'
 P32 = ppage(f"""{head('Part I · Pitch · 12', 'The circle of fifths', 'All the keys on one clock face. Going round clockwise, each key is a <b>5th higher</b> than the last and has <b>one more sharp</b> (or one fewer flat). Anticlockwise, each is a 4th higher, a 5th lower, with one more flat.')}
 {hero(circle_hero(), 'Clockwise, one more sharp each step')}
 {h3('How to read the clock') + '<p><b>Outer ring:</b> major keys. <b>Middle ring:</b> their relative minors (small letters). <b>Inner ring:</b> the key signature.</p>' + h3('Neighbours are close') + '<p>Keys next to each other share all but one note, so music moves between them easily: from C major to G major or F major, or to the relative minor. These are the <b>related keys</b>.</p>'}
