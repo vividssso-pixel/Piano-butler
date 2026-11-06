@@ -7,25 +7,26 @@ const M = await createVerovioModule(); const tk = new VerovioToolkit(M);
 const S = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const DUR = { s: '1', m: '2', c: '4', q: '8' }, LEN = { s: 4, m: 2, c: 1, q: 0.5 };
 let id = 0; const nid = () => 'x' + (++id);
-const pn = (p) => [p[0], p.slice(1)];
+const pn = (p) => [p[0], p.replace(/^[a-g][sf]?/, ''), /^[a-g]s/.test(p) ? 's' : /^[a-g]f\d/.test(p) ? 'f' : ''];   // 'fs4' is F sharp (Lesson 9's first black key)
 // move a pitch up by letter steps (C to G is 4): the tune keeps its shape and its finger numbers; a chord letter moves the same way
 const L7 = 'cdefgab', trp = (p, k) => { if (!k) return p; const i = L7.indexOf(p[0]) + k; return L7[i % 7] + (+p.slice(1) + Math.floor(i / 7)); };
 const trChord = (c, k) => trp(c.toLowerCase() + '4', k)[0].toUpperCase();
 function noteXml(p, d, o = {}) {
-  const [pname, oct] = pn(p); const i = nid(); o.ids && o.ids.push(i);
+  const [pname, oct, acc] = pn(p); const i = nid(); o.ids && o.ids.push(i);
   const syl = o.syl ? `<verse n="1"><syl${o.wp ? ` wordpos="${o.wp}" con="d"` : ''}>${o.syl}</syl></verse>` : '';
   const loc = o.loc != null ? ` loc="${o.loc}"` : '';
   if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}" stem.dir="${o.hand === 'LU' ? 'up' : o.hand === 'L' ? 'down' : o.staff5 ? ((o.bass ? BASS_PLACE : STAFF_PLACE)[p] > 4 ? 'down' : 'up') : o.lh ? 'down' : 'up'}">${syl}</note>`];   // on a staff: above the middle line, stems down   // the right hand's stems up, the left hand's down
-  return [i, o.rhythm ? `<note xml:id="${i}" dur="${DUR[d]}" loc="0" stem.dir="up">${syl}</note>` : `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${o.stem ? ` stem.dir="${o.stem}"` : ''}>${syl}</note>`];
+  return [i, o.rhythm ? `<note xml:id="${i}" dur="${DUR[d]}" loc="0" stem.dir="up">${syl}</note>` : `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${acc ? ` accid="${acc}"` : ''}${o.stem ? ` stem.dir="${o.stem}"` : ''}>${syl}</note>`];
 }
-function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b] = pn(p); return `<note pname="${a}" oct="${b}"/>`; }).join('') + '</chord>']; }
+function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b, c] = pn(p); return `<note pname="${a}" oct="${b}"${c ? ` accid="${c}"` : ''}/>`; }).join('') + '</chord>']; }
 // one line of bars [b0, b1): opts.words, opts.fing, opts.chords, opts.lh (a way), opts.rhythm (one-line staff), opts.meter
 function mei(b0, b1, o) {
   let ms = '', ctrl = [];
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p.includes('+')) { flush(); const [i, x] = chordXml(p.split('+').map(q => trp(q, o.tr)), d); l1 += x; INFO[i] = { len: LEN[d] };   // a chord in the right hand (her 6 Nov 14:24: the chords one at a time)
+    bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p.includes('+') && o.rhythm) p = p.split('+')[0];   // a rhythm line: the chord is one beat to clap
+      if (p.includes('+')) { flush(); let [i, x] = chordXml(p.split('+').map(q => trp(q, o.tr)), d); if (o.words && syl) x = x.replace('</chord>', `<verse n="1"><syl>${syl}</syl></verse></chord>`); l1 += x; INFO[i] = { len: LEN[d] };   // a chord in the right hand (her 6 Nov 14:24: the chords one at a time)
         if (o.fing && fo != null) String(fo).split(' ').forEach(ff => ctrl.push(`<fing startid="#${i}" place="above">${ff}</fing>`)); return; }
       if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; INFO[i] = { len: LEN[d], rest: true }; return; }   // a rest (Lesson 8 on)
       const HL = o.mix && (S.hand || {})[p] === 'L';   // a left-hand note in a right-hand line: stem down, finger below
@@ -36,16 +37,20 @@ function mei(b0, b1, o) {
       else if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${fo != null && !o.fk ? fo : (o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);   // fo: this note's own finger (G with 4 next to A)
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${lfo != null ? lfo : S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
     flush();
+    { const seen = new Set(); l1 = l1.replace(/pname="([a-g])" oct="(\d)" accid="([sf])"/g, (m, a, b, c) => { const k = a + b + c; if (seen.has(k)) return `pname="${a}" oct="${b}" accid.ges="${c}"`; seen.add(k); return m; }); }   // a sharp lasts the bar: written once
     let st2 = '';
     const CH = (o.src != null && S.more[o.src].chords) || S.chords;   // a tune of its own brings its own chords
     if (o.lh) { const ch = CH[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';
       pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d) : noteXml(ps[0], d); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
       st2 = `<staff n="2"><layer n="1">${l2}</layer></staff>`; }
+    const DY = (o.src != null ? S.more[o.src].dyn : S.dyn) || {};   // p, pp, f, ff under the right hand's staff (Lesson 9's surprise)
+    if (o.dyn && DY[b]) DY[b].forEach(([t, x]) => ctrl.push(`<dynam staff="1" tstamp="${t}" place="${o.dynPlace || 'below'}">${x}</dynam>`));
     if (o.chords) ctrl.push(`<harm staff="1" tstamp="1" place="above">${o.ask && b > 0 ? '_____' : trChord(CH[b], o.tr)}</harm>`);   // ask: the first name given, the rest to write
     const right = b === S.bars.length - 1 ? ' right="end"' : '';
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff>${st2}${ctrl.splice(0).join('')}</measure>`;
   }
-  const met = (o.key ? ` keysig="${o.key}"` : '') + (o.meter ? ` meter.count="${(S.meter || '4/4').split('/')[0]}" meter.unit="${(S.meter || '4/4').split('/')[1]}"` : '');
+  const MT = (o.src != null && S.more[o.src].meter) || S.meter || '4/4';
+  const met = (o.key ? ` keysig="${o.key}"` : '') + (o.meter ? ` meter.count="${MT.split('/')[0]}" meter.unit="${MT.split('/')[1]}"` : '');
   const sd = o.staff5 ? `<staffDef n="1" lines="1" clef.shape="${o.bass ? 'F' : 'G'}" clef.line="1"${met}/>`   // a staff drawn to the lettered heads (her 4 Nov 18:11): Verovio gives the clef, we draw the lines
     : o.rhythm || o.pre ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
     : o.lh ? `<staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp>`
@@ -61,7 +66,8 @@ function duetMei(b0, b1, o) {
     const rh = last ? chordXml(D.end.rh, 's')[1] : D.rh[ch].map(p => noteXml(p, 'c')[1]).join('');
     const lh = last ? chordXml(D.end.lh, 's')[1] : [0, 1].map(() => chordXml(D.lh[ch], 'm')[1]).join('');
     ms += `<measure n="${b + 1}"${last ? ' right="end"' : ''}><staff n="1"><layer n="1">${rh}</layer></staff><staff n="2"><layer n="1">${lh}</layer></staff>${o.chords ? `<harm staff="1" tstamp="1" place="above">${ch}</harm>` : ''}</measure>`; }
-  const met = o.meter ? ` meter.count="${(S.meter || '4/4').split('/')[0]}" meter.unit="${(S.meter || '4/4').split('/')[1]}"` : '';
+  const MT = (o.src != null && S.more[o.src].meter) || S.meter || '4/4';   // a tune of its own may bring its own meter (the waltz peek)
+  const met = o.meter ? ` meter.count="${MT.split('/')[0]}" meter.unit="${MT.split('/')[1]}"` : '';
   return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef><staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="G" clef.line="2"${met}/></staffGrp></scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
 }
 let INFO = {};
@@ -237,7 +243,8 @@ function zigMei(b0, b1, o) {
     const right = b === S.bars.length - 1 ? ' right="end"' : '';
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff><staff n="2"><layer n="1"><mSpace/></layer></staff>${ctrl.join('')}</measure>`;
   }
-  const met = o.meter ? ` meter.count="${(S.meter || '4/4').split('/')[0]}" meter.unit="${(S.meter || '4/4').split('/')[1]}"` : '';
+  const MT = (o.src != null && S.more[o.src].meter) || S.meter || '4/4';   // a tune of its own may bring its own meter (the waltz peek)
+  const met = o.meter ? ` meter.count="${MT.split('/')[0]}" meter.unit="${MT.split('/')[1]}"` : '';
   return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef><staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp></scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
 }
 const JOBS = S.jobs || {
