@@ -75,6 +75,13 @@ def guestman(letters, redi=(), w=70, tag=''):
         o += f'<rect x="{60 - tw / 2}" y="214" width="{tw}" height="32" rx="16" fill="{N}"/><text x="60" y="237" text-anchor="middle" font-family="AH" font-size="22" font-weight="700" fill="#fff">{tag}</text>'
     return o + '</svg>'
 
+def hero_kinds():   # her 6 Nov: the four kinds side by side, the middle ball (or the top) is what changes
+    K = [(('C', 'E', 'G'), (), 'C', 'major', '3 + 2'), (('C', 'E♭', 'G'), (1,), 'Cm', 'minor', '2 + 3'), (('C', 'E♭', 'G♭'), (1, 2), 'C°', 'diminished', '2 + 2'), (('C', 'E', 'G♯'), (2,), 'C+', 'augmented', '3 + 3')]
+    return '<div class="hk4">' + ''.join(f'<div>{guestman(l, r, 112, t)}<b>{n}</b><span>{c}</span></div>' for l, r, t, n, c in K) + '</div>'
+def hero_keychords():   # the seven snowmen of C major; I, IV and V in red
+    D = [(('C', 'E', 'G'), 'C', 'I'), (('D', 'F', 'A'), 'Dm', 'ii'), (('E', 'G', 'B'), 'Em', 'iii'), (('F', 'A', 'C'), 'F', 'IV'), (('G', 'B', 'D'), 'G', 'V'), (('A', 'C', 'E'), 'Am', 'vi'), (('B', 'D', 'F'), 'B°', 'vii°')]
+    return '<div class="hk7">' + ''.join(f'<div class="{"on" if n in ("I", "IV", "V") else ""}">{guestman(l, (0, 1, 2) if n in ("I", "IV", "V") else (), 74, t)}<b>{n}</b></div>' for l, t, n in D) + '</div>'
+
 H1 = hpage(f"""{head('Part IV · Harmony · 1', 'Chords and triads', 'Press two or more notes at once and you have a <b>chord</b>. The favourite of all is the <b>triad</b>: three notes stacked like a snowman.')}
 {two(BIGSNOW, '<div class="big3"><div><span>1</span><p>Pick a note: the <b class="co">root</b>, the big ball at the bottom. It holds the chord up and gives it its name.</p></div><div><span>2</span><p>Skip one letter, take the next: <b>E</b>, the <b>3rd</b>.</p></div><div><span>3</span><p>Skip again: <b>G</b>, the <b>5th</b>. C E G is the triad of C.</p></div></div>' + kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), dot(2, '3'), dot(4, '5')], scale=1.0) + '<p class="sm" style="text-align:center;margin:4px 0 0">On the keys: play one, skip one (shaded), play one, skip one, play one.</p>', '1.1fr 1fr')}
 {two(px('h_build', 104, 'The snowman on the staff: three lines in a row (or three spaces).'), '<p>On the staff, each ball sits on the <b>next line up</b> (or the next space up): the root, a <b>3rd</b> above it, a <b>5th</b> above the root.</p><p class="sm">First met: Level ½ (the tonic triad of C, G and F major).</p>', '1fr 1.15fr')}
@@ -100,16 +107,14 @@ FLOORS = ('<svg viewBox="0 0 300 120" style="width:100%;max-width:150px;height:a
           + '</svg>')
 YKMOON = ykfig('yk_moon', ('n1', 'n2', 'n3'), 84)
 H2 = hpage(f"""{head('Part IV · Harmony · 2', 'Four kinds of triad', 'Every triad is two 3rds stacked. To tell the kinds apart, count the keys <b>in between</b>, black and white, that you do not play: root to 3rd, then 3rd to 5th. Those two numbers name the kind, and its sound.')}
+{hero(hero_kinds(), 'Count the keys between: 3 + 2 is major, 2 + 3 is minor')}
 {tbl(['Kind', 'Keys between', 'On C', 'Chord name', 'First met'], KINDS, ['20%', '22%', '20%', '20%', '18%'])}
 <p class="sm">Chord names: a letter alone means major (C); m means minor (Cm). You see them above the melody in songbooks and lead sheets: C | Am | F | G. In interval names, 3 keys between is a major 3rd and 2 is a minor 3rd (p. {{S2}}).</p>
-{px('h2_four', 96, 'The four kinds on C. Only the 3rd and the 5th move; the root stays.')}
 {h3('Count the keys in between')}
 <div class="fk"><div class="fkf">{kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), semi(W_, '1', 46, '#fff'), semi(W_ * 1.5, '2'), semi(W_ * 2, '3', 46, '#fff'), dot(2, '3'), semi(W_ * 3.5, '1'), semi(W_ * 4, '2', 46, '#fff'), dot(4, '5')], scale=1.0)}</div><div>Play C and E and count the keys you skip, black and white: C♯, D, D♯ is <b class="co">3</b>. Then E to G: F, F♯ is <b class="co">2</b>. <b>3 + 2 is major.</b> Any root works the same way: from D, skip 3 to F♯, then 2 to A: D F♯ A, D major.</div></div>
 {inaction('Major or minor? D F A', kbx('C', 8, W_, 92, label=True, shade={1: '#fde6dd', 3: '#fde6dd', 5: '#fde6dd'}, marks=[dot(1, '1', y=67), dot(3, '3', y=67), dot(5, '5', y=67)], scale=1.0), ['<b>Root to 3rd:</b> D to F skips D♯ and E: <b>2</b>.', '<b>3rd to 5th:</b> F to A skips F♯, G and G♯: <b>3</b>.', '<b>2 + 3</b> is minor.'], 'D F A is <b>D minor</b> (Dm). Three of the white-key triads are minor: D, E and A.')}
 {thinkt('Two floors of a building: a tall floor (3 keys between) and a short one (2). Major: tall, then short, 3 + 2. Minor: short, then tall, 2 + 3. Diminished: two short, 2 + 2. Augmented: two tall, 3 + 3.')}
 <!--SPLIT-->
-{h3('The seven white-key triads, sorted')}
-{px('h2_white', 60, 'Always the same on the white keys: <b>three major</b> (C, F, G), <b>three minor</b> (D, E, A), <b>one diminished</b> (B), no augmented. In any major key, chords I, IV and V are the major ones (p. {{H3}}).')}
 {h3('How they sound')}
 {tbl(['Kind', 'Sounds', 'Heard in'], [['major', 'bright, settled, open', 'most cheerful tunes, fanfares'], ['minor', 'darker, softer, sadder', 'lullabies, laments, film tension'], ['diminished', 'tense, unstable, wants to move', 'suspense, the chord before home'], ['augmented', 'floating, dreamy, unsettled', 'dream scenes, a passing colour']], ['22%', '38%', '40%'])}
 {youknow('Beethoven, Moonlight Sonata (first movement)', YKMOON, 'The famous slow triplets are the notes of a <b class="co">C♯ minor triad</b>: C♯, E and G♯, rocking gently. Minor is why it sounds so dark and sad.', '', True)}
@@ -120,6 +125,7 @@ H2 = hpage(f"""{head('Part IV · Harmony · 2', 'Four kinds of triad', 'Every tr
 DEG = [['<b>I</b>', 'tonic', 'major', 'C', 'G'], ['ii', 'supertonic', 'minor', 'Dm', 'Am'], ['iii', 'mediant', 'minor', 'Em', 'Bm'], ['<b>IV</b>', 'subdominant', 'major', 'F', 'C'], ['<b>V</b>', 'dominant', 'major', 'G', 'D'], ['vi', 'submediant', 'minor', 'Am', 'Em'], ['vii°', 'leading note', 'diminished', 'B°', 'F♯°']]
 BLUES = '<div class="blues">' + ''.join(f'<span class="{"b1" if c == "C" else "b4" if c == "F" else "b5"}"><i>{n}</i>{c}</span>' for n, c in zip(['I', 'I', 'I', 'I', 'IV', 'IV', 'I', 'I', 'V', 'IV', 'I', 'V'], ['C', 'C', 'C', 'C', 'F', 'F', 'C', 'C', 'G', 'F', 'C', 'G'])) + '</div>'
 H3 = hpage(f"""{head('Part IV · Harmony · 3', 'Chords in a key', 'Build a triad on every note of a scale and you have the chords of that key. <b>Roman numerals</b> name each one by its place in the scale: I on the 1st note, IV on the 4th, V on the 5th. Capitals are major, small numerals are minor, and small with ° is diminished.')}
+{hero(hero_keychords(), 'One snowman on every note: I, IV and V do most of the work')}
 {px('h3_cmaj', 80, 'The seven chords of C major. Only white keys, so the kinds come out as on p. {{H2+1}}.')}
 {tbl(['Numeral', 'Name', 'Kind', 'Keys between', 'In C', 'In G'], [[a, b, c, {'major': '3 + 2', 'minor': '2 + 3', 'diminished': '2 + 2'}[c], d, e] for a, b, c, d, e in DEG], ['13%', '21%', '18%', '18%', '15%', '15%'])}
 <p class="sm">The same in every major key: I, IV and V are major; ii, iii and vi are minor; vii° is diminished. First met: I, IV and V at Levels 1–2; the other chords from about Level 4.</p>
@@ -146,6 +152,8 @@ css += """
 .tripc{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;border-top:1px solid #e3e1ee;padding:7px 0} .tt2 b{display:block;font-size:16px} .tt2 span{font-size:13.5px;color:#6d6f9c;line-height:1.3;display:block}
 .trip{display:flex;flex-wrap:wrap;align-items:center;gap:4px} .ta{color:#e4572e;font-weight:800} .cb{display:inline-flex;flex-direction:column;align-items:center;border-radius:8px;padding:4px 8px;min-width:40px;color:#fff;line-height:1.1} .cb b{font-family:PF;font-size:20px} .cb small{font-size:12px;font-weight:700;opacity:.9}
 .cb.home{background:#e4572e} .cb.home2{background:#f2a48c} .cb.away{background:#26296b} .cb.pull{background:#3f8f6b}
+.hk4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:640px;margin:0 auto} .hk4>div{display:flex;flex-direction:column;align-items:center} .hk4 b{font-size:16px;margin-top:4px} .hk4 span{font-family:CV,cursive;font-size:22px;font-weight:700;color:#e4572e}
+.hk7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:680px;margin:0 auto} .hk7>div{display:flex;flex-direction:column;align-items:center} .hk7 b{font-family:PF,serif;font-size:20px;color:#26296b;margin-top:2px} .hk7 .on b{color:#e4572e}
 .kbt{font-size:16px;font-weight:700;margin:0 0 2px;text-align:center} .gp3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0} .gp3 .pair{gap:4px}
 .pc4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 10px} .pc{border:2px solid #26296b;border-radius:10px;padding:8px 6px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px} .pmark{font-family:PF;font-weight:800;font-size:46px;line-height:1;color:#e4572e;height:48px} .pmark.pw{font-size:28px;line-height:48px} .pc b{font-size:16px} .pc i{font-style:normal;font-size:14px;color:#6d6f9c} .pair{display:flex;align-items:center;justify-content:center;gap:2px} .pf{font-family:CV;font-size:20px;color:#e4572e;line-height:1.1}
 .twmin .fav{background:#fff7f3;border:2px dashed #e4572e;border-radius:8px} .big3.h3x{flex-direction:row;gap:16px;margin:10px 0 4px} .big3.h3x>div{flex:1}
@@ -446,8 +454,7 @@ HCOL = {'I': '#e4572e', 'IV': '#26296b', 'V': '#3f8f6b'}
 HOLDMAP = ('<div class="hold3">' + ''.join(f'<div>{guestman(l, (), 96, t).replace("fill=\"#26296b\"/><text x=\"60\" y=\"237\"", f"fill=\"{HCOL[t]}\"/><text x=\"60\" y=\"237\"")}</div>' for l, t in ((('C', 'E', 'G'), 'I'), (('F', 'A', 'C'), 'IV'), (('G', 'B', 'D'), 'V'))) + '</div>'
            + '<div class="hold7">' + ''.join(f'<div><b>{n}</b>' + ''.join(f'<span style="background:{HCOL[c]}">{c}</span>' for c in cs) + '</div>' for n, cs in HOLD) + '</div>')
 H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The melody is the singer; the chords are the band. To choose a chord for each bar, look at the melody’s main notes and pick the snowman holding them.')}
-{h3('Which snowman holds the note?')}
-{HOLDMAP}
+{hero(HOLDMAP, 'Which snowman holds the tune’s main notes?')}
 <p class="sm" style="text-align:center">Every note of C major lives in I, IV or V. C and G live in two: let your ear choose.</p>
 <div class="big3 h3x"><div><span>1</span><p>Look at the <b>main notes</b> of the bar: the long ones, and the ones on beats 1 and 3.</p></div><div><span>2</span><p>Find the snowman that holds them: <b>I, IV or V</b>.</p></div><div><span>3</span><p>Play that chord in the left hand while the right hand plays the tune.</p></div></div>
 {h3('Twinkle, Twinkle, with its chords')}

@@ -153,6 +153,7 @@ def page(inner, n, right='PART II · TIME'):
     inner = PM.resolve(order_blocks(inner))
     return f'''<section class="pg"><div class="top"><span>THE PIANO BUTLER HANDBOOK</span><span>{right}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'''
 MINCSS = """
+.hero .vx,.hero figure{border:0!important;box-shadow:none!important;background:transparent!important}
 .hs .verse text{font-family:AH,Arial,sans-serif;font-weight:700} .hs .verse{fill:#e4572e}
 .hl{font-family:CV,cursive;font-size:20px;font-weight:700;color:#e4572e}
 .ht.nt td{padding-top:11px;padding-bottom:11px}
