@@ -367,7 +367,7 @@ for (const g of new Set(Object.keys(out).map(group))) {
     const [b0, b1, oo] = JOBS[k], data = (oo.src != null ? S.more[oo.src].bars : S.bars).slice(b0, b1);
     let ko = [a1], kn = [s0];
     const SKIP = n => n[0] === 'r' || (oo.lh && oo.mix && (S.hand || {})[n[0]] === 'L');   // a rest, or a note the left hand plays on its own staff
-    if (process.env.DBG) console.log(k, JSON.stringify(sylWidths(out[k]).map(Math.round)), JSON.stringify(info[j].bars));
+    if (process.env.DBG) console.log(k, JSON.stringify(sylWidths(out[k]).map(Math.round)), JSON.stringify(info[j].bars), data.flat().filter(n => !SKIP(n)).length, info[j].heads.length, data.length, bars.length);
     if (EVEN && !oo.rhythm && data.flat().filter(n => !SKIP(n)).length === info[j].heads.length && data.length === bars.length) {
       // as even by the beat as the words allow (her 5 Nov 13:50): try all the way first, then less, until no two words touch
       const sy = sylWidths(out[k]);
