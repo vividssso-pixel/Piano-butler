@@ -115,14 +115,17 @@ def ladder(rows):   # one row per way of playing: colour a step each time you cl
 P2T = SONG.get('p2_ticks', ['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])
 LINES = lambda pre: ''.join(mus(k) + '<div class="sp"></div>' for k in sorted(k for k in V if k.startswith(pre) and k[len(pre):].isdigit()))
 SUB = lambda t, how: f'<div class="sub"><span>{t}</span></div><p class="how">{how}</p>'
+LISTEN = f'<div class="listen">{qr(URL, 52)}<div><div class="lh2">Listen first</div><p>Scan the code: listen to the whole song once, then hum along the second time.</p></div></div>'
+if SONG.get('p1_tight'): LISTEN = LISTEN.replace('listen to the whole song once, then hum along the second time.', 'listen once, then hum along.')
+# p1_tight (her 7 Nov 00:51, '조정해줘'): a long song's page 1 gives its room to the notes -- no chip row, and Listen first and the wow moment side by side
+TOP1 = (f'<div class="lw2">{LISTEN}{WOW}</div>' if SONG.get('p1_tight') else f'<div class="chips"><span class="cl">In this song</span>{chips}</div>\n' + LISTEN)
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <p class="lead">{LEAD}</p>
-<div class="chips"><span class="cl">In this song</span>{chips}</div>
-<div class="listen">{qr(URL, 52)}<div><div class="lh2">Listen first</div><p>Scan the code: listen to the whole song once, then hum along the second time.</p></div></div>
+{TOP1}
 <div class="sp"></div>{part(1, 'Meet the song', SONG.get('sing_how', 'Listen, pointing to each note as it sounds. Then sing it with the words.'))}
 {POS}
 <div class="sp"></div>{LINES('sing')}
-{WOW}<div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
+{'' if SONG.get('p1_tight') else WOW}<div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
 
 NAMES = LINES('name') if not SONG.get('names_row') else '<div class="trow">' + ''.join(mus(k) for k in sorted(k for k in V if k.startswith('name') and k[4:].isdigit())) + '</div>'
 # New in this song: one picture, one line, and where the Handbook takes it further (her 4 Nov 22:08)
@@ -197,6 +200,7 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .lad{{display:grid;grid-template-columns:118px 34px repeat({len(LSTEPS)},1fr) 34px;gap:6px;align-items:center;margin:3px 0}} .lad.lhd{{margin-bottom:2px}} .lst{{font-size:11px;font-weight:700;color:{MUTE};text-align:center;line-height:1.15}} .lrn{{font-size:14px;font-weight:700}} .lsq{{height:22px;border:1.8px solid {N};border-radius:4px}}
 .yrs{{display:grid;grid-template-columns:1fr 1fr;gap:24px;border-top:1px solid #d9d6ea;padding-top:10px}} .yrs .ticks{{gap:6px;margin:4px 0 0}} .yrs .tk{{font-size:14.5px}} .menu ol{{margin:2px 0 6px;padding-left:20px;font-size:14.5px;line-height:1.55}} .days{{display:flex;gap:9px}} .dy{{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:{MUTE}}}
 .posx{{margin:2px 0 4px}} .posx p{{margin:2px 0}}
+.lw2{{display:grid;grid-template-columns:1fr 1.5fr;gap:14px;align-items:stretch}} .lw2>.listen,.lw2>.wow{{margin:0}}
 [hidden]{{display:none!important}}
 .strip{{display:grid;grid-template-columns:repeat(4,1fr);border-left:2px solid {N};margin:8px 0 0}} .sc{{border-right:2px solid {N};border-top:1.5px solid #d9d6ea;border-bottom:1.5px solid #d9d6ea;padding:8px 0;text-align:center;font-family:'Playfair Display',serif;font-weight:700;font-size:30px;color:{N}}}
 @media print {{ body{{background:#fff}} .pg{{margin:0}} }}''' + EARLY_CSS
