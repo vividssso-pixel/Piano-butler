@@ -70,16 +70,16 @@ def pic_time():
         o += f'<circle cx="{x + 4}" cy="{yb}" r="{9 if big else 5}" fill="{ORD if big else OCR}"/>' + lab(x + 4, yb + 28, t, ORD if big else OCR, 14, fam='AH')
     o += lab(512, yb + 28, '&amp;', OPK, 13, fam='AH') + lab(582, yb + 28, '&amp;', OPK, 13, fam='AH')
     # a 6/8 bar, small, lower right
-    T = Staff(500, 740, yb + 116, 9, 'G'); o += T.lines(w=1) + T.tsig(518, 6, 8)
+    T = Staff(60, 300, yb + 116, 9, 'G'); o += T.lines(w=1) + T.tsig(78, 6, 8)
     for g in range(2):
-        xs = [552 + g * 92 + k * 26 for k in range(3)]
+        xs = [112 + g * 92 + k * 26 for k in range(3)]
         o += T.beam(xs, ['E5', 'E5', 'E5']).replace(f'<ellipse cx="{xs[0]}"', f'<ellipse fill-opacity="1" cx="{xs[0]}"')
         o += f'<circle cx="{xs[0]}" cy="{T.y("E5"):.1f}" r="4.6" fill="{ORD}"/>'
-    o += lab(620, yb + 140, 'or three to a beat', OPK, 18)
+    o += lab(330, yb + 120, 'or three to a beat', OPK, 18, 'start')
     o += call(4, 118, S.y1 - 3 * S.sp, 100, 60) + call(2, 236, S.y('A4') - 10, 236, 50) + call(6, 360, S.y('A4') - 50, 360, 50) + call(3, 452, S.y('B4') - 12, 452, 50)
-    o += call(1, 184, yb, 118, yb) + call(6, 134, S.y('G4') + 8, 150, yb + 44) + call(7, 514, S.y('A4') + 9, 540, yb + 40) + call(3, 648, S.y('G4') + 22, 700, yb + 44) + call(5, 508, yb + 98, 470, yb + 98)
-    return f'<svg viewBox="0 0 800 {yb + 156}" style="width:100%;display:block">{o}</svg>'
-LEG_T = [(1, 'Pulse, tempo and the bar', 'the steady beat under everything; beat 1 is strongest', 'T1'), (2, 'Notes and rests', 'each shape says how long: a hollow note lasts twice a filled one; the rest is counted too', 'T2'), (3, 'How long is a note?', 'a dot adds half; a tie glues two notes into one', 'T3'), (4, 'Time signatures', 'four seats in every bar, a crotchet in each', 'T4'), (5, 'Compound and irregular time', 'beats that split in three, or bars of five and seven', 'T5'), (6, 'Rhythm: groups and upbeats', 'beams show the beats; a piece may start before bar 1', 'T6'), (7, 'Rhythm: off the beat', 'a note that lands between the beats and holds on', 'T7'), ('★', 'Tips: when the rhythm slips', '', 'TT')]
+    o += call(1, 682, yb, 740, yb) + call(6, 134, S.y('G4') + 8, 100, yb) + call(7, 514, S.y('A4') + 9, 514, yb + 58) + call(3, 648, S.y('G4') + 22, 700, yb + 58) + call(5, 48, yb + 98, 48, yb + 148)
+    return f'<svg viewBox="0 0 800 {yb + 160}" style="width:100%;display:block">{o}</svg>'
+LEG_T = [(1, 'Pulse, tempo and the bar', 'the steady beat underneath; beat 1 is strongest', 'T1'), (2, 'Notes and rests', 'the shape says how long; rests are counted too', 'T2'), (3, 'How long is a note?', 'a dot adds half; a tie glues two notes into one', 'T3'), (4, 'Time signatures', 'four seats in every bar, a crotchet in each', 'T4'), (5, 'Compound and irregular time', 'beats in threes; bars of five or seven', 'T5'), (6, 'Rhythm: groups and upbeats', 'beams show the beats; starting before bar 1', 'T6'), (7, 'Rhythm: off the beat', 'a note between the beats that holds on', 'T7'), ('★', 'Tips: when the rhythm slips', '', 'TT')]
 
 # ---------- Part I · Pitch ----------
 def pic_pitch():
@@ -107,36 +107,36 @@ def pic_pitch():
     o += call(4, (kx('F3') + 40 + kx('C4')) / 2 + 10, (G.y1 + F.y1) / 2 + 16, 660, (G.y1 + F.y1) / 2 + 16)
     o += call(1, kx('C5') + 10, ky + 20, 660, ky + 20)
     return f'<svg viewBox="0 0 700 {ky + KH + 40}" style="width:100%;display:block">{o}</svg>'
-LEG_P = [(1, 'The keyboard', 'the groups of two and three black keys: C sits just left of the two', 'P1'), (2, 'The staff and the clefs', 'the treble clef names the G line, the bass clef the F line', 'P2'), (3, 'Reading the notes', 'find a landmark note, then step or skip from it', 'P3'), (4, 'The staff and the keyboard', 'every line and space is one white key', 'P4'), (5, 'Sharps, flats and naturals', 'a sharp moves one key right, a flat one key left', 'P5'), ('★', 'Tips: when a note reads wrong', '', 'PT')]
+LEG_P = [(1, 'The keyboard', 'two and three black keys; C is left of the two', 'P1'), (2, 'The staff and the clefs', 'the treble clef names G, the bass clef F', 'P2'), (3, 'Reading the notes', 'find a landmark note, then step or skip from it', 'P3'), (4, 'The staff and the keyboard', 'every line and space is one white key', 'P4'), (5, 'Sharps, flats and naturals', 'a sharp moves one key right, a flat one key left', 'P5'), ('★', 'Tips: when a note reads wrong', '', 'PT')]
 
 # ---------- Part III · Scales and keys ----------
 def pic_scales():
-    S = Staff(40, 560, 150, 12); o = S.lines() + S.clefsym()
+    S = Staff(40, 700, 150, 12); o = S.lines() + S.clefsym()
     o += f'<text x="86" y="{S.y("F5") + 5:.1f}" font-family="AH" font-size="22" font-weight="700" fill="{ORD}" text-anchor="middle">♯</text>'
-    sc = ['G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5']; xs = [130 + i * 58 for i in range(8)]
+    sc = ['G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5']; xs = [140 + i * 74 for i in range(8)]
     for x, n in zip(xs, sc): o += S.note(x, n, 'c', OPK if n == 'E5' else OCR)
-    o += S.end(560)
+    o += S.end(700)
     steps = 'TTSTTTS'; yb = S.y1 + 30
     for i, t in enumerate(steps):
         x0, x1 = xs[i] + 8, xs[i + 1] - 8; red = t == 'S'
         o += f'<path d="M{x0},{yb - 5} V{yb} H{x1} V{yb - 5}" fill="none" stroke="{ORD if red else OCR}" stroke-width="{2 if red else 1.3}"/>' + lab((x0 + x1) / 2, yb + 17, 'semitone' if red else 'tone', ORD if red else OCR, 11, fam='AH')
     o += bracket(xs[0], xs[2], S.y('B4') - 52, 'a 3rd: 4 semitones, major', OCR, up=True, fs=12)
     o += lab(xs[5], S.y('E5') - 48, 'E minor starts here', OPK, 15)
-    o += lab(100, yb + 48, 'last sharp F♯, one key up: G major', OPK, 16, 'start')
+    o += lab(100, yb + 52, 'last sharp F♯, one key up: G major', OPK, 16, 'start')
     o += f'<path d="M92,{S.y("F5") - 16} Q110,{S.y("F5") - 40} {xs[0] - 6},{S.y("G4") - 10}" fill="none" stroke="{ORD}" stroke-width="1.6" stroke-dasharray="3 3"/>'
     # a small circle of fifths
-    cx, cy, R = 655, 150, 62; MJ = ['C', 'G', 'D', 'A', 'E', 'B', 'F♯', 'D♭', 'A♭', 'E♭', 'B♭', 'F']
+    cx, cy, R = 630, yb + 160, 56; MJ = ['C', 'G', 'D', 'A', 'E', 'B', 'F♯', 'D♭', 'A♭', 'E♭', 'B♭', 'F']
     o += f'<circle cx="{cx}" cy="{cy}" r="{R}" fill="none" stroke="{OCR}" stroke-width="1.2" opacity=".7"/>'
     for i, m in enumerate(MJ):
         a = _om.radians(-90 + i * 30); x, y = cx + (R + 16) * _om.cos(a), cy + (R + 16) * _om.sin(a)
         o += f'<circle cx="{x:.1f}" cy="{y:.1f}" r="12" fill="{ORD if i == 1 else ODK}" stroke="{ORD if i == 1 else OCR}" stroke-width="1.2"/>'
         o += lab(x, y + 4.5, m, '#fff' if i == 1 else OCR, 11.5, fam='AH')
     a0, a1 = _om.radians(-76), _om.radians(-50); r2 = R + 38
-    o += f'<path d="M{cx + r2 * _om.cos(a0):.1f},{cy + r2 * _om.sin(a0):.1f} A{r2},{r2} 0 0 1 {cx + r2 * _om.cos(a1):.1f},{cy + r2 * _om.sin(a1):.1f}" fill="none" stroke="{OPK}" stroke-width="2.5" stroke-linecap="round"/>' + lab(cx + 22, cy - R - 44, '+1♯', OPK, 14, fam='AH')
-    o += call(1, xs[1], S.y('B4') - 58, xs[1], 30) + call(2, xs[2] + 20, S.y('B4') - 58, xs[2] + 50, 30) + call(3, xs[3] - 8, yb + 2, xs[3] - 8, yb + 58) + call(4, xs[5], S.y('E5') - 36, xs[5] + 50, 30)
-    o += call(5, 86, S.y('F5') - 14, 60, 30) + call(6, 92, yb + 36, 60, yb + 58) + call(7, cx, cy + R + 4, cx, cy + R + 34)
-    return f'<svg viewBox="0 0 760 {yb + 84}" style="width:100%;display:block">{o}</svg>'
-LEG_S = [(1, 'Counting intervals', 'count the letters, both ends included: G A B is a 3rd', 'S1'), (2, 'Major, minor and perfect', 'the same number can be bigger or smaller: count the semitones', 'S2'), (3, 'Major scales', 'tone, tone, semitone, tone, tone, tone, semitone', 'S3'), (4, 'Minor scales', 'the same notes from the 6th note; the 7th often raised', 'S4'), (5, 'Keys and key signatures', 'the sharps at the start apply all the way through', 'S5'), (6, 'Finding the key', 'last sharp, one key up; second-last flat', 'S6'), (7, 'The circle of fifths', 'clockwise, one more sharp each step', 'S7'), ('★', 'Tips: when a note sounds wrong', '', 'ST')]
+    o += f'<path d="M{cx + r2 * _om.cos(a0):.1f},{cy + r2 * _om.sin(a0):.1f} A{r2},{r2} 0 0 1 {cx + r2 * _om.cos(a1):.1f},{cy + r2 * _om.sin(a1):.1f}" fill="none" stroke="{OPK}" stroke-width="2.5" stroke-linecap="round"/>' + lab(cx + 26, cy - R - 42, '+1♯', OPK, 14, fam='AH')
+    o += call(1, xs[1], S.y('B4') - 58, xs[1], 30) + call(2, xs[2] + 20, S.y('B4') - 58, xs[2] + 60, 30) + call(3, xs[3] - 8, yb + 2, xs[3] - 8, yb + 62) + call(4, xs[5], S.y('E5') - 36, xs[5] + 60, 30)
+    o += call(5, 86, S.y('F5') - 14, 60, 30) + call(6, 92, yb + 40, 60, yb + 62) + call(7, cx - R - 22, cy, cx - R - 60, cy)
+    return f'<svg viewBox="0 0 760 {yb + 246}" style="width:100%;display:block">{o}</svg>'
+LEG_S = [(1, 'Counting intervals', 'count the letters, both ends: G A B is a 3rd', 'S1'), (2, 'Major, minor and perfect', 'the same number, bigger or smaller', 'S2'), (3, 'Major scales', 'T T S T T T S: the two short steps', 'S3'), (4, 'Minor scales', 'the same notes from the 6th note up', 'S4'), (5, 'Keys and key signatures', 'the sharps at the start apply all the way', 'S5'), (6, 'Finding the key', 'last sharp, one key up; second-last flat', 'S6'), (7, 'The circle of fifths', 'clockwise, one more sharp each step', 'S7'), ('★', 'Tips: when a note sounds wrong', '', 'ST')]
 
 # ---------- Part IV · Harmony ----------
 def pic_harmony():
@@ -164,14 +164,14 @@ def pic_harmony():
     o += call(11, bars[0] + 60, G.y('G4') - 40, bars[0] + 60, 26) + lab(bars[0] + 78, 31, 'the tune picks the chords', OPK, 15, 'start')
     o += call('4·8', xCE, yn - 14, xCE + 26, 26) + call(6, xGs, yn - 14, xGs - 10, 26) + call(5, xG7, yn - 14, xG7 + 22, 26) + call(7, xC9 + 8, F.y('D4') - 8, xC9 + 54, 26)
     # below: the numerals row, then the trip
-    ya = yb + 30
-    o += call(3, 92, yb + 4, 60, ya) + call(1, xC, F.y('G3') + 10, xC, ya) + call(2, xF, F.y('C3') + 10, xF, ya) + call(2, xFm - 12, F.y('C3') + 10, xFm - 20, ya) + call(9, xFm + 10, F.y('A2') + 6, xFm + 20, ya)
-    o += lab(xF + 16, ya + 5, 'major', OPK, 13, 'start') + lab(xFm + 36, ya + 5, 'minor: one note down', OPK, 13, 'start')
+    ya = yb + 36
+    o += call(3, 92, yb + 4, 60, ya) + call(1, xC, F.y('G3') + 10, xC, ya) + call(2, xF, F.y('C3') + 10, xF, ya) + call(9, xFm, F.y('C3') + 10, xFm, ya)
+    o += lab(xF + 18, ya + 5, 'major', OPK, 13, 'start') + lab(xFm + 18, ya + 5, 'a guest note: minor', OPK, 13, 'start')
     o += call(10, (xG7 + xC9) / 2, yb + 6, (xG7 + xC9) / 2, ya) + lab((xG7 + xC9) / 2 + 16, ya + 5, 'full stop', OPK, 13, 'start')
-    yt = ya + 30
+    yt = ya + 36
     o += f'<path d="M{xC - 14},{yt - 6} V{yt} H{xC9 + 14} V{yt - 6}" fill="none" stroke="{OPK}" stroke-width="1.3"/>' + call(12, (xC + xC9) / 2, yt, (xC + xC9) / 2, yt + 18) + lab((xC + xC9) / 2 + 18, yt + 23, 'a trip from home and back', OPK, 15, 'start')
     return f'<svg viewBox="0 0 800 {yt + 36}" style="width:100%;display:block">{o}</svg>'
-LEG_H = [(1, 'Chords and triads', 'three notes stacked like a snowman', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3: count the keys between', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes with a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more floor: G7 pulls home', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), (9, 'Chords from outside the key', 'a guest note: A♭ in C major', 'H9'), (10, 'Cadences', 'V to I ends a phrase like a full stop', 'H10'), (11, 'Chords under a melody', 'the tune’s main notes pick the chord', 'H11'), (12, 'Progressions everywhere', 'the same few trips, in every song', 'H12'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
+LEG_H = [(1, 'Chords and triads', 'three notes stacked like a snowman', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes, a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more floor: G7 pulls home', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), (9, 'Chords from outside the key', 'a guest note: A♭ in C major', 'H9'), (10, 'Cadences', 'V to I ends a phrase like a full stop', 'H10'), (11, 'Chords under a melody', 'the tune’s main notes pick the chord', 'H11'), (12, 'Progressions everywhere', 'the same few trips, in every song', 'H12'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
 
 def opener_art(kick, title, line, part, PAGE, cls=''):
     pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H)}[part]
@@ -181,7 +181,7 @@ def opener_art(kick, title, line, part, PAGE, cls=''):
 {pic()}
 <div class="legA{" leg3" if len(leg) > 9 else ""}">{rows}</div></div></section>'''
 OPENCSS = '''
-.part2 .pl{margin-bottom:4px}
-.legA{display:grid;grid-template-columns:1fr 1fr;gap:5px 22px;margin-top:8px;font-size:12.5px;line-height:1.35;color:#fffdf7} .legA>div{display:flex;gap:8px;align-items:flex-start} .legA b{font-size:13.5px} .legA .ln{flex:0 0 22px;height:22px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center;margin-top:1px} .legA .pg2{color:#f4a9bb;font-weight:700;font-size:12px;margin-left:4px} .legA>div>div>span:last-child{opacity:.85}
-.legA.leg3{gap:3px 18px;font-size:11.5px} .legA.leg3 b{font-size:12.5px}
+.part2 .pl{margin-bottom:18px}
+.legA{display:grid;grid-template-columns:1fr 1fr;gap:13px 30px;margin-top:30px;font-size:12.5px;line-height:1.4;color:#fffdf7} .legA>div{display:flex;gap:8px;align-items:flex-start} .legA b{font-size:13.5px} .legA .ln{flex:0 0 22px;height:22px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center;margin-top:1px} .legA .pg2{color:#f4a9bb;font-weight:700;font-size:12px;margin-left:4px} .legA>div>div>span:last-child{opacity:.85}
+.legA.leg3{gap:10px 24px;font-size:12px} .legA.leg3 b{font-size:13px}
 '''
