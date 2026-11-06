@@ -242,7 +242,7 @@ H5B = hpage(f"""<div class="kick">Part IV · Harmony · 5 · continued</div>
 {pxr('h7_diff', ('n8', 'n12'), 80, 'One note decides: B makes Cmaj7, B♭ makes C7. Everything below stays the same.')}
 {youknow('The blues, with sevenths', BLUES.replace('>C<', '>C7<').replace('>F<', '>F7<').replace('>G<', '>G7<'), 'Swap the triads for <b class="co">7th chords</b> and the twelve-bar chart (p. {{H3+1}}) turns into the real blues: the 7th is the blue note.', 'Play the chart with plain C, F and G first (p. {{H3+1}}), then add the red 7ths: B♭, E♭ and F.')}
 {two(pxr('h7_pull', ('n3', 'n5', 'n7', 'n8'), 76), '<p><b>Why G7 pulls home:</b> its B wants to rise to <b class="co">C</b> and its F wants to fall to <b class="co">E</b>. Two small steps, and you are home in C.</p>', '1.2fr 1fr')}
-{thinkt('A triad is plain toast. The 7th is the topping: the same bread, but now it tastes of something.')}
+{thinkt('A triad is plain toast; the 7th is the topping: same bread, new taste.')}
 {watch(['Writing C7 when you mean Cmaj7: “7” alone means the bluesy one, with B♭.', 'Stacking the 7th from the wrong note: count a 7th up from the root, not from the 5th.'])}
 {foot('Four kinds of triad p. {{H2}} · Chords in a key p. {{H3}}', 'Workbook Harmony 5 · Online: Library › Chords')}""", 73)
 

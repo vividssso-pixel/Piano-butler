@@ -153,6 +153,7 @@ def page(inner, n, right='PART II · TIME'):
     inner = PM.resolve(order_blocks(inner))
     return f'''<section class="pg"><div class="top"><span>THE PIANO BUTLER HANDBOOK</span><span>{right}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'''
 MINCSS = """
+.ia2{grid-template-columns:1fr!important;gap:6px!important} .ia2 ol{display:grid!important;grid-template-columns:repeat(3,1fr);gap:12px!important} .ia2 .vx .vs svg{max-height:96px!important;min-height:66px} .ia2>figure,.ia2>div:first-child{justify-self:center}
 .hero .vx,.hero figure{border:0!important;box-shadow:none!important;background:transparent!important}
 .hs .verse text{font-family:AH,Arial,sans-serif;font-weight:700} .hs .verse{fill:#e4572e}
 .hl{font-family:CV,cursive;font-size:20px;font-weight:700;color:#e4572e}
@@ -296,7 +297,7 @@ P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Put yo
 {youknow('Radetzky March (Johann Strauss I)', ykfig('yk_clap', ('n1','n2','n3','n4','n5','n6'), 66), 'At the New Year concert the audience claps along on <b class="co">every beat</b>. That steady clap is the pulse; the orchestra’s tune moves freely over it.', 'Put on any march and clap only the beat, not the tune.')}
 {inact('Feel the beat before you play', '<div><p class="mmk"><span class="mm">' + gin("n", "c") + ' = 96</span></p>' + vx('t34', 72) + '</div>', ['<b>Read the mark:</b> <span class="mm">' + gin("n", "c") + ' = 96</span>, 96 crotchet beats a minute.', '<b>Listen first:</b> set the metronome and let one full bar go by, counting “1 2 3” in your head.', '<b>Step in</b> on the next beat 1, the way you step onto a moving escalator.'], 'The first note lands <b>on the beat</b>, not a guess.')}
 {thinkt('The beat is the stage and the notes are the actors: the stage is there before anyone walks on. So step in the way you step onto an escalator or take a plate off a sushi train: watch it move for a bar, then join in.')}
-{watch(['Speeding up in the easy bars and slowing down in the hard ones: the pulse stays the same all the way through.', 'Counting only the notes you play: the beat goes on through long notes and rests.'])}
+{watch(['Speeding up in easy bars and slowing in hard ones: the pulse never changes.', 'Counting only the notes you play: the beat goes on through long notes and rests.'])}
 {foot('Time signatures p. {{T4}} · Tempo words: Expression (later)', 'Workbook Level 0 · Pulse · Online: Metronome')}''', 36)
 
 rows = [('breve', 'breve', 'double whole note', '8', 'Level 4'), ('dsb', 'dotted semibreve', 'dotted whole note', '6', ''), ('sb', 'semibreve', 'whole note', '4', 'Level 0'), ('dm', 'dotted minim', 'dotted half note', '3', 'Level 0'), ('m', 'minim', 'half note', '2', 'Level 0'), ('dc', 'dotted crotchet', 'dotted quarter note', '1½', 'Level ½'),
@@ -376,7 +377,6 @@ P40 = page(f'''{head('Part II · Time · 5', 'Compound and irregular time', 'Com
 {two(box('Uneven groups in 4/4', '<p>Many dances keep 4/4 but group the eight quavers 3 + 3 + 2: “1 2 3, 1 2 3, 1 2”.</p>'), vx('t332', 54), '1fr 1fr')}
 {inact('Count 6/8 in two', vx('ia_68', 74), ['<b>Slowly, count all six:</b> 1 2 3 4 5 6.', '<b>Lean on 1 and 4</b>, the red notes.', '<b>Faster, count only those:</b> two beats, each a dotted crotchet.'], '6/8 has <b>two beats</b> in a bar, each split into three.')}
 {youknow('Row, Row, Row Your Boat', ykfig('yk_row', ('n1','n2'), 70), 'Two big beats in every bar, each a <b class="co">dotted crotchet</b>: “Row, row”. Inside each beat, “gent-ly” splits it into three. That is 6/8.', 'Sway twice per bar while you sing it.')}
-{inact('Hear 3 + 3 + 2 inside 4/4', vx('t332', 74), ['<b>Count eight quavers</b> in a bar of 4/4.', '<b>Group them</b> 3 + 3 + 2, accenting 1, 4 and 7.', '<b>Keep the beat</b> in your foot: it stays in four.'], 'The bar is still <b>4/4</b>; only the accents are uneven.')}
 {foot('Time signatures p. {{T4}} · Rhythm: groups and upbeats p. {{T6}}', 'Workbook Levels 1–4 · Compound time · Online: Rhythm clock')}''', 40)
 
 P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Say your own name: long and short sounds, that’s <b>rhythm</b>. The pulse marches steadily on; the rhythm dances around it. How the notes are grouped on the page shows where the beats fall.')}
@@ -453,7 +453,7 @@ TT = page(f"""{head('Part II · Time · Tips', 'When the rhythm slips', 'A rhyth
 {inact('Count the long notes', train([[('n', 2, 'm'), ('n', 1, 'c')], [('n', 3, 'dm')]], '3/4'), ['<b>Say 1 2 3</b> once through before you play, to feel the beat.', '<b>The minim books seats 1 and 2:</b> keep saying “2” while it sounds.', '<b>The dotted minim books all three:</b> let go on the next “1”, not before.'], 'Long notes are where counting slips: <b>say every seat</b> they book.')}
 {h3('Four ways to steady a rhythm')}
 <div class="fixes">{''.join(f'<div><span class="rn">{i + 1}</span><b>{a}</b><span>{b}</span></div>' for i, (a, b) in enumerate([('Count out loud', 'Say the counts while you play, not in your head: a slip you can hear is a slip you can fix.'), ('Tap, then play', 'Tap the rhythm on the lid and say the counts; play only when the tapping is steady.'), ('Walk the beat', 'Step the pulse while you clap the rhythm, so the beat lives in your feet.'), ('Split the beat', 'For dots and quavers, count “1 & 2 &”: the extra “&” shows exactly where each note goes.')]))}</div>
-{thinkt('Like a dance partner: the beat leads and the rhythm follows. Lose the beat and every step after it goes wrong.')}""", PM.PAGE['TT'])
+{thinkt('Like a dance partner: the beat leads, the rhythm follows.')}""", PM.PAGE['TT'])
 
 _body += TT
 FLOWJS = '''<script>
