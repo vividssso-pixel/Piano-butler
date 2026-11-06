@@ -113,13 +113,14 @@ H2 = hpage(f"""{head('Part IV · Harmony · 2', 'Four kinds of triad', 'Every tr
 <p class="sm">Chord names: a letter alone means major (C); m means minor (Cm). You see them above the melody in songbooks and lead sheets: C | Am | F | G. In interval names, 3 keys between is a major 3rd and 2 is a minor 3rd (p. {{S2}}).</p>
 {h3('Count the keys in between')}
 <div class="fk"><div class="fkf">{kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), semi(W_, '1', 46, '#fff'), semi(W_ * 1.5, '2'), semi(W_ * 2, '3', 46, '#fff'), dot(2, '3'), semi(W_ * 3.5, '1'), semi(W_ * 4, '2', 46, '#fff'), dot(4, '5')], scale=1.0)}</div><div>Play C and E and count the keys you skip, black and white: C♯, D, D♯ is <b class="co">3</b>. Then E to G: F, F♯ is <b class="co">2</b>. <b>3 + 2 is major.</b> Any root works the same way: from D, skip 3 to F♯, then 2 to A: D F♯ A, D major.</div></div>
-{inaction('Major or minor? D F A', kbx('C', 8, W_, 92, label=True, shade={1: '#fde6dd', 3: '#fde6dd', 5: '#fde6dd'}, marks=[dot(1, '1', y=67), dot(3, '3', y=67), dot(5, '5', y=67)], scale=1.0), ['<b>Root to 3rd:</b> D to F skips D♯ and E: <b>2</b>.', '<b>3rd to 5th:</b> F to A skips F♯, G and G♯: <b>3</b>.', '<b>2 + 3</b> is minor.'], 'D F A is <b>D minor</b> (Dm). Three of the white-key triads are minor: D, E and A.')}
 {thinkt('Two floors of a building: a tall floor (3 keys between) and a short one (2). Major: tall, then short, 3 + 2. Minor: short, then tall, 2 + 3. Diminished: two short, 2 + 2. Augmented: two tall, 3 + 3.')}
 <!--SPLIT-->
 {h3('How they sound')}
 {tbl(['Kind', 'Sounds', 'Heard in'], [['major', 'bright, settled, open', 'most cheerful tunes, fanfares'], ['minor', 'darker, softer, sadder', 'lullabies, laments, film tension'], ['diminished', 'tense, unstable, wants to move', 'suspense, the chord before home'], ['augmented', 'floating, dreamy, unsettled', 'dream scenes, a passing colour']], ['22%', '38%', '40%'])}
 {youknow('Beethoven, Moonlight Sonata (first movement)', YKMOON, 'The famous slow triplets are the notes of a <b class="co">C♯ minor triad</b>: C♯, E and G♯, rocking gently. Minor is why it sounds so dark and sad.', '', True)}
 {watch(['Counting the keys you play: count only the keys in between, black and white.', 'Forgetting that in diminished and augmented triads the 5th changes too.', 'Spelling with the wrong letter: a triad skips one letter, so C minor is C E♭ G, never C D♯ G.'])}
+{game('Which kind?', '<div class="gm4" style="grid-template-columns:repeat(3,1fr)">' + ''.join(f'<div>{guestman(t, (), 80)}<b>{n}</b></div>' for t, n in ((('C', 'E♭', 'G♭'), '1'), (('D', 'F♯', 'A'), '2'), (('E', 'G♯', 'B♯'), '3'))) + '</div>', 'Count the keys between: 3 + 2 major, 2 + 3 minor, 2 + 2 diminished, 3 + 3 augmented.', '1 diminished · 2 major · 3 augmented.')}
+{try10(guestman(('C', 'E', 'G'), (1,), 70, 'C'), 'C E G, then C E♭ G, then C E♭ G♭.', 'Bright, dark, tense. Only the middle ball moves first, then the top one. Listen for the change each time.')}
 {foot('Chords and triads p. {{H1}} · Major, minor and perfect p. {{S2}}', 'Workbook Harmony 2 · Online: Library › Chords')}""", 66)
 
 # ---------- Harmony 3 · Chords in a key ----------
@@ -131,14 +132,15 @@ H3 = hpage(f"""{head('Part IV · Harmony · 3', 'Chords in a key', 'Build a tria
 {tbl(['Numeral', 'Name', 'Kind', 'Keys between', 'In C', 'In G'], [[a, b, c, {'major': '3 + 2', 'minor': '2 + 3', 'diminished': '2 + 2'}[c], d, e] for a, b, c, d, e in DEG], ['13%', '21%', '18%', '18%', '15%', '15%'])}
 <p class="sm">The same in every major key: I, IV and V are major; ii, iii and vi are minor; vii° is diminished. First met: I, IV and V at Levels 1–2; the other chords from about Level 4.</p>
 {two(h3('The three primary chords') + '<p><b class="co">I, IV and V</b> are the strongest chords of a key. Between them they hold <b>every note of the scale</b>: C E G, F A C, G B D. That is why so many tunes need only these three.</p>', thinkt('I is home. IV is a visit next door. V is the walk back, already looking at the front door: it wants to go home to I. Play C, F, G, C and hear it.'), '1.2fr 1fr')}
-{inaction('Find I, IV and V in G major', px('h3_g', 74), ['<b>Count up the scale:</b> G A B C D. The 1st note is G, the 4th C, the 5th D.', '<b>Build a triad on each</b>, using the key signature: the F is F♯.', '<b>Check with the keys between:</b> all three are 3 + 2, major.'], 'In G major: <b>I = G</b>, <b>IV = C</b>, <b>V = D</b> (D F♯ A).')}
 <!--SPLIT-->
 {two(h3('In a minor key') + '<p>In A minor the three main chords are <b>i</b> (A minor), <b>iv</b> (D minor) and <b>V</b>: E G♯ B, made major by the <b class="co">raised 7th</b>, G♯, which pulls up to the home note A. Check: E G♯ B is 3 + 2, major.</p>', px('h3_min', 88, 'A minor: i, iv and V. The G♯ makes V major.'), '1fr 1.1fr')}
 {h3('Which chord holds the note?')}
 {tbl(['Note in C', 'C', 'D', 'E', 'F', 'G', 'A', 'B'], [['<b>Chord</b>', 'I or IV', 'V', 'I', 'IV', 'I or V', 'IV', 'V']], ['16%'] + ['12%'] * 7)}
 <p class="sm">The same idea works in every key: find which of I, IV and V holds the note.</p>
 {youknow('The twelve-bar blues', BLUES, 'Almost every blues, and a lot of rock ’n’ roll, is just <b class="co">I, IV and V</b> in twelve bars. Learn this chart and you can play along with hundreds of songs.', 'Play the chart in C with your left hand, one chord per bar, four beats each.')}
-{watch(['Writing every numeral big: ii, iii and vi are minor, so they are written small.', 'Forgetting the raised 7th in a minor key: V in A minor is E G♯ B, not E G B.', 'Forgetting the raised 7th in a minor key: in A minor, V is E major, with G♯.'])}
+{watch(['Writing every numeral big: ii, iii and vi are minor, so they are written small.', 'Forgetting the raised 7th in a minor key: V in A minor is E G♯ B, not E G B.'])}
+{game('Which numeral?', '<div class="gm4" style="grid-template-columns:repeat(4,1fr)">' + ''.join(f'<div>{guestman(t, (), 62, n)}<b>{q}</b></div>' for t, n, q in ((('F', 'A', 'C'), 'F', '1'), (('G', 'B', 'D'), 'G', '2'), (('A', 'C', 'E'), 'Am', '3'), (('D', 'F', 'A'), 'Dm', '4'))) + '</div>', 'All in C major. Count up the scale from C to find each chord’s number.', '1 IV · 2 V · 3 vi · 4 ii.')}
+{try10(guestman(('C', 'E', 'G'), (), 70, 'I'), 'Left hand: I IV V I.', 'C, F, G, C, one chord per bar, four beats each. The three primary chords: nearly every nursery tune fits them.')}
 {foot('Four kinds of triad p. {{H2}} · Major scales p. {{S3}} · Cadences p. {{H10}}', 'Workbook Harmony 3 · Online: Library › Chords')}""", 68)
 css += """
 .snowc{margin:0;font-size:15px;line-height:1.5}
@@ -181,14 +183,12 @@ H4 = hpage(f"""{head('Part IV · Harmony · 4', 'Inversions', 'Same three notes,
 <p class="sm">The little numbers count up from the bass. E G C: C is a <b>6th</b> above E, so I⁶. G C E: E is a 6th and C a <b>4th</b> above G, so I⁶₄. A slash chord just names the bass: C/E (more on p. {{{{H8}}}}).</p>
 {pxr('h4_inv', ('n2', 'n7', 'n9'), 90, 'The same three chords on the staff; the red note is the root, C. To find the root, restack the notes every other letter (like C E G): then the bottom ball is the root.')}
 <!--SPLIT-->
-{h3('Why inversions?')}
-<p>They let your hand <b>move as little as possible</b>: keep any note two chords share, and move the others to the nearest note of the next chord. Left-hand accompaniments and hymn parts are written this way.</p>
 {inaction('Play I, IV, V, I smoothly', px('h4_smooth', 86), ['<b>I:</b> C E G. <b>IV:</b> keep C, move E up to F and G up to A: C F A.', '<b>V:</b> no shared note. C steps down to B, F down to D, A down to G: B D G.', '<b>I again:</b> B up to C, D up to E, G stays: C E G.'], 'IV is F/C and V is G/B: <b>inversions</b> keep the hand in one place.')}
 {youknow('Pachelbel’s Canon, the bass (here in C)', ykfig('yk_canon', ('n2', 'n4', 'n6'), 84), 'The famous bass walks <b>straight down the scale</b>: C B A G F E. It can, because some chords are <b class="co">inversions</b>: G/B, Em/G and C/E put a different note in the bass.', 'Play the bass slowly and hum the famous violin tune over it.')}
-{h3('Chords of C, every position')}
-{tbl(['Chord', 'Root position', '1st inversion', '2nd inversion'], [['<b>I</b> (C)', 'C E G', 'E G C', 'G C E'], ['<b>IV</b> (F)', 'F A C', 'A C F', 'C F A'], ['<b>V</b> (G)', 'G B D', 'B D G', 'D G B'], ['<b>vi</b> (Am)', 'A C E', 'C E A', 'E A C']], ['16%', '28%', '28%', '28%'])}
 {thinkt('The same three friends in a photo, swapping places: still the same group (the same chord), but whoever stands at the front (the bass) changes the picture.')}
 {watch(['Naming a chord from its bass note: in an inversion the bass is not the root. Restack it in 3rds first.', 'Thinking an inversion is a new chord: E G C is still C major.'])}
+{game('Which position?', qitems(['C E G', 'E G C', 'G C E'], 3), 'Same three notes. Look at the bottom one: root, 3rd or 5th?', '1 root position · 2 first inversion (C/E) · 3 second inversion (C/G).')}
+{try10(guestman(('E', 'G', 'C'), (0,), 70, 'C/E'), 'Climb the chord.', 'Play C E G, then E G C, then G C E, then C E G an octave up. Same snowman, turning over as it climbs.')}
 {foot('Chords and triads p. {{H1}} · Chords in a key p. {{H3}} · Cadences p. {{H10}}', 'Workbook Harmony 4 · Online: Library › Chords')}""", 70)
 
 # ---------- Harmony 5 · Seventh chords (picture-first, her 5 Nov) ----------
@@ -238,13 +238,14 @@ H5A = hpage(f"""{head('Part IV · Harmony · 5', 'Seventh chords', 'Add one more
 {px('h7_key', 84, 'Only white keys. G7 is the one with the strongest pull home.')}""", 72)
 
 H5B = hpage(f"""<div class="kick">Part IV · Harmony · 5 · continued</div>
-{inaction('Which seventh is it? G B D F', px('h7_mys', 76), ['<b>Count the keys between:</b> G to B is 3, B to D is 2, D to F is 2.', '<b>3 + 2 + 2</b> is the bluesy one.', '<b>The root is G:</b> G7.'], 'G B D F is <b>G7</b>, the chord that pulls hardest back to C.')}
 {h3('Spot the difference')}
 {pxr('h7_diff', ('n8', 'n12'), 80, 'One note decides: B makes Cmaj7, B♭ makes C7. Everything below stays the same.')}
 {youknow('The blues, with sevenths', BLUES.replace('>C<', '>C7<').replace('>F<', '>F7<').replace('>G<', '>G7<'), 'Swap the triads for <b class="co">7th chords</b> and the twelve-bar chart (p. {{H3+1}}) turns into the real blues: the 7th is the blue note.', 'Play the chart with plain C, F and G first (p. {{H3+1}}), then add the red 7ths: B♭, E♭ and F.')}
 {two(pxr('h7_pull', ('n3', 'n5', 'n7', 'n8'), 76), '<p><b>Why G7 pulls home:</b> its B wants to rise to <b class="co">C</b> and its F wants to fall to <b class="co">E</b>. Two small steps, and you are home in C.</p>', '1.2fr 1fr')}
 {thinkt('A triad is plain toast; the 7th is the topping: same bread, new taste.')}
 {watch(['Writing C7 when you mean Cmaj7: “7” alone means the bluesy one, with B♭.', 'Stacking the 7th from the wrong note: count a 7th up from the root, not from the 5th.'])}
+{game('Which seventh?', qitems(['G B D F', 'C E G B', 'D F A C'], 3), 'A triad with one more floor. Name each chord.', '1 G7 (dominant 7th) · 2 Cmaj7 · 3 Dm7.')}
+{try10(guestman(('G', 'B', 'D'), (), 70, 'G7'), 'Play G7, then C.', 'G B D F, hold it, then C E G. The F in G7 leans on E; the B leans up to C. That lean is the pull home.')}
 {foot('Four kinds of triad p. {{H2}} · Chords in a key p. {{H3}}', 'Workbook Harmony 5 · Online: Library › Chords')}""", 73)
 
 # ---------- Harmony 6 · Colour chords (picture-first, her 5 Nov: most chord types, fun, visual) ----------
@@ -292,7 +293,6 @@ H6A = hpage(f"""{head('Part IV · Harmony · 6', 'Colour chords', 'The 3rd is th
 {h3('On any root, the counts stay the same')}
 {tbl(['Colour', 'Keys between', 'On C', 'On G', 'On F', 'On D'], ANY, ['13%', '17%', '17.5%', '17.5%', '17.5%', '17.5%'])}""", 76)
 H6B = hpage(f"""<div class="kick">Part IV · Harmony · 6 · continued</div>
-{inaction('Which colour is it? G C D', pxr('h6_mys', (), 100), ['<b>Count the keys between:</b> G to C is 4, C to D is 1.', '<b>4 + 1</b> is the sus4 card: no B (no 3rd), and C has taken its place.', '<b>The root is G:</b> Gsus4.'], 'G C D is <b>Gsus4</b>. Let the C fall to <b class="co">B</b> and you have G major.')}
 <p class="sm"><b>sus</b>: the 3rd held up or down · <b>5</b>: no 3rd at all · <b>6</b> and <b>add9</b>: one note added on top. Csus means Csus4.</p>
 {h3('Spot the difference')}
 {pxr('h6_diff', ('n3', 'n8'), 82, 'The same red D, two jobs. Csus2 throws the E out; Cadd9 keeps the E and puts the D on top.')}
@@ -300,6 +300,8 @@ H6B = hpage(f"""<div class="kick">Part IV · Harmony · 6 · continued</div>
 {two(pxr('h6_twins', ('n1', 'n6'), 78), '<p><b>C6 or Am7?</b> The same four notes, C E G A. The red bottom note decides: C at the bottom is <b>C6</b>; A at the bottom is <b>Am7</b>. More on the bass note in Slash chords, p. {{H8}}.</p>', '1fr 1.1fr')}
 {thinkt('Dressing the snowman: a scarf (the 6th) or a hat (the 9th) and it is still the same snowman. Sus moves its middle ball; a power chord takes the middle ball away.')}
 {watch(['Writing C2: some books mean Csus2, others Cadd9. Check whether the E is there.', 'Calling Cadd9 a ninth chord: C9 also has the 7th (B♭). Add9 is just the triad plus the 9th (D on C), nothing else (The tower, p. {{H7}}).'])}
+{game('sus2, sus4 or add9?', qitems(['C D G', 'C F G', 'C E G D'], 3), 'In a sus chord the 3rd has moved; in an add chord nothing moved and a note was added.', '1 Csus2 · 2 Csus4 · 3 Cadd9.')}
+{try10(guestman(('C', 'F', 'G'), (1,), 70, 'Csus4'), 'Csus4, then C.', 'Play C F G, then let the F slide down to E. The sus chord waits; the plain chord arrives.')}
 {foot('Four kinds of triad p. {{H2}} · Seventh chords p. {{H5}}', 'Workbook Harmony 6 · Online: Library › Chords')}""", 77)
 
 # ---------- Harmony 7 · The tower: 9, 11, 13 (picture-first, her 5 Nov: 'triad on the scale's land, sevenths a floor up, and beyond?') ----------
@@ -344,9 +346,10 @@ H7B = hpage(f"""<div class="kick">Part IV · Harmony · 7 · continued</div>
 {h3('6 or 13? add9 or 9?')}
 {tbl(['Same top note', 'Without the 7th', 'With the 7th (B♭)'], [['A on C', '<b>C6</b>: C E G A', '<b>C13</b>: C E B♭ A'], ['D on C', '<b>Cadd9</b>: C E G D', '<b>C9</b>: C E G B♭ D']], ['24%', '38%', '38%'])}
 <p class="sm">Look for the 7th. No 7th: a colour chord (p. {{H6}}). A 7th: a tower chord.</p>
-{inaction('Name this tall chord: G B D F A', pxr('h8_mys', ('n5',), 110), ['<b>Find the root:</b> each note skips one letter, so the bottom note, G, is the root.', '<b>The first four floors</b>, G B D F, count 3 + 2 + 2: G7.', '<b>One more floor:</b> A is the 2nd above G, an octave up: the 9th.'], 'G B D F A is <b>G9</b>: G7 with the 9th on top.')}
 {thinkt('A tower block has a lift: you don’t stop at every floor. Get out at the 3rd, the 7th and the top floor with the view.')}
 {watch(['Hunting far up for the 9th: it is just the 2nd, an octave higher (D on C).', 'Calling C13 a C6: the 13th chord has the 7th (B♭) as well.', 'Playing F and E together in C13 or C11: they clash. C13 drops the F; C11 drops the E.'])}
+{game('Which floor?', qitems(['the 9th of C', 'the 11th of C', 'the 13th of C'], 3), 'Keep skipping one letter above the 7th: C E G B♭ D F A.', '1 D · 2 F · 3 A.')}
+{try10(guestman(('C', 'E', 'G'), (), 70, 'C9'), 'Play C E G B♭ D.', 'Both hands if you need them: left hand C E G, right hand B♭ D. A C9: the tower with one floor above the 7th.')}
 {foot('Seventh chords p. {{H5}} · Colour chords p. {{H6}}', 'Workbook Harmony 7 · Online: Library › Chords')}""", 79)
 
 # ---------- Harmony 8 · Slash chords (her 5 Nov: cover all the uses) ----------
@@ -369,9 +372,10 @@ H8B = hpage(f"""<div class="kick">Part IV · Harmony · 8 · continued</div>
 {pxr('h9_pedal', ('n4', 'n8', 'n12', 'n16'), 100, 'The bass holds C while the chords change above it: C, F/C, G/C, C. The chords pull away from the C, then come home. (It is called a pedal after the organ’s foot pedals, which hold long low notes.)')}
 {h3('Job 4: a bass from outside the chord')}
 {two(pxr('h9_out', ('n4', 'n8'), 140), '<p><b>F/G</b>: F A C over a G. G is not in the F chord, so it floats, open and unfinished, ready to land on C. Pop and gospel players love it.</p><p><b>D/C</b>: D F♯ A over a C. The C is not in the D chord, so it rubs, then usually steps down to B (D/C to G/B).</p>', '1fr 1.1fr')}
-{inaction('Name it: G B D over a low B', pxr('h9_mys', ('n4',), 120), ['<b>The right hand:</b> G B D, the G chord.', '<b>The lowest note:</b> B, in the left hand.', '<b>Chord, slash, bass:</b> G/B. B is in the G chord: an inversion.'], 'It is <b>G/B</b>, “G over B”: G major, 1st inversion.')}
 {thinkt('A house and the ground it stands on: the slash says what to build (the chord) and where to build it (the bass). Same house, new ground, new view.')}
 {watch(['Writing it back to front: the chord comes first, the bass second. E/C would be an E chord over C.', 'Letting the right hand dip below the bass: the letter after the slash must be the lowest note you play.', 'Forgetting the chord itself: in C/E the right hand still plays the whole C chord, C E G, not just C.'])}
+{game('Read the slash', qitems(['G/B', 'C/G', 'F/A', 'Am/C'], 4), 'Before the slash: the chord. After it: the bass note. Which note goes in the left hand?', '1 B · 2 G · 3 A · 4 C.')}
+{try10(guestman(('C', 'E', 'G'), (), 70, 'C/E'), 'Right hand C, left hand E.', 'Play C E G in the right hand and a low E in the left: C/E. Now move the left hand to G: C/G. Same chord, new floor.')}
 {foot('Inversions p. {{H4}} · Colour chords p. {{H6}}', 'Workbook Harmony 8 · Online: Library › Chords')}""", 81)
 
 # ---------- Harmony 9 · Chords from outside the key (direction A: secret, picture first, game, Try it) ----------

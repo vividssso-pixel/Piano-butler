@@ -65,9 +65,10 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Keys to the <b>le
 {inaction('Find G4 on the keyboard', kbx('C', 15, 28, 100, label=True, shade={7: '#fde6dd', 11: '#fde6dd'}, marks=[f'<circle cx="{(7 + i) * 28 + 14}" cy="71" r="8" fill="#fff" stroke="#26296b" stroke-width="1.8"/><text x="{(7 + i) * 28 + 14}" y="74.6" text-anchor="middle" font-family="AH,Arial" font-size="10" font-weight="700" fill="#26296b">{i + 1}</text>' for i in range(5)], scale=1.0), ['<b>Find middle C (C4):</b> the C just left of the two black keys nearest the middle.', '<b>Count up the letters</b>, one white key each: C D E F G is five keys.', '<b>Same octave</b>, so the number stays 4.'], 'The key: <b>G4</b>. One octave higher, the next G, is G5.')}
 <!--SPLIT-->
 {youknow('Amazing Grace, on the black keys only', '<figure class="vx kbf">' + keyboard('C', 8, 30, 92, label=True, marks=[f'<circle cx="{x * 30}" cy="40" r="8" fill="#e4572e"/>' for x in (1, 2, 4, 5, 6)], scale=1.0) + '</figure>', 'The whole tune fits on the <b class="co">five black keys</b>: D♭ G♭ B♭ G♭ B♭ A♭ G♭ E♭ D♭. The groups of two and three are a little melody machine.', 'Start on the lower key of a pair of black keys and find the tune by ear.')}
-{inaction('Find F♯4', kbx('C', 8, 34, 100, label=True, shade={3: '#fde6dd', 4: '#fde6dd'}, marks=['<circle cx="136" cy="44" r="10" fill="#e4572e"/>'], scale=0.8), ['<b>Find F4:</b> the white key just left of the group of three black keys above middle C.', '<b>Sharp means up:</b> move one key to the right.', '<b>The very next key</b> is black: that is F♯.'], 'F♯4 is the <b>black key</b> just right of F4, the first of the group of three.')}
 {watch(['Calling every black key a sharp: each one has a flat name too (p. {{P5}}).'])}
 {thinkt('The black keys are like the little bumps on F and J of a computer keyboard: feel them and you know where you are without looking.')}
+{game('Name the key', '<div class="gm4" style="grid-template-columns:repeat(3,1fr)">' + ''.join(f'<div>{kbx("C", 8, 22, 64, label=False, marks=[f"<circle cx=\"{x}\" cy=\"{y}\" r=\"7\" fill=\"#e4572e\"/>"], scale=1.0)}<b>{n}</b></div>' for n, x, y in (('1', 22 * 2.5, 50), ('2', 22 * 6, 26), ('3', 22 * 4.5, 50))) + '</div>', 'Each keyboard starts on C. Use the groups of black keys to name the red key.', '1 E (right of the two) · 2 the black key between A and B: A♯ or B♭ · 3 G (in the group of three).')}
+{try10(kbx('C', 8, 24, 70, label=True, shade={0: '#fde6dd', 7: '#fde6dd'}, scale=1.0), 'Play every C on the piano.', 'Start at the bottom and work up, saying “C” each time: left of the two black keys, every time. Then every F: left of the three.')}
 {foot('The staff and the clefs p. {{P2}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 1 · Online: Library › Keyboard')}""", 22)
 
 clefs = [[gsym('𝄞', 46), '<b>treble clef</b> (G clef)', 'curls round the line for G (line 2)', 'Level 0'], [gsym('𝄢', 30), '<b>bass clef</b> (F clef)', 'its two dots sit either side of the line for F (line 4)', 'Level 0']]
@@ -81,10 +82,11 @@ P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music 
 <p>Notes above or below the staff sit on short extra lines called <b>ledger lines</b>, spaced like the staff lines.</p>
 {two(h3('Octave signs') + tbl(['Sign', 'Meaning'], [['<b>8va</b>', 'an octave higher, as far as the dotted line'], ['<b>8vb</b>', 'an octave lower'], ['<b>loco</b>', 'back where it is written']], ['26%', '74%']), '<p class="sm" style="margin-top:34px">First met: Level ½. Octave signs save writing many ledger lines: a high passage stays on the staff, with 8va above it.</p>', '1.4fr 1fr')}
 <!--SPLIT-->
-{inaction('Which staff does this note belong to?', kbx('C', 15, 28, 92, label=True, shade={i: ('#eef0f8' if i < 7 else '#fdeee8') for i in range(15)}, marks=['<circle cx="210" cy="54" r="10" fill="#e4572e"/>'], scale=1.0), ['<b>Below middle C</b> (blue): the bass staff, usually the left hand.', '<b>Above middle C</b> (pink): the treble staff, usually the right hand.', '<b>Middle C itself</b> (the red dot): either staff, whichever hand plays it.'], 'Low keys: <b>bass clef</b>. High keys: <b>treble clef</b>. The two staves meet at middle C.')}
 {youknow('Twinkle, Twinkle, Little Star', ykfig('yk_twk', ('n3','n4','n7'), 70), 'The treble clef curls round <b class="co">line 2: G</b>, the very note Twinkle leaps up to. Middle C hangs on its own ledger line below.', 'Point to the G line, then play C C G G A A G.')}
 {watch(['Reading bass-clef notes as if they were treble: check the clef on every line.'])}
 {thinkt('A clef is a pair of glasses: the same five lines read as different notes, depending on which pair you put on.')}
+{game('Treble or bass?', qitems(['a note two keys above middle C', 'the lowest key on the piano', 'middle C', 'a high, high note'], 4), 'Which staff would each note be written on?', '1 treble · 2 bass · 3 either: it sits between the two · 4 treble, with ledger lines or 8va.')}
+{try10(px('gs_c', 70), 'Point, then play.', 'Point to the line the treble clef curls round and play that G. Point to the line between the bass clef’s dots and play that F. Middle C sits between them.')}
 {foot('Reading the notes p. {{P3}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 23)
 
 rhy = [['Treble lines', 'E G B D F', '<i>Every Good Boy Deserves Fun</i>'], ['Treble spaces', 'F A C E', 'spells <i>FACE</i>'], ['Bass lines', 'G B D F A', '<i>Great Big Dragon Flies Away</i>'], ['Bass spaces', 'A C E G', '<i>All Cows Eat Grass</i>']]
@@ -99,7 +101,8 @@ P24 = ppage(f"""{head('Part I · Pitch · 3', 'Reading the notes', 'Each line an
 {thinkt('Landmark notes are like lamp posts on a dark road: walk from one to the next and you are never lost.')}
 {youknow('Mary Had a Little Lamb', ykfig('yk_mary', ('n1','n2','n3'), 96), 'E D C: <b class="co">line, space, ledger line</b>, one step down each time. Read the shape and the tune walks down with it.', 'Read the notes aloud before you play them.')}
 {watch(['Naming bass-clef notes with treble names: in the bass, the bottom line is G, not E.', 'Counting ledger lines from the wrong end: start from the staff and count outwards.'])}
-{inaction('Read a ledger-line note', px('ledger', 86), ['<b>Start at the staff edge:</b> the top line of the treble staff is F.', '<b>Step up</b> one note at a time: G (space), A (first ledger line).', '<b>Below the staff</b> count down the same way: D, C, B, A.'], 'Ledger lines are the staff carried on: count by steps from the nearest line.')}
+{game('Fill the gap', qitems(['E G _ D F', 'F A _ E', 'G B D _ A', 'A C E _'], 4), 'Treble lines, treble spaces, bass lines, bass spaces: one letter is missing from each.', '1 B · 2 C · 3 F · 4 G.')}
+{try10(px('tr_lines', 64), 'Say the treble lines up and down.', '“E G B D F”, then “F D B G E”, out loud, as fast as you can without a slip. Then the spaces: “F A C E”.')}
 {foot('The staff and the clefs p. {{P2}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 24)
 
 P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Every line and space of the grand staff is one white key. Read from left to right, the notes climb the staff exactly as the keys climb the keyboard: two octaves from C3 to C5, with middle C in red where the two staves meet.')}
@@ -111,7 +114,8 @@ P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Eve
 {thinkt('The staff is a ladder laid on its side beside the keyboard: each rung, a line or a space, is the next white key.')}
 {youknow('Frère Jacques, in both hands', ykfig('yk_frere', ('n5','n6','n7','n8'), 104), 'The left hand plays the <b class="co">same letters</b>, C D E C, one octave lower, written in the bass clef.', 'Play it right hand, then left hand, then both together.')}
 {watch(['Thinking the black keys have their own lines: they borrow a white key’s line or space with a sharp or flat.'])}
-{inaction('Landmarks either side of middle C', px('landmarks', 98), ['<b>Find middle C</b> on the map: between the two staves.', '<b>Treble G</b> is five white keys above it.', '<b>Bass F</b> is five white keys below it.'], 'The landmarks sit at the same distance either side of middle C.')}
+{game('How many white keys?', qitems(['middle C up to G', 'middle C down to F', 'middle C up to the next C'], 3), 'Count both ends. The staff climbs the same way: one line or space per white key.', '1 five (C D E F G) · 2 five (C B A G F) · 3 eight: an octave.')}
+{try10(kbx('C', 8, 24, 70, label=True, shade={0: '#fde6dd', 7: '#fde6dd'}, scale=1.0), 'Play middle C, then walk up.', 'Say each white key as you play it, C D E F G A B C, and picture each one climbing the staff: line, space, line, space.')}
 {foot('The keyboard p. {{P1}} · Reading the notes p. {{P3}}', 'Workbook Pitch 1–2 · Online: Library › Staff and clefs')}""", 25)
 
 acc = [[gsym('♯', 28), 'sharp', 'raises a note by a semitone', 'Level 0'], [gsym('♭', 28), 'flat', 'lowers a note by a semitone', 'Level 0'], [gsym('♮', 28), 'natural', 'cancels a sharp or flat', 'Level ½'], [gsym('𝄪', 16), 'double sharp', 'raises by two semitones', 'Level 4'], [gsym('𝄫', 28), 'double flat', 'lowers by two semitones', 'Level 4']]
@@ -125,9 +129,10 @@ P26 = ppage(f"""{head('Part I · Pitch · 5', 'Sharps, flats and naturals', 'A s
 {two('<p>Every black key has two names: the key between F and G is both <b>F♯</b> and <b>G♭</b>. Notes that sound the same but are written differently are <b>enharmonic</b>. White keys can have sharp or flat names too: <b>E♯</b> is F, <b>C♭</b> is B.</p>', kbx('C', 7, 46, 150, label=True, marks=[f'<text x="{(i + 1) * 46}" y="{y}" text-anchor="middle" font-family="AH,Arial" font-size="10.5" font-weight="700" fill="#fff">{t}</text>' for i, (s1, f1) in zip((0, 1, 3, 4, 5), (('C♯', 'D♭'), ('D♯', 'E♭'), ('F♯', 'G♭'), ('G♯', 'A♭'), ('A♯', 'B♭'))) for y, t in ((62, s1), (77, f1))], scale=1.0), '1fr 1fr')}
 <p class="think"><span>Think of it</span>A key signature is the principal’s notice on the school board: it speaks to every student, every day. An accidental is a teacher stopping at one student’s desk: the message is for that note only, and it lasts until the next bar line.</p>
 <!--SPLIT-->
-{inaction('One key, two names', px('enh', 80), ['<b>The first bar:</b> F♯, then G♭.', '<b>Find them:</b> both are the black key between F and G.', '<b>The last bar:</b> no black key sits above E, so E♯ is the white key F.'], 'Same key, different names: these are <b>enharmonic</b> notes.')}
 {youknow('Für Elise (Beethoven)', ykfig('yk_elise', ('n2','n4'), 70), 'E, <b class="co">D♯</b>, E, <b class="co">D♯</b>: a semitone down and back. The sharp is written again in the new bar, because the bar line wiped it out.', 'Play E and D♯ back and forth: the black key just left of E.')}
 {watch(['Forgetting that an accidental lasts until the bar line.', 'Carrying an accidental into the next bar: after the bar line, the key signature rules again.'])}
+{game('Which key is it?', qitems(['C♯', 'E♭', 'B♯', 'F♭'], 4), 'Sharp: one key to the right. Flat: one key to the left. Which key do you press?', '1 the black key right of C · 2 the black key left of E · 3 the white key C · 4 the white key E.')}
+{try10(kbx('C', 8, 24, 70, label=True, shade={1: '#fde6dd'}, scale=1.0), 'Play D, D♯, D♭.', 'D, then one key right (the black key), then one key left of D (another black key). Say the names as you play.')}
 {foot('Keys and key signatures p. {{S5}}', 'Workbook Pitch 3 · Online: Library › Signs')}""", 26)
 
 
@@ -199,9 +204,10 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'How far apa
 <p class="sm"><b>Your hand is a ruler:</b> thumb on C, little finger on G: five fingers on five white keys, a 5th.</p>
 <!--SPLIT-->
 {youknow('Twinkle, Twinkle, Little Star', ykfig('yk_twk5', ('n1','n3'), 70), 'The leap from “twin-” to “kle” is C up to G: C D E F G, <b class="co">five letters, a 5th</b>.', 'Sing the first two notes of any song, then count the letters between them.')}
-{inaction('Name an interval on the keyboard', kbx('C', 8, 34, 100, label=True, shade={2: '#fde6dd', 7: '#fde6dd'}, marks=[], scale=1.0), ['<b>Find both notes:</b> E and the C above it.', '<b>Count the letters:</b> E F G A B C is six.', '<b>Both ends count:</b> so the interval is a 6th.'], 'E up to C is a <b>6th</b>.')}
 {watch(['Counting only the gaps, not the notes: always count both ends.', 'Letting a sharp or flat change the number: C to G♯ is still a 5th.'])}
 {thinkt('Monday to Wednesday is three days, not two: you count the day you start on. Intervals count the same way.')}
+{game('Count the letters', qitems(['C up to G', 'D up to F', 'E up to the next E', 'G up to A'], 4), 'Count every letter, both ends included. What is each interval called?', '1 a 5th (C D E F G) · 2 a 3rd · 3 an octave (8) · 4 a 2nd.')}
+{try10(kbx('C', 8, 24, 70, label=True, shade={0: '#fde6dd', 4: '#fde6dd'}, scale=1.0), 'Thumb on C, finger 5 on G.', 'Your hand is a ruler: thumb to little finger on white keys is a 5th. Play it, then thumb to finger 3: a 3rd.')}
 {foot('Major, minor and perfect p. {{S2}} · Major scales p. {{S3}}', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 27)
 
 iv = [['unison', '', '0 (perfect)', '', 'Level 1'], ['2nd', '1 (minor)', '2 (major)', '', 'Level 1'], ['3rd', '3 (minor)', '4 (major)', '', 'Level ½'], ['4th', '', '5 (perfect)', '6 (augmented)', 'Level 1'], ['5th', '6 (diminished)', '7 (perfect)', '', 'Level 1'], ['6th', '8 (minor)', '9 (major)', '', 'Level 2'], ['7th', '10 (minor)', '11 (major)', '', 'Level 2'], ['octave', '', '12 (perfect)', '', 'Level 1']]
@@ -216,7 +222,8 @@ P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'Two i
 {thinkt('A major and a minor 3rd are a smile and a frown: the same face, one small change at the corners.')}
 {youknow('Beethoven, Symphony No. 5', ykfig('yk_b5', ('n2','n3','n4','n5'), 96), 'Da-da-da-DUM: G down to <b class="co">E♭</b> is four semitones, a <b>major 3rd</b>. Three semitones would be minor.', 'Count the keys from G down to E♭: F♯, F, E, E♭.')}
 {watch(['Counting white keys only: count every key, black and white.', 'Calling a 4th or 5th “major”: they are perfect.'])}
-{inaction('Tone or semitone?', px('tones', 66), ['<b>E to F:</b> the very next key, no black key between: a semitone.', '<b>C to D:</b> one key between (C♯): a tone.', '<b>B to C</b> and <b>F to G</b>: check the same way.'], 'E–F and B–C are semitones; C–D and F–G are tones.')}
+{game('Major or minor 3rd?', qitems(['C–E', 'D–F', 'F–A', 'E–G'], 4), 'Count the semitones between the two keys: 4 is major, 3 is minor.', '1 major (4) · 2 minor (3) · 3 major (4) · 4 minor (3).')}
+{try10(kbx('C', 8, 24, 70, label=True, shade={0: '#fde6dd', 2: '#fde6dd'}, scale=1.0), 'Play C–E, then C–E♭.', 'Bright, then dark. One key makes the difference: the major 3rd has four semitones, the minor 3rd three.')}
 {foot('Counting intervals p. {{S1}} · Chords: Harmony (later)', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 28)
 
 forms = [['major', 'T T S T T T S', 'Level ½'], ['natural minor', 'T S T T S T T', 'Level ½'], ['harmonic minor', 'T S T T S T+S S', 'Level ½'], ['melodic minor (up)', 'T S T T T T S; down as the natural minor', 'Level 2'], ['chromatic', 'every semitone', 'Level 2'], ['pentatonic (black keys)', 'T T T+S T T+S', 'Level 0']]
@@ -225,12 +232,13 @@ P29 = ppage(f"""{head('Part I · Pitch · 8', 'Major scales', 'Climb from a key 
 {hero(hero_stairs(), 'Tone, tone, semitone, tone, tone, tone, semitone: the two short steps are 3–4 and 7–8')}
 {tbl(['Scale', 'Steps', 'First met'], forms, ['30%', '50%', '20%'])}
 {two(h3('Every step has a name') + '<p class="degs">' + ' · '.join(f'<b>{a}</b> {b}' for a, b in deg) + '</p>', h3('Major or minor?') + '<p>The same key note can start a major or a minor scale: C major and C minor. The pattern decides. Major sounds bright and settled; minor, darker.</p>')}
-{inaction('Build D major', px('ia_sc1', 70) + px('ia_sc2', 70), ['<b>Write the eight letters</b> from D to D, every letter once.', '<b>Check the steps</b> against T T S T T T S: E–F is too small, B–C is too small.', '<b>Raise F and C</b> a semitone to fix them.'], 'D major: <b>D E F♯ G A B C♯ D</b>, two sharps.')}
 <!--SPLIT-->
 {thinkt('A scale is a staircase with two short steps. Wherever you build it, the short steps sit in the same places: between 3 and 4, and between 7 and 8.')}
 {youknow('Joy to the World', ykfig('yk_joy', ('n1','n2','n3','n4','n5','n6','n7','n8'), 70), 'The first line is the <b class="co">C major scale</b>, top to bottom: C B A G F E D C.', 'Play C major down from the top C and sing “Joy to the world” over it.')}
 {watch(['Using the same letter twice: every letter appears once (F♯, not G♭, in G major).', 'Forgetting the semitone between 7 and 8: the leading note pulls up to the key note.'])}
 {howto('Practise a scale', ['<b>Hands separately,</b> slowly, saying the finger numbers aloud.', '<b>Fingering for C, G, D, A and E major</b> (right hand): 1 2 3, thumb under, 1 2 3 4 5.', '<b>Listen for evenness:</b> every note the same length and loudness.', '<b>Then hands together,</b> one octave, then two.'])}
+{game('Spot the wrong note', qitems(['G A B C D E F G', 'D E F♯ G A B C D', 'F G A B C D E F'], 3), 'Each major scale has one note that breaks the T T S T T T S pattern. Which, and what should it be?', '1 F should be F♯ · 2 C should be C♯ · 3 B should be B♭.')}
+{try10(kbx('C', 8, 24, 70, label=True, shade={2: '#fde6dd', 3: '#fde6dd'}, scale=1.0), 'One finger, C to C.', 'Play the white keys from C up to C and say “tone, tone, semitone, tone, tone, tone, semitone” as you go. Feel the two short steps.')}
 {foot('Minor scales p. {{S4}} · Keys and key signatures p. {{S5}}', 'Workbook Pitch 5 · Online: Scale finder, Library › Scales')}""", 29)
 
 keys = [['C major', 'A minor', '—', 'Level ½'], ['G major', 'E minor', '1♯', 'Level ½'], ['D major', 'B minor', '2♯', 'Level 1'], ['A major', 'F♯ minor', '3♯', 'Level 3'], ['E major', 'C♯ minor', '4♯', 'Level 4'], ['B major', 'G♯ minor', '5♯', 'Level 4'], ['F major', 'D minor', '1♭', 'Level ½'], ['B♭ major', 'G minor', '2♭', 'Level 1'], ['E♭ major', 'C minor', '3♭', 'Level 3'], ['A♭ major', 'F minor', '4♭', 'Level 4'], ['D♭ major', 'B♭ minor', '5♭', 'Level 4']]
@@ -245,8 +253,9 @@ P29b = ppage(f"""{head('Part I · Pitch · 9', 'Minor scales', 'Every minor scal
 <!--SPLIT-->
 {inaction('Build E harmonic minor', '', ['<b>Borrow G major’s notes</b> starting on E: E F♯ G A B C D E.', '<b>Raise the 7th:</b> D becomes D♯.', '<b>Check the gap</b> C to D♯: a tone and a half.'], 'E harmonic minor: <b>E F♯ G A B C D♯ E</b>.')}
 {youknow('Greensleeves', ykfig('yk_green', ('n4','n7'), 70), 'A minor, with a <b class="co">G♯</b>: the raised 7th of the harmonic minor, leaning hard up to A.', 'Play it once with G♯, once with G: hear the pull disappear.')}
-{inaction('Find the relative minor of F major', kbx('C', 8, 34, 100, label=True, shade={1: '#fde6dd', 3: '#fde6dd'}, marks=[], scale=1.0), ['<b>Start on F,</b> the key note.', '<b>Count three semitones down:</b> E, E♭, D.', '<b>Check the signature:</b> D minor has one flat, B♭, like F major.'], 'The relative minor of F major is <b>D minor</b>.')}
 {watch(['Raising the 7th in the key signature: it is written as an accidental each time.', 'Playing the melodic minor’s raised notes on the way down.'])}
+{game('Which minor?', qitems(['nothing raised', 'the 7th raised', '6th and 7th raised going up, lowered coming down'], 3), 'Three forms of the minor scale. Name each one.', '1 natural · 2 harmonic · 3 melodic.')}
+{try10(kbx('A', 8, 24, 70, label=True, shade={6: '#fde6dd'}, scale=1.0), 'A to A on the white keys.', 'That is A natural minor: dark from the first note. Play it again with G♯ instead of G: harmonic minor, and the top pulls home.')}
 {foot('Major scales p. {{S3}} · Keys and key signatures p. {{S5}}', 'Workbook Pitch 5 · Online: Scale finder, Library › Scales')}""", 30)
 
 P30 = ppage(f"""{head('Part I · Pitch · 10', 'Keys and key signatures', 'Why write F♯ fifty times? The <b>key signature</b> at the start of each line says it once, for the whole piece. Its sharps or flats always line up in the same order.')}
@@ -258,9 +267,10 @@ P30 = ppage(f"""{head('Part I · Pitch · 10', 'Keys and key signatures', 'Why w
 {two('<svg viewBox="0 0 300 120" style="width:100%;max-width:300px;display:block;margin:0 auto"><circle cx="78" cy="60" r="50" fill="#fff" stroke="#26296b" stroke-width="3"/><circle cx="78" cy="60" r="42" fill="none" stroke="#26296b" stroke-width="1"/><text x="78" y="56" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="#26296b">A major</text><text x="78" y="74" text-anchor="middle" font-family="AH,Arial" font-size="11" fill="#6d6f9c">front</text><circle cx="222" cy="60" r="50" fill="#fdeee8" stroke="#e4572e" stroke-width="3"/><circle cx="222" cy="60" r="42" fill="none" stroke="#e4572e" stroke-width="1"/><text x="222" y="56" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="#e4572e">F♯ minor</text><text x="222" y="74" text-anchor="middle" font-family="AH,Arial" font-size="11" fill="#6d6f9c">back</text><text x="150" y="66" text-anchor="middle" font-family="AH,Arial" font-size="22" fill="#26296b">⇄</text></svg>', h3('One signature, two keys') + '<p>Every key signature belongs to <b>one major key and one minor key</b>, like the two sides of a coin: three sharps are A major or F♯ minor. The minor is the <b>relative minor</b>, three semitones below the major.</p>', '1fr 1.3fr')}
 <p class="think"><span>Think of it</span>A dress code on a party invitation: written once at the top, it applies to every guest all night. Only an accidental, a word to one guest, overrules it, and only until the bar line.</p>
 <!--SPLIT-->
-{inaction('Name the keys', ringks('ks_2s', -1, 84), ['<b>Count:</b> two sharps, F♯ and C♯.', '<b>The last sharp</b> is C♯; one semitone up is D.', '<b>The relative minor,</b> three semitones below D, is B.'], 'Two sharps: <b>D major</b> or <b>B minor</b>.')}
 {youknow('Minuet in G', ykfig('yk_minuet2', ('n5',), 84), 'One sharp in the key signature: every F is <b class="co">F♯</b>, like the one just before the top G. That sharp is why it is in G major.', 'Find every F in the piece and play it as F♯.')}
 {watch(['Writing a key signature in the wrong order: sharps always F C G D A E B.', 'Forgetting that a signature names two keys: a major and its relative minor.', 'Reading it once and forgetting it: glance at the key signature at the start of every line.'])}
+{game('How many sharps or flats?', qitems(['G major', 'D major', 'A major', 'F major'], 4), 'Count the steps from C round the circle: clockwise adds a sharp, anticlockwise adds a flat.', '1 one sharp · 2 two · 3 three · 4 one flat.')}
+{try10(px('sharps', 60), 'Say the sharps in order.', '“Father Charles Goes Down And Ends Battle”: F C G D A E B. Then backwards for the flats: B E A D G C F.')}
 {foot('Major scales p. {{S3}} · Finding the key p. {{S6}} · The circle of fifths p. {{S7}}', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 31)
 
 P31 = ppage(f"""{head('Part I · Pitch · 11', 'Finding the key', 'A key signature names two keys, a major and its relative minor. Two quick rules (and one to remember) find the major; one more finds the minor; then the music itself tells you which of the two it is.')}
@@ -272,8 +282,9 @@ P31 = ppage(f"""{head('Part I · Pitch · 11', 'Finding the key', 'A key signatu
 {youknow('Für Elise (Beethoven)', ykfig('yk_elise2', ('n1','n9'), 70), 'No key signature, a <b class="co">G♯</b> as the clue, and the music keeps coming home to <b class="co">A</b>: <b>A minor</b>.', 'Play A, then G♯ A: hear the G♯ lean into home.')}
 {h3('Minor keys and their clue notes')}
 {tbl(['Minor key', 'Signature', 'Clue note (raised 7th)'], [['A minor', 'none', '<b class="co">G♯</b>'], ['E minor', '1♯', '<b class="co">D♯</b>'], ['D minor', '1♭', '<b class="co">C♯</b>'], ['B minor', '2♯', '<b class="co">A♯</b>'], ['G minor', '2♭', '<b class="co">F♯</b>']], ['34%', '28%', '38%'])}
-{inaction('Major or minor? No sharps or flats', kbx('C', 8, 34, 100, label=True, shade={5: '#fde6dd'}, marks=['<circle cx="170" cy="44" r="10" fill="#e4572e"/>'], scale=1.0), ['<b>The signature:</b> none, so C major or A minor.', '<b>The clue notes:</b> G♯ appears. G♯ is the raised 7th of A minor.', '<b>The last note:</b> A.'], 'No sharps or flats, G♯ clues, ending on A: <b>A minor</b>.')}
 {thinkt('Detective work: the key signature narrows it to two suspects; the clue note and the last note name the culprit.')}
+{game('Name the major key', qitems(['2 sharps', '4 sharps', '1 flat', '3 flats'], 4), 'Sharps: the last sharp, one key up. Flats: the second-last flat is the key (one flat alone is F).', '1 D · 2 E · 3 F · 4 E♭.')}
+{try10(px('sharps', 60), 'Three sharps, stop, step up.', 'Say “F C G”, stop: the last one is G♯. One key up is A. Three sharps is A major. Try it with two and four.')}
 {foot('Keys and key signatures p. {{S5}} · The circle of fifths p. {{S7}}', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 32)
 
 
@@ -325,13 +336,12 @@ P32 = ppage(f"""{head('Part I · Pitch · 12', 'The circle of fifths', 'All the 
 {h3('How to read the clock') + '<p><b>Outer ring:</b> major keys. <b>Middle ring:</b> their relative minors (small letters). <b>Inner ring:</b> the key signature.</p>' + h3('Neighbours are close') + '<p>Keys next to each other share all but one note, so music moves between them easily: from C major to G major or F major, or to the relative minor. These are the <b>related keys</b>.</p>'}
 {h3('Six jobs for one circle')}
 <div class="uses"><div><b>Key signatures</b><span>Count the steps from C: clockwise for sharps, anticlockwise for flats.</span></div><div><b>Relative minors</b><span>Look straight in from any major key.</span></div><div><b>The main chords</b><span>A key’s two neighbours give its other main chords: in C, the chords of F and G.</span></div><div><b>Cadences</b><span>The strongest close, V to I, is one step anticlockwise: G to C.</span></div><div><b>Changing key</b><span>Pieces usually move one step round, or to the relative minor.</span></div><div><b>Scale practice</b><span>Go round the circle: one new sharp or flat each time.</span></div></div>
-{inaction('Why do G major and D major sound so close?', '', ['<b>Find both:</b> D is one step clockwise from G.', '<b>Compare the scales:</b> G major has C; D major has C♯.', '<b>Count:</b> six notes the same, one different.'], 'Neighbours share six of their seven notes, so music moves between them easily.')}
 <p class="think"><span>Think of it</span>Like a colour wheel: neighbours blend, opposites clash. C and G sit side by side; C and F♯ sit opposite.</p>
 <!--SPLIT-->
 {youknow('Passacaglia (Handel), the bass', ykfig('yk_pass', ('n1','n2','n3','n4','n5','n6','n7','n8'), 80), 'Each bass note is a <b class="co">5th below</b> the one before (or a 4th above): G C F B♭ E♭ A D G, one step round the circle each chord.', 'Play the bass line slowly and hear it pull towards the last G.')}
-{h3('The first steps round the circle')}
-{tbl(['Steps', 'Clockwise (sharps)', 'Anticlockwise (flats)'], [['1', 'G major: F♯', 'F major: B♭'], ['2', 'D major: F♯ C♯', 'B♭ major: B♭ E♭'], ['3', 'A major: F♯ C♯ G♯', 'E♭ major: B♭ E♭ A♭']], ['16%', '42%', '42%'])}
 {watch(['Going the wrong way round: clockwise adds sharps, anticlockwise adds flats.', 'Forgetting the relative minors on the middle ring.'])}
+{game('Neighbours on the clock', qitems(['right of D', 'left of C', 'opposite C', 'inside G'], 4), 'Clockwise is right. Inside each major sits its relative minor.', '1 A · 2 F · 3 F♯ / G♭ · 4 E minor.')}
+{try10(kbx('C', 8, 24, 70, label=True, shade={0: '#fde6dd', 4: '#fde6dd'}, scale=1.0), 'Walk the circle: C G D A E.', 'Play each key note with one finger, a 5th up each time (drop an octave when you run out of hand). You just walked four steps clockwise.')}
 {foot('Keys and key signatures p. {{S5}} · Finding the key p. {{S6}} · Chords: Harmony (later)', 'Workbook Pitch 5 · Online: Scale finder, Library › Related keys')}""", 33)
 
 css += '''
