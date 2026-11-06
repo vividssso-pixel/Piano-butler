@@ -38,7 +38,8 @@ def trp(p, k):   # 'cs5' (a sharp) keeps its octave; a chord 'c4+e4+g4' moves no
 # them; `sharp` marks the key's black key in coral, named above it
 def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
     used = {trp(p, tr)[0] for bar in SONG['bars'] for p, *_ in bar if p != 'r'}; H, w = 150, 42
-    whites = ['c', 'd', 'e', 'f', 'g', 'a', 'b', 'c', 'd', 'e'][:SONG.get('kb_whites', 7)]; out = ''; top = 24 if sharp is not None else 0   # C to B is enough (her 4 Nov 13:35)
+    W7 = ['c', 'd', 'e', 'f', 'g', 'a', 'b']; f0 = W7.index(SONG.get('_kb_from') or 'c')   # a keyboard may start on another key (the left hand's G position: G to F)
+    whites = (W7[f0:] + W7 + W7)[:SONG.get('kb_whites', 7)]; out = ''; top = 24 if sharp is not None else 0   # C to B is enough (her 4 Nov 13:35)
     W = len(whites) * w; width = width * len(whites) / 10 * 1.05
     for i, l in enumerate(whites):
         inpos = start <= i < start + 5; lit = inpos and l in used
@@ -47,7 +48,7 @@ def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
         out += f'<text x="{i * w + w / 2}" y="{H - 12}" text-anchor="middle" font-family="AH" font-weight="700" font-size="17" fill="{N}">{l.upper()}</text>'
         if fmap is not None: inpos = l in fmap; lit = l not in (SONG.get('kb_open') or [])   # a stretch key gets an open circle
         if inpos: f = fmap[l] if fmap else i - start + 1; out += f'<circle cx="{i * w + w / 2}" cy="{H + 19}" r="13" fill="{C if lit else "#fff"}" stroke="{C}" stroke-width="1.8"/><text x="{i * w + w / 2}" y="{H + 24.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{"#fff" if lit else C}">{f}</text>'
-    for i in [i for i in (0, 1, 3, 4, 5, 7, 8) if i < len(whites) - 1]:
+    for i in [i for i in range(len(whites) - 1) if whites[i] in 'cdfga']:   # a black key after C, D, F, G and A
         out += f'<rect x="{(i + 1) * w - 13}" y="0" width="26" height="{H * 0.6}" rx="2" fill="{C if i == sharp else N}"/>'
         if i == sharp: out += f'<text x="{(i + 1) * w}" y="-8" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{C}">F♯</text>'
     out += f'<text x="1" y="{H + 50}" text-anchor="start" font-family="AH" font-weight="700" font-size="12" fill="{MUTE}">{SONG.get("kb_c", "middle C")}</text>'   # the finger numbers under the keys, clear of the black keys (her 4 Nov 19:58)
@@ -141,7 +142,7 @@ def STRIP(names):   # the bars as names only, big: the first lead sheet's seed (
 def chord_page():   # her 6 Nov 14:24: page 3 unpacks the chords one at a time (meet the chord, find it in the song, play it), the road to the lead sheet
     C = SONG['chord_page']
     def ckb(t, fm, extra):
-        SONG['_kb_all'] = 1; SONG['_kb_extra'] = extra; kc = SONG.get('kb_c'); SONG['kb_c'] = C.get('kb_c', kc or 'middle C'); h = f'<div><div class="kbl">{t}</div>{kb(width=C.get("kb_w", 230), fmap=fm)}</div>'; SONG['_kb_all'] = 0; SONG['_kb_extra'] = None; SONG['kb_c'] = kc or 'middle C'; return h
+        SONG['_kb_all'] = 1; SONG['_kb_extra'] = extra; SONG['_kb_from'] = C.get('kb_from'); kc = SONG.get('kb_c'); SONG['kb_c'] = C.get('kb_c', kc or 'middle C'); h = f'<div><div class="kbl">{t}</div>{kb(width=C.get("kb_w", 230), fmap=fm)}</div>'; SONG['_kb_all'] = 0; SONG['_kb_extra'] = None; SONG['_kb_from'] = None; SONG['kb_c'] = kc or 'middle C'; return h
     kbs = '<div class="kbs">' + ''.join(ckb(t, fm, ex) for t, fm, ex in C['kbs']) + '</div>'
     return page(f'''{part(3, C.get('title', 'The chords'), C['how'])}
 <div class="sp"></div>{SUB(C.get('meet_title', 'Meet the chord'), C['meet'])}<div class="pos"><div>{kbs}</div><div>{C['meet_note']}</div></div>
