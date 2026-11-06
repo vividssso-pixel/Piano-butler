@@ -331,11 +331,14 @@ function mapX(svg, knotsOld, knotsNew) {
     let nx = f(x), nw = Math.max(1, f(x + w) - nx);
     if (w < 600) { nx = Math.round((f(x + w / 2) - w / 2) * 10) / 10; nw = w; }   // a small box or hyphen keeps its size: only its middle moves
     rects.push(m.replace(/(^<rect |[ ])x="(-?[\d.]+)"/, `$1x="${nx}"`).replace(/ width="(-?[\d.]+)"/, ` width="${Math.round(nw * 10) / 10}"`)); return `@@R${rects.length - 1}@@`; });
+  // a ledger line (her 6 Nov 16:51: 'the C ledger line is too long'): its middle moves with the head, its length stays a head and a bit
+  const leds = []; body = body.replace(/(<g class="ledgerLines[^"]*">)([\s\S]*?)(<\/g>)/g, (m, a, inner, z) => { leds.push(a + inner.replace(/d="M(-?[\d.]+) (-?[\d.]+) L(-?[\d.]+) (-?[\d.]+)"/g, (mm, x1, y1, x2, y2) => {
+      const mid = f((+x1 + +x2) / 2), half = Math.min((+x2 - +x1) / 2, 190); return `d="M${Math.round(mid - half)} ${y1} L${Math.round(mid + half)} ${y2}"`; }) + z); return `@@L${leds.length - 1}@@`; });
   body = body.replace(/(<use[^>]*transform="translate\()(-?[\d.]+)/g, (m, a, x) => a + f(x))   // a group's own transform (the page margin, a bar number) is relative: left alone
     .replace(/ (x|cx|x1|x2)="(-?[\d.]+)"/g, (m, a, x) => ` ${a}="${f(x)}"`)
     .replace(/ d="([^"]+)"/g, (m, d) => ' d="' + d.replace(/([ML])\s*(-?[\d.]+)/g, (mm, c, x) => c + f(x)) + '"')
     .replace(/ points="([^"]+)"/g, (m, p) => ' points="' + p.trim().split(/\s+/).map(q => { const [x, y] = q.split(','); return f(x) + ',' + y; }).join(' ') + '"');
-  body = body.replace(/@@R(\d+)@@/g, (m, i) => rects[+i]);
+  body = body.replace(/@@R(\d+)@@/g, (m, i) => rects[+i]).replace(/@@L(\d+)@@/g, (m, i) => leds[+i]);
   return head + body;
 }
 // A stem stays on its own head (her 6 Nov 10:24: 'stems right on the side of the head'): the spacing moves head and stem
