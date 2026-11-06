@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Score Reader | Piano Butler</title>
+<meta name="description" content="Upload a MusicXML score and get every marking in it explained — key, time signature, note names, rhythm, dynamics and articulations, bar by bar.">
+<meta name="robots" content="noindex, follow">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f5f0eb; color: #1a1008; font-family: 'Inter', system-ui, -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  ul, ol { margin: 0; padding: 0; list-style: none; }
+
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 52px;
+         background: #f5f0eb; border-bottom: 1px solid #e8e0d8; position: sticky; top: 0; z-index: 10; }
+  .nav-logo { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .nav-bar { width: 3px; height: 18px; background: #d4956a; border-radius: 2px; }
+  .nav-back { font-size: 13px; color: #8a7a6a; }
+  .nav-back:hover { color: #d4956a; }
+
+  .wrap { max-width: 860px; margin: 0 auto; padding: 32px 24px 80px; }
+  .hero-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; color: #d4956a; text-transform: uppercase; margin-bottom: 12px; }
+  .hero-title { font-size: 30px; font-weight: 800; line-height: 1.2; margin-bottom: 12px; }
+  .hero-sub { font-size: 14.5px; color: #6a5a4a; line-height: 1.65; max-width: 620px; }
+
+  .drop { margin: 28px 0; border: 2px dashed #d8cec4; border-radius: 14px; background: #fff;
+          padding: 40px 24px; text-align: center; transition: border-color .15s, background .15s; }
+  .drop.over { border-color: #d4956a; background: #fdf3eb; }
+  .drop-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .drop-sub { font-size: 13px; color: #8a7a6a; line-height: 1.6; }
+  .btn { display: inline-block; margin-top: 16px; padding: 10px 22px; background: #d4956a; color: #fff;
+         font-size: 14px; font-weight: 700; border-radius: 10px; }
+  .btn:hover { background: #b8703a; }
+  .btn-quiet { background: #fff; border: 1.5px solid #d8cec4; color: #6a5a4a; font-weight: 600; }
+  .btn-quiet:hover { background: #f0e8e0; border-color: #d4956a; color: #a05a38; }
+
+  .card { background: #fff; border: 1px solid #e8e0d8; border-radius: 14px; padding: 20px 22px; margin-bottom: 16px; }
+  .card-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+                color: #8a7a6a; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .fact { background: #faf6f2; border-radius: 10px; padding: 12px 14px; }
+  .fact-k { font-size: 11.5px; color: #8a7a6a; margin-bottom: 4px; }
+  .fact-v { font-size: 15px; font-weight: 700; }
+
+  .term { border-top: 1px solid #f0e8e0; padding: 13px 0; }
+  .term:first-of-type { border-top: none; padding-top: 0; }
+  .term-head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 5px; }
+  .term-sym { font-size: 14.5px; font-weight: 800; }
+  .term-count { font-size: 11px; color: #a08a76; background: #f5efe9; padding: 2px 8px; border-radius: 20px; }
+  .term-tr { font-size: 12.5px; color: #a05a38; font-style: italic; }
+  .term-body { font-size: 13.5px; color: #4a3a2c; line-height: 1.65; }
+  .term-unknown { font-size: 13px; color: #8a7a6a; font-style: italic; }
+
+  .barnav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .barnav input { width: 74px; padding: 7px 10px; border: 1.5px solid #e0d8d0; border-radius: 8px;
+                  font-family: inherit; font-size: 14px; color: #1a1008; background: #fff; }
+  .barnav input:focus { outline: none; border-color: #d4956a; }
+  .step { padding: 7px 13px; border: 1.5px solid #e0d8d0; border-radius: 8px; background: #fff;
+          font-size: 13px; font-weight: 600; color: #6a5a4a; }
+  .step:hover:not(:disabled) { border-color: #d4956a; color: #a05a38; }
+  .step:disabled { opacity: .4; cursor: default; }
+
+  .bar { background: #faf6f2; border-radius: 12px; padding: 15px 17px; margin-bottom: 11px; }
+  .bar-n { font-size: 12px; font-weight: 700; color: #a05a38; margin-bottom: 10px; }
+  .row { display: flex; gap: 12px; padding: 6px 0; border-top: 1px solid #efe6dd; font-size: 13.5px; line-height: 1.6; }
+  .row:first-of-type { border-top: none; }
+  .row-k { flex: 0 0 96px; color: #8a7a6a; font-size: 12.5px; padding-top: 1px; }
+  .row-v { flex: 1; color: #2a2015; word-break: break-word; }
+  .mono { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12.5px; }
+  .none { color: #b0a396; }
+  .staff-tag { display: inline-block; font-size: 10.5px; font-weight: 700; color: #6a7a8a;
+               background: #eef2f6; padding: 1px 7px; border-radius: 5px; margin-right: 7px; }
+
+  .note-cp { background: #fdf3eb; border: 1px solid #f0d8c0; border-radius: 12px; padding: 14px 17px;
+             font-size: 13px; color: #6a5a4a; line-height: 1.65; margin-bottom: 16px; }
+  .note-cp strong { color: #a05a38; }
+  .omr { background: #fdf6e8; border: 1.5px solid #e8c88a; border-left: 5px solid #d99a2b;
+         border-radius: 12px; padding: 15px 18px; margin-bottom: 16px; }
+  .omr-title { font-size: 14px; font-weight: 800; color: #8a5a10; margin-bottom: 7px; }
+  .omr-body { font-size: 13px; color: #6a4a20; line-height: 1.7; }
+  .omr-body strong { color: #8a5a10; }
+
+  .err { background: #fdecea; border: 1px solid #f5c6c0; border-radius: 12px; padding: 14px 17px;
+         font-size: 13.5px; color: #a0342a; line-height: 1.6; margin-bottom: 16px; }
+  .foot { margin-top: 34px; padding-top: 20px; border-top: 1px solid #e8e0d8; font-size: 12px;
+          color: #a08a76; line-height: 1.7; }
+  .viewtoggle { display: flex; gap: 6px; background: #f0e8e0; padding: 4px; border-radius: 11px;
+                margin-bottom: 16px; width: fit-content; }
+  .vt { padding: 8px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600; color: #8a7a6a; }
+  .vt.on { background: #fff; color: #1a1008; font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+
+  .tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 20px;
+         border: 1.5px solid #e0d8d0; background: #fff; font-size: 13px; font-weight: 600; color: #6a5a4a; }
+  .tab:hover { border-color: #d4956a; color: #a05a38; }
+  .tab.on { background: #d4956a; border-color: #d4956a; color: #fff; }
+  .tab-n { font-size: 11px; opacity: .75; }
+  .tab.on .tab-n { opacity: .9; }
+
+  .sheet-intro { font-size: 13.5px; color: #6a5a4a; line-height: 1.65; margin-bottom: 14px; }
+  .sheet-note { font-size: 12.5px; color: #8a6a3a; background: #fdf6e8; border: 1px solid #f0dfc0;
+                border-radius: 10px; padding: 9px 12px; line-height: 1.6; margin-bottom: 14px; }
+  .srow { border-top: 1px solid #f0e8e0; padding: 12px 0; }
+  .srow:first-of-type { border-top: none; padding-top: 0; }
+  .srow-head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 4px; }
+  .srow-name { font-size: 14.5px; font-weight: 800; }
+  .srow-body { font-size: 13.5px; color: #4a3a2c; line-height: 1.65; margin-bottom: 3px; }
+  .srow-bars { font-size: 12px; color: #a08a76; line-height: 1.55; }
+  .printrow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+
+  @media print {
+    .nav, .drop, .no-print, .hero-eyebrow, .hero-sub, .note-cp, .foot { display: none !important; }
+    body { background: #fff; }
+    .wrap { padding: 0; max-width: none; }
+    .hero-title { font-size: 20px; margin-bottom: 14px; }
+    .card { border: none; padding: 0 0 14px; margin-bottom: 14px; page-break-inside: auto; }
+    .srow, .term { page-break-inside: avoid; }
+    .fact { background: #f5f5f5; }
+  }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 22px 16px 60px; }
+    .hero-title { font-size: 23px; }
+    .row { flex-direction: column; gap: 2px; }
+    .row-k { flex: none; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script id="app-jsx" type="text/jsx-raw">
+const { useState, useMemo, useRef, useCallback } = React;
+
+/* ------------------------------------------------------------------ *
+ * TERM DICTIONARY
+ * Meanings, not just labels. Every entry says what to DO, and keeps
+ * the bar low. Nothing here is generated — it is a fixed lookup.
+ * ------------------------------------------------------------------ */
+const TERMS = {
+  // ---- dynamics ----
+  "ppp": { tr: "pianississimo", body: "About as quiet as you can play and still make a sound. Aim for a whisper you can control rather than the quietest note possible." },
+  "pp":  { tr: "pianissimo", body: "Very soft. Let the key go down slowly rather than pressing lightly — that is what keeps the tone from disappearing." },
+  "p":   { tr: "piano", body: "Soft. Not timid — a soft sound still needs to travel to the back of the room." },
+  "mp":  { tr: "mezzo-piano", body: "Moderately soft. Just under a normal speaking voice." },
+  "mf":  { tr: "mezzo-forte", body: "Moderately loud. Comfortable and full, nothing forced." },
+  "f":   { tr: "forte", body: "Loud. Use arm weight rather than finger effort — the sound is rounder and your hand stays relaxed." },
+  "ff":  { tr: "fortissimo", body: "Very loud. Still a musical sound. If it starts to bang, you have gone past it." },
+  "fff": { tr: "fortississimo", body: "As loud as the piece ever gets. Save something for it earlier so it actually feels like an arrival." },
+  "sf":  { tr: "sforzando", body: "One note suddenly stronger, then straight back to where you were. A jolt, not a new dynamic." },
+  "sfz": { tr: "sforzando", body: "A sudden strong accent on this note only. Everything after it returns to normal." },
+  "fz":  { tr: "forzando", body: "Force this one note, then let go immediately." },
+  "fp":  { tr: "fortepiano", body: "Loud on the note, instantly soft after it. The drop is the whole effect." },
+  "rf":  { tr: "rinforzando", body: "Reinforce — a short surge of strength across a few notes." },
+  "rfz": { tr: "rinforzando", body: "A brief swell of emphasis, slightly wider than a single accent." },
+
+  // ---- wedges ----
+  "crescendo":  { tr: "cresc.", body: "Grow louder gradually. Decide where the loudest point lands before you start, or it arrives too early." },
+  "diminuendo": { tr: "dim. / decresc.", body: "Fade gradually. Easier if you think of it as slowing the key down rather than playing weakly." },
+
+  // ---- articulations ----
+  "staccato":     { tr: "detached", body: "Short and separated. Aim for about half the written length — it is about the silence after the note, not about stabbing at it." },
+  "staccatissimo":{ tr: "very detached", body: "Shorter and crisper than staccato. Very little contact with the key." },
+  "accent":       { tr: "marcato accent", body: "Lean on this note — more weight, not more force. Let the arm drop into it and release." },
+  "strong-accent":{ tr: "marcato", body: "A firm, marked note. Stronger than an accent and usually a little longer too." },
+  "tenuto":       { tr: "held", body: "Give the note its full length, with a little pressure. Often means 'take your time here' as much as 'hold it'." },
+  "detached-legato": { tr: "portato", body: "Between legato and staccato — connected, but each note gently re-articulated." },
+  "spiccato":     { tr: "bouncing", body: "Light and springy. Rare in piano writing; treat it as a crisp staccato." },
+  "slur":         { tr: "legato", body: "Join these notes into one line — no gap between them. Lift gently at the end of the slur; that lift is part of the phrasing." },
+  "breath-mark":  { tr: "breath", body: "A small lift, like taking a breath mid-sentence. It shapes the phrase without changing the tempo." },
+  "caesura":      { tr: "railroad tracks", body: "A real pause. Stop, let the silence sit, then continue." },
+
+  // ---- ornaments ----
+  "trill-mark":     { tr: "trill", body: "Rapidly alternate this note with the one above. Start slowly and evenly — speed comes later and matters less than evenness." },
+  "mordent":        { tr: "lower mordent", body: "A quick flick down to the note below and straight back. One fast wobble, not a trill." },
+  "inverted-mordent": { tr: "upper mordent", body: "A quick flick up to the note above and straight back." },
+  "turn":           { tr: "gruppetto", body: "Four notes curling around the written one: above, the note, below, the note. Keep it smooth, not rushed." },
+  "inverted-turn":  { tr: "inverted gruppetto", body: "The turn the other way round: below, the note, above, the note." },
+  "grace":          { tr: "grace note", body: "A small decorative note squeezed in before the main one. It borrows time — usually from the note it leads to." },
+  "tremolo":        { tr: "tremolo", body: "Rapid repetition or alternation. Keep the hand loose; tension is what makes this tiring." },
+  "fermata":        { tr: "pause", body: "Hold longer than written — roughly half as long again, though it is your judgement. The music waits for you here." },
+  "arpeggiate":     { tr: "rolled chord", body: "Spread the chord from the bottom up rather than playing it all at once, arriving on the top note in time." },
+
+  // ---- pedal & directions ----
+  "pedal-start": { tr: "press the pedal", body: "Right pedal down. Change it whenever the harmony changes, or the sound turns muddy." },
+  "pedal-stop":  { tr: "release the pedal", body: "Pedal up. Clean silence is as much a part of the sound as the ringing." },
+
+  // ---- common words found in <words> ----
+  "dolce":       { tr: "sweetly", body: "Warm and gentle. Usually asks for a singing tone rather than a change of speed." },
+  "cantabile":   { tr: "singing", body: "Play as though the melody were being sung. Breathe where a singer would." },
+  "espressivo":  { tr: "expressively", body: "Shape it. Small changes in weight and timing, not big dramatic gestures." },
+  "legato":      { tr: "smoothly", body: "Connect every note to the next with no gap between them." },
+  "leggiero":    { tr: "lightly", body: "Light fingers, minimal weight. Speed feels easier when the hand stays loose." },
+  "sostenuto":   { tr: "sustained", body: "Full, held notes. Often slightly broader in feel." },
+  "ritardando":  { tr: "rit. — slowing", body: "Gradually slow down. Start later than you think; most people begin too early." },
+  "rallentando": { tr: "rall. — slowing", body: "Gradually slow down, usually with a sense of relaxing rather than winding down." },
+  "ritenuto":    { tr: "riten. — held back", body: "Immediately slower, not gradually. Different from a ritardando." },
+  "accelerando": { tr: "accel. — speeding up", body: "Gradually get faster. Keep the pulse even as it moves, or it turns into a scramble." },
+  "a tempo":     { tr: "back in time", body: "Return to the original speed after slowing or speeding up." },
+  "tempo primo": { tr: "the first tempo", body: "Back to the speed the piece started at." },
+  "rubato":      { tr: "stolen time", body: "Stretch and compress the timing for expression. Time borrowed in one place is paid back in another." },
+  "poco":        { tr: "a little", body: "A small amount of whatever it is attached to." },
+  "poco a poco": { tr: "little by little", body: "Gradually — the change should be barely noticeable moment to moment." },
+  "molto":       { tr: "very", body: "A lot of whatever it is attached to." },
+  "meno":        { tr: "less", body: "Less of whatever follows." },
+  "piu":         { tr: "more", body: "More of whatever follows." },
+  "sempre":      { tr: "always", body: "Keep doing it — it applies from here on, not just once." },
+  "simile":      { tr: "similarly", body: "Carry on in the same manner without the markings being written out again." },
+  "subito":      { tr: "suddenly", body: "Immediately, with no preparation. The surprise is the point." },
+  "allegro":     { tr: "fast, cheerful", body: "Brisk and lively. The word originally meant cheerful, which is a better guide than a metronome number." },
+  "allegretto":  { tr: "moderately fast", body: "A little slower and lighter than allegro." },
+  "andante":     { tr: "walking pace", body: "Moving steadily, at about the speed of a comfortable walk." },
+  "andantino":   { tr: "slightly faster than andante", body: "A gentle, flowing pace." },
+  "moderato":    { tr: "moderate", body: "A middle speed — neither pressing forward nor holding back." },
+  "adagio":      { tr: "slow, at ease", body: "Slow and unhurried. There is room to let each note sound." },
+  "largo":       { tr: "broad", body: "Very slow and wide. Think spacious rather than merely slow." },
+  "lento":       { tr: "slow", body: "Slow and calm." },
+  "vivace":      { tr: "lively", body: "Quick and full of energy." },
+  "presto":      { tr: "very fast", body: "Fast. Evenness matters more than top speed." },
+  "grazioso":    { tr: "gracefully", body: "Elegant and light, with a slight lift to the phrasing." },
+  "con moto":    { tr: "with motion", body: "Keep it moving — do not let it settle." },
+  "con brio":    { tr: "with spirit", body: "Bright and energetic." },
+  "maestoso":    { tr: "majestic", body: "Broad and dignified, with weight in the sound." },
+  "scherzando":  { tr: "playfully", body: "Light and joking in character." },
+  "marcato":     { tr: "marked", body: "Each note deliberate and clearly separated in weight." },
+  "tranquillo":  { tr: "calmly", body: "Settled and quiet in character." },
+  "agitato":     { tr: "agitated", body: "Restless and urgent, usually without actually changing speed." },
+  "da capo":     { tr: "from the top", body: "Go back to the beginning and play again." },
+  "dal segno":   { tr: "from the sign", body: "Go back to the sign and continue from there." },
+  "fine":        { tr: "the end", body: "The piece finishes here, even though there is music printed after it." }
+};
+
+const KEY_NAMES = {
+  "-7": ["C flat major", "A flat minor"], "-6": ["G flat major", "E flat minor"],
+  "-5": ["D flat major", "B flat minor"], "-4": ["A flat major", "F minor"],
+  "-3": ["E flat major", "C minor"], "-2": ["B flat major", "G minor"],
+  "-1": ["F major", "D minor"], "0": ["C major", "A minor"],
+  "1": ["G major", "E minor"], "2": ["D major", "B minor"],
+  "3": ["A major", "F sharp minor"], "4": ["E major", "C sharp minor"],
+  "5": ["B major", "G sharp minor"], "6": ["F sharp major", "D sharp minor"],
+  "7": ["C sharp major", "A sharp minor"]
+};
+
+const NOTE_LENGTH = {
+  breve: "breve", whole: "semibreve (4 beats)", half: "minim (2 beats)",
+  quarter: "crotchet (1 beat)", eighth: "quaver (half a beat)",
+  "16th": "semiquaver (quarter beat)", "32nd": "demisemiquaver", "64th": "hemidemisemiquaver"
+};
+
+const INTERVAL_STEPS = ["unison", "minor 2nd", "major 2nd", "minor 3rd", "major 3rd",
+  "perfect 4th", "tritone", "perfect 5th", "minor 6th", "major 6th", "minor 7th", "major 7th", "octave"];
+
+function intervalName(semis) {
+  const dir = semis > 0 ? " up" : (semis < 0 ? " down" : "");
+  const a = Math.abs(semis);
+  if (a === 0) return "same note";
+  if (a > 12) return "wider than an octave" + dir;
+  return INTERVAL_STEPS[a] + dir;
+}
+
+const INTERVAL_TIPS = {
+  "unison": "The same note repeated. Watch that the repetition stays even.",
+  "same note": "The same note again. Easy to read, easy to let go slack — keep the pulse honest.",
+  "minor 2nd": "A half step, the closest move there is. Neighbouring keys, no gap.",
+  "major 2nd": "A whole step — one key skipped between them. The ordinary step of a scale.",
+  "minor 3rd": "A small skip. On the stave, line to line or space to space.",
+  "major 3rd": "A slightly wider skip, and the interval that makes a chord sound bright.",
+  "perfect 4th": "A comfortable open leap. Feel the hand shape rather than reading each note.",
+  "tritone": "The restless one — three whole steps. It usually wants to resolve.",
+  "perfect 5th": "A wide open sound, the frame of most chords.",
+  "minor 6th": "A big stretch. Prepare the hand shape before you leave the first note.",
+  "major 6th": "A big warm leap. Look ahead to where you are landing.",
+  "minor 7th": "Nearly an octave. Aim from the arm, not the fingers.",
+  "major 7th": "Almost an octave but not quite — easy to over-reach.",
+  "octave": "The same letter, eight notes apart. Fix the hand span and move as one unit.",
+  "wider than an octave": "A jump bigger than an octave. Move early and land quietly."
+};
+
+function intervalTip(name) {
+  const base = name.replace(/ (up|down)$/, "");
+  return INTERVAL_TIPS[base] || null;
+}
+
+function lookup(raw) {
+  if (!raw) return null;
+  const k = String(raw).toLowerCase().trim().replace(/[.,;:!]+$/, "");
+  if (TERMS[k]) return TERMS[k];
+  const noAccents = k.replace(/ù|ú/g, "u").replace(/à|á/g, "a");
+  if (TERMS[noAccents]) return TERMS[noAccents];
+  const words = noAccents.split(/\s+/);
+  for (let i = 0; i < words.length; i++) {
+    if (TERMS[words[i]]) return TERMS[words[i]];
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------------ *
+ * PARSER — plain DOMParser over MusicXML. No notation is rendered.
+ * ------------------------------------------------------------------ */
+const txt = (el, tag) => {
+  const n = el ? el.getElementsByTagName(tag)[0] : null;
+  return n ? n.textContent.trim() : null;
+};
+
+function pitchName(noteEl) {
+  const p = noteEl.getElementsByTagName("pitch")[0];
+  if (!p) return null;
+  const step = txt(p, "step") || "?";
+  const oct = txt(p, "octave") || "";
+  const alt = parseInt(txt(p, "alter") || "0", 10);
+  let acc = "";
+  if (alt === 1) acc = "♯";
+  else if (alt === 2) acc = "♯♯";
+  else if (alt === -1) acc = "♭";
+  else if (alt === -2) acc = "♭♭";
+  return step + acc + oct;
+}
+
+function durName(noteEl) {
+  const t = txt(noteEl, "type");
+  if (!t) return null;
+  const dots = noteEl.getElementsByTagName("dot").length;
+  return t + (dots ? ".".repeat(dots) : "");
+}
+
+function childTagNames(parent) {
+  const out = [];
+  if (!parent) return out;
+  for (let i = 0; i < parent.children.length; i++) out.push(parent.children[i].tagName);
+  return out;
+}
+
+function parseScore(xmlText) {
+  const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+  if (doc.getElementsByTagName("parsererror").length) {
+    throw new Error("That file could not be read as XML. If it came from a compressed .mxl, try exporting as uncompressed MusicXML.");
+  }
+  const root = doc.documentElement;
+  if (!root || (root.tagName !== "score-partwise" && root.tagName !== "score-timewise")) {
+    throw new Error("This does not look like a MusicXML file. Expected a score-partwise document.");
+  }
+  if (root.tagName === "score-timewise") {
+    throw new Error("This is a timewise MusicXML file. Please export as score-partwise, which is what most programs produce by default.");
+  }
+
+  // MusicXML records the program that produced it. If that program is an OMR
+  // engine, every number below came from reading a picture rather than from
+  // notation data — which is a completely different level of certainty, and the
+  // reader must not present the two the same way.
+  const OMR_TOOLS = ["audiveris", "oemer", "photoscore", "smartscore", "playscore",
+                     "sheetmusicscanner", "notateme", "scorecloud", "melogen", "notagen"];
+  let software = null, omrSource = null;
+  const encs = root.getElementsByTagName("software");
+  for (let i = 0; i < encs.length; i++) {
+    const v = encs[i].textContent.trim();
+    if (!v) continue;
+    if (!software) software = v;
+    const low = v.toLowerCase();
+    for (let t = 0; t < OMR_TOOLS.length; t++) {
+      if (low.indexOf(OMR_TOOLS[t]) >= 0) { omrSource = v; break; }
+    }
+    if (omrSource) break;
+  }
+
+  const title = txt(root, "work-title") || txt(root, "movement-title") || null;
+  let composer = null;
+  const creators = root.getElementsByTagName("creator");
+  for (let i = 0; i < creators.length; i++) {
+    if (creators[i].getAttribute("type") === "composer") { composer = creators[i].textContent.trim(); break; }
+  }
+
+  const parts = root.getElementsByTagName("part");
+  const partNames = [];
+  const scoreParts = root.getElementsByTagName("score-part");
+  for (let i = 0; i < scoreParts.length; i++) partNames.push(txt(scoreParts[i], "part-name") || ("Part " + (i + 1)));
+
+  const bars = {};           // bar position -> { staves: {} }
+  const tally = { dynamics: {}, articulations: {}, ornaments: {}, words: {}, other: {} };
+  const sequences = {};      // staff -> ordered [{ midi, name, bar, type }] for interval work
+  const rhythmUse = {};      // duration name -> { count, bars: Set }
+  const pitchUse = {};       // pitch name -> { count, bars: Set }
+  const accidentals = {};    // sharp/flat/natural -> count
+  let keyFifths = null, keyMode = null, timeSig = null, tempo = null, divisions = null;
+  let lowest = null, highest = null, noteCount = 0;
+
+  const bump = (bucket, name) => { if (name) tally[bucket][name] = (tally[bucket][name] || 0) + 1; };
+  const MIDI_STEP = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+  for (let pi = 0; pi < parts.length; pi++) {
+    const measures = parts[pi].getElementsByTagName("measure");
+    for (let mi = 0; mi < measures.length; mi++) {
+      const m = measures[mi];
+      // Key bars by POSITION, not by the printed number. Pickup bars and repeats
+      // reuse numbers (0 appears three times in some editions), and keying by
+      // number silently merges genuinely different bars into one.
+      const num = String(mi);
+      const printed = m.getAttribute("number");
+
+      const attrs = m.getElementsByTagName("attributes")[0];
+      if (attrs) {
+        if (divisions === null && txt(attrs, "divisions")) divisions = txt(attrs, "divisions");
+        const kEl = attrs.getElementsByTagName("key")[0];
+        if (kEl && keyFifths === null) { keyFifths = txt(kEl, "fifths"); keyMode = txt(kEl, "mode"); }
+        const tEl = attrs.getElementsByTagName("time")[0];
+        if (tEl && !timeSig) {
+          const b = txt(tEl, "beats"), bt = txt(tEl, "beat-type");
+          if (b && bt) timeSig = b + "/" + bt;
+        }
+      }
+
+      const sounds = m.getElementsByTagName("sound");
+      for (let i = 0; i < sounds.length; i++) {
+        const t = sounds[i].getAttribute("tempo");
+        if (t && !tempo) tempo = Math.round(parseFloat(t));
+      }
+      const metros = m.getElementsByTagName("per-minute");
+      if (metros.length && !tempo) tempo = Math.round(parseFloat(metros[0].textContent));
+
+      if (!bars[num]) bars[num] = { staves: {}, printed: printed };
+      if (bars[num].printed == null) bars[num].printed = printed;
+      const slot = (st) => {
+        if (!bars[num].staves[st]) {
+          bars[num].staves[st] = { notes: [], rhythm: [], dynamics: [], articulations: [], ornaments: [], words: [] };
+        }
+        return bars[num].staves[st];
+      };
+
+      // directions (dynamics, wedges, words, pedal)
+      const dirs = m.getElementsByTagName("direction");
+      for (let i = 0; i < dirs.length; i++) {
+        const d = dirs[i];
+        const st = txt(d, "staff") || String(pi + 1);
+        const s = slot(st);
+        const dyn = d.getElementsByTagName("dynamics")[0];
+        if (dyn) childTagNames(dyn).forEach(function (n) { s.dynamics.push(n); bump("dynamics", n); });
+        const wedges = d.getElementsByTagName("wedge");
+        for (let w = 0; w < wedges.length; w++) {
+          const ty = wedges[w].getAttribute("type");
+          if (ty === "crescendo" || ty === "diminuendo") { s.dynamics.push(ty); bump("dynamics", ty); }
+        }
+        const words = d.getElementsByTagName("words");
+        for (let w = 0; w < words.length; w++) {
+          const v = words[w].textContent.trim();
+          if (v) { s.words.push(v); bump("words", v); }
+        }
+        const ped = d.getElementsByTagName("pedal")[0];
+        if (ped) {
+          const ty = ped.getAttribute("type");
+          if (ty === "start") { s.words.push("pedal down"); bump("other", "pedal-start"); }
+          if (ty === "stop") { s.words.push("pedal up"); bump("other", "pedal-stop"); }
+        }
+      }
+
+      // notes
+      const notes = m.getElementsByTagName("note");
+      for (let i = 0; i < notes.length; i++) {
+        const n = notes[i];
+        if (n.parentNode !== m) continue;
+        const st = txt(n, "staff") || String(pi + 1);
+        const s = slot(st);
+        const isRest = n.getElementsByTagName("rest").length > 0;
+        const isChord = n.getElementsByTagName("chord").length > 0;
+        const isGrace = n.getElementsByTagName("grace").length > 0;
+
+        const barLabel = (printed != null && printed !== "") ? printed : String(mi + 1);
+
+        if (isRest) {
+          s.notes.push("rest");
+        } else {
+          const nm = pitchName(n);
+          if (nm) {
+            noteCount++;
+            s.notes.push((isChord ? "+" : "") + nm + (isGrace ? " (grace)" : ""));
+            const p = n.getElementsByTagName("pitch")[0];
+            const step = txt(p, "step"), oct = parseInt(txt(p, "octave") || "4", 10);
+            const alt = parseInt(txt(p, "alter") || "0", 10);
+            const midi = (oct + 1) * 12 + (MIDI_STEP[step] || 0) + alt;
+            if (lowest === null || midi < lowest.midi) lowest = { midi: midi, name: nm };
+            if (highest === null || midi > highest.midi) highest = { midi: midi, name: nm };
+
+            if (!pitchUse[nm]) pitchUse[nm] = { count: 0, bars: {} };
+            pitchUse[nm].count++;
+            pitchUse[nm].bars[barLabel] = true;
+            if (alt === 1 || alt === 2) accidentals.sharp = (accidentals.sharp || 0) + 1;
+            else if (alt === -1 || alt === -2) accidentals.flat = (accidentals.flat || 0) + 1;
+            if (n.getElementsByTagName("accidental").length) {
+              const accTxt = txt(n, "accidental");
+              if (accTxt === "natural") accidentals.natural = (accidentals.natural || 0) + 1;
+            }
+
+            // Melodic line per staff. A chord breaks the line: measuring a "leap"
+            // from inside a chord to the next bar is meaningless, and in a piece with
+            // a chordal left hand it invents huge numbers of fake repeated notes.
+            if (!sequences[st]) sequences[st] = [];
+            const seq = sequences[st];
+            if (isChord) {
+              if (seq.length && !seq[seq.length - 1].brk) seq.pop();
+              if (!seq.length || !seq[seq.length - 1].brk) seq.push({ brk: true });
+            } else if (!isGrace) {
+              seq.push({ midi: midi, name: nm, bar: barLabel });
+            }
+          }
+          if (isGrace) bump("ornaments", "grace");
+        }
+        if (!isChord) {
+          const dn = durName(n);
+          if (dn) {
+            s.rhythm.push(dn);
+            if (!rhythmUse[dn]) rhythmUse[dn] = { count: 0, rests: 0, bars: {} };
+            rhythmUse[dn].count++;
+            if (isRest) rhythmUse[dn].rests++;
+            rhythmUse[dn].bars[barLabel] = true;
+          }
+        }
+
+        const nots = n.getElementsByTagName("notations")[0];
+        if (nots) {
+          const arts = nots.getElementsByTagName("articulations")[0];
+          if (arts) childTagNames(arts).forEach(function (a) { s.articulations.push(a); bump("articulations", a); });
+          const orn = nots.getElementsByTagName("ornaments")[0];
+          if (orn) childTagNames(orn).forEach(function (o) {
+            if (o === "accidental-mark") return;
+            s.ornaments.push(o); bump("ornaments", o);
+          });
+          if (nots.getElementsByTagName("fermata").length) { s.ornaments.push("fermata"); bump("ornaments", "fermata"); }
+          if (nots.getElementsByTagName("arpeggiate").length) { s.ornaments.push("arpeggiate"); bump("ornaments", "arpeggiate"); }
+          const slurs = nots.getElementsByTagName("slur");
+          for (let sl = 0; sl < slurs.length; sl++) {
+            if (slurs[sl].getAttribute("type") === "start") { s.articulations.push("slur"); bump("articulations", "slur"); }
+          }
+        }
+      }
+    }
+  }
+
+  const barNums = Object.keys(bars).sort(function (a, b) { return parseInt(a, 10) - parseInt(b, 10); });
+
+  // If the file states a mode, the key is certain. If it does not — and many
+  // editions do not — the same signature means two different keys, and saying
+  // which one would be a guess. Show both and say so.
+  let keyName = null, keyUncertain = false;
+  if (keyFifths !== null && KEY_NAMES[keyFifths]) {
+    const pair = KEY_NAMES[keyFifths];
+    const mode = (keyMode || "").toLowerCase();
+    if (mode === "minor") keyName = pair[1];
+    else if (mode === "major") keyName = pair[0];
+    else { keyName = pair[0] + " or " + pair[1]; keyUncertain = true; }
+  }
+
+  // Melodic intervals, step by step through each staff's line.
+  const intervalUse = {};
+  Object.keys(sequences).forEach(function (st) {
+    const seq = sequences[st];
+    for (let i = 1; i < seq.length; i++) {
+      if (seq[i].brk || seq[i - 1].brk) continue;
+      const semis = seq[i].midi - seq[i - 1].midi;
+      const nm = intervalName(semis);
+      if (!nm) continue;
+      if (!intervalUse[nm]) intervalUse[nm] = { count: 0, bars: {}, examples: [] };
+      intervalUse[nm].count++;
+      intervalUse[nm].bars[seq[i].bar] = true;
+      if (intervalUse[nm].examples.length < 3) {
+        intervalUse[nm].examples.push(seq[i - 1].name + " to " + seq[i].name + " (bar " + seq[i].bar + ")");
+      }
+    }
+  });
+
+  return {
+    title: title, composer: composer, partNames: partNames,
+    keyFifths: keyFifths, keyMode: keyMode, keyName: keyName, keyUncertain: keyUncertain,
+    timeSig: timeSig, tempo: tempo, divisions: divisions,
+    bars: bars, barNums: barNums, tally: tally,
+    noteCount: noteCount, lowest: lowest, highest: highest,
+    rhythmUse: rhythmUse, pitchUse: pitchUse, intervalUse: intervalUse,
+    accidentals: accidentals, staffCount: Object.keys(sequences).length,
+    software: software, omrSource: omrSource
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ * UI
+ * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * STUDY SHEETS — the same piece pivoted by category instead of by bar
+ * ------------------------------------------------------------------ */
+function barList(barsObj) {
+  const keys = Object.keys(barsObj).sort(function (a, b) {
+    const x = parseInt(a, 10), y = parseInt(b, 10);
+    if (!isNaN(x) && !isNaN(y)) return x - y;
+    return String(a).localeCompare(String(b));
+  });
+  if (keys.length <= 14) return keys.join(", ");
+  return keys.slice(0, 14).join(", ") + " … and " + (keys.length - 14) + " more";
+}
+
+function rhythmLabel(r) {
+  const base = r.replace(/\.+$/, "");
+  const dots = r.length - base.length;
+  return (NOTE_LENGTH[base] || base) + (dots === 1 ? ", dotted" : dots > 1 ? ", double dotted" : "");
+}
+
+function buildSheets(d) {
+  const sheets = [];
+
+  const rhythmRows = Object.keys(d.rhythmUse)
+    .sort(function (a, b) { return d.rhythmUse[b].count - d.rhythmUse[a].count; })
+    .map(function (k) {
+      const e = d.rhythmUse[k];
+      const notes = e.count - e.rests;
+      let sub = null;
+      if (e.rests && notes) sub = notes + " played, " + e.rests + " as rests";
+      else if (e.rests) sub = "all rests";
+      return { head: rhythmLabel(k), count: e.count, sub: sub,
+               bars: barList(e.bars), body: null };
+    });
+  sheets.push({ id: "rhythm", label: "Rhythm",
+    intro: "Every note length used in this piece, commonest first. Rests are counted too, since a rest is a length you have to feel just as accurately. If one of these is unfamiliar, that is the one to clap before you play anything.",
+    rows: rhythmRows, empty: "No note lengths were recorded in this file." });
+
+  const pitchRows = Object.keys(d.pitchUse)
+    .sort(function (a, b) { return d.pitchUse[b].count - d.pitchUse[a].count; })
+    .map(function (k) {
+      return { head: k, count: d.pitchUse[k].count, bars: barList(d.pitchUse[k].bars), body: null };
+    });
+  const accBits = [];
+  if (d.accidentals.sharp) accBits.push(d.accidentals.sharp + " sharpened");
+  if (d.accidentals.flat) accBits.push(d.accidentals.flat + " flattened");
+  if (d.accidentals.natural) accBits.push(d.accidentals.natural + " naturals written in");
+  sheets.push({ id: "notes", label: "Note names",
+    intro: "Every pitch in the piece and how often it appears" +
+           (d.lowest && d.highest ? ", from " + d.lowest.name + " up to " + d.highest.name : "") +
+           (accBits.length ? ". Accidentals: " + accBits.join(", ") + "." : "."),
+    rows: pitchRows, empty: "No pitched notes were found in this file." });
+
+  const ivRows = Object.keys(d.intervalUse)
+    .sort(function (a, b) { return d.intervalUse[b].count - d.intervalUse[a].count; })
+    .map(function (k) {
+      const e = d.intervalUse[k];
+      const tip = intervalTip(k);
+      return { head: k, count: e.count, bars: barList(e.bars),
+               body: tip, sub: e.examples.join(" · ") };
+    });
+  sheets.push({ id: "intervals", label: "Intervals",
+    intro: "Every step and leap in the melodic line, commonest first. Reading by interval rather than note by note is what makes sight-reading faster.",
+    rows: ivRows,
+    note: d.staffCount > 1
+      ? "Measured along each staff separately. Where a staff carries more than one voice, some of these leaps are the line switching voices rather than a real jump."
+      : null,
+    empty: "Not enough consecutive notes to measure intervals." });
+
+  const fromTally = function (obj, withMeaning) {
+    return Object.keys(obj).sort(function (a, b) { return obj[b] - obj[a]; }).map(function (k) {
+      const info = withMeaning ? lookup(k) : null;
+      return { head: k, count: obj[k], bars: null,
+               sub: info && info.tr ? info.tr : null,
+               body: info ? info.body : (withMeaning ? "Not in the dictionary yet — worth adding." : null) };
+    });
+  };
+
+  sheets.push({ id: "dynamics", label: "Dynamics",
+    intro: "Every loudness marking in the piece, and what each is asking for.",
+    rows: fromTally(d.tally.dynamics, true), empty: "No dynamic markings in this file." });
+
+  sheets.push({ id: "articulation", label: "Articulation",
+    intro: "How the notes are to be started and released.",
+    rows: fromTally(d.tally.articulations, true), empty: "No articulation marks in this file." });
+
+  const symbols = {};
+  Object.keys(d.tally.ornaments).forEach(function (k) { symbols[k] = d.tally.ornaments[k]; });
+  Object.keys(d.tally.other).forEach(function (k) { symbols[k] = d.tally.other[k]; });
+  Object.keys(d.tally.words).forEach(function (k) { symbols[k] = d.tally.words[k]; });
+  sheets.push({ id: "symbols", label: "Signs and words",
+    intro: "Ornaments, pedal, and everything written in words on the page.",
+    rows: fromTally(symbols, true), empty: "No ornaments or written directions in this file." });
+
+  return sheets;
+}
+
+function Sheet({ sheet }) {
+  return (
+    <div className="card sheet-print">
+      <div className="card-label">{sheet.label}</div>
+      <div className="sheet-intro">{sheet.intro}</div>
+      {sheet.note ? <div className="sheet-note">{sheet.note}</div> : null}
+      {sheet.rows.length === 0
+        ? <div className="term-unknown">{sheet.empty}</div>
+        : sheet.rows.map(function (r, i) {
+            return (
+              <div className="srow" key={i}>
+                <div className="srow-head">
+                  <span className="srow-name">{r.head}</span>
+                  <span className="term-count">{r.count}{r.count === 1 ? " time" : " times"}</span>
+                  {r.sub ? <span className="term-tr">{r.sub}</span> : null}
+                </div>
+                {r.body ? <div className="srow-body">{r.body}</div> : null}
+                {r.bars ? <div className="srow-bars">bars {r.bars}</div> : null}
+              </div>
+            );
+          })}
+    </div>
+  );
+}
+
+function Facts({ d }) {
+  const items = [];
+  if (d.keyName) items.push(["Key signature", d.keyName]);
+  else if (d.keyFifths !== null) items.push(["Key signature", d.keyFifths + " sharps/flats"]);
+  if (d.timeSig) items.push(["Time signature", d.timeSig]);
+  if (d.tempo) items.push(["Tempo marking", d.tempo + " bpm"]);
+  items.push(["Bars", String(d.barNums.length)]);
+  items.push(["Notes", String(d.noteCount)]);
+  if (d.lowest && d.highest) items.push(["Range", d.lowest.name + " to " + d.highest.name]);
+  if (d.partNames.length) items.push(["Staves", String(d.partNames.length)]);
+  return (
+    <div className="card">
+      <div className="card-label">What the score says</div>
+      <div className="grid">
+        {items.map(function (it, i) {
+          return (
+            <div className="fact" key={i}>
+              <div className="fact-k">{it[0]}</div>
+              <div className="fact-v">{it[1]}</div>
+            </div>
+          );
+        })}
+      </div>
+      {d.keyUncertain ? (
+        <div style={{ marginTop: 14, fontSize: 12.5, color: "#8a6a3a", background: "#fdf6e8",
+                      border: "1px solid #f0dfc0", borderRadius: 10, padding: "10px 13px", lineHeight: 1.6 }}>
+          <strong style={{ color: "#a05a38" }}>Worth checking.</strong> This file gives the key signature
+          but not whether the piece is major or minor, so both are shown. The last bass note usually settles it.
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function Bar({ num, data, staffNames }) {
+  const staves = Object.keys(data.staves).sort();
+  return (
+    <div className="bar">
+      <div className="bar-n">Bar {data.printed != null && data.printed !== "" ? data.printed : num}</div>
+      {staves.map(function (st) {
+        const s = data.staves[st];
+        const rows = [
+          ["Note names", s.notes.join("  "), true],
+          ["Rhythm", s.rhythm.map(function (r) {
+            const base = r.replace(/\.+$/, "");
+            const dots = r.length - base.length;
+            const nice = NOTE_LENGTH[base] || base;
+            return nice + (dots ? " dotted" : "");
+          }).join(", "), false],
+          ["Dynamics", s.dynamics.join(", "), false],
+          ["Articulation", s.articulations.join(", "), false],
+          ["Ornaments", s.ornaments.join(", "), false],
+          ["Written", s.words.join(" · "), false]
+        ];
+        return (
+          <div key={st} style={{ marginBottom: staves.length > 1 ? 12 : 0 }}>
+            {staves.length > 1
+              ? <div style={{ marginBottom: 6 }}><span className="staff-tag">{staffNames[st] || ("Staff " + st)}</span></div>
+              : null}
+            {rows.map(function (r, i) {
+              if (!r[1]) {
+                if (i > 1) return null;
+                return (
+                  <div className="row" key={i}>
+                    <div className="row-k">{r[0]}</div>
+                    <div className="row-v none">nothing here</div>
+                  </div>
+                );
+              }
+              return (
+                <div className="row" key={i}>
+                  <div className="row-k">{r[0]}</div>
+                  <div className={"row-v" + (r[2] ? " mono" : "")}>{r[1]}</div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function App() {
+  const [data, setData] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
+  const [start, setStart] = useState(0);
+  const [span] = useState(4);
+  const [view, setView] = useState("sheets");
+  const [sheet, setSheet] = useState("rhythm");
+  const fileRef = useRef(null);
+
+  const sheets = useMemo(function () { return data ? buildSheets(data) : []; }, [data]);
+  const activeSheet = useMemo(function () {
+    if (!sheets.length) return null;
+    const found = sheets.filter(function (s) { return s.id === sheet; })[0];
+    return found || sheets[0];
+  }, [sheets, sheet]);
+
+  const staffNames = useMemo(function () {
+    const m = {};
+    if (data) data.partNames.forEach(function (n, i) { m[String(i + 1)] = n; });
+    if (data && data.partNames.length === 2) { m["1"] = "Right hand"; m["2"] = "Left hand"; }
+    return m;
+  }, [data]);
+
+  const readFile = useCallback(function (file) {
+    if (!file) return;
+    setBusy(true); setErr(null);
+    const finish = function (text) {
+      try {
+        const parsed = parseScore(text);
+        if (!parsed.barNums.length) throw new Error("No bars were found in that file.");
+        setData(parsed); setStart(0);
+      } catch (e) {
+        setData(null); setErr(e.message || String(e));
+      }
+      setBusy(false);
+    };
+    const name = (file.name || "").toLowerCase();
+    if (name.endsWith(".mxl")) {
+      if (typeof JSZip === "undefined") {
+        setErr("Compressed .mxl needs the JSZip library, which did not load. Try an uncompressed .musicxml file.");
+        setBusy(false); return;
+      }
+      const fr = new FileReader();
+      fr.onload = function (e) {
+        JSZip.loadAsync(e.target.result).then(function (zip) {
+          let target = null;
+          zip.forEach(function (path, entry) {
+            if (target || entry.dir) return;
+            if (path.indexOf("META-INF") === 0) return;
+            if (/\.(xml|musicxml)$/i.test(path)) target = entry;
+          });
+          if (!target) throw new Error("No score file was found inside that .mxl archive.");
+          return target.async("string");
+        }).then(finish).catch(function (e2) {
+          setErr(e2.message || "That .mxl file could not be opened."); setBusy(false);
+        });
+      };
+      fr.readAsArrayBuffer(file);
+    } else {
+      const fr = new FileReader();
+      fr.onload = function (e) { finish(e.target.result); };
+      fr.onerror = function () { setErr("That file could not be read."); setBusy(false); };
+      fr.readAsText(file);
+    }
+  }, []);
+
+  const shown = data ? data.barNums.slice(start, start + span) : [];
+  const atEnd = data ? start + span >= data.barNums.length : true;
+
+  return (
+    <div>
+      <div className="nav">
+        <div className="nav-logo"><span className="nav-bar"></span>Piano Butler</div>
+        <a className="nav-back" href="index.html">Back to search</a>
+      </div>
+
+      <div className="wrap">
+        <div className="hero-eyebrow">Score reader</div>
+        <div className="hero-title">Every marking in the score, explained</div>
+        <div className="hero-sub">
+          Load a MusicXML file and this reads out what is actually written in it — key, time signature,
+          note names, rhythm, dynamics, articulations and ornaments, bar by bar, with what each one is
+          asking you to do. Nothing is guessed; every value is read straight from the file.
+        </div>
+
+        <div className={"drop" + (over ? " over" : "")}
+             onDragOver={function (e) { e.preventDefault(); setOver(true); }}
+             onDragLeave={function () { setOver(false); }}
+             onDrop={function (e) {
+               e.preventDefault(); setOver(false);
+               if (e.dataTransfer.files && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+             }}>
+          <div className="drop-title">{busy ? "Reading…" : "Drop a MusicXML file here"}</div>
+          <div className="drop-sub">
+            .musicxml, .xml or .mxl · nothing is uploaded anywhere, it is read in your browser
+          </div>
+          <button className="btn" onClick={function () { if (fileRef.current) fileRef.current.click(); }}>
+            Choose a file
+          </button>
+          <input ref={fileRef} type="file" accept=".xml,.musicxml,.mxl" style={{ display: "none" }}
+                 onChange={function (e) { readFile(e.target.files[0]); e.target.value = ""; }} />
+        </div>
+
+        {err ? <div className="err">{err}</div> : null}
+
+        {data && data.omrSource ? (
+          <div className="omr">
+            <div className="omr-title">Read from a picture — treat every number here as a draft</div>
+            <div className="omr-body">
+              This file was produced by <strong>{data.omrSource}</strong>, which reads printed notation
+              from an image or PDF. That is guesswork, not data: piano scores in particular give it
+              trouble, because two hands and overlapping voices are the hardest case there is. Wrong
+              pitches, missed accidentals and merged voices are all normal.
+              <br /><br />
+              So check it against the actual score before you rely on any of it — and especially before
+              you hand it to a student. A file exported directly from notation software needs none of
+              this caution; this one does.
+            </div>
+          </div>
+        ) : null}
+
+        {!data && !err ? (
+          <div className="note-cp">
+            <strong>Where to find scores.</strong> IMSLP has MusicXML for a great deal of public-domain
+            repertoire — Bach, Mozart, Beethoven, Chopin, Burgmüller, Czerny and so on. Start there.
+            For music still in copyright, use your own purchased copy: it stays on your machine, since
+            this page reads the file locally and never sends it anywhere.
+          </div>
+        ) : null}
+
+        {!data && !err ? (
+          <div className="note-cp">
+            <strong>Only have a PDF?</strong> A PDF of sheet music is a picture — there is no note data
+            inside it, so it has to be recognised first. The free tool for that is{" "}
+            <a href="https://audiveris.com/" style={{ color: "#a05a38", textDecoration: "underline" }}>
+              Audiveris</a>, which is open source and runs on Mac, Windows and Linux: open the PDF in it,
+            then export MusicXML and load that here. Note that MuseScore 4 can no longer import PDFs —
+            that feature was removed — so MuseScore is only useful afterwards, for correcting the
+            MusicXML. Anything that arrives here from a recognition tool gets flagged as a draft, because
+            it is one.
+          </div>
+        ) : null}
+
+        {data ? (
+          <div>
+            {data.title || data.composer ? (
+              <div className="card">
+                <div className="card-label">Score</div>
+                <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 3 }}>{data.title || "Untitled"}</div>
+                {data.composer ? <div style={{ fontSize: 13.5, color: "#6a5a4a" }}>{data.composer}</div> : null}
+              </div>
+            ) : null}
+
+            <Facts d={data} />
+
+            <div className="viewtoggle no-print">
+              <button className={"vt" + (view === "sheets" ? " on" : "")}
+                      onClick={function () { setView("sheets"); }}>Study sheets</button>
+              <button className={"vt" + (view === "bars" ? " on" : "")}
+                      onClick={function () { setView("bars"); }}>Bar by bar</button>
+            </div>
+
+            {view === "sheets" ? (
+              <div>
+                <div className="tabs no-print">
+                  {sheets.map(function (s) {
+                    return (
+                      <button key={s.id}
+                              className={"tab" + (sheet === s.id ? " on" : "")}
+                              onClick={function () { setSheet(s.id); }}>
+                        {s.label}
+                        <span className="tab-n">{s.rows.length}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {activeSheet ? <Sheet sheet={activeSheet} /> : null}
+                <div className="printrow no-print">
+                  <button className="step" onClick={function () { window.print(); }}>
+                    Print this sheet
+                  </button>
+                  <span style={{ fontSize: 12.5, color: "#a08a76" }}>
+                    Prints just the sheet you are looking at.
+                  </span>
+                </div>
+              </div>
+            ) : (
+            <div className="card">
+              <div className="card-label">Bar by bar</div>
+              <div className="barnav">
+                <button className="step" disabled={start === 0}
+                        onClick={function () { setStart(Math.max(0, start - span)); }}>Back</button>
+                <button className="step" disabled={atEnd}
+                        onClick={function () { setStart(Math.min(data.barNums.length - 1, start + span)); }}>Next</button>
+                <span style={{ fontSize: 13, color: "#8a7a6a" }}>Go to bar</span>
+                <input type="number" min="1" max={data.barNums.length}
+                       value={start + 1}
+                       onChange={function (e) {
+                         const v = parseInt(e.target.value, 10);
+                         if (!isNaN(v)) setStart(Math.max(0, Math.min(data.barNums.length - 1, v - 1)));
+                       }} />
+                <span style={{ fontSize: 12.5, color: "#a08a76" }}>
+                  of {data.barNums.length}
+                </span>
+              </div>
+              {shown.map(function (n) {
+                return <Bar key={n} num={n} data={data.bars[n]} staffNames={staffNames} />;
+              })}
+            </div>
+            )}
+          </div>
+        ) : null}
+
+        <div className="foot">
+          This page reads a MusicXML file in your browser and describes what is written in it. It does not
+          display, store, or send the score. Descriptions of musical terms are commentary, not reproduction.
+          Use public-domain editions, or your own copy of music still in copyright.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(p) { super(p); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error: error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 32, fontFamily: "monospace", color: "#a0342a" }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Something broke while rendering.</div>
+          <div style={{ fontSize: 13 }}>{String(this.state.error && this.state.error.message)}</div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <ErrorBoundary><App /></ErrorBoundary>
+);
+</script>
+
+<script>
+(function () {
+  function go() {
+    if (typeof Babel === "undefined") { setTimeout(go, 50); return; }
+    try {
+      var src = document.getElementById("app-jsx").textContent;
+      var out = Babel.transform(src, { presets: ["react"] }).code;
+      var s = document.createElement("script");
+      s.textContent = out;
+      document.body.appendChild(s);
+    } catch (e) {
+      document.getElementById("root").innerHTML =
+        '<div style="padding:32px;font-family:monospace;color:#a0342a">Compile error: ' +
+        (e && e.message ? e.message : String(e)) + "</div>";
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go);
+  else go();
+})();
+</script>
+</body>
+</html>

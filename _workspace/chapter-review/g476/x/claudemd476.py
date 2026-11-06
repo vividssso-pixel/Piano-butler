@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+# Phase 476: CLAUDE.md: Book rule 11 (the macro-first pass on chapters 16 and 19 is built; what it is); the log row.
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+a = s.index("first a pass on scales (16) and key-signatures"); b = s.index("Then intervals and chords built the same way", a)
+if s.count("first a pass on scales (16) and key-signatures") != 1: raise SystemExit('rule 11')
+s = s[:a] + ("Phase 476 built the pass on scales (16) and key-signatures\n"
+    "   (19): the Lesson Book's first page is a map of all twelve keys (16: the keyboard clock, a semitone a step, the major\n"
+    "   scale one shape that turns, its half steps coral; 19: the circle of fifths, the chapter's five filled), the screen\n"
+    "   lesson ends with it again (an extra step, not counted in the chapter's steps; 16: scale stamps per hand, the same\n"
+    "   store as Today's; 19: 'I can draw it and name it', stamps 'ks:<key>'); the teacher sets each student's keys in the\n"
+    "   dashboard (Log lesson › For the student › Keys: a first line [keys:C,G,D]; [keys:-] clears; default the chapter's\n"
+    "   exam keys; G♭ stands for F♯) and the maps and drill level 10 use them; Workbook page 7 works in any key ('___\n"
+    "   major', a fresh copy per key, the first copy's ring coloured all year); fingering groups (C G D A E; B; F; B♭ E♭ A♭\n"
+    "   D♭). Map colours: the piano's own; coral only the half steps (clock) or the key looked at (circle); navy marks are\n"
+    "   the student's. ") + s[b:]
+ROW = """| 476 | 2026-10-17 | **The twelve keys, macro first: chapters 16 (Scales) and 19 (Key Signatures) open and close with a map of all twelve keys; the teacher sets each student's keys (her 02:05 '1.2.3. 다동의해').** Her decisions: 1 the keyboard clock for scales, the circle of fifths for key signatures; 2 "this student's keys" in the dashboard (default the exam keys, all 12 possible); 3 this pass first, then chapters 21 and 22 in the same frame. **Drills** (keymap476.jsx before LESSON_BOOKS; patch476.py): `KeyRing` (the keyboard clock: piano colours, the major scale one rotating shape, half steps coral, the big dot the first note; o.plain shows the keys' own names, a white key the scale spells otherwise shows both, B / C♭; o.paper for print) and `FifthsRing` (navy fill = the keys being learnt; coral ring = the key looked at; 30° tap sectors); Lesson Book p.1 of both chapters is the map (16 with a key: whole step, half step, the first note); on screen the map pads `SscMapPad` / `SkgMapPad`, again as an extra last step "My twelve keys" (Lesson's new `extra` step prop: not counted, so a finished chapter stays finished): 16 with the fingering, "Same fingers", stamps per hand (three dots in each key, a tick at three) and Listen; 19 with both staves and "I can draw it and name it". Level 10 'My keys' in both drills: 16 'which degree' (the shape, the keys' own names: the spelling is the question; the answer outlined and the dots numbered after) and 'which note is in the scale' (only the big dot; only for keys whose outside notes mix plain and signed, one wrong answer of the answer's kind); 19 'which major key' (fewer than three keys: the chapter's join in; a small circle after the answer). Workbook p.7 'Any key' (WbTop step 7, numbered parts, an ALL YEAR part with the ring to colour, Faces), the check-up now p.8; Teacher copy p.7 blocks (19 on a third page with every sign's place). Today page: a `[keys:…]` line (list mark allowed) is stored in `pb_my_keys_v1` and left out of the list; `[keys:-]` clears; "Not me" (syClearLocal) forgets it. **Dashboard** (td476.py): Log lesson › For the student › Keys (12 chips in fifths order, All 12, Clear); the line goes first (the 1500-character cap trims homework, never it), only with homework, when the keys change, or when the log had one; once cleared, `[keys:-]` goes on with each homework; keysOf reads F#, c, B♭ as the drills do; This week and the history leave the line out ('Keys: …' in the history). Reviewed by four strict reviewers (theory 21, Korean 13, design 29, code 7 findings) and a verifier (70 checked; its 12 new findings fixed; the app-wide wide ♭ in Korean print is older and left); tests: wbcheck/lbcheck clean, today476 12/12, tdkeys476 23/23. Deferred: the Today page's own circle of fifths (an older component: marking the student's keys there), arc arrows, a fingering table in the Teacher copy, F♯ major as its own key. |
+"""
+import re
+m = re.search(r'^\| 475 \| [^\n]*\n', s, re.M)
+if not m: raise SystemExit('row 475')
+s = s[:m.end()] + ROW + s[m.end():]
+open(p, 'w', encoding='utf-8').write(s); print('CLAUDE.md: rule 11; log row 476')

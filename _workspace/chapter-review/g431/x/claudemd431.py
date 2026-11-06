@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+# Phase 431 in CLAUDE.md: the Phase row.   python3 claudemd431.py <CLAUDE.md>
+import sys
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+if '| 431 | 2026-10-12 |' in s: raise SystemExit('CLAUDE.md: row 431 already there')
+row = """| 431 | 2026-10-12 | **Chapter 6 after her 06:38 notes on PDF v2.** (1) 'X가 짤렸다': the cross on the 4th how-to picture (no lid) was cut off -- its picture began lower (note on d41, not d42); it now has the same room above as the other three. (2) 'show middle C from the bass clef too': the opener has Clara's C under Queensland AND over Kingsland, Clara between them. (3) 'the numbers over the notes are confusing, do it another way': in every Workbook row (SfRow -- chapters 4, 5, 6) the question number now sits in the top-left corner of its answer box, crossword-style (SF_NUM); the 'e.g.' over the example is gone (the coral box is the example); a row with no boxes puts the number under the staff. (4) 'the fold activity goes in here, right?' -- yes: chapter 5's paint print held back Sky C / Sea C for this chapter (FOLD_PAIRS, Phase 419), so Five Cs (book p.6) is now folded at Clara's ladder: Clara's C on Clara's C, Queensland C on Kingsland C, Sky C on Sea C (two ladders up, two down), named in the picture; its words say so; At the piano adds 'Fold partners'; on screen FoldStaff({ledger}) folds the ledger pair too, in this chapter's words (Clara's C, never 'middle C'). Guide page: opener and Five Cs drawings, the fold in its words and tip; worksheet/printables pictures for chapters 4 and 6 redone. PDF v3 sent. Checks: ll431test 24/24 (marks' room, opener, fold book + screen en/ko, numbers inside boxes in ch4/5/6 Workbooks, no e.g.), ll429test 82/82, ws419 45, sf405 22, ch1 21, ch2 21, ch3 35, no-song 24, frame430 0 spill, lbcheck chapters 1-6 and wbcheck ch4-6 0 overflow en/ko. |
+"""
+i = s.index('| 430 | 2026-10-12 |'); j = s.index('\n', i) + 1
+s = s[:j] + row + s[j:]
+open(p, 'w', encoding='utf-8').write(s); print('CLAUDE.md ok')

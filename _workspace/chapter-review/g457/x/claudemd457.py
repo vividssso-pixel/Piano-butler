@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+# Phase 457: CLAUDE.md: the log row and Book rule 11 (note-values: draft v1, waiting for her answers).
+import sys, re
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+ROW = """| 457 | 2026-10-13 | **Chapter 5 (Notes & Rests) started: Lesson Book draft v1 + review pack.** After her 18:22 '응 계속 가줘', the last room of Level 1 in path order. The level plan's scope for room 5 (the semibreve, minim, crotchet, quaver pair and dotted minim; their rests as pictures; rests on the staff, bars and filling bars wait for Time Signatures; the dotted crotchet, single quavers and semiquavers for Rhythm Patterns and higher drill levels), built on chapter 3 (beat hearts, counting out loud, dashed silent beats, bird and tur-tle) and her G2 (walk, running, + for 'and'). No staff yet (chapter 6 comes after) and no letter names (rooms on a floor in any order): tasks on middle C and the 4th small house, hand and finger named. 7 pages (nvbook457.jsx in _workspace/chapter-review/g457/x, draft only, drills.src.html unchanged): 1 the note family over four hearts, a coral sound line under each note as long as its beats · 2 The crotchet: one beat (the sister walks, bird) · 3 The minim: two beats (play, then hold; held counts lighter) · 4 Longer notes: the dotted minim and the semibreve · 5 Two quavers on one beat: 1 + 2 + (the brother runs, tur-tle) · 6 Rests: silence you count (crotchet, minim, semibreve rests; the minim rest sits on its short line, the semibreve rest hangs under it; the silent beat dashed as in chapter 3) · 7 My five checks. A fresh reviewer's fixes are in (set tasks, no letters, the sound line under the note, a rounder semibreve, the dot clear of the line, the rest's hook, checks = steps, chapter numbers from bkChapterNo, Korean wording; walk and run are pictures only in Korean). Review pack Claude outputs/Chapter-05-Notes-Rests-review-v1.pdf (11 pages): G1-G3, A1-A6 (today: 12 tool steps, more than room 5, a 6-level drill with bars and dots, a pre-rules Workbook, 'Count it out loud' still says 1 and 2 and, both names everywhere), B1-B13 with recommendations. Checks: lbcheck note-values 0/0 en and ko, every picture inside its frame. |
+"""
+m = re.search(r'^\| 456 \| [^\n]*\n', s, re.M)
+if not m: raise SystemExit('row 456')
+s = s[:m.end()] + ROW + s[m.end():]
+m = re.search(r"Next: Level 1's note-values;", s)
+if not m: raise SystemExit('rule 11')
+s = s[:m.start()] + "Next: Level 1's note-values (draft v1, Phase 457, waiting for her answers to G1-G3 and B1-B13);" + s[m.end():]
+open(p, 'w', encoding='utf-8').write(s); print('CLAUDE.md: log row 457, rule 11')

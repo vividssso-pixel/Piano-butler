@@ -30,7 +30,7 @@ function mei(v) {
   if (v.ties || v.slurs) ms = ms.replace('</measure>', (v.ties || []).map(([a, b]) => `<tie startid="#n${a}" endid="#n${b}"/>`).join('') + (v.slurs || []).map(([a, b]) => `<slur startid="#n${a}" endid="#n${b}" curvedir="${v.slurdir || 'below'}"/>`).join('') + '</measure>');   // one-bar snippets: ties and slurs by note number
   const key = v.key ? ` key.sig="${v.key}"` : '';
   const sd = staves.map((s, k) => `<staffDef n="${k + 1}" lines="5" clef.shape="${s[0]}" clef.line="${s[1]}"${key}${v.meter ? ` meter.count="${v.meter.split('/')[0]}" meter.unit="${v.meter.split('/')[1]}"` : ''}/>`).join('');
-  return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef><staffGrp${staves.length > 1 ? ' symbol="brace" bar.thru="true"' : ''}>${sd}</staffGrp></scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><mei xmlns="http://www.music-encoding.org/ns/mei" meiversion="5.0"><meiHead><fileDesc><titleStmt><title/></titleStmt><pubStmt/></fileDesc></meiHead><music><body><mdiv><score><scoreDef><staffGrp${staves.length > 1 && !v.nobrace ? ' symbol="brace" bar.thru="true"' : ''}>${sd}</staffGrp></scoreDef><section>${ms}</section></score></mdiv></body></music></mei>`;
 }
 const S = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')); const out = {};
 for (const [k, v] of Object.entries(S)) {
