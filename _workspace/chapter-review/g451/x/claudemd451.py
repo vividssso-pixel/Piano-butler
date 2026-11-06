@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+# Phase 451: CLAUDE.md -- the log row.
+import sys, re
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+ROW = """| 451 | 2026-10-12 | **The cut-outs' own QA.** Her 22:24 '컷아웃 페이지도 오류검사 했어?' (448 had only checked their clefs and their fit). kit/cut451.js: all 14 sets, en + ko: page count, overflow, anything outside its svg box or the page, text cut or over text, the reader-text rules; then every page looked at and every fact checked: note cards (T1-T12, B1-B12 against their staff positions and keys), rhythm cards, note bars, the tempo race (board order, key), the scale and triad sliders and interval ruler, the circle of fifths and the orders of sharps and flats, the chord cake, the chord loop, the song shapes, the 24 composer cards (dates, places, works, against the app's data), the element and motion cards, the dice nets (7 tabs). Wrong, fixed in patch451.py: (1) chord loop: the I chord is navy, so its keys C E G looked like black keys: navy key colour now drawn light (#a4a9e8) with navy letters; (2) chord loop: 'play the bottom note of each chord with your left hand' (the cards show F as C F A and Am as C E A, so the bottom key was C three times): now 'each chord's root, its letter name (C, G, A, F)'; (3) composer answer list 'oldest first' had Bach before Handel (both 1685; Handel February, Bach March): same-year tie-break, Handel then Bach, Chopin then Schumann; (4) practice week: 21 stars to fill, 14 stickers: now 21; (5) the forte sign's tail cut off by its box (ElemIcon, also the app's Styles chapter): baseline 24 -> 22.4; (6) 'motion' under the motion name sat on its descenders: 1.2 mm of air. Left as they are (by design): the grand staff mat's two staves are two spaces apart so middle C's ledger line is exactly halfway (the TRY THIS says so); the token page is half empty. The printables pictures of the chord loop and element cards remade. |
+"""
+m = re.search(r'^\| 450 \| [^\n]*\n', s, re.M)
+if not m: raise SystemExit('row 450')
+s = s[:m.end()] + ROW + s[m.end():]
+open(p, 'w', encoding='utf-8').write(s); print('CLAUDE.md: log row 451')

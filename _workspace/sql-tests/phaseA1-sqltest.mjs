@@ -1,0 +1,63 @@
+import { PGlite } from '@electric-sql/pglite';
+import fs from 'fs';
+const sql = fs.readFileSync('../phaseA1.sql', 'utf8');
+const A = '11111111-1111-1111-1111-111111111111', B = '22222222-2222-2222-2222-222222222222';
+const T1 = 'a'.repeat(40), T2 = 'b'.repeat(40);
+let pass = 0, fail = 0;
+const ok = (c, m) => { if (c) { pass++; console.log('PASS', m); } else { fail++; console.log('FAIL', m); } };
+
+async function run(idType) {
+  console.log('\n=== students.id type: ' + idType + ' ===');
+  const db = new PGlite();
+  await db.exec(`
+    create role anon nologin; create role authenticated nologin;
+    create schema auth; create table auth.users(id uuid primary key);
+    create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
+    grant usage on schema public, auth to anon, authenticated;
+    grant execute on function auth.uid() to anon, authenticated;
+    alter default privileges in schema public grant all on tables to anon, authenticated;
+    insert into auth.users values ('${A}'),('${B}');
+    create table public.students(id ${idType} primary key ${idType === 'uuid' ? 'default gen_random_uuid()' : 'generated always as identity'}, user_id uuid references auth.users(id), name text);
+    grant all on public.students to anon, authenticated;
+    alter table public.students enable row level security;
+    create policy own on public.students for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+  `);
+  const sA = (await db.query(`insert into public.students(user_id,name) values ('${A}','Mia Kim') returning id`)).rows[0].id;
+  const sB = (await db.query(`insert into public.students(user_id,name) values ('${B}','Leo Park') returning id`)).rows[0].id;
+  const lit = v => idType === 'uuid' ? `'${v}'` : v;
+  await db.exec(sql); ok(true, 'SQL runs');
+  await db.exec(sql); ok(true, 'SQL runs a second time (idempotent)');
+  const as = async (role, uid, q) => { await db.exec(`reset role; select set_config('request.jwt.claim.sub','${uid || ''}',false); set role ${role}`); try { return { r: await db.query(q) }; } catch (e) { return { e: e.message }; } finally { await db.exec('reset role'); } };
+
+  let x = await as('authenticated', A, `insert into public.student_links(student_id,display_name,token) values (${lit(sA)},'Mia','${T1}') returning teacher_id`);
+  ok(x.r && x.r.rows[0].teacher_id === A, 'teacher A creates a link for own student (teacher_id defaults to caller)');
+  x = await as('authenticated', A, `insert into public.student_links(student_id,display_name,token) values (${lit(sB)},'Leo','${T2}')`);
+  ok(x.e && /row-level security/.test(x.e), 'teacher A cannot create a link for teacher B\'s student');
+  x = await as('authenticated', A, `insert into public.student_links(student_id,teacher_id,display_name,token) values (${lit(sB)},'${B}','Leo','${T2}')`);
+  ok(x.e && /row-level security/.test(x.e), 'teacher A cannot forge teacher_id = B');
+  x = await as('authenticated', A, `insert into public.student_links(student_id,display_name,token) values (${lit(sA)},'Dup','${'c'.repeat(40)}')`);
+  ok(!!x.e, 'one link per student (second insert rejected)');
+  x = await as('authenticated', B, `insert into public.student_links(student_id,display_name,token) values (${lit(sB)},'Leo','short')`);
+  ok(x.e && /check/.test(x.e), 'short token rejected');
+  x = await as('authenticated', B, `insert into public.student_links(student_id,display_name,token) values (${lit(sB)},'Leo','${T2}')`);
+  ok(!!x.r, 'teacher B creates own link');
+  x = await as('authenticated', A, 'select * from public.student_links'); ok(x.r.rows.length === 1 && x.r.rows[0].display_name === 'Mia', 'A sees only own link');
+  x = await as('authenticated', B, 'select * from public.student_links'); ok(x.r.rows.length === 1 && x.r.rows[0].display_name === 'Leo', 'B sees only own link');
+  x = await as('anon', null, 'select * from public.student_links'); ok(x.e && /permission denied/.test(x.e), 'anon cannot read the table');
+  x = await as('anon', null, `select public.pb_student_info('${T1}') as v`); ok(x.r && x.r.rows[0].v.name === 'Mia', 'anon + valid token -> name only');
+  ok(x.r && Object.keys(x.r.rows[0].v).join() === 'name', 'response contains only "name"');
+  x = await as('anon', null, `select public.pb_student_info('${'z'.repeat(40)}') as v`); ok(x.r.rows[0].v === null, 'wrong token -> null');
+  x = await as('anon', null, `select public.pb_student_info('short') as v`); ok(x.r.rows[0].v === null, 'short token -> null');
+  x = await as('authenticated', A, `update public.student_links set active=false, revoked_at=now() where student_id=${lit(sA)}`);
+  x = await as('anon', null, `select public.pb_student_info('${T1}') as v`); ok(x.r.rows[0].v === null, 'paused link -> null');
+  x = await as('authenticated', A, `update public.student_links set active=true, revoked_at=null, token='${'d'.repeat(40)}' where student_id=${lit(sA)}`);
+  x = await as('anon', null, `select public.pb_student_info('${T1}') as v`); ok(x.r.rows[0].v === null, 'regenerated: old token dead');
+  x = await as('anon', null, `select public.pb_student_info('${'d'.repeat(40)}') as v`); ok(x.r.rows[0].v.name === 'Mia', 'regenerated: new token works');
+  x = await as('authenticated', A, `update public.student_links set display_name='HACK' where student_id=${lit(sB)} returning 1`); ok(x.r && x.r.rows.length === 0, 'A cannot update B\'s link');
+  x = await as('authenticated', A, `delete from public.student_links where student_id=${lit(sB)} returning 1`); ok(x.r && x.r.rows.length === 0, 'A cannot delete B\'s link');
+  x = await as('anon', null, `insert into public.student_links(student_id,teacher_id,display_name,token) values (${lit(sA)},'${A}','x','${'e'.repeat(40)}')`); ok(!!x.e, 'anon cannot insert');
+  await db.exec(`delete from public.students where id = ${lit(sA)}`);
+  x = await db.query(`select count(*)::int c from public.student_links`); ok(x.rows[0].c === 1, 'deleting a student removes their link (cascade)');
+}
+await run('uuid'); await run('bigint');
+console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+# Phase 450: CLAUDE.md -- the log row.
+import sys, re
+p = sys.argv[1]; s = open(p, encoding='utf-8').read()
+ROW = """| 450 | 2026-10-12 | **Chapter 1: thumb in and out; one plays, the others balance.** Her 19:17 (on the tipped-boat thumb picture): '엄지가 나머지 손가락 안으로 자유롭게 인앤아웃 왔다갔다 하는것도 체크하는 것도 있었으면 좋겠어 팔꿈치 움직이던것 처럼 ... 손가락 각각누를 때마다 다른 손가락들은 발란스잡듯이 애니메이션으로'; draft shown as a GIF, then her 21:17 '1 엄지 인앤 아웃, 2 응' (the name 'Thumb in and out' / '엄지 인앤아웃', not 'Under the bridge'; and the paper picture shows where the thumb goes in). patch450.py + thumb450.jsx: handFront450 = the book's thumb picture (hand-thumb, the right hand from the front of the keyboard) drawn in pen so it moves: the finger that plays sinks with its key (coral), the hand leans a little toward it, the others stay on their keys; the thumb slides in under fingers 2, 3 and 4 (drawn behind them, with a light coral band and a dashed line where it is) and back out. ThumbMoves450: two cards under the thumb picture in the app's step 3 (book page 4), playing on their own like the warm-ups: 'Thumb in and out' (a check, like the elbow wings) and 'One plays, four balance' (1 2 3 4 5 4 3 2, the numbers on the hand). Book page 4: the still thumb picture is now thumbBook450 (the thumb out, and in light coral where it goes in; LbFig takes pic=), caption 'The thumb plays on the side of its tip, like a tipped boat, and slides in and out'; At the piano 3 adds 'the other fingers rest on their keys to keep the balance', new 5 '<b>Thumb in and out:</b> slide the thumb in under fingers 2, 3 and 4, then back out. The hand stays round and still.'; the teacher line adds 'a thumb that cannot slide in and out means a tight hand'. The posture guide page: two new points, the new thumb drawing, the check 'slides in and out freely'. Checks: ch1app376 21, lbcheck, wbcheck and fitko397 for chapter 1 pass, teacher and spread pages fit (en, ko). |
+"""
+m = re.search(r'^\| 449 \| [^\n]*\n', s, re.M)
+if not m: raise SystemExit('row 449')
+s = s[:m.end()] + ROW + s[m.end():]
+open(p, 'w', encoding='utf-8').write(s); print('CLAUDE.md: log row 450')

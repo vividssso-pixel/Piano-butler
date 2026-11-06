@@ -10,7 +10,7 @@ def dot(i, t='', col='#e4572e', y=73):   # her 5 Nov: key markers are outlined (
 YKDAN = '<figure class="vx"><div class="vs">' + P['yk_dan'].replace('<svg ', '<svg style="max-height:72px" ', 1) + '</div></figure>'   # (K. 545 and the Alberti bass wait for Harmony 6, in the bass clef: her 4 Nov)
 for _n in ('n1', 'n2', 'n3', 'n4', 'n5'): YKDAN = YKDAN.replace(f'<g id="{_n}" class="note">', f'<g id="{_n}" class="note" style="fill:#e4572e;color:#e4572e">', 1)
 # ---------- Part III opener ----------
-HTOC = [(t, PM.PAGE[k]) for t, k in (('Chords and triads', 'H1'), ('Four kinds of triad', 'H2'), ('Chords in a key', 'H3'), ('Inversions', 'H4'), ('Seventh chords', 'H5'), ('Colour chords', 'H6'), ('The tower: 9, 11, 13', 'H7'), ('Slash chords', 'H8'), ('Chords from outside the key', 'H9'), ('Cadences', 'H10'), ('Chords under a melody', 'H11'), ('Progressions everywhere', 'H12'))] + [('Tips', PM.PAGE['H12'] + 2)]
+HTOC = [(t, PM.PAGE[k]) for t, k in (('Chords and triads', 'H1'), ('Four kinds of triad', 'H2'), ('Chords in a key', 'H3'), ('Inversions', 'H4'), ('Seventh chords', 'H5'), ('Colour chords', 'H6'), ('The tower: 9, 11, 13', 'H7'), ('Slash chords', 'H8'), ('Chords from outside the key', 'H9'), ('Cadences', 'H10'), ('Chords under a melody', 'H11'), ('Progressions everywhere', 'H12'), ('Tips: when a chord sounds wrong', 'HT'))]
 hflow = ''.join(f'<div class="fl"><b>{a}</b><span>{b}</span></div>' + ('<span class="fa">›</span>' if i < 4 else '') for i, (a, b) in enumerate([('Triads', 'the house'), ('Sevenths', 'one more floor'), ('The tower', '9, 11, 13'), ('Slash chords', 'a new bass'), ('Progressions', 'chords that travel')]))
 HOPEN = f"""<section class="pg part2"><div class="pframe"><div class="pk">Part IV · Which notes sound together</div><div class="pt">Harmony</div><div class="pdv"></div>
 <p class="pl">A melody is the singer; harmony is the band behind it: the chords underneath. Start with the triad, a house of three notes, then build it higher floor by floor, and finish with the chords that close a phrase and carry a song.</p>
@@ -140,6 +140,12 @@ css += """
 .rn{font-family:PF,serif;font-weight:700;display:inline-flex;align-items:center;gap:1px} .fg{display:inline-flex;flex-direction:column;font-family:AH,Arial;font-size:.58em;line-height:1;margin-left:1px} .fg i{font-style:normal} .invt td{vertical-align:middle;font-size:17px}
 .hold3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} .hold7{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:8px 0 2px;text-align:center} .hold7>div{display:flex;flex-direction:column;align-items:center;gap:3px;border:1.5px solid #e3e1ee;border-radius:8px;padding:6px 2px} .hold7 b{font-family:PF;font-size:24px;color:#26296b} .hold7 span{color:#fff;font-weight:800;font-size:13px;border-radius:10px;padding:1px 8px}
 .mel{font-family:PF;font-size:22px;font-weight:700;color:#26296b;text-align:center;margin:2px 0;letter-spacing:.06em}
+.tip{border-left:3px solid #e4572e;background:#fdf6f2;padding:10px 16px 12px;margin:12px 0} .tip .bh{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e4572e} .tip .tt{display:block;font-size:16px;margin:2px 0 6px} .tip table{background:transparent;table-layout:fixed;width:100%} .tip td,.tip th{vertical-align:top;white-space:normal!important}
+.fixes{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin:6px 0 10px} .fixes>div{position:relative;padding:10px 12px 10px 44px;border:1px solid #e2ddd0;display:flex;flex-direction:column;gap:2px;font-size:13.5px;line-height:1.45} .fixes b{font-size:14.5px} .fixes .rn{position:absolute;left:12px;top:12px;width:22px;height:22px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center}
+.fnkey{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:center;font-size:15px;margin:2px 0 8px} .fnkey .cb{padding:2px 10px;min-width:0} .nocapsh th{text-transform:none!important;letter-spacing:0!important;font-size:13px!important;color:#26296b!important}
+.tripc{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;border-top:1px solid #e3e1ee;padding:7px 0} .tt2 b{display:block;font-size:16px} .tt2 span{font-size:13.5px;color:#6d6f9c;line-height:1.3;display:block}
+.trip{display:flex;flex-wrap:wrap;align-items:center;gap:4px} .ta{color:#e4572e;font-weight:800} .cb{display:inline-flex;flex-direction:column;align-items:center;border-radius:8px;padding:4px 8px;min-width:40px;color:#fff;line-height:1.1} .cb b{font-family:PF;font-size:20px} .cb small{font-size:12px;font-weight:700;opacity:.9}
+.cb.home{background:#e4572e} .cb.home2{background:#f2a48c} .cb.away{background:#26296b} .cb.pull{background:#3f8f6b}
 .kbt{font-size:16px;font-weight:700;margin:0 0 2px;text-align:center} .gp3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0} .gp3 .pair{gap:4px}
 .pc4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 10px} .pc{border:2px solid #26296b;border-radius:10px;padding:8px 6px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px} .pmark{font-family:PF;font-weight:800;font-size:46px;line-height:1;color:#e4572e;height:48px} .pmark.pw{font-size:28px;line-height:48px} .pc b{font-size:16px} .pc i{font-style:normal;font-size:14px;color:#6d6f9c} .pair{display:flex;align-items:center;justify-content:center;gap:2px} .pf{font-family:CV;font-size:20px;color:#e4572e;line-height:1.1}
 .twmin .fav{background:#fff7f3;border:2px dashed #e4572e;border-radius:8px} .big3.h3x{flex-direction:row;gap:16px;margin:10px 0 4px} .big3.h3x>div{flex:1}
@@ -439,7 +445,7 @@ HOLD = [('C', ('I', 'IV')), ('D', ('V',)), ('E', ('I',)), ('F', ('IV',)), ('G', 
 HCOL = {'I': '#e4572e', 'IV': '#26296b', 'V': '#3f8f6b'}
 HOLDMAP = ('<div class="hold3">' + ''.join(f'<div>{guestman(l, (), 96, t).replace("fill=\"#26296b\"/><text x=\"60\" y=\"237\"", f"fill=\"{HCOL[t]}\"/><text x=\"60\" y=\"237\"")}</div>' for l, t in ((('C', 'E', 'G'), 'I'), (('F', 'A', 'C'), 'IV'), (('G', 'B', 'D'), 'V'))) + '</div>'
            + '<div class="hold7">' + ''.join(f'<div><b>{n}</b>' + ''.join(f'<span style="background:{HCOL[c]}">{c}</span>' for c in cs) + '</div>' for n, cs in HOLD) + '</div>')
-H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The melody is the singer; the chords are the band. To choose a chord for each bar, look at the melody’s main notes and pick the snowman that holds them.')}
+H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The melody is the singer; the chords are the band. To choose a chord for each bar, look at the melody’s main notes and pick the snowman holding them.')}
 {h3('Which snowman holds the note?')}
 {HOLDMAP}
 <p class="sm" style="text-align:center">Every note of C major lives in I, IV or V. C and G live in two: let your ear choose.</p>
@@ -457,13 +463,42 @@ H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The 
 {watch(['Choosing a chord for a passing note: use the main notes (strong beats, long notes).', 'Playing the left hand louder than the tune: the melody is the star, the chords are the stage.'])}
 {foot('Chords in a key p. {{H3}} · Cadences p. {{H10}}', 'Workbook Harmony 11 · Online: Library › Chords')}""", 89)
 
+# ---------- Harmony 12 · Progressions everywhere + Harmony tips ----------
+FN = {'I': 'home', 'vi': 'home2', 'iii': 'home2', 'IV': 'away', 'ii': 'away', 'V': 'pull', 'V7': 'pull'}
+INC = {'I': 'C', 'ii': 'Dm', 'iii': 'Em', 'IV': 'F', 'V': 'G', 'V7': 'G7', 'vi': 'Am'}
+def trip(nums, key=INC): return '<div class="trip">' + '<span class="ta">→</span>'.join(f'<span class="cb {FN[n]}"><b>{n}</b><small>{key[n]}</small></span>' for n in nums) + '</div>'
+TRIPS = [('The pop four', ['I', 'V', 'vi', 'IV'], 'countless pop songs and ballads'), ('The fifties', ['I', 'vi', 'IV', 'V'], 'old rock ’n’ roll and doo-wop'), ('The jazz three-step', ['ii', 'V', 'I'], 'jazz standards (as ii7, V7, Imaj7)'), ('The canon', ['I', 'V', 'vi', 'iii', 'IV', 'I', 'IV', 'V'], 'Pachelbel’s Canon and its many children')]
+H12 = hpage(f"""{head('Part IV · Harmony · 12', 'Progressions everywhere', 'A <b>progression</b> is a trip from chord to chord. A handful of trips turn up in song after song. Learn them by their numbers and you can play them in any key.')}
+<div class="fnkey"><span class="cb home"><b>I</b></span> home <span class="cb home2"><b>vi iii</b></span> home’s cousins <span class="cb away"><b>IV ii</b></span> away <span class="cb pull"><b>V</b></span> the pull back home</div>
+{''.join(f'<div class="tripc"><div class="tt2"><b>{t}</b><span>{w}</span></div>{trip(n)}</div>' for t, n, w in TRIPS)}
+<div class="big3 h3x"><div><span>1</span><p>Learn the trip by <b>numbers</b>: I V vi IV.</p></div><div><span>2</span><p>Pick a key and turn the numbers into chords: in C, <b>C G Am F</b>.</p></div><div><span>3</span><p>Play it round and round. Change key: the numbers stay the same.</p></div></div>
+<!--SPLIT-->
+{h3('Same trip, any key')}
+{tbl(['The pop four', 'I', 'V', 'vi', 'IV'], [['<b>in C</b>', 'C', 'G', 'Am', 'F'], ['<b>in G</b>', 'G', 'D', 'Em', 'C'], ['<b>in F</b>', 'F', 'C', 'Dm', 'B♭'], ['<b>in D</b>', 'D', 'A', 'Bm', 'G']], ['28%', '18%', '18%', '18%', '18%'], 'nocapsh')}
+{youknow('Pachelbel’s Canon: the trip under the tune', ykfig('yk_canon', ('n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8'), 80), 'The famous bass walks down, and above it the chords take the <b class="co">canon trip</b>: C G Am Em F C F G. Countless songs borrow it.', 'Play the bass slowly with your left hand and the chords in your right.')}
+{inaction('Play the pop four in G major', trip(['I', 'V', 'vi', 'IV'], {'I': 'G', 'V': 'D', 'vi': 'Em', 'IV': 'C'}), ['<b>I</b> is the key note: G.', '<b>V</b> is the 5th note of the G scale: D. <b>vi</b> is the 6th: E, minor, so Em.', '<b>IV</b> is the 4th note: C.'], 'G, D, Em, C: <b>the pop four in G</b>. Same trip, new key.')}
+{game('Name the trip', '<div class="gm4" style="grid-template-columns:1fr">' + ''.join(f'<div style="flex-direction:row;justify-content:center;gap:14px"><b>{n}</b><p class="mel" style="margin:0">{c}</p></div>' for n, c in (('1', 'C · Am · F · G'), ('2', 'Dm · G · C'), ('3', 'C · G · Am · F'))) + '</div>', 'All in C major. Turn each into numbers, then name the trip: the pop four, the fifties or the jazz three-step.', '1 the fifties (I vi IV V) · 2 the jazz three-step (ii V I) · 3 the pop four (I V vi IV).')}
+{try10(trip(['I', 'V', 'vi', 'IV']), 'Play C, G, Am, F, four beats each.', 'Go round four times without stopping, left hand plays the chord’s name note (C for C, A for Am), right hand the whole snowman. Hum any tune you like over it.')}
+{thinkt('A walk round the block: leave home, wander, feel the pull, and turn the corner back home.')}
+{watch(['Learning songs one by one: learn the trip by numbers, then change key.', 'Mixing up the pop four and the fifties: same four chords, different order. Listen to which chord comes second.'])}
+{foot('Chords in a key p. {{H3}} · Cadences p. {{H10}} · Chords under a melody p. {{H11}}', 'Workbook Harmony 12 · Online: Library › Chords')}""", 91)
+HT = hpage(f"""{head('Part IV · Harmony · Tips', 'When a chord sounds wrong', 'A chord that sounds wrong usually has one small slip. Name the slip, fix that one note, and the chord comes right.')}
+{inaction('Fix a sour chord', '<div class="pair" style="justify-content:center">' + guestman(('C', 'E♭', 'G'), (1,), 82, 'C?') + arrow_svg() + guestman(('C', 'E', 'G'), (1,), 82, 'C') + '</div>', ['<b>It sounds dark</b>, but the music wants a bright C chord.', '<b>Count the keys between:</b> 2, then 3. That is minor.', '<b>Move one note:</b> E♭ up to E makes 3 + 2. Bright again.'], 'One note was off: <b>fix the middle of the snowman</b>.')}
+<div class="tip"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
+{tbl(['What you notice', 'Check', 'Turn to'], [['A chord sounds sour', '<b class="co">the kind</b>: keys between, 3 + 2 or 2 + 3', 'p. {{H2}}'], ['Your hand jumps all over', '<b class="co">an inversion</b>: keep the shared note still', 'p. {{H4}}'], ['A big chord sounds muddy', '<b class="co">leave notes out</b>: drop the 5th first', 'p. {{H7}}'], ['A sharp or flat surprises you', '<b class="co">a guest</b>: sharps go up, flats go down', 'p. {{H9}}'], ['The end does not feel finished', '<b class="co">the cadence</b>: end with V → I', 'p. {{H10}}'], ['The left hand fights the tune', '<b class="co">the main notes</b>: pick the snowman holding them', 'p. {{H11}}']], ['36%', '50%', '14%'])}
+</div>
+{h3('Four ways to learn chords fast')}
+<div class="fixes">{''.join(f'<div><span class="rn" style="font-family:AH">{i + 1}</span><b>{a}</b><span>{b_}</span></div>' for i, (a, b_) in enumerate([('Build, then play', 'Say the snowman (C E G) before your fingers go down.'), ('Hands alone first', 'Left hand chords alone, then the tune alone, then together.'), ('One trip a week', 'Learn one progression, then play it in three keys.'), ('Listen for the kind', 'Play major and minor side by side: bright, then dark.')]))}</div>
+{thinkt('Like a mechanic: one odd sound points to one part. Fix that part and the engine runs smoothly.')}""", 93)
+
 css += """
 .big3{display:flex;flex-direction:column;gap:12px;font-size:16px;line-height:1.4} .big3 div{display:flex;gap:10px;align-items:flex-start} .big3 p{margin:0} .big3 span{flex:none;width:26px;height:26px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
 .k7{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:6px 0 4px} .kc{border:1.5px solid #e3e1ee;border-radius:8px;padding:8px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 .ks{font-family:PF,serif;font-size:26px;color:#26296b;line-height:1} .kn{font-size:12.5px;font-weight:700;color:#26296b} .km{font-size:17px;font-weight:700;color:#e4572e} .kw{font-size:11.5px;color:#6d6f9c;line-height:1.3}
 """
 
-_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)), ('H9', H9), ('H10', H10), ('H11', H11))]
+_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)), ('H9', H9), ('H10', H10), ('H11', H11), ('H12', H12))]
+_secs.append(_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{PM.PAGE["HT"]}</span></div>', HT))
 html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}</style></head><body>{HOPEN}{"".join(_secs)}{_flowjs}</body></html>'
 open('/mnt/user-data/outputs/house-rooms/handbook-harmony.html', 'w').write(html)
 print('ok')

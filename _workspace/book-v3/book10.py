@@ -66,6 +66,7 @@ FF = (f"@font-face{{font-family:'AH';font-weight:400;src:url(data:font/woff2;bas
       f"@font-face{{font-family:'AH';font-weight:700;src:url(data:font/woff2;base64,{b64(FD + 'atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2')}) format('woff2')}}"
       f"@font-face{{font-family:'NM';src:url(data:font/woff2;base64,{b64(FD + 'noto-music/files/noto-music-music-400-normal.woff2')}) format('woff2')}}"
       f"@font-face{{font-family:'PF';font-weight:700;src:url(data:font/woff2;base64,{b64('/tmp/claude-0/fnt/package/files/playfair-display-latin-700-normal.woff2')}) format('woff2')}}")
+FF += ''.join(f"@font-face{{font-family:'AH';font-weight:{w};unicode-range:U+0030;src:url(data:font/woff2;base64,{b64(FD + f'figtree/files/figtree-latin-{w}-normal.woff2')}) format('woff2')}}" for w in (400, 700))   # her 6 Nov review: a plain zero, Atkinson's slashed 0 reads like Ø for children
 FF += f"@font-face{{font-family:'CV';font-weight:700;src:url(data:font/woff2;base64,{b64(FD + 'caveat/files/caveat-latin-700-normal.woff2')}) format('woff2')}}"   # her 5 Nov: handwritten notes, like a passed-down cheat sheet
 
 for _k in ('wbr34', 'wbr24'):
@@ -177,7 +178,7 @@ SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the t
  'S7': 'Clockwise adds a sharp, anticlockwise adds a flat: every key on one clock.',
  'H1': 'Play one, skip one, play one: the snowman rule.', 'H2': 'Count the keys between: 3 + 2 is major, 2 + 3 is minor.', 'H3': 'Build a snowman on every note of the scale: I, IV and V are the strongest.',
  'H4': 'Move the bottom note to the top: same chord, new bass.', 'H5': 'One more floor on the snowman and the chord changes colour.', 'H6': 'Move the 3rd, take it away, or add one note: five new colours.',
- 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'H9': 'Sharp guests push <b>up</b>, flat guests sigh <b>down</b>: follow them one key and you find the next chord.', 'H10': 'Music has full stops and commas too: listen to the last two chords of a phrase.', 'H11': 'Look at the melody’s main notes, then pick the snowman that holds them.'}
+ 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'H9': 'Sharp guests push <b>up</b>, flat guests sigh <b>down</b>: follow them one key and you find the next chord.', 'H10': 'Music has full stops and commas too: listen to the last two chords of a phrase.', 'H11': 'Look at the melody’s main notes, then pick the snowman that holds them.', 'H12': 'Most songs take the same few trips: home, away, a pull, and home again.'}
 def secret_box(t): return f'<div class="secret1"><span class="sl">The secret</span><span>{t}</span></div>'
 def hand(t, cls=''): return f'<span class="hand3 {cls}">{t}</span>'
 def assemble(key, pg):   # her 5 Nov: a topic is 2 pages, or 3 when it needs room; page numbers come from the page map

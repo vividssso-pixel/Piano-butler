@@ -1,0 +1,184 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:NM;src:url(music.woff2)}
+@font-face{font-family:PF;font-weight:800;src:url(pf800.woff2)}
+@font-face{font-family:PF;font-weight:900;src:url(pf900.woff2)}
+@font-face{font-family:IN;font-weight:500;src:url(in500.woff2)}
+@font-face{font-family:IN;font-weight:700;src:url(in700.woff2)}
+@font-face{font-family:IN;font-weight:800;src:url(in800.woff2)}
+html,body{margin:0;background:#fffdf7}
+svg{display:block}
+</style></head><body>
+<svg id="v" width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+const NAVY = '#26296b', CORAL = '#e4572e', IVORY = '#fffdf7', SOFT = '#9a9cc4', PINK = '#e98aa6';
+let TL = null, CLEF = {};
+const ease = x => x <= 0 ? 0 : x >= 1 ? 1 : 1 - Math.pow(1 - x, 3);
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const midiOf = s => { const o = Math.floor(s / 7), d = ((s % 7) + 7) % 7; return 60 + o * 12 + [0, 2, 4, 5, 7, 9, 11][d]; };
+// measure the ink of a clef glyph once (canvas scan), like the drills do
+function measure(ch) {
+  const c = document.createElement('canvas'); c.width = 400; c.height = 600; const g = c.getContext('2d');
+  g.font = '200px NM'; g.fillStyle = '#000'; g.fillText(ch, 100, 400);
+  const d = g.getImageData(0, 0, 400, 600).data; let top = 1e9, bot = -1, l = 1e9, r = -1;
+  for (let y = 0; y < 600; y++) for (let x = 0; x < 400; x++) if (d[(y * 400 + x) * 4 + 3] > 60) { top = Math.min(top, y); bot = Math.max(bot, y); l = Math.min(l, x); r = Math.max(r, x); }
+  return { top: top - 400, bot: bot - 400, l: l - 100, w: r - l };
+}
+function clefSvg(kind, x, topLine, h) {
+  const sp = 2 * h, m = CLEF[kind];
+  const want = kind === 'treble' ? [topLine - 1.418 * sp, topLine + 4 * sp + 1.680 * sp] : [topLine - 0.161 * sp, topLine + 3.470 * sp];
+  const k = (want[1] - want[0]) / (m.bot - m.top);
+  const base = want[0] - m.top * k;
+  return `<text x="${x - m.l * k}" y="${base}" font-family="NM" font-size="${200 * k}" fill="${NAVY}">${kind === 'treble' ? '𝄞' : '𝄢'}</text>`;
+}
+function staffLines(x0, x1, top, h, op) {
+  let s = ''; for (let i = 0; i < 5; i++) s += `<line x1="${x0}" x2="${x1}" y1="${top + i * 2 * h}" y2="${top + i * 2 * h}" stroke="${NAVY}" stroke-width="2" opacity="${op}"/>`; return s;
+}
+// layout per staff kind: returns {staves:[{kind,top}], yOf(step, which)}
+function layout(kind) {
+  if (kind === 'treble') { const h = 11, top = 255; return { h, staves: [{ kind: 'treble', top }], yOf: s => top + (10 - s) * h }; }
+  if (kind === 'bass') { const h = 11, top = 235; return { h, staves: [{ kind: 'bass', top }], yOf: s => top + (-2 - s) * h }; }
+  const h = 8, tt = 215, bt = tt + 16 * h;
+  return { h, staves: [{ kind: 'treble', top: tt }, { kind: 'bass', top: bt }], yOf: (s, w) => (w === 'b' ? bt + (-2 - s) * h : tt + (10 - s) * h) };
+}
+function ledgerSteps(s, w, kind) {
+  const treble = kind === 'treble' || (kind === 'grand' && w !== 'b');
+  const out = [];
+  if (treble) { if (s >= 12) for (let p = 12; p <= s; p += 2) out.push(p); if (s <= 0) for (let p = 0; p >= s; p -= 2) out.push(p); }
+  else { if (s >= 0) for (let p = 0; p <= s; p += 2) out.push(p); if (s <= -12) for (let p = -12; p >= s; p -= 2) out.push(p); }
+  return out;
+}
+function tiara(x, y, sc, op) {
+  return `<g opacity="${op}" transform="translate(${x},${y}) scale(${sc})"><path d="M-11 0 L-9 -11 L-4.5 -5 L0 -14 L4.5 -5 L9 -11 L11 0 Z" fill="${PINK}" stroke="${NAVY}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="0" cy="-15.5" r="2.2" fill="${CORAL}" stroke="${NAVY}" stroke-width="1"/></g>`;
+}
+// keyboard C2..C6
+const KB = { x: 118, y: 560, w: 36, hW: 120, hB: 74, first: 36, last: 84 };
+function kbX(midi) { // white index
+  const o = Math.floor((midi - KB.first) / 12), n = (midi - KB.first) % 12, wi = [0, 0.6, 1, 1.6, 2, 3, 3.6, 4, 4.6, 5, 5.6, 6][n];
+  return KB.x + (o * 7 + wi) * KB.w;
+}
+const isBlack = m => [1, 3, 6, 8, 10].includes(m % 12);
+function keyboard(lit) { // lit: {midi: alpha}
+  let s = '';
+  for (let m = KB.first; m <= KB.last; m++) if (!isBlack(m)) {
+    const x = kbX(m), a = lit[m] || 0;
+    s += `<rect x="${x}" y="${KB.y}" width="${KB.w}" height="${KB.hW}" rx="4" fill="${IVORY}" stroke="${NAVY}" stroke-width="1.8"/>`;
+    if (a > 0) s += `<rect x="${x + 2}" y="${KB.y + 2}" width="${KB.w - 4}" height="${KB.hW - 4}" rx="3" fill="${CORAL}" opacity="${a * 0.85}"/>`;
+    if (m % 12 === 0) s += `<text x="${x + KB.w / 2}" y="${KB.y + KB.hW - 10}" text-anchor="middle" font-family="IN" font-weight="700" font-size="12" fill="${a > 0.4 ? '#fff' : SOFT}">C${Math.floor(m / 12) - 1}</text>`;
+  }
+  for (let m = KB.first; m <= KB.last; m++) if (isBlack(m)) {
+    const x = kbX(m) + KB.w * 0.0;
+    s += `<rect x="${x + 4}" y="${KB.y}" width="${KB.w * 0.62}" height="${KB.hB}" rx="3" fill="${NAVY}"/>`;
+  }
+  return s;
+}
+function caption(sc, t) {
+  let s = '';
+  const caps = sc.caps || [];
+  caps.forEach((c, i) => {
+    const next = caps[i + 1] ? caps[i + 1][0] : sc.to;
+    const a = ease((t - c[0]) / 0.4) * (1 - ease((t - (next - 0.35)) / 0.35));
+    if (a <= 0) return;
+    s += `<text x="640" y="${98 + (1 - a) * 10}" text-anchor="middle" font-family="PF" font-weight="800" font-size="44" fill="${NAVY}" opacity="${a}">${c[1]}</text>`;
+  });
+  return s;
+}
+function staffScene(sc, t) {
+  const L = layout(sc.staff), h = L.h;
+  const enter = ease((t - sc.from) / 0.5), leave = 1 - ease((t - (sc.to - 0.4)) / 0.4), op = enter * leave;
+  const x0 = sc.staff === 'grand' ? 250 : 230, x1 = 1050;
+  let s = `<g opacity="${op}">`;
+  L.staves.forEach(st => { s += staffLines(x0, x1, st.top, h, 1) + clefSvg(st.kind, x0 + 12, st.top, h); });
+  if (sc.staff === 'grand') { const t0 = L.staves[0].top, b1 = L.staves[1].top + 8 * h; s += `<line x1="${x0}" x2="${x0}" y1="${t0}" y2="${b1}" stroke="${NAVY}" stroke-width="2.5"/>`; s += `<path d="M${x0 - 14} ${t0} C ${x0 - 30} ${t0 + 20}, ${x0 - 2} ${(t0 + b1) / 2 - 20}, ${x0 - 22} ${(t0 + b1) / 2} C ${x0 - 2} ${(t0 + b1) / 2 + 20}, ${x0 - 30} ${b1 - 20}, ${x0 - 14} ${b1}" fill="none" stroke="${NAVY}" stroke-width="3"/>`; }
+  const n = sc.notes.length, lit = {};
+  const xs = sc.id === 'middle' ? [520, 760] : sc.notes.map((_, i) => 420 + i * (sc.staff === 'grand' ? 130 : 135));
+  sc.notes.forEach((nt, i) => {
+    const [tn, step, letter, name, w] = nt;
+    const k = (t - tn);
+    if (k < -0.35) return;
+    const x = xs[i], y = L.yOf(step, w), rx = h * 1.3, ry = h * 0.92;
+    const isLast = i === n - 1 || (sc.notes[i + 1] && t < sc.notes[i + 1][0]);
+    const current = k >= 0 && (i === n - 1 ? true : t < sc.notes[i + 1][0]);
+    // ladders draw first (0.35 s before the note)
+    ledgerSteps(step, w, sc.staff).forEach((p, j) => {
+      const g = ease((k + 0.35 - j * 0.12) / 0.3); if (g <= 0) return;
+      const ly = L.yOf(p, w), half = (rx + h * 0.75) * g;
+      s += `<line x1="${x - half}" x2="${x + half}" y1="${ly}" y2="${ly}" stroke="${current ? CORAL : NAVY}" stroke-width="2.6" stroke-linecap="round"/>`;
+    });
+    if (k < 0) return;
+    const pop = k < 0.25 ? 0.6 + 0.4 * ease(k / 0.25) + Math.sin(Math.PI * clamp01(k / 0.25)) * 0.12 : 1;
+    const col = current ? CORAL : NAVY;
+    s += `<ellipse cx="${x}" cy="${y}" rx="${rx * pop}" ry="${ry * pop}" transform="rotate(-20 ${x} ${y})" fill="${col}"/>`;
+    // letter
+    const la = ease(k / 0.3);
+    if (sc.staff === 'grand') {
+      const lx = x + rx + 14;
+      const mb = sc.id === 'middle' && w === 'b';
+      s += `<text x="${lx}" y="${y + (mb ? -12 : 6)}" font-family="IN" font-weight="800" font-size="19" fill="${col}" opacity="${la}">${name || letter}</text>`;
+      if (sc.id === 'middle') s += `<text x="${lx}" y="${y + (mb ? 6 : 26)}" font-family="IN" font-weight="700" font-size="14" fill="${SOFT}" opacity="${la}">${w === 'b' ? 'over the bass staff' : 'under the treble staff'}</text>`;
+    } else {
+      const up = sc.staff === 'treble', ty = up ? L.yOf(14) - 34 : L.yOf(-14) + 58;
+      s += `<text x="${x}" y="${ty}" text-anchor="middle" font-family="IN" font-weight="800" font-size="30" fill="${col}" opacity="${la}">${letter}</text>`;
+      if (name) s += `<text x="${x}" y="${ty + (up ? -36 : 28)}" text-anchor="middle" font-family="IN" font-weight="700" font-size="18" fill="${col}" opacity="${la}">${name}</text>`;
+    }
+    if (step === 0) s += tiara(x, y - ry - 3, 0.9, la);
+    // key light: bright when struck, fading to a glow
+    const m = midiOf(step); lit[m] = Math.max(lit[m] || 0, current ? 1 - 0.5 * ease(k / 1.2) : 0.0);
+  });
+  // middle scene: arrows from both Cs to the one key
+  if (sc.id === 'middle') {
+    const a = ease((t - (sc.arrowAt || 28.0)) / 0.5);
+    if (a > 0) {
+      const kx = kbX(60) + KB.w / 2;
+      [[520, L.yOf(0, 't')], [760, L.yOf(0, 'b')]].forEach(([x, y]) => { s += `<path d="M${x} ${y + 16} Q ${(x + kx) / 2} ${(y + KB.y) / 2 + 40} ${kx} ${KB.y - 8}" fill="none" stroke="${CORAL}" stroke-width="2.4" stroke-dasharray="7 6" opacity="${a}"/>`; });
+      lit[60] = Math.max(lit[60] || 0, a);
+    }
+  }
+  if (sc.id === 'fivec') { sc.notes.forEach(nt => { const k = t - nt[0]; if (k >= 0) { const m = midiOf(nt[1]); lit[m] = Math.max(lit[m] || 0, 0.55 + 0.45 * (1 - ease(k / 0.8))); } }); }
+  s += '</g>';
+  s += `<g opacity="${op}">${keyboard(lit)}</g>`;
+  return s;
+}
+function bowtie(x, y, sc) { return `<g transform="translate(${x},${y}) scale(${sc})"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="${NAVY}" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="${NAVY}" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.4" fill="${CORAL}"/></g>`; }
+function titleScene(sc, t) {
+  const a = ease((t - 0.2) / 0.6) * (1 - ease((t - (sc.to - 0.4)) / 0.4));
+  const b = ease((t - 0.9) / 0.6) * (1 - ease((t - (sc.to - 0.4)) / 0.4));
+  // a little ladder climbing out of a staff
+  let s = `<g opacity="${a}">`;
+  s += staffLines(440, 840, 400, 8, 0.9);
+  for (let j = 0; j < 3; j++) { const g = ease((t - 1.2 - j * 0.35) / 0.3); if (g > 0) s += `<line x1="${640 - 26 * g}" x2="${640 + 26 * g}" y1="${384 - j * 16}" y2="${384 - j * 16}" stroke="${CORAL}" stroke-width="3" stroke-linecap="round"/>`; }
+  const g4 = ease((t - 2.4) / 0.3); if (g4 > 0) s += `<ellipse cx="640" cy="352" rx="${11 * g4}" ry="${8 * g4}" transform="rotate(-20 640 352)" fill="${CORAL}"/>`;
+  s += `<text x="640" y="235" text-anchor="middle" font-family="PF" font-weight="900" font-size="78" fill="${NAVY}">Ledger lines</text>`;
+  s += `</g><g opacity="${b}"><text x="640" y="292" text-anchor="middle" font-family="IN" font-weight="500" font-size="26" fill="${NAVY}">Little ladders out of the staff</text>`;
+  s += `<text x="640" y="160" text-anchor="middle" font-family="IN" font-weight="800" font-size="16" letter-spacing="3" fill="${CORAL}">CHAPTER 15 · PIANO BUTLER</text></g>`;
+  return s;
+}
+function endScene(sc, t) {
+  const a = ease((t - sc.from) / 0.5), b = ease((t - sc.from - 1.0) / 0.5), c = ease((t - (sc.ctaAt || sc.from + 2.0)) / 0.5);
+  const fade = 1 - ease((t - (sc.to - 0.5)) / 0.5);
+  let s = `<g opacity="${fade}">`;
+  s += `<text x="640" y="200" text-anchor="middle" font-family="PF" font-weight="800" font-size="44" fill="${NAVY}" opacity="${a}">Drawing a ladder</text>`;
+  const items = ['A little wider than the note', 'The same distance apart as the staff lines', 'No gaps back to the staff'];
+  items.forEach((it, i) => { const g = ease((t - (sc.itemsAt ? sc.itemsAt[i] : sc.from + 0.6 + i * 0.45)) / 0.4); s += `<g opacity="${g}"><circle cx="390" cy="${268 + i * 54}" r="8" fill="${CORAL}"/><text x="416" y="${276 + i * 54}" font-family="IN" font-weight="700" font-size="26" fill="${NAVY}">${it}</text></g>`; });
+  s += `<g opacity="${c}">${bowtie(560, 476, 1.2)}<text x="618" y="498" font-family="IN" font-weight="800" font-size="26" fill="${NAVY}">Now try the drill</text><text x="640" y="548" text-anchor="middle" font-family="IN" font-weight="500" font-size="18" fill="${SOFT}">thepianobutler.com</text></g>`;
+  return s + '</g>';
+}
+window.render = function (t) {
+  let s = `<rect width="1280" height="720" fill="${IVORY}"/>`;
+  // thin double rule frame, like the books
+  s += `<rect x="18" y="18" width="1244" height="684" rx="14" fill="none" stroke="${NAVY}" stroke-width="2"/><rect x="25" y="25" width="1230" height="670" rx="10" fill="none" stroke="${NAVY}" stroke-width="0.8"/>`;
+  TL.scenes.forEach(sc => {
+    if (t < sc.from - 0.01 || t > sc.to + 0.01) return;
+    if (sc.id === 'title') s += titleScene(sc, t);
+    else if (sc.id === 'end') s += endScene(sc, t);
+    else s += staffScene(sc, t) + caption(sc, t);
+  });
+  document.getElementById('v').innerHTML = s;
+};
+window.init = async function (tl) {
+  TL = tl;
+  await Promise.all(['200px NM', '800 40px PF', '900 40px PF', '500 20px IN', '700 20px IN', '800 20px IN'].map(f => document.fonts.load(f, f.includes('NM') ? '𝄞𝄢' : 'Aa')));
+  CLEF.treble = measure('𝄞'); CLEF.bass = measure('𝄢');
+  return CLEF;
+};
+</script></body></html>

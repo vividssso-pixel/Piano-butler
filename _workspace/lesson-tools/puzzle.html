@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Practice Puzzle | Piano Butler</title>
+<meta name="description" content="Open a PDF score, cut out the bars you are practising, mark them up, and practise the joins as well as the pieces.">
+<meta name="robots" content="noindex, follow">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
+
+<script type="module">
+/* PDF.js v4 ships as an ES module, so it is loaded here and handed to the
+   classic (Babel-compiled) app through window. Versions are pinned — an
+   unpinned CDN is what produced the blank-page bug in Phase 42. */
+import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs";
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+window.pdfjsLib = pdfjsLib;
+window.dispatchEvent(new Event("pdfjs-ready"));
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f5f0eb; color: #1a1008; font-family: 'Inter', system-ui, -apple-system, sans-serif; min-height: 100vh; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input { font-family: inherit; }
+
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 52px;
+         background: #f5f0eb; border-bottom: 1px solid #e8e0d8; position: sticky; top: 0; z-index: 20; }
+  .nav-logo { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .nav-bar { width: 3px; height: 18px; background: #d4956a; border-radius: 2px; }
+  .nav-back { font-size: 13px; color: #8a7a6a; }
+  .nav-back:hover { color: #d4956a; }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 30px 24px 90px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; color: #d4956a; text-transform: uppercase; margin-bottom: 12px; }
+  .title { font-size: 30px; font-weight: 800; line-height: 1.2; margin-bottom: 12px; }
+  .sub { font-size: 14.5px; color: #6a5a4a; line-height: 1.65; max-width: 660px; }
+
+  .drop { margin: 28px 0; border: 2px dashed #d8cec4; border-radius: 14px; background: #fff;
+          padding: 42px 24px; text-align: center; }
+  .drop.over { border-color: #d4956a; background: #fdf3eb; }
+  .drop-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .drop-sub { font-size: 13px; color: #8a7a6a; line-height: 1.6; }
+  .btn { display: inline-block; margin-top: 16px; padding: 10px 22px; background: #d4956a; color: #fff;
+         font-size: 14px; font-weight: 700; border-radius: 10px; }
+  .btn:hover { background: #b8703a; }
+  .btn[disabled] { opacity: .5; cursor: default; }
+
+  .card { background: #fff; border: 1px solid #e8e0d8; border-radius: 14px; padding: 20px 22px; margin-bottom: 16px; }
+  .card-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+                color: #8a7a6a; margin-bottom: 14px; }
+  .muted { font-size: 13px; color: #8a7a6a; line-height: 1.6; }
+
+  .row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .row + .row { margin-top: 12px; }
+  .step { padding: 9px 15px; border: 1.5px solid #e0d8d0; border-radius: 9px; background: #fff;
+          font-size: 13.5px; font-weight: 600; color: #6a5a4a; }
+  .step:hover:not([disabled]) { border-color: #d4956a; color: #a05a38; }
+  .step[disabled] { opacity: .4; cursor: default; }
+  .step.go { background: #2f6b52; border-color: #2f6b52; color: #fff; }
+  .step.go:hover { background: #24523f; border-color: #24523f; color: #fff; }
+  .step.warn:hover { border-color: #d09a92; color: #a0342a; }
+  .step.send { background: #d4956a; border-color: #d4956a; color: #fff; }
+  .step.send:hover { background: #b8703a; border-color: #b8703a; color: #fff; }
+
+  .pagewrap { position: relative; display: inline-block; line-height: 0; cursor: crosshair;
+              border: 1px solid #e8e0d8; border-radius: 10px; overflow: hidden; background: #fff; touch-action: none; }
+  .pagewrap canvas { display: block; max-width: 100%; height: auto; }
+  .sel { position: absolute; border: 2px solid #d4956a; background: rgba(212,149,106,.16); pointer-events: none; }
+  .savedbox { position: absolute; border: 1.5px solid rgba(47,107,82,.55); background: rgba(47,107,82,.10);
+              pointer-events: none; border-radius: 3px; }
+  .savedbox span { position: absolute; top: -1px; left: -1px; background: #2f6b52; color: #fff;
+                   font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px 0 3px 0; line-height: 1.5; }
+
+  .hint { background: #fdf3eb; border: 1px solid #f0d8c0; border-radius: 10px; padding: 11px 14px;
+          font-size: 13px; color: #6a5a4a; line-height: 1.6; margin-bottom: 14px; }
+  .hint strong { color: #a05a38; }
+
+  /* drawing */
+  .draw { position: relative; line-height: 0; border: 1px solid #e8e0d8; border-radius: 10px; overflow: hidden;
+          background: #fff; touch-action: none; }
+  .draw canvas { display: block; width: 100%; height: auto; }
+  .tools { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin: 12px 0 0; }
+  .tool { width: 34px; height: 34px; border-radius: 9px; border: 1.5px solid #e0d8d0; background: #fff;
+          display: flex; align-items: center; justify-content: center; }
+  .tool:hover { border-color: #d4956a; }
+  .tool.on { border-color: #1a1008; box-shadow: 0 0 0 2px rgba(26,16,8,.12); }
+  .swatch { width: 15px; height: 15px; border-radius: 50%; }
+  .note-in { flex: 1; min-width: 200px; padding: 9px 12px; border: 1.5px solid #e0d8d0; border-radius: 9px;
+             font-size: 13.5px; color: #1a1008; background: #fff; }
+  .note-in:focus { outline: none; border-color: #d4956a; }
+
+  .strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: 9px; }
+  .pc { border: 1.5px solid #e0d8d0; border-radius: 9px; background: #fff; padding: 6px; text-align: left; }
+  .pc:hover { border-color: #d4956a; }
+  .pc.done { background: #e6f2ec; border-color: #7cb79b; }
+  .pc.cur { box-shadow: 0 0 0 2.5px #d4956a; border-color: #d4956a; }
+  .pc canvas { display: block; width: 100%; height: auto; border-radius: 4px; background: #fff; }
+  .pc-cap { font-size: 11px; color: #8a7a6a; margin-top: 5px; display: flex; justify-content: space-between; gap: 6px; }
+  .pc-cap b { color: #1a1008; font-size: 12px; }
+  .pc.done .pc-cap b { color: #2f6b52; }
+
+  /* Two columns: cut on the left, work on the right. The left column is pinned
+     so a new cut never costs a scroll. */
+  .cols { display: grid; grid-template-columns: minmax(0, 43fr) minmax(0, 57fr); gap: 16px; align-items: start; }
+  .col-left { position: sticky; top: 64px; }
+  .col-right { min-width: 0; }
+  .pagewrap canvas { max-height: 60vh; width: auto; }
+  .empty { border: 1.5px dashed #ddd2c6; border-radius: 14px; padding: 34px 22px; text-align: center;
+           color: #8a7a6a; font-size: 13.5px; line-height: 1.7; background: #fdfaf7; }
+  @media (max-width: 900px) {
+    .cols { grid-template-columns: 1fr; }
+    .col-left { position: static; }
+    .cols.working .col-right { order: -1; }
+    .pagewrap canvas { max-height: none; width: 100%; }
+  }
+
+  .clip { margin-top: 14px; padding: 13px 15px; background: #fff; border: 1px solid #eee4da; border-radius: 11px; }
+  .clip-media { display: block; width: 100%; max-height: 46vh; border-radius: 9px; background: #000; }
+  audio.clip-media { background: transparent; max-height: none; }
+
+  .logbar { margin-top: 14px; padding: 13px 15px; background: #faf6f2; border: 1px solid #eee4da; border-radius: 11px; }
+  .logbar-q { font-size: 12.5px; font-weight: 700; color: #6a5a4a; margin-bottom: 9px; }
+  .lvl { padding: 8px 15px; border: 1.5px solid #e0d8d0; border-radius: 20px; background: #fff;
+         font-size: 13px; font-weight: 700; color: #8a7a6a; }
+  .lvl:hover { border-color: #d4956a; color: #a05a38; }
+  .dots { display: flex; align-items: center; gap: 4px; margin-top: 10px; flex-wrap: wrap; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  .seam { border: 1.5px dashed #c9b8a6; border-radius: 12px; padding: 14px 16px; margin-top: 14px; background: #fdfaf7; }
+  .seam.on { border-style: solid; border-color: #7cb79b; background: #e6f2ec; }
+  .seam-t { font-size: 13.5px; font-weight: 800; margin-bottom: 3px; }
+  .seam.on .seam-t { color: #2f6b52; }
+  .seam-b { font-size: 12.5px; color: #6a5a4a; line-height: 1.6; }
+  .seam-join { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+               text-transform: uppercase; color: #a05a38; padding: 5px 0; }
+
+  /* the route — a map of pieces, not a grade sheet */
+  .trail { display: flex; align-items: center; overflow-x: auto; padding: 2px 2px 12px; }
+  .trail-node { flex: none; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #e0d8d0;
+                background: #fff; color: #a08a76; font-size: 12px; font-weight: 800;
+                display: flex; align-items: center; justify-content: center; }
+  .trail-node:hover { border-color: #d4956a; }
+  .trail-node.mid { border-color: #d4956a; color: #a05a38; background: #fdf3eb; }
+  .trail-node.done { border-color: #2f6b52; color: #fff; background: #2f6b52; }
+  .trail-node.cur { box-shadow: 0 0 0 3px rgba(212,149,106,.35); }
+  .trail-line { flex: none; width: 16px; height: 2px; background: #e0d8d0; }
+  .trail-line.on { background: #7cb79b; height: 3px; }
+
+  .suggest .suggest-t { font-size: 13.5px; font-weight: 800; color: #a05a38; margin-bottom: 6px; }
+
+  .join { background: #e6f2ec; border: 1px solid #a9cfbd; border-radius: 12px; padding: 14px 17px; margin-bottom: 16px; }
+  .join-t { font-size: 14px; font-weight: 800; color: #2f6b52; margin-bottom: 4px; }
+  .join-b { font-size: 13px; color: #3d6b58; line-height: 1.6; }
+
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .err { background: #fdecea; border: 1px solid #f5c6c0; border-radius: 12px; padding: 14px 17px;
+         font-size: 13.5px; color: #a0342a; line-height: 1.6; margin-bottom: 16px; }
+  .foot { margin-top: 34px; padding-top: 20px; border-top: 1px solid #e8e0d8; font-size: 12px;
+          color: #a08a76; line-height: 1.7; }
+  @media (max-width: 560px) {
+    .wrap { padding: 22px 16px 60px; }
+    .title { font-size: 23px; }
+    .strip { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script id="app-jsx" type="text/jsx-raw">
+const { useState, useMemo, useRef, useCallback, useEffect } = React;
+
+/* ---------------- storage ---------------- */
+
+function fileKey(bytes, name) {
+  let h = 5381;
+  const step = Math.max(1, Math.floor(bytes.length / 4096));
+  for (let i = 0; i < bytes.length; i += step) h = ((h << 5) + h + bytes[i]) | 0;
+  h = ((h << 5) + h + bytes.length) | 0;
+  for (let i = 0; i < name.length; i++) h = ((h << 5) + h + name.charCodeAt(i)) | 0;
+  return "pzpdf_" + (h >>> 0).toString(36);
+}
+
+// v1 stored a bare array of pieces. Keep reading it so nobody loses work.
+function loadSaved(key) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return { pieces: [], seams: {} };
+    const v = JSON.parse(raw);
+    if (Array.isArray(v)) return { pieces: v, seams: {} };
+    return { pieces: Array.isArray(v.pieces) ? v.pieces : [], seams: v.seams || {} };
+  } catch (e) { return { pieces: [], seams: {} }; }
+}
+function save(key, pieces, seams) {
+  try { window.localStorage.setItem(key, JSON.stringify({ v: 2, pieces: pieces, seams: seams })); }
+  catch (e) { /* private mode, or quota */ }
+}
+
+/* ---------------- practice log ---------------- */
+
+// 0 = not yet, 1 = got through it, 2 = comfortable.
+const LEVELS = [
+  { v: 0, label: "Not yet",     tone: "#a0342a", bg: "#fdecea" },
+  { v: 1, label: "Got it",      tone: "#a05a38", bg: "#fdf3eb" },
+  { v: 2, label: "Comfortable", tone: "#2f6b52", bg: "#e6f2ec" }
+];
+
+function today() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1), day = String(d.getDate());
+  return d.getFullYear() + "-" + (m.length < 2 ? "0" + m : m) + "-" + (day.length < 2 ? "0" + day : day);
+}
+
+function daysBetween(a, b) {
+  const x = new Date(a + "T00:00:00"), y = new Date(b + "T00:00:00");
+  return Math.round((y - x) / 86400000);
+}
+
+// One entry per day per block — practising the same bar twice on Tuesday is
+// still one day of spacing, and spacing is the thing that matters.
+function addEntry(log, level) {
+  const t = today();
+  const arr = (log || []).filter(function (e) { return e.d !== t; });
+  arr.push({ d: t, r: level });
+  arr.sort(function (p, q) { return p.d < q.d ? -1 : (p.d > q.d ? 1 : 0); });
+  return arr;
+}
+
+function lastEntry(p) {
+  const log = p.log || [];
+  return log.length ? log[log.length - 1] : null;
+}
+
+// "Learned" is simply what you said last time, so it fades honestly instead of
+// standing as a permanent tick from three weeks ago.
+function isLearned(p) {
+  const e = lastEntry(p);
+  if (e) return e.r === 2;
+  return !!p.done;                       // pieces cut before the log existed
+}
+
+function sinceText(p) {
+  const e = lastEntry(p);
+  if (!e) return "not practised yet";
+  const n = daysBetween(e.d, today());
+  if (n <= 0) return "today";
+  if (n === 1) return "yesterday";
+  if (n < 7) return n + " days ago";
+  if (n < 14) return "a week ago";
+  if (n < 31) return Math.round(n / 7) + " weeks ago";
+  return Math.round(n / 30) + " months ago";
+}
+
+/* ---------------- geometry ---------------- */
+
+function normRect(ax, ay, bx, by) {
+  let x = Math.min(ax, bx), y = Math.min(ay, by);
+  let w = Math.abs(bx - ax), h = Math.abs(by - ay);
+  if (x < 0) { w += x; x = 0; }
+  if (y < 0) { h += y; y = 0; }
+  if (x + w > 1) w = 1 - x;
+  if (y + h > 1) h = 1 - y;
+  return { x: x, y: y, w: Math.max(0, w), h: Math.max(0, h) };
+}
+
+/* ---------------- seams ---------------- */
+
+// Keyed by the two piece ids, not their positions, so removing a piece
+// cannot silently transfer a seam to a different pair.
+function seamKey(a, b) { return a.id + ">" + b.id; }
+
+// A run only continues across a seam that has itself been learned.
+// Two perfect pieces with a broken join are not a joined run.
+function longestRun(pieces, seams) {
+  let best = { from: -1, to: -1, len: 0 };
+  let start = -1;
+  for (let i = 0; i < pieces.length; i++) {
+    if (!isLearned(pieces[i])) { start = -1; continue; }
+    if (start < 0) start = i;
+    else if (!seams[seamKey(pieces[i - 1], pieces[i])]) start = i;
+    const len = i - start + 1;
+    if (len > best.len) best = { from: start, to: i, len: len };
+  }
+  return best;
+}
+
+/* ---------------- crop drawing ---------------- */
+
+function paintCrop(ctx, source, rect, outW, outH) {
+  const sx = Math.round(rect.x * source.width);
+  const sy = Math.round(rect.y * source.height);
+  const sw = Math.max(1, Math.round(rect.w * source.width));
+  const sh = Math.max(1, Math.round(rect.h * source.height));
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, outW, outH);
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(source, sx, sy, sw, sh, 0, 0, outW, outH);
+}
+
+const TOOLS = {
+  pencil:      { color: "#2a2118", width: 0.004, alpha: 1,   blend: "source-over" },
+  red:         { color: "#c0392b", width: 0.005, alpha: 1,   blend: "source-over" },
+  highlighter: { color: "#ffd24d", width: 0.030, alpha: 0.45, blend: "multiply" }
+};
+
+function paintStrokes(ctx, strokes, w, h) {
+  strokes.forEach(function (s) {
+    const t = TOOLS[s.tool] || TOOLS.pencil;
+    if (!s.pts || s.pts.length < 1) return;
+    ctx.save();
+    ctx.globalAlpha = t.alpha;
+    ctx.globalCompositeOperation = t.blend;
+    ctx.strokeStyle = t.color;
+    ctx.lineWidth = Math.max(1, t.width * w);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(s.pts[0][0] * w, s.pts[0][1] * h);
+    for (let i = 1; i < s.pts.length; i++) ctx.lineTo(s.pts[i][0] * w, s.pts[i][1] * h);
+    if (s.pts.length === 1) ctx.lineTo(s.pts[0][0] * w + 0.01, s.pts[0][1] * h);
+    ctx.stroke();
+    ctx.restore();
+  });
+}
+
+/* ---------------- send a fragment ---------------- */
+
+// Builds the image the student actually receives: the bars, the teacher's
+// markings, and the note underneath. Nothing is uploaded — the file is made
+// here and handed to the phone's own share sheet.
+function buildShareCanvas(source, piece, caption) {
+  const sw = Math.max(1, Math.round(piece.rect.w * source.width));
+  const sh = Math.max(1, Math.round(piece.rect.h * source.height));
+  const W = Math.max(700, Math.min(1600, sw));
+  const H = Math.max(1, Math.round(W * (sh / sw)));
+  const pad = Math.round(W * 0.035);
+  const note = (piece.note || "").trim();
+  const fontSize = Math.max(20, Math.round(W * 0.028));
+
+  const cv = document.createElement("canvas");
+  const measure = cv.getContext("2d");
+  measure.font = "500 " + fontSize + "px system-ui, -apple-system, sans-serif";
+
+  // wrap the note to the image width before we know the final height
+  const lines = [];
+  if (note) {
+    const words = note.split(/\s+/);
+    let line = "";
+    for (let i = 0; i < words.length; i++) {
+      const test = line ? line + " " + words[i] : words[i];
+      if (measure.measureText(test).width > W - pad * 2 && line) { lines.push(line); line = words[i]; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+  }
+  const capH = Math.round(fontSize * 1.1);
+  const noteH = lines.length ? pad * 0.6 + lines.length * Math.round(fontSize * 1.45) : 0;
+  const bottom = pad * 0.7 + capH + noteH + pad * 0.7;
+
+  cv.width = W + pad * 2;
+  cv.height = H + pad + bottom;
+  const ctx = cv.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, cv.width, cv.height);
+
+  // paintCrop/paintStrokes both draw from 0,0, so compose on a scratch canvas
+  // and place it inside the padded frame.
+  const tmp = document.createElement("canvas");
+  tmp.width = W; tmp.height = H;
+  const tctx = tmp.getContext("2d");
+  paintCrop(tctx, source, piece.rect, W, H);
+  paintStrokes(tctx, piece.strokes || [], W, H);
+  ctx.drawImage(tmp, pad, pad);
+
+  let y = pad + H + pad * 0.7 + fontSize;
+  ctx.fillStyle = "#a08a76";
+  ctx.font = "600 " + Math.round(fontSize * 0.82) + "px system-ui, -apple-system, sans-serif";
+  ctx.fillText(caption, pad, y);
+  if (lines.length) {
+    y += pad * 0.6;
+    ctx.fillStyle = "#1a1008";
+    ctx.font = "500 " + fontSize + "px system-ui, -apple-system, sans-serif";
+    lines.forEach(function (ln) { y += Math.round(fontSize * 1.45); ctx.fillText(ln, pad, y); });
+  }
+  return cv;
+}
+
+function canvasToFile(cv, name) {
+  return new Promise(function (resolve) {
+    cv.toBlob(function (blob) {
+      if (!blob) { resolve(null); return; }
+      try { resolve(new File([blob], name, { type: "image/png" })); }
+      catch (e) { resolve(blob); }        // older browsers: hand back the blob
+    }, "image/png");
+  });
+}
+
+// Read-only crop (thumbnails, joined run).
+function Crop({ source, rect, strokes, maxWidth }) {
+  const ref = useRef(null);
+  useEffect(function () {
+    const cv = ref.current;
+    if (!cv || !source || !rect) return;
+    const sw = Math.max(1, Math.round(rect.w * source.width));
+    const sh = Math.max(1, Math.round(rect.h * source.height));
+    const outW = Math.max(1, Math.min(maxWidth, sw));
+    const outH = Math.max(1, Math.round(outW * (sh / sw)));
+    cv.width = outW; cv.height = outH;
+    const ctx = cv.getContext("2d");
+    paintCrop(ctx, source, rect, outW, outH);
+    paintStrokes(ctx, strokes || [], outW, outH);
+  }, [source, rect, strokes, maxWidth]);
+  return <canvas ref={ref} />;
+}
+
+// The route so far — a small map instead of a grade sheet. Nothing here is
+// locked; every node is clickable at any time, in any order.
+function Trail({ pieces, seams, cur, onPick }) {
+  if (pieces.length < 2) return null;
+  return (
+    <div className="trail">
+      {pieces.map(function (p, i) {
+        const learned = isLearned(p);
+        const state = learned ? "done" : (lastEntry(p) ? "mid" : "");
+        const seamOn = i > 0 && !!seams[seamKey(pieces[i - 1], p)];
+        return (
+          <React.Fragment key={p.id}>
+            {i > 0 ? <span className={"trail-line" + (seamOn ? " on" : "")} /> : null}
+            <button className={"trail-node " + state + (i === cur ? " cur" : "")}
+                    title={"Piece " + (i + 1) + " · " + sinceText(p)}
+                    onClick={function () { onPick(i); }}>{i + 1}</button>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------------- drawable piece ---------------- */
+
+function Annot({ source, rect, strokes, tool, onStroke }) {
+  const ref = useRef(null);
+  const live = useRef(null);
+
+  const repaint = useCallback(function (extra) {
+    const cv = ref.current;
+    if (!cv || !source) return;
+    const ctx = cv.getContext("2d");
+    paintCrop(ctx, source, rect, cv.width, cv.height);
+    paintStrokes(ctx, extra ? strokes.concat([extra]) : strokes, cv.width, cv.height);
+  }, [source, rect, strokes]);
+
+  useEffect(function () {
+    const cv = ref.current;
+    if (!cv || !source || !rect) return;
+    const sw = Math.max(1, Math.round(rect.w * source.width));
+    const sh = Math.max(1, Math.round(rect.h * source.height));
+    const outW = Math.max(1, Math.min(2000, sw));
+    cv.width = outW;
+    cv.height = Math.max(1, Math.round(outW * (sh / sw)));
+    repaint(null);
+  }, [source, rect, repaint]);
+
+  const at = function (e) {
+    const r = ref.current.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+  };
+
+  const down = function (e) {
+    if (tool === "off") return;
+    e.preventDefault();
+    if (ref.current.setPointerCapture) { try { ref.current.setPointerCapture(e.pointerId); } catch (x) {} }
+    live.current = { tool: tool, pts: [at(e)] };
+    repaint(live.current);
+  };
+  const move = function (e) {
+    if (!live.current) return;
+    e.preventDefault();
+    live.current.pts.push(at(e));
+    repaint(live.current);
+  };
+  const up = function () {
+    if (!live.current) return;
+    const s = live.current;
+    live.current = null;
+    if (s.pts.length) onStroke(s);
+  };
+
+  return (
+    <div className="draw">
+      <canvas ref={ref}
+              style={{ cursor: tool === "off" ? "default" : "crosshair" }}
+              onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} />
+    </div>
+  );
+}
+
+/* ---------------- page with selection ---------------- */
+
+function PageView({ source, pieces, pageNum, onCut }) {
+  const boxRef = useRef(null);
+  const cvRef = useRef(null);
+  const [drag, setDrag] = useState(null);
+
+  useEffect(function () {
+    const cv = cvRef.current;
+    if (!cv || !source) return;
+    cv.width = source.width; cv.height = source.height;
+    cv.getContext("2d").drawImage(source, 0, 0);
+  }, [source]);
+
+  const rel = useCallback(function (e) {
+    const r = boxRef.current.getBoundingClientRect();
+    const p = (e.touches && e.touches[0]) ? e.touches[0] : e;
+    return { x: (p.clientX - r.left) / r.width, y: (p.clientY - r.top) / r.height };
+  }, []);
+
+  const start = function (e) { e.preventDefault(); const p = rel(e); setDrag({ a: p, b: p }); };
+  const move = function (e) { if (!drag) return; e.preventDefault(); setDrag({ a: drag.a, b: rel(e) }); };
+  const end = function () {
+    if (!drag) return;
+    const r = normRect(drag.a.x, drag.a.y, drag.b.x, drag.b.y);
+    setDrag(null);
+    if (r.w > 0.02 && r.h > 0.01) onCut(r);
+  };
+
+  const liveR = drag ? normRect(drag.a.x, drag.a.y, drag.b.x, drag.b.y) : null;
+  const pct = function (v) { return (v * 100) + "%"; };
+
+  return (
+    <div className="pagewrap" ref={boxRef}
+         onMouseDown={start} onMouseMove={move} onMouseUp={end} onMouseLeave={end}
+         onTouchStart={start} onTouchMove={move} onTouchEnd={end}>
+      <canvas ref={cvRef} />
+      {pieces.map(function (p, i) {
+        if (p.page !== pageNum) return null;
+        return (
+          <div className="savedbox" key={p.id}
+               style={{ left: pct(p.rect.x), top: pct(p.rect.y), width: pct(p.rect.w), height: pct(p.rect.h) }}>
+            <span>{i + 1}</span>
+          </div>
+        );
+      })}
+      {liveR ? <div className="sel" style={{ left: pct(liveR.x), top: pct(liveR.y), width: pct(liveR.w), height: pct(liveR.h) }} /> : null}
+    </div>
+  );
+}
+
+/* ---------------- app ---------------- */
+
+function App() {
+  const [ready, setReady] = useState(!!window.pdfjsLib);
+  const [doc, setDoc] = useState(null);
+  const [fname, setFname] = useState("");
+  const [key, setKey] = useState(null);
+  const [pageNum, setPageNum] = useState(1);
+  const [source, setSource] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const [over, setOver] = useState(false);
+  const [pieces, setPieces] = useState([]);
+  const [seams, setSeams] = useState({});
+  const [cur, setCur] = useState(-1);
+  const [joined, setJoined] = useState(false);
+  const [suggestion, setSuggestion] = useState(null);
+  const [tool, setTool] = useState("off");
+  const [sent, setSent] = useState(null);
+  const [sources, setSources] = useState({});
+  // Clips live for this session only. A video is far too big for browser storage,
+  // and the workflow is film → attach → send → done, so nothing needs keeping.
+  const [clips, setClips] = useState({});
+  const clipRef = useRef(null);
+  const photoRef = useRef(null);
+  const fileRef = useRef(null);
+
+  useEffect(function () {
+    if (window.pdfjsLib) { setReady(true); return; }
+    const h = function () { setReady(true); };
+    window.addEventListener("pdfjs-ready", h);
+    return function () { window.removeEventListener("pdfjs-ready", h); };
+  }, []);
+
+  useEffect(function () { if (key) save(key, pieces, seams); }, [key, pieces, seams]);
+
+  const openFile = useCallback(function (file) {
+    if (!file) return;
+    if (!/\.pdf$/i.test(file.name || "")) { setErr("Please choose a PDF."); return; }
+    setErr(null); setBusy(true);
+    const fr = new FileReader();
+    fr.onload = function (e) {
+      const bytes = new Uint8Array(e.target.result);
+      const k = fileKey(bytes, file.name || "");
+      window.pdfjsLib.getDocument({ data: bytes }).promise.then(function (d) {
+        const saved = loadSaved(k);
+        setDoc(d); setFname(file.name || "score.pdf"); setKey(k);
+        setPieces(saved.pieces); setSeams(saved.seams);
+        setPageNum(1); setCur(-1); setJoined(false); setSuggestion(null); setSources({}); setBusy(false);
+      }).catch(function (e2) {
+        setErr("That PDF could not be opened: " + (e2 && e2.message ? e2.message : e2));
+        setBusy(false);
+      });
+    };
+    fr.onerror = function () { setErr("That file could not be read."); setBusy(false); };
+    fr.readAsArrayBuffer(file);
+  }, []);
+
+  // A photograph of the music on the stand — the lesson path, where opening a
+  // PDF is far too slow. Everything downstream only needs something with a
+  // width, a height and pixels, so a photo drops straight into the same machinery.
+  const openImage = useCallback(function (file) {
+    if (!file) return;
+    setErr(null); setBusy(true);
+    const fr = new FileReader();
+    fr.onload = function (e) {
+      const bytes = new Uint8Array(e.target.result);
+      const k = fileKey(bytes, file.name || "photo");
+      const blob = new Blob([bytes], { type: file.type || "image/jpeg" });
+
+      const place = function (bmpOrImg, w, h) {
+        // Phone photos are enormous; anything past ~2000px only costs memory.
+        const scale = Math.min(1, 2000 / Math.max(w, h));
+        const cv = document.createElement("canvas");
+        cv.width = Math.max(1, Math.round(w * scale));
+        cv.height = Math.max(1, Math.round(h * scale));
+        const ctx = cv.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(bmpOrImg, 0, 0, cv.width, cv.height);
+        const saved = loadSaved(k);
+        setDoc({ numPages: 1, photo: true });
+        setFname(file.name || "photo");
+        setKey(k);
+        setPieces(saved.pieces); setSeams(saved.seams);
+        setSources({ 1: cv }); setSource(cv);
+        setPageNum(1); setCur(-1); setJoined(false); setSuggestion(null); setClips({}); setBusy(false);
+      };
+
+      // createImageBitmap applies the phone's rotation tag; an <img> is the fallback.
+      if (window.createImageBitmap) {
+        window.createImageBitmap(blob, { imageOrientation: "from-image" })
+          .then(function (bmp) { place(bmp, bmp.width, bmp.height); })
+          .catch(function () {
+            const img = new window.Image();
+            img.onload = function () { place(img, img.naturalWidth, img.naturalHeight); };
+            img.onerror = function () { setErr("That image could not be read."); setBusy(false); };
+            img.src = URL.createObjectURL(blob);
+          });
+      } else {
+        const img = new window.Image();
+        img.onload = function () { place(img, img.naturalWidth, img.naturalHeight); };
+        img.onerror = function () { setErr("That image could not be read."); setBusy(false); };
+        img.src = URL.createObjectURL(blob);
+      }
+    };
+    fr.onerror = function () { setErr("That file could not be read."); setBusy(false); };
+    fr.readAsArrayBuffer(file);
+  }, []);
+
+  // One renderer for any page, cached — pieces and seams can span pages.
+  const needPage = useCallback(function (pn) {
+    if (!doc || doc.photo || sources[pn]) return;
+    doc.getPage(pn).then(function (page) {
+      const base = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: Math.min(3, Math.max(1.4, 1500 / base.width)) });
+      const cv = document.createElement("canvas");
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      const ctx = cv.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);
+      return page.render({ canvasContext: ctx, viewport: vp }).promise.then(function () { return cv; });
+    }).then(function (cv) {
+      setSources(function (prev) {
+        if (prev[pn]) return prev;
+        const nx = Object.assign({}, prev); nx[pn] = cv; return nx;
+      });
+    }).catch(function (e) {
+      setErr("Could not draw page " + pn + ": " + (e && e.message ? e.message : e));
+    });
+  }, [doc, sources]);
+
+  useEffect(function () {
+    if (!doc || doc.photo) return;
+    setBusy(true);
+    needPage(pageNum);
+  }, [doc, pageNum, needPage]);
+
+  useEffect(function () {
+    setSource(sources[pageNum] || null);
+    if (sources[pageNum]) setBusy(false);
+  }, [sources, pageNum]);
+
+  const cut = useCallback(function (rect) {
+    setPieces(function (prev) {
+      const next = prev.concat([{
+        id: "p" + Date.now() + "_" + prev.length, page: pageNum, rect: rect,
+        done: false, strokes: [], note: "", log: []
+      }]);
+      setCur(next.length - 1);
+      return next;
+    });
+    setJoined(false);
+  }, [pageNum]);
+
+  const patch = useCallback(function (i, fields) {
+    setPieces(function (prev) {
+      return prev.map(function (p, j) { return j === i ? Object.assign({}, p, fields) : p; });
+    });
+  }, []);
+
+  const removePiece = useCallback(function (i) {
+    setPieces(function (prev) {
+      const gone = prev[i];
+      const next = prev.filter(function (_p, j) { return j !== i; });
+      setSeams(function (s) {
+        const nx = {};
+        Object.keys(s).forEach(function (k) {
+          if (k.indexOf(gone.id) < 0) nx[k] = s[k];   // drop seams that touched it
+        });
+        return nx;
+      });
+      return next;
+    });
+    setCur(-1); setJoined(false);
+  }, []);
+
+  // A gentle nudge, not an assignment — picks something not yet comfortable,
+  // and it is just as easy to wave off as to open.
+  const pickToday = useCallback(function () {
+    if (!pieces.length) return;
+    const notYet = pieces.filter(function (p) { return !isLearned(p); });
+    const pool = notYet.length ? notYet : pieces;
+    const choice = pool[Math.floor(Math.random() * pool.length)];
+    setSuggestion(pieces.indexOf(choice));
+  }, [pieces]);
+
+  const run = useMemo(function () { return longestRun(pieces, seams); }, [pieces, seams]);
+  const doneCount = pieces.filter(isLearned).length;
+  const touchedToday = pieces.filter(function (p) {
+    const e = lastEntry(p); return e && e.d === today();
+  }).length;
+  const current = cur >= 0 && cur < pieces.length ? pieces[cur] : null;
+  const nextPiece = current && cur + 1 < pieces.length ? pieces[cur + 1] : null;
+  const sKey = current && nextPiece ? seamKey(current, nextPiece) : null;
+  const seamReady = !!(current && nextPiece && isLearned(current) && isLearned(nextPiece));
+
+  // Make the image here, hand it to the phone's share sheet (WhatsApp, Messages,
+  // anything), and fall back to a plain download on a desktop.
+  const sendPiece = useCallback(function (i) {
+    const p = pieces[i];
+    const src = p && sources[p.page];
+    if (!p || !src) return;
+    setSent(null);
+    const caption = (fname || "score").replace(/\.pdf$/i, "") + " · piece " + (i + 1);
+    let cv;
+    try { cv = buildShareCanvas(src, p, caption); }
+    catch (e) { setSent("Could not build the image: " + (e.message || e)); return; }
+    canvasToFile(cv, "piece-" + (i + 1) + ".png").then(function (file) {
+      if (!file) { setSent("Could not build the image."); return; }
+      const nav = window.navigator;
+      const isFile = (typeof File !== "undefined") && (file instanceof File);
+      const clip = clips[p.id];
+      const wanted = clip && clip.file ? [file, clip.file] : [file];
+
+      function trySend(list, label) {
+        if (!isFile || !nav.canShare || !nav.share) return false;
+        let ok = false;
+        try { ok = nav.canShare({ files: list }); } catch (e) { ok = false; }
+        if (!ok) return false;
+        nav.share({ files: list })
+          .then(function () { setSent(label); })
+          .catch(function () { /* cancelled — say nothing */ });
+        return true;
+      }
+
+      // Some browsers accept an image but refuse a mixed image + video share,
+      // so fall back to the image alone rather than failing outright.
+      if (trySend(wanted, wanted.length > 1 ? "Sent — score and clip" : "Sent")) return;
+      if (wanted.length > 1 && trySend([file], "Sent the score — send the clip yourself")) return;
+
+      const url = URL.createObjectURL(file);
+      const a = document.createElement("a");
+      a.href = url; a.download = "piece-" + (i + 1) + ".png";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      setSent(clip ? "Image saved — attach it with your clip" : "Image saved");
+    });
+  }, [pieces, sources, fname, clips]);
+
+  const attachClip = useCallback(function (pieceId, file) {
+    if (!file) return;
+    setClips(function (prev) {
+      const old = prev[pieceId];
+      if (old && old.url) URL.revokeObjectURL(old.url);
+      const nx = Object.assign({}, prev);
+      nx[pieceId] = {
+        file: file,
+        url: URL.createObjectURL(file),
+        kind: /^audio\//.test(file.type) ? "audio" : "video",
+        name: file.name || "clip"
+      };
+      return nx;
+    });
+  }, []);
+
+  const dropClip = useCallback(function (pieceId) {
+    setClips(function (prev) {
+      const old = prev[pieceId];
+      if (old && old.url) URL.revokeObjectURL(old.url);
+      const nx = Object.assign({}, prev);
+      delete nx[pieceId];
+      return nx;
+    });
+  }, []);
+
+  const logIt = useCallback(function (i, level) {
+    setPieces(function (prev) {
+      return prev.map(function (p, j) {
+        if (j !== i) return p;
+        const log = addEntry(p.log, level);
+        return Object.assign({}, p, { log: log, done: level === 2 });
+      });
+    });
+  }, []);
+
+  useEffect(function () {
+    if (!doc) return;
+    if (current) needPage(current.page);
+    if (nextPiece) needPage(nextPiece.page);
+    if (suggestion !== null && pieces[suggestion]) needPage(pieces[suggestion].page);
+    if (joined && run.len > 1) {
+      for (let i = run.from; i <= run.to; i++) needPage(pieces[i].page);
+    }
+  }, [doc, current, nextPiece, suggestion, joined, run.from, run.to, run.len, pieces, needPage]);
+
+  return (
+    <div>
+      <div className="nav">
+        <div className="nav-logo"><span className="nav-bar"></span>Piano Butler</div>
+        <a className="nav-back" href="index.html">Back to search</a>
+      </div>
+
+      <div className="wrap">
+        <div className="eyebrow">Practice puzzle</div>
+        <div className="title">Cut out the bit you are actually practising</div>
+        <div className="sub">
+          Open your own PDF, drag a box around the bars you want, and that section becomes a piece you
+          can see large, write on, and come back to. Pieces only join up once you have practised the
+          seam between them — which is usually where playing actually falls apart.
+        </div>
+
+        {!doc ? (
+          <div className={"drop" + (over ? " over" : "")}
+               onDragOver={function (e) { e.preventDefault(); setOver(true); }}
+               onDragLeave={function () { setOver(false); }}
+               onDrop={function (e) {
+                 e.preventDefault(); setOver(false);
+                 const f = e.dataTransfer.files && e.dataTransfer.files[0];
+                 if (!f) return;
+                 if (/^image\//.test(f.type)) openImage(f); else openFile(f);
+               }}>
+            <div className="drop-title">
+              {busy ? "Opening…" : "Start from the music in front of you"}
+            </div>
+            <div className="drop-sub">
+              Photograph the page on the stand, or open a PDF. Either way it stays inside your
+              browser and is never uploaded anywhere.
+            </div>
+            <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
+              <button className="btn" style={{ marginTop: 0 }} disabled={busy}
+                      onClick={function () { if (photoRef.current) photoRef.current.click(); }}>
+                Photograph the score
+              </button>
+              <button className="step" disabled={!ready || busy}
+                      onClick={function () { if (fileRef.current) fileRef.current.click(); }}>
+                {ready ? "Open a PDF" : "PDF reader loading…"}
+              </button>
+            </div>
+            <input ref={photoRef} type="file" accept="image/*" capture="environment"
+                   style={{ display: "none" }}
+                   onChange={function (e) { openImage(e.target.files[0]); e.target.value = ""; }} />
+            <input ref={fileRef} type="file" accept="application/pdf,.pdf" style={{ display: "none" }}
+                   onChange={function (e) { openFile(e.target.files[0]); e.target.value = ""; }} />
+          </div>
+        ) : null}
+
+        {err ? <div className="err">{err}</div> : null}
+
+        {doc ? (
+          <div>
+            <div className="card">
+              <div className="row" style={{ justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>{fname}</div>
+                  <div className="muted">
+                    {doc.photo ? "photo" : doc.numPages + " page" + (doc.numPages === 1 ? "" : "s")}
+                    {" · "}{pieces.length} piece{pieces.length === 1 ? "" : "s"} · {doneCount} learned
+                  </div>
+                </div>
+                <button className="step" onClick={function () {
+                  setDoc(null); setPieces([]); setSeams({}); setSources({}); setSource(null);
+                  setCur(-1); setJoined(false); setSuggestion(null); setKey(null); setClips({}); setSent(null);
+                }}>Start again</button>
+              </div>
+            </div>
+
+            <div className={"cols" + (current && !joined ? " working" : "")}>
+            <div className="col-left">
+
+            <div className="card">
+              <div className="card-label">
+                {doc.photo ? "Your photo · drag to cut a piece" : "The page · drag to cut a piece"}
+              </div>
+              {!doc.photo ? (
+                <div className="row" style={{ marginBottom: 12 }}>
+                  <button className="step" disabled={pageNum <= 1}
+                          onClick={function () { setPageNum(pageNum - 1); }}>←</button>
+                  <span className="muted">Page {pageNum} of {doc.numPages}</span>
+                  <button className="step" disabled={pageNum >= doc.numPages}
+                          onClick={function () { setPageNum(pageNum + 1); }}>→</button>
+                  {busy ? <span className="muted">drawing…</span> : null}
+                </div>
+              ) : null}
+              {source
+                ? <PageView source={source} pieces={pieces} pageNum={pageNum} onCut={cut} />
+                : <div className="muted">Drawing the page…</div>}
+              <div className="hint" style={{ margin: "12px 0 0" }}>
+                <strong>Drag a box</strong> around the bars you want. Green boxes are pieces you already cut.
+              </div>
+            </div>
+
+            {pieces.length > 1 ? (
+              <div className="card suggest">
+                {suggestion === null ? (
+                  <div className="row" style={{ justifyContent: "space-between" }}>
+                    <div>
+                      <div className="suggest-t">Not sure what to open today?</div>
+                      <div className="muted">No pressure either way — just a place to start.</div>
+                    </div>
+                    <button className="step go" onClick={pickToday}>Surprise me</button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="suggest-t">How about piece {suggestion + 1}?</div>
+                    <div className="row" style={{ alignItems: "flex-start", gap: 14, flexWrap: "nowrap" }}>
+                      {sources[pieces[suggestion].page] ? (
+                        <div style={{ width: 84, flex: "none" }}>
+                          <Crop source={sources[pieces[suggestion].page]} rect={pieces[suggestion].rect}
+                                strokes={pieces[suggestion].strokes} maxWidth={84} />
+                        </div>
+                      ) : null}
+                      <div style={{ flex: 1, minWidth: 160 }}>
+                        <div className="muted" style={{ marginBottom: 10 }}>{sinceText(pieces[suggestion])}</div>
+                        <div className="row">
+                          <button className="step go" onClick={function () {
+                            const i = suggestion;
+                            setCur(i); setPageNum(pieces[i].page); setJoined(false); setSuggestion(null);
+                          }}>Open it</button>
+                          <button className="step" onClick={pickToday}>Show me another</button>
+                          <button className="step" onClick={function () { setSuggestion(null); }}>Not today</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {pieces.length ? (
+              <div className="card">
+                <div className="card-label">
+                  Your pieces · {doneCount} of {pieces.length} comfortable
+                  {touchedToday ? " · " + touchedToday + " today" : ""}
+                </div>
+                <Trail pieces={pieces} seams={seams} cur={cur}
+                       onPick={function (i) {
+                         setCur(i); setPageNum(pieces[i].page); setJoined(false); setSuggestion(null);
+                       }} />
+                <div className="strip">
+                  {pieces.map(function (p, i) {
+                    const src = sources[p.page];
+                    const cls = ["pc"];
+                    if (isLearned(p)) cls.push("done");
+                    if (i === cur && !joined) cls.push("cur");
+                    return (
+                      <button key={p.id} className={cls.join(" ")}
+                              onClick={function () { setCur(i); setPageNum(p.page); setJoined(false); setSuggestion(null); }}>
+                        {src
+                          ? <Crop source={src} rect={p.rect} strokes={p.strokes} maxWidth={260} />
+                          : <div className="muted" style={{ padding: "16px 4px", textAlign: "center" }}>p.{p.page}</div>}
+                        <div className="pc-cap">
+                          <b>{i + 1}</b><span>{sinceText(p)}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="muted" style={{ marginTop: 12 }}>
+                  No streaks are counted here. Come back whenever; the pieces, notes and markings stay put.
+                </div>
+              </div>
+            ) : null}
+
+            </div>
+            <div className="col-right">
+
+            {!current && !joined ? (
+              <div className="empty">
+                Drag a box on the page to cut your first piece.<br />
+                A line, a few bars, one awkward corner — whatever you are actually practising.
+              </div>
+            ) : null}
+
+            {run.len > 1 ? (
+              <div className="join">
+                <div className="join-t">{run.len} pieces are joined</div>
+                <div className="join-b">
+                  Pieces and seams both done — that is a real stretch of music now, not a fragment.
+                </div>
+                <div className="row">
+                  <button className={"step" + (joined ? "" : " go")}
+                          onClick={function () { setJoined(!joined); }}>
+                    {joined ? "Back to one piece" : "Play the joined run"}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {joined && run.len > 1 ? (
+              <div className="card">
+                <div className="card-label">Joined run · pieces {run.from + 1}–{run.to + 1}</div>
+                <div className="stack">
+                  {pieces.slice(run.from, run.to + 1).map(function (p) {
+                    const src = sources[p.page];
+                    return src
+                      ? <Crop key={p.id} source={src} rect={p.rect} strokes={p.strokes} maxWidth={1800} />
+                      : <div key={p.id} className="muted">Drawing page {p.page}…</div>;
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {!joined && current ? (
+              <div className="card">
+                <div className="card-label">Piece {cur + 1} of {pieces.length} · page {current.page}</div>
+
+                {sources[current.page]
+                  ? <Annot source={sources[current.page]} rect={current.rect}
+                           strokes={current.strokes || []} tool={tool}
+                           onStroke={function (s) {
+                             patch(cur, { strokes: (current.strokes || []).concat([s]) });
+                           }} />
+                  : <div className="muted">Drawing page {current.page}…</div>}
+
+                <div className="tools">
+                  <button className={"tool" + (tool === "off" ? " on" : "")} title="Just look"
+                          onClick={function () { setTool("off"); }}>✋</button>
+                  <button className={"tool" + (tool === "pencil" ? " on" : "")} title="Pencil"
+                          onClick={function () { setTool("pencil"); }}>
+                    <span className="swatch" style={{ background: "#2a2118" }} />
+                  </button>
+                  <button className={"tool" + (tool === "red" ? " on" : "")} title="Red"
+                          onClick={function () { setTool("red"); }}>
+                    <span className="swatch" style={{ background: "#c0392b" }} />
+                  </button>
+                  <button className={"tool" + (tool === "highlighter" ? " on" : "")} title="Highlighter"
+                          onClick={function () { setTool("highlighter"); }}>
+                    <span className="swatch" style={{ background: "#ffd24d" }} />
+                  </button>
+                  <button className="step" disabled={!(current.strokes || []).length}
+                          onClick={function () {
+                            const s = (current.strokes || []).slice(0, -1);
+                            patch(cur, { strokes: s });
+                          }}>Undo</button>
+                  <button className="step" disabled={!(current.strokes || []).length}
+                          onClick={function () { patch(cur, { strokes: [] }); }}>Clear</button>
+                  <input className="note-in" placeholder="A note to yourself — left hand leads, slow from here…"
+                         value={current.note || ""}
+                         onChange={function (e) { patch(cur, { note: e.target.value }); }} />
+                </div>
+
+                <div className="clip">
+                  {clips[current.id] ? (
+                    <div>
+                      {clips[current.id].kind === "audio"
+                        ? <audio className="clip-media" src={clips[current.id].url} controls />
+                        : <video className="clip-media" src={clips[current.id].url} controls playsInline />}
+                      <div className="row" style={{ marginTop: 9 }}>
+                        <span className="muted">Goes out together with the score when you send.</span>
+                        <button className="step" onClick={function () { dropClip(current.id); }}>Remove clip</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="row">
+                      <button className="step" onClick={function () { if (clipRef.current) clipRef.current.click(); }}>
+                        Attach a video or voice clip
+                      </button>
+                      <span className="muted">
+                        Film it on your phone as usual, then attach it here — it goes out with the score.
+                      </span>
+                    </div>
+                  )}
+                  <input ref={clipRef} type="file" accept="video/*,audio/*" style={{ display: "none" }}
+                         onChange={function (e) {
+                           attachClip(current.id, e.target.files[0]);
+                           e.target.value = "";
+                         }} />
+                </div>
+
+                <div className="logbar">
+                  <div className="logbar-q">After you play it — how did that go?</div>
+                  <div className="row">
+                    {LEVELS.map(function (L) {
+                      const e = lastEntry(current);
+                      const on = e && e.d === today() && e.r === L.v;
+                      return (
+                        <button key={L.v} className={"lvl" + (on ? " on" : "")}
+                                style={on ? { background: L.bg, borderColor: L.tone, color: L.tone } : null}
+                                onClick={function () { logIt(cur, L.v); }}>
+                          {L.label}{on ? " ✓" : ""}
+                        </button>
+                      );
+                    })}
+                    <span className="muted">
+                      {sinceText(current)}
+                      {(current.log || []).length
+                        ? " · " + current.log.length + " session" + (current.log.length === 1 ? "" : "s")
+                        : ""}
+                    </span>
+                  </div>
+                  {(current.log || []).length ? (
+                    <div className="dots">
+                      {current.log.slice(-14).map(function (e, i) {
+                        const L = LEVELS[e.r] || LEVELS[0];
+                        return <span key={i} className="dot" title={e.d + " · " + L.label}
+                                     style={{ background: L.tone }} />;
+                      })}
+                      <span className="muted" style={{ fontSize: 11 }}>
+                        oldest → newest
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="row">
+                  <button className="step" disabled={cur <= 0}
+                          onClick={function () { const i = cur - 1; setCur(i); setPageNum(pieces[i].page); }}>← Previous</button>
+                  <button className="step" disabled={cur >= pieces.length - 1}
+                          onClick={function () { const i = cur + 1; setCur(i); setPageNum(pieces[i].page); }}>Next →</button>
+                  <button className="step send" onClick={function () { sendPiece(cur); }}>
+                    Send this bit
+                  </button>
+                  <button className="step warn" onClick={function () { removePiece(cur); }}>Remove</button>
+                  {sent ? <span className="muted">{sent}</span> : null}
+                </div>
+
+                {nextPiece ? (
+                  <div className={"seam" + (seams[sKey] ? " on" : "")}>
+                    <div className="seam-t">
+                      The seam · piece {cur + 1} into piece {cur + 2}
+                      {seams[sKey] ? " ✓" : ""}
+                    </div>
+                    <div className="seam-b">
+                      {seamReady
+                        ? "Both pieces are learned. Now play the last bar of this one straight into the first bar of the next — that join is its own thing to practise, and it is where a piece usually breaks."
+                        : "Learn both pieces first, then come back and practise playing one straight into the other."}
+                    </div>
+                    {seamReady && sources[current.page] && sources[nextPiece.page] ? (
+                      <div style={{ marginTop: 12 }}>
+                        <Crop source={sources[current.page]} rect={current.rect} strokes={current.strokes} maxWidth={1400} />
+                        <div className="seam-join">↓ the join ↓</div>
+                        <Crop source={sources[nextPiece.page]} rect={nextPiece.rect} strokes={nextPiece.strokes} maxWidth={1400} />
+                      </div>
+                    ) : null}
+                    {seamReady ? (
+                      <div className="row">
+                        {seams[sKey]
+                          ? <button className="step" onClick={function () {
+                              setSeams(function (s) { const n = Object.assign({}, s); delete n[sKey]; return n; });
+                            }}>Seam done ✓ — undo</button>
+                          : <button className="step go" onClick={function () {
+                              setSeams(function (s) { const n = Object.assign({}, s); n[sKey] = true; return n; });
+                            }}>The join is smooth</button>}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="foot">
+          Your PDF is opened and drawn inside this browser. It is never uploaded, and nothing is stored
+          anywhere except the boxes, notes and markings you made, which stay on this device.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(p) { super(p); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error: error }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 32, fontFamily: "monospace", color: "#a0342a" }}>
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Something broke while rendering.</div>
+          <div style={{ fontSize: 13 }}>{String(this.state.error && this.state.error.message)}</div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <ErrorBoundary><App /></ErrorBoundary>
+);
+</script>
+
+<script>
+(function () {
+  function go() {
+    if (typeof Babel === "undefined") { setTimeout(go, 50); return; }
+    try {
+      var src = document.getElementById("app-jsx").textContent;
+      var out = Babel.transform(src, { presets: ["react"] }).code;
+      var s = document.createElement("script");
+      s.textContent = out;
+      document.body.appendChild(s);
+    } catch (e) {
+      document.getElementById("root").innerHTML =
+        '<div style="padding:32px;font-family:monospace;color:#a0342a">Compile error: ' +
+        (e && e.message ? e.message : String(e)) + "</div>";
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go);
+  else go();
+})();
+</script>
+</body>
+</html>
