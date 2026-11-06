@@ -5,7 +5,7 @@ import { VerovioToolkit } from 'verovio/esm';
 import fs from 'fs';
 const M = await createVerovioModule(); const tk = new VerovioToolkit(M);
 const S = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
-const DUR = { s: '1', m: '2', c: '4', q: '8' }, LEN = { s: 4, m: 2, c: 1, q: 0.5 };
+const DUR = { s: '1', m: '2', c: '4', q: '8', d: '2' }, LEN = { s: 4, m: 2, c: 1, q: 0.5, d: 3 }, DOTS = { d: ' dots="1"' };   // d: a dotted minim, 3/4's whole-bar note (Lesson 10)
 let id = 0; const nid = () => 'x' + (++id);
 const pn = (p) => [p[0], p.replace(/^[a-g][sf]?/, ''), /^[a-g]s/.test(p) ? 's' : /^[a-g]f\d/.test(p) ? 'f' : ''];   // 'fs4' is F sharp (Lesson 9's first black key)
 // move a pitch up by letter steps (C to G is 4): the tune keeps its shape and its finger numbers; a chord letter moves the same way
@@ -16,25 +16,25 @@ function noteXml(p, d, o = {}) {
   const syl = o.syl ? `<verse n="1"><syl${o.wp ? ` wordpos="${o.wp}" con="d"` : ''}>${o.syl}</syl></verse>` : '';
   const loc = o.loc != null ? ` loc="${o.loc}"` : '';
   if (o.pre) return [i, `<note xml:id="${i}" dur="${DUR[d]}" loc="${S.pre[p]}" stem.dir="${o.hand === 'LU' ? 'up' : o.hand === 'L' ? 'down' : o.staff5 ? ((o.bass ? BASS_PLACE : STAFF_PLACE)[p] > 4 ? 'down' : 'up') : o.lh ? 'down' : 'up'}">${syl}</note>`];   // on a staff: above the middle line, stems down   // the right hand's stems up, the left hand's down
-  return [i, o.rhythm ? `<note xml:id="${i}" dur="${DUR[d]}" loc="0" stem.dir="up">${syl}</note>` : `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${acc ? ` accid="${acc}"` : ''}${o.stem ? ` stem.dir="${o.stem}"` : ''}>${syl}</note>`];
+  return [i, o.rhythm ? `<note xml:id="${i}" dur="${DUR[d]}" loc="0" stem.dir="up">${syl}</note>` : `<note xml:id="${i}" dur="${DUR[d]}"${DOTS[d] || ''} pname="${pname}" oct="${oct}"${acc ? ` accid="${acc}"` : ''}${o.stem ? ` stem.dir="${o.stem}"` : ''}>${syl}</note>`];
 }
-function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b, c] = pn(p); return `<note pname="${a}" oct="${b}"${c ? ` accid="${c}"` : ''}/>`; }).join('') + '</chord>']; }
+function chordXml(ps, d, stem) { const i = nid(); return [i, `<chord xml:id="${i}" dur="${DUR[d]}"${DOTS[d] || ''}${stem ? ` stem.dir="${stem}"` : ''}>` + ps.map(p => { const [a, b, c] = pn(p); return `<note pname="${a}" oct="${b}"${c ? ` accid="${c}"` : ''}/>`; }).join('') + '</chord>']; }
 // one line of bars [b0, b1): opts.words, opts.fing, opts.chords, opts.lh (a way), opts.rhythm (one-line staff), opts.meter
 function mei(b0, b1, o) {
   let ms = '', ctrl = [];
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p.includes('+') && o.rhythm) p = p.split('+')[0];   // a rhythm line: the chord is one beat to clap
+    bar.forEach(([p, d, syl, wp, fo, lfo, hh]) => { if (p.includes('+') && o.rhythm) p = p.split('+')[0];   // a rhythm line: the chord is one beat to clap
       if (p.includes('+')) { flush(); let [i, x] = chordXml(p.split('+').map(q => trp(q, o.tr)), d); if (o.words && syl) x = x.replace('</chord>', `<verse n="1"><syl>${syl}</syl></verse></chord>`); l1 += x; INFO[i] = { len: LEN[d] };   // a chord in the right hand (her 6 Nov 14:24: the chords one at a time)
         if (o.fing && fo != null) String(fo).split(' ').forEach(ff => ctrl.push(`<fing startid="#${i}" place="above">${ff}</fing>`));
         if (o.lhfing && lfo != null) String(lfo).split(' ').forEach(ff => ctrl.push(`<fing startid="#${i}" place="below">${ff}</fing>`)); return; }
-      if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; INFO[i] = { len: LEN[d], rest: true }; return; }   // a rest (Lesson 8 on)
-      const HL = o.mix && (S.hand || {})[p] === 'L';   // a left-hand note in a right-hand line: stem down, finger below
+      if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"${DOTS[d] || ''}/>`; INFO[i] = { len: LEN[d], rest: true }; return; }   // a rest (Lesson 8 on)
+      const HL = o.mix && ((S.hand || {})[p] === 'L' || hh === 'L');   // a note's own seventh field can say L too (the night tune's low E)   // a left-hand note in a right-hand line: stem down, finger below
       if (HL && o.lh) { flush(); const i = nid(); l1 += `<note xml:id="${i}" dur="${DUR[d]}" pname="b" oct="4" head.visible="false" stem.visible="false" class="ghost">${o.words && syl ? `<verse n="1"><syl${wp ? ` wordpos="${wp}" con="d"` : ''}>${syl}</syl></verse>` : ''}</note>`; return; }   // both hands (her 6 Nov 10:09): the left hand's note sits on its own staff, written in S.lh
       const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, hand: HL ? 'LU' : '', lh: !o.staff5 && (o.lhfing || o.lhdown || HL) });
       if (d === 'q') { run.push(x); if (run.length === 2) flush(); } else { flush(); l1 += x; }
-      if (o.fing && HL) ctrl.push(`<fing startid="#${i}" place="below">${lfo != null ? lfo : (S.lh_finger || {})[p]}</fing>`);
+      if (o.fing && HL) ctrl.push(`<fing startid="#${i}" place="${o.lh ? 'below' : 'above'}">${lfo != null ? lfo : (S.lh_finger || {})[p]}</fing>`);
       else if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${fo != null && !o.fk ? fo : (o.fk ? S[o.fk] : S.rh_finger)[p]}</fing>`);   // fo: this note's own finger (G with 4 next to A)
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${lfo != null ? lfo : S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
     flush();
@@ -42,7 +42,8 @@ function mei(b0, b1, o) {
     let st2 = '';
     const CH = (o.src != null && S.more[o.src].chords) || S.chords;   // a tune of its own brings its own chords
     if (o.lh) { const ch = CH[b], last = b === S.bars.length - 1, pat = (S.lhpat && o.src == null && S.lhpat[b] && S.lh[o.lh][S.lhpat[b]]) || (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';   // a bar may have its own left-hand part (the answer, the BANG)
-      pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d) : noteXml(ps[0], d); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
+      pat.forEach(([ps, d, f]) => { if (ps[0] === 'r') {   // 'r': the left hand waits (Für Elise)
+         l2 += `<rest xml:id="${nid()}" dur="${DUR[d]}"${DOTS[d] || ''}/>`; return; } const [i, x] = ps.length > 1 ? chordXml(ps, d) : noteXml(ps[0], d); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
       st2 = `<staff n="2"><layer n="1">${l2}</layer></staff>`; }
     const DY = (o.src != null ? S.more[o.src].dyn : S.dyn) || {};   // p, pp, f, ff under the right hand's staff (Lesson 9's surprise)
     if (o.dyn && DY[b]) DY[b].forEach(([t, x]) => ctrl.push(`<dynam staff="1" tstamp="${t}" place="${o.dynPlace || 'below'}">${x}</dynam>`));
@@ -86,6 +87,10 @@ function addCounts(svg) {
     const nx = (ev[ei + 1] || { x: x0 + L * U }).x, step = L > 1 ? Math.min(U, (nx - 120 - x0) / (L - 0.5)) : U;
     if (L < 1) {   // a quaver: the beat's number on the beat, '+' (and) between
       out += `<text x="${x0.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${ON}" class="cnt">${Number.isInteger(beat) ? beat + 1 : '+'}</text>`; beat += L; return; }
+    if (!Number.isInteger(beat)) {   // a longer note or rest starting on an 'and' (Für Elise): '+' where it starts, then the beats it covers, held
+      out += `<text x="${x0.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${INFO[e.id].rest ? HELD : ON}" class="cnt">+</text>`;
+      for (let b = Math.ceil(beat); b < beat + L; b++) { const x = x0 + (b - beat) * step; out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${HELD}" class="cnt">${b + 1}</text>`; }
+      beat += L; return; }
     for (let k = 0; k < L; k++) { const x = x0 + k * step, held = k > 0;
       out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${held || INFO[e.id].rest ? HELD : ON}" class="cnt">${beat + k + 1}</text>`;
       if (held) { const xa = x - step + 150, xb = x - 150; if (xb > xa) out += `<line x1="${xa.toFixed(0)}" x2="${xb.toFixed(0)}" y1="${Y - 95}" y2="${Y - 95}" stroke="${HELD}" stroke-width="26" stroke-linecap="round"/>`; } }
@@ -172,7 +177,7 @@ function fitBeams(svg, L) {
 // a five-line staff spaced to the lettered heads (her 4 Nov 18:11): a line every head-height, E4 on the bottom line
 let SP5 = 0;
 // the left hand an octave lower on the King's staff (her 4 Nov 19:58): G2 on the bottom line, so C3 in the second space
-const BASS_PLACE = { c4: 3, d4: 4, e4: 5, f4: 6, g4: 7, a4: 8, b4: 9 };
+const BASS_PLACE = { g3: 0, a3: 1, b3: 2, c4: 3, d4: 4, e4: 5, f4: 6, g4: 7, a4: 8, b4: 9 };
 const STAFF_PLACE = { g3: -5, a3: -4, b3: -3, c4: -2, d4: -1, e4: 0, f4: 1, g4: 2, a4: 3, b4: 4, c5: 5, d5: 6, e5: 7, f5: 8, g5: 9 };
 function drawStaff5(svg, lineY, RY, bass) {
   const sp = 2 * RY, k = sp / 180; SP5 = sp;
@@ -184,7 +189,7 @@ function drawStaff5(svg, lineY, RY, bass) {
   svg = svg.replace(/(class="meterSig">)([\s\S]*?)(<\/g>)/, (m, a, body, c) => a + body.replace(/transform="translate\((\d+), (\d+)\) scale\(([\d.]+), ([\d.]+)\)"/g, (mm, x, y, sx) => `transform="translate(${+x + 40}, ${mi++ ? mid + sp : mid - sp}) scale(${sx * k * 0.85}, ${sx * k * 0.85})"`) + c);
   return svg;
 }
-let FIRST_ONLY = false;   // set per job (o.lt1): the letter on each line's first note only
+let VDOWN = 0, FIRST_ONLY = false;   // set per job (o.lt1): the letter on each line's first note only
 function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5, bass) {
   const PL = staff5 ? (bass ? BASS_PLACE : STAFF_PLACE) : (S.place || {});   // on a staff of our own every note has its line or space
   // heads about twice the size, so the places are twice as far apart too (S.pre: E on the line, D hanging just under it, C
@@ -225,7 +230,7 @@ function addLetterHeads(svg, pitches, hs, hm, keepLen, onStaff, staff5, bass) {
   if (staff5) svg = drawStaff5(svg, lineY, RY, bass);
   // beamed quavers: their stems as long as a crotchet's (her 4 Nov 15:19), so the beam moves to sit that far from the heads
   if (!onStaff) svg = fitBeams(svg, STEM);
-  return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${keepLen ? 480 : 150})">`);   // a left-hand stem down needs the words further down   // the words below the bigger low notes
+  return svg.replace(/class="verse">/g, `class="verse" transform="translate(0,${(keepLen ? 480 : 150) + VDOWN})">`);   // vdown: a line with a low ledger note pushes its words down (Ode's low G)   // a left-hand stem down needs the words further down   // the words below the bigger low notes
 }
 // Hands take turns (her 5 Nov 00:39: the zigzag pieces): one line of notes that steps between the two staves, the right
 // hand's on the Queen's staff, the left hand's on the King's (note[6] === 'L'), quavers beamed in fours across both
@@ -236,7 +241,7 @@ function zigMei(b0, b1, o) {
     let l1 = '', run = [], ctrl = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };
     S.bars[b].forEach(([p, d, syl, wp, f, lf, h]) => { const [pname, oct] = pn(p), i = nid(), L = h === 'L';
-      const x = `<note xml:id="${i}" dur="${DUR[d]}" pname="${pname}" oct="${oct}"${L ? ' staff="2"' : ''} stem.dir="${STEP(p) >= (L ? STEP('d3') : STEP('b4')) ? 'down' : 'up'}"/>`;   // the stem rule on each hand's own staff (her 6 Nov 10:24)   // the left hand's stems up, so its fingers below stay clear
+      const x = `<note xml:id="${i}" dur="${DUR[d]}"${DOTS[d] || ''} pname="${pname}" oct="${oct}"${L ? ' staff="2"' : ''} stem.dir="${STEP(p) >= (L ? STEP('d3') : STEP('b4')) ? 'down' : 'up'}"/>`;   // the stem rule on each hand's own staff (her 6 Nov 10:24)   // the left hand's stems up, so its fingers below stay clear
       if (d === 'q') { run.push(x); if (run.length === 4) flush(); } else { flush(); l1 += x; }
       if (o.fing && f != null) ctrl.push(`<fing startid="#${i}" staff="${L ? 2 : 1}" place="${L ? 'below' : 'above'}">${f}</fing>`);
       INFO[i] = { len: LEN[d] }; });
@@ -267,7 +272,7 @@ const opts = (o, extra) => ({ adjustPageHeight: true, adjustPageWidth: false, sc
   ...(o.staff5 ? { rightMarginClef: 2, leftMarginMeterSig: 2, rightMarginMeterSig: 2 } : { rightMarginClef: 1, leftMarginMeterSig: 1, rightMarginMeterSig: 1 }),   // room round the clef and the time on our big staff (her 4 Nov 21:11)
   ...(o.letters ? { leftMarginNote: 2, rightMarginNote: 1.5, leftMarginBarLine: 1.5, rightMarginBarLine: 2 } : { leftMarginNote: 1, rightMarginNote: 0, leftMarginBarLine: 0, rightMarginBarLine: 0 }),   // set every time: the toolkit keeps options between jobs   // big lettered heads: room round each and off the bar lines (her 4 Nov 13:22)
   ...extra });
-const load = (b0, b1, o) => { INFO = {}; id = 0; tk.loadData(o.duet ? duetMei(b0, b1, o) : o.zig ? zigMei(b0, b1, o) : mei(b0, b1, o)); };
+const load = (b0, b1, o) => { INFO = {}; id = 0; const x = o.duet ? duetMei(b0, b1, o) : o.zig ? zigMei(b0, b1, o) : mei(b0, b1, o); if (process.env.DBGMEI && o.src != null) console.error(x.replace(/<\/measure>/g, '</measure>\n')); tk.loadData(x); };
 const group = (k) => JOBS[k] && JOBS[k][2].zig ? 'zig' : k.replace(/\d+$/, '').replace(/^more[AB]$/, 'more'), natural = {};   // the two More to play tunes print at one size (her 5 Nov 13:51)
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   const SB = S.bars; if (o.src != null) S.bars = S.more[o.src].bars;   // a More to play tune (S.more) engraved like the song
@@ -286,7 +291,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   const sy0 = +(svg.match(/class="staff">\s*<path d="M\d+ (\d+)/) || svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];   // the line's height, read before anything moves
  if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase(), o.names ? S.bars.slice(b0, b1).flat().filter(n => n[0] !== 'r').map(n => n[0][0].toUpperCase()) : null, o.box, o.pre);   // the boxes read the engraved heads, so before the lettered heads replace them
   if (o.rows) svg = addRows(svg, o.rows, b0, o.pic, o.pre);   // the rows read the engraved notes and the line, so before the lettered heads too
-  FIRST_ONLY = !!o.lt1; if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]).filter(p => p !== 'r'), o.hs, o.hm, o.mix, !o.pre, o.staff5, o.bass);   // first, so the fingers clear the stems as they end up
+  FIRST_ONLY = !!o.lt1; VDOWN = o.vdown || 0; if (o.letters) svg = addLetterHeads(svg, S.bars.slice(b0, b1).flat().map(n => n[0]).filter(p => p !== 'r'), o.hs, o.hm, o.mix, !o.pre, o.staff5, o.bass);   // first, so the fingers clear the stems as they end up
   if (o.lhfing) { const sy = sy0;
     const bots = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.max(+m[1], +m[2]));
     const base = Math.max(sy, ...bots) + 330 + (o.letters && (!o.pre || o.staff5) ? 220 : 0);   // on the staff a lettered head hangs below its stem
@@ -326,7 +331,7 @@ function barsOf(svg) {
   const one = staff1(body);
   const heads = [...one.matchAll(/class="notehead">(?:\s*<line [^>]*\/>)*\s*<(?:use [^>]*translate\((-?[\d.]+),|ellipse cx="(-?[\d.]+)")/g)].map(m => +(m[1] || m[2]));   // a head's own ledger lines come first
   const rests = [...one.matchAll(/class="rest">\s*<use [^>]*translate\((-?[\d.]+),/g)].map(m => +m[1]);
-  return { bars, heads, rests, first: heads.length ? Math.min(...heads) : null };
+  return { bars, heads, rests, first: heads.length || rests.length ? Math.min(...heads, ...rests) : null };   // a line may open with rests (Für Elise's left hand)
 }
 function mapX(svg, knotsOld, knotsNew) {
   const f = (x) => { x = +x; if (x <= knotsOld[0]) return x;
@@ -388,22 +393,24 @@ for (const g of new Set(Object.keys(out).map(group))) {
   const wordy = ks.some(k => JOBS[k][2].words);   // without words every bar of the same length gets the same width (her 6 Nov 14:24)
   // with words (her 6 Nov 14:59: 'notes leaning to one side'): each bar gets the room its words need, and otherwise every bar
   // the same share (the bars needing more take it, the rest share what is left evenly)
+  // MG: the least gap between two items; without words the notes themselves set the room, a little wider
   const needOf = (k) => { const [b0, b1, oo] = JOBS[k], data = (oo.src != null ? S.more[oo.src].bars : S.bars).slice(b0, b1);
     const SK = n => n[0] === 'r' || (oo.lh && oo.mix && (S.hand || {})[n[0]] === 'L'); const sy = sylWidths(out[k]), so = sylOffs(out[k]); let h = 0;
     return data.map(bar => { const it = []; let t = 0; bar.forEach(n => { if (n[0] === 'r') it.push({ r: 1, w: 0, f: 0, t }); else { it.push({ w: sy[h] || 0, f: sy[h] ? so[h] : 0, t }); h++; } t += LEN[n[1]]; });
       if (!it.length) return 600; const a = it[0], z = it[it.length - 1], fix = Math.max(330, 100 - a.f) + Math.max(z.r ? 400 : 330, z.f + z.w - 90) + 212;
-      let g = 0, u = 0; for (let i = 1; i < it.length; i++) { const wg = Math.max(300, it[i - 1].f + it[i - 1].w - it[i].f + 150); g += wg; u = Math.max(u, wg / (it[i].t - it[i - 1].t)); }
+      const MG = oo.words ? 300 : 440; let g = 0, u = 0; for (let i = 1; i < it.length; i++) { const wg = Math.max(MG, it[i - 1].f + it[i - 1].w - it[i].f + 150); g += wg; u = Math.max(u, wg / (it[i].t - it[i - 1].t)); }
       return EVENNEED ? fix + u * (z.t - a.t) : fix + g; }); };   // even: every beat as wide as the widest word needs   // the words' room; the beats take what is left
   let col = [...Array(n)].map(() => 1), keep = false;
   const spanAll = Math.min(...info.map(i => i.bars[i.bars.length - 1])) - s;
-  let EVENNEED = true; if (same && wordy) { const ev = ks.map(needOf), evTot = [...Array(n)].reduce((a, _, j) => a + Math.max(...ev.map(r => r[j] || 0)), 0); if (evTot > spanAll * +(process.env.EVG || 0)) EVENNEED = false; if (process.env.DBG6) console.log(g, Math.round(evTot), Math.round(spanAll), EVENNEED); }   // all even if the line has room, else only what the words need
-  if (same && wordy) { const nd = ks.map(needOf), need = [...Array(n)].map((_, j) => Math.max(...nd.map(r => r[j] || 0)));
+  let EVENNEED = true; if (same) { const ev = ks.map(needOf), evTot = [...Array(n)].reduce((a, _, j) => a + Math.max(...ev.map(r => r[j] || 0)), 0); if (evTot > spanAll * +(process.env.EVG || 0)) EVENNEED = false; if (process.env.DBG6) console.log(g, Math.round(evTot), Math.round(spanAll), EVENNEED); }   // all even if the line has room, else only what the words need
+  // without words too, a bar never gets less than its notes and rests need (Für Elise's 3/4 bars of quavers and rests)
+  if (same) { const nd = ks.map(needOf), need = [...Array(n)].map((_, j) => Math.max(...nd.map(r => r[j] || 0)));
     let fixed = new Set(), q = 0;
     for (let it = 0; it < n; it++) { const free = [...Array(n).keys()].filter(j => !fixed.has(j)); q = (spanAll - [...fixed].reduce((a, j) => a + need[j], 0)) / free.length;
       const more = free.filter(j => need[j] > q); if (!more.length) break; more.forEach(j => fixed.add(j)); }
     col = need.map((v, j) => fixed.has(j) ? v : Math.max(q, 1)); if (process.env.DBG5) console.log(g, ks.join(','), JSON.stringify(need.map(Math.round)), Math.round(spanAll), JSON.stringify(col.map(Math.round))); }
   const tot = col.reduce((a, b) => a + b, 0);
-  const grow = same && wordy && tot > spanAll ? tot - spanAll : 0;   // the words need more room than the line has: the line grows (the page scales it back), the gaps stay even   // never crowd the words: the bars stay as engraved (only the beats evened inside them)
+  const grow = same && tot > spanAll ? tot - spanAll : 0;   // the words need more room than the line has: the line grows (the page scales it back), the gaps stay even   // never crowd the words: the bars stay as engraved (only the beats evened inside them)
   if (keep) console.log('bars left as engraved in ' + g + ' (would squeeze to ' + fit.toFixed(2) + ')');
   const E = Math.min(...info.map(i => i.bars[i.bars.length - 1])) + grow;   // one right edge for every line, so the last bar lines stand together too
   ks.forEach((k, j) => { const { bars, first } = info[j], a1 = first - 260, end = E;
@@ -430,7 +437,7 @@ for (const g of new Set(Object.keys(out).map(group))) {
           const it = []; { let t = 0; bar.forEach(n => { if (n[0] === 'r') it.push({ t, r: true, w: 0, f: 0 }); else { it.push({ t, w: sy[si] || 0, f: sy[si] ? so[si] : 0, gh: SKIP(n) }); si++; } t += LEN[n[1]]; }); }
           const ni = it.length, Lm = Math.max(330, ni ? 100 - it[0].f : 0), Rm = Math.max(ni && it[ni - 1].r ? 400 : 330, ni ? it[ni - 1].f + it[ni - 1].w - 90 : 0);   // a word's own start and end, not only its note's   // a word starts at its note and runs to the right   // a rest is wider than a head   // a head, and its word, never crowd a bar line
           // the beat's step: as big as the bar allows (up to an even quarter of it), found so beats and words fill the room exactly
-          const room = W - Lm - Rm, gapAt = (u) => it.map((x, i) => i ? Math.max((x.t - it[i - 1].t) * u, it[i - 1].f + it[i - 1].w - x.f + 150, 300) : 0), sum = (u) => gapAt(u).reduce((a, g) => a + g, 0);
+          const MG = oo.words ? 300 : 440, room = W - Lm - Rm, gapAt = (u) => it.map((x, i) => i ? Math.max((x.t - it[i - 1].t) * u, it[i - 1].f + it[i - 1].w - x.f + 150, MG) : 0), sum = (u) => gapAt(u).reduce((a, g) => a + g, 0);
           let lo = 0, hi = W / T; if (sum(hi) > room - 212) { for (let r = 0; r < 30; r++) { const md = (lo + hi) / 2; if (sum(md) > room - 212) hi = md; else lo = md; } hi = lo; }
           const gap = gapAt(hi); if (process.env.DBG7 && bi === 0) console.log(k, JSON.stringify(it.map(x => [x.t, Math.round(x.w), Math.round(x.f)])), JSON.stringify(gap.map(Math.round)), Math.round(hi), Math.round(room));
           let span = gap.reduce((a, g) => a + g, 0), sc = 1;

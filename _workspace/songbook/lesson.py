@@ -36,9 +36,9 @@ def trp(p, k):   # 'cs5' (a sharp) keeps its octave; a chord 'c4+e4+g4' moves no
     i = L7.index(p[0]) + k; return L7[i % 7] + str(int(p.lstrip('abcdefgs')) + i // 7)
 # a keyboard from middle C: the five white keys under the right hand (from `start`), the song's notes lit, the fingers on
 # them; `sharp` marks the key's black key in coral, named above it
-def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
+def kb(start=0, tr=0, sharp=None, width=380, fmap=None, frm=None):
     used = {trp(p, tr)[0] for bar in SONG['bars'] for p, *_ in bar if p != 'r'}; H, w = 150, 42
-    W7 = ['c', 'd', 'e', 'f', 'g', 'a', 'b']; f0 = W7.index(SONG.get('_kb_from') or 'c')   # a keyboard may start on another key (the left hand's G position: G to F)
+    W7 = ['c', 'd', 'e', 'f', 'g', 'a', 'b']; f0 = W7.index(frm or SONG.get('_kb_from') or 'c')   # a keyboard may start on another key (the left hand's G position: G to F)
     whites = (W7[f0:] + W7 + W7)[:SONG.get('kb_whites', 7)]; out = ''; top = 24 if sharp is not None else 0   # C to B is enough (her 4 Nov 13:35)
     W = len(whites) * w; width = width * len(whites) / 10 * 1.05
     for i, l in enumerate(whites):
@@ -50,7 +50,7 @@ def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
         if inpos: f = fmap[l] if fmap else i - start + 1; out += f'<circle cx="{i * w + w / 2}" cy="{H + 19}" r="13" fill="{C if lit else "#fff"}" stroke="{C}" stroke-width="1.8"/><text x="{i * w + w / 2}" y="{H + 24.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{"#fff" if lit else C}">{f}</text>'
     for i in [i for i in range(len(whites) - 1) if whites[i] in 'cdfga']:   # a black key after C, D, F, G and A
         out += f'<rect x="{(i + 1) * w - 13}" y="0" width="26" height="{H * 0.6}" rx="2" fill="{C if i == sharp else N}"/>'
-        if i == sharp: out += f'<text x="{(i + 1) * w}" y="-8" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{C}">F♯</text>'
+        if i == sharp: out += f'<text x="{(i + 1) * w}" y="-8" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="{C}">{whites[i].upper()}♯</text>'
     out += f'<text x="1" y="{H + 50}" text-anchor="start" font-family="AH" font-weight="700" font-size="12" fill="{MUTE}">{SONG.get("kb_c", "middle C")}</text>'   # the finger numbers under the keys, clear of the black keys (her 4 Nov 19:58)
     return f'<svg viewBox="-2 {-2 - top} {W + 4} {H + 58 + top}" style="width:{width:.0f}px;max-width:100%;display:block">{out}</svg>'
 
@@ -86,20 +86,22 @@ def note(kind, s=1.0):
     if kind == 'r':   # a crotchet rest
         return (f'<svg viewBox="0 0 30 50" style="width:{24 * s}px;height:{40 * s}px"><path d="M11 5 L19 15 Q13 20 14 25 L20 33 Q12 30 11 35 Q11 41 16 45 Q6 41 8 34 Q10 29 15 31 L9 24 Q14 19 13 14 Z" fill="{N}"/></svg>')
     head = f'<ellipse cx="14" cy="40" rx="9" ry="6.3" transform="rotate(-22 14 40)" fill="{N if kind == "c" else "#fff"}" stroke="{N}" stroke-width="{0 if kind == "c" else 2.6}"/>'
+    if kind == 'd': head += f'<circle cx="28" cy="38" r="2.6" fill="{N}"/>'; kind = 'm'   # a dotted minim: a minim and its dot
     stem = '' if kind == 's' else f'<line x1="22.3" y1="38" x2="22.3" y2="6" stroke="{N}" stroke-width="2.2"/>'
-    return f'<svg viewBox="0 0 30 50" style="width:{24 * s}px;height:{40 * s}px">{head}{stem}</svg>'
+    return f'<svg viewBox="0 0 34 50" style="width:{27 * s}px;height:{40 * s}px">{head}{stem}</svg>'
 def beats(n): return '<span class="bd">' + '<i></i>' * n + '</span>'
 def halves(): return '<span class="bd hv"><i></i><i></i></span>'   # two quavers: one beat's dot cut in half (her 4 Nov 13:23)
 vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{halves() if k == "qq" else beats(n)}</div></div>' for k, nm, n in SONG.get('value_names', [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)]) if k in SONG.get('values', 'cms'))
 TIME = SONG.get("time_html", "<p><b>Top 4:</b> four beats in every bar.</p><p><b>Bottom 4:</b> a crotchet is one beat.</p>")
-TSN = '<div class="tsn"><span>4</span><span>4</span></div>' if SONG.get("time_label", "The time") == "The time" else ''
+TSN = ('<div class="tsn"><span>%s</span><span>%s</span></div>' % tuple(SONG.get('meter', '4/4').split('/'))) if SONG.get("time_label", "The time") == "The time" else ''
 tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
   '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G.</p></div></div>')
 exec(open('early.py').read())
-KBS = lambda w: '<div class="kbs">' + ''.join(f'<div><div class="kbl">{t}</div>{kb(width=w, fmap=fm, sharp=(x[0] if x and x[0] is not None else None))}</div>' for t, fm, *x in SONG['kbs']) + '</div>'   # a third item: the black key to mark (3 = F sharp)
-if 'pos' in SONG and not SONG.get('pos_html'): POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else KBS(SONG.get('kb_w', 300)) if SONG.get('kbs') else kb(width=SONG.get('kb_w', 300), fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
+KBS = lambda w: '<div class="kbs">' + ''.join(f'<div><div class="kbl">{t}</div>{kb(width=w, fmap=fm, sharp=(x[0] if x and x[0] is not None else None), frm=(x[1] if len(x) > 1 else None))}</div>' for t, fm, *x in SONG['kbs']) + '</div>'   # a third item: the black key to mark (3 = F sharp)
+if SONG.get('pos_nokb'): POS = '<div class="posx">' + SONG['pos'] + '</div>'   # a long song: the keyboard waits for page 3
+elif 'pos' in SONG and not SONG.get('pos_html'): POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else KBS(SONG.get('kb_w', 300)) if SONG.get('kbs') else kb(width=SONG.get('kb_w', 300), fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
 # her 5 Nov 21:19: the five ideas for teaching it like your own child -- a wow moment, a spot-the-mistake game, a turtle-to-bird ladder, make it yours, a 5-minute menu
 STAR = '<svg width="26" height="26" viewBox="0 0 26 26"><path d="M13 2.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L13 18.6l-6.4 3.5 1.4-7.1-5.3-5 7.2-.9z" fill="none" stroke="#e4572e" stroke-width="2" stroke-linejoin="round"/></svg>'
 WOW = f'<div class="wow">{STAR}<div><div class="wowh">The wow moment</div><p>{SONG["wow"]}</p></div></div>' if SONG.get('wow') else ''
@@ -138,7 +140,7 @@ P2 = page(f'''{part(2, 'Take it apart', 'The same song, one piece at a time: fir
 exec(open('early.py').read())
 def STRIP(names):   # the bars as names only, big: the first lead sheet's seed (her 6 Nov 14:54: the chords from the left hand)
     cells = ''.join(f'<div class="sc">{n}</div>' for n in names)
-    return f'<div class="strip">{cells}</div>'
+    return f'<div class="strip" style="grid-template-columns:repeat({SONG.get("strip_cols", 4)},1fr)">{cells}</div>'
 def chord_page():   # her 6 Nov 14:24: page 3 unpacks the chords one at a time (meet the chord, find it in the song, play it), the road to the lead sheet
     C = SONG['chord_page']
     def ckb(t, fm, extra):
@@ -194,6 +196,7 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .wow{{display:flex;gap:12px;align-items:center;border-left:3px solid {C};padding:4px 12px;margin:6px 0 0}} .wow p{{margin:0;font-size:15px;line-height:1.45}} .wowh{{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}}
 .lad{{display:grid;grid-template-columns:118px 34px repeat({len(LSTEPS)},1fr) 34px;gap:6px;align-items:center;margin:3px 0}} .lad.lhd{{margin-bottom:2px}} .lst{{font-size:11px;font-weight:700;color:{MUTE};text-align:center;line-height:1.15}} .lrn{{font-size:14px;font-weight:700}} .lsq{{height:22px;border:1.8px solid {N};border-radius:4px}}
 .yrs{{display:grid;grid-template-columns:1fr 1fr;gap:24px;border-top:1px solid #d9d6ea;padding-top:10px}} .yrs .ticks{{gap:6px;margin:4px 0 0}} .yrs .tk{{font-size:14.5px}} .menu ol{{margin:2px 0 6px;padding-left:20px;font-size:14.5px;line-height:1.55}} .days{{display:flex;gap:9px}} .dy{{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:{MUTE}}}
+.posx{{margin:2px 0 4px}} .posx p{{margin:2px 0}}
 [hidden]{{display:none!important}}
 .strip{{display:grid;grid-template-columns:repeat(4,1fr);border-left:2px solid {N};margin:8px 0 0}} .sc{{border-right:2px solid {N};border-top:1.5px solid #d9d6ea;border-bottom:1.5px solid #d9d6ea;padding:8px 0;text-align:center;font-family:'Playfair Display',serif;font-weight:700;font-size:30px;color:{N}}}
 @media print {{ body{{background:#fff}} .pg{{margin:0}} }}''' + EARLY_CSS
@@ -215,8 +218,7 @@ if SONG.get('more'):
     P4 = page(f'''{part('+', 'More to play', SONG.get('more_how', 'The same keys, the same fingers, the same note values: two new tunes. Then make your own.'))}
 <div class="sp"></div>{SUB(M[0]['title'], M[0].get('how', 'Sing it on the words, then play it.'))}
 <div class="sp"></div>{''.join(mus(k) for k in sorted((k for k in V if k.startswith('moreA') and k[5:].isdigit()), key=lambda k: int(k[5:])))}
-<div class="sp"></div>{SUB(M[1]['title'], M[1].get('how', 'Say the words in rhythm first, then play it.'))}
-<div class="sp"></div>{''.join(mus(k) for k in sorted((k for k in V if k.startswith('moreB') and k[5:].isdigit()), key=lambda k: int(k[5:])))}
+{('<div class="sp"></div>' + SUB(M[1]['title'], M[1].get('how', 'Say the words in rhythm first, then play it.')) + '<div class="sp"></div>' + ''.join(mus(k) for k in sorted((k for k in V if k.startswith('moreB') and k[5:].isdigit()), key=lambda k: int(k[5:])))) if len(M) > 1 and any(k.startswith('moreB') for k in V) else ''}
 {TASK}
 {YOURS}
 <div class="sp"></div><div class="end">{ticks(SONG.get('more_ticks', ['Played the first tune', 'Played the second tune', 'Played my own tune']), True)}</div>''', 4)
