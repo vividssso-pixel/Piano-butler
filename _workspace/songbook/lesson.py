@@ -98,7 +98,7 @@ tsig = f"""<div class="ts">{TSN}<div class="tsx">{TIME}</div></div>"""
 POS = SONG.get('pos_html') or ('<div class="pos"><div>' + kb(width=340) + '</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>'
   '<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G.</p></div></div>')
 exec(open('early.py').read())
-KBS = lambda w: '<div class="kbs">' + ''.join(f'<div><div class="kbl">{t}</div>{kb(width=w, fmap=fm, sharp=(x[0] if x else None))}</div>' for t, fm, *x in SONG['kbs']) + '</div>'   # a third item: the black key to mark (3 = F sharp)
+KBS = lambda w: '<div class="kbs">' + ''.join(f'<div><div class="kbl">{t}</div>{kb(width=w, fmap=fm, sharp=(x[0] if x and x[0] is not None else None))}</div>' for t, fm, *x in SONG['kbs']) + '</div>'   # a third item: the black key to mark (3 = F sharp)
 if 'pos' in SONG and not SONG.get('pos_html'): POS = '<div class="pos"><div>' + (blackkb(330) if SONG.get('black_pos') else KBS(SONG.get('kb_w', 300)) if SONG.get('kbs') else kb(width=SONG.get('kb_w', 300), fmap=SONG.get('fmap'))) + '</div><div>' + SONG['pos'] + '</div></div>'
 # her 5 Nov 21:19: the five ideas for teaching it like your own child -- a wow moment, a spot-the-mistake game, a turtle-to-bird ladder, make it yours, a 5-minute menu
 STAR = '<svg width="26" height="26" viewBox="0 0 26 26"><path d="M13 2.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L13 18.6l-6.4 3.5 1.4-7.1-5.3-5 7.2-.9z" fill="none" stroke="#e4572e" stroke-width="2" stroke-linejoin="round"/></svg>'
@@ -145,7 +145,7 @@ def chord_page():   # her 6 Nov 14:24: page 3 unpacks the chords one at a time (
         SONG['_kb_all'] = 1; SONG['_kb_extra'] = extra; SONG['_kb_from'] = C.get('kb_from'); kc = SONG.get('kb_c'); SONG['kb_c'] = C.get('kb_c', kc or 'middle C'); h = f'<div><div class="kbl">{t}</div>{kb(width=C.get("kb_w", 230), fmap=fm)}</div>'; SONG['_kb_all'] = 0; SONG['_kb_extra'] = None; SONG['_kb_from'] = None; SONG['kb_c'] = kc or 'middle C'; return h
     kbs = '<div class="kbs">' + ''.join(ckb(t, fm, ex) for t, fm, ex in C['kbs']) + '</div>'
     return page(f'''{part(3, C.get('title', 'The chords'), C['how'])}
-<div class="sp"></div>{SUB(C.get('meet_title', 'Meet the chord'), C['meet'])}<div class="pos"><div>{kbs}</div><div>{C['meet_note']}</div></div>
+<div class="sp"></div>{SUB(C.get('meet_title', 'Meet the chord'), C['meet'])}{('<div class="pos"><div>' + kbs + '</div><div>' + C['meet_note'] + '</div></div>') if C.get('meet_note') else kbs}
 <div class="sp"></div>{SUB(C.get('find_title', 'Find it in the song'), C['find'])}{''.join(mus(k) for k in C['find_jobs'])}
 <div class="sp"></div>{SUB(C.get('play_title', 'Play the chords'), C['play'])}{''.join(mus(k) for k in C.get('play_jobs', []))}{STRIP(C['strip']) if C.get('strip') else ''}
 <div class="sp"></div>{LADCHK()}''', 3)

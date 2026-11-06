@@ -27,7 +27,8 @@ function mei(b0, b1, o) {
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
     bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p.includes('+') && o.rhythm) p = p.split('+')[0];   // a rhythm line: the chord is one beat to clap
       if (p.includes('+')) { flush(); let [i, x] = chordXml(p.split('+').map(q => trp(q, o.tr)), d); if (o.words && syl) x = x.replace('</chord>', `<verse n="1"><syl>${syl}</syl></verse></chord>`); l1 += x; INFO[i] = { len: LEN[d] };   // a chord in the right hand (her 6 Nov 14:24: the chords one at a time)
-        if (o.fing && fo != null) String(fo).split(' ').forEach(ff => ctrl.push(`<fing startid="#${i}" place="above">${ff}</fing>`)); return; }
+        if (o.fing && fo != null) String(fo).split(' ').forEach(ff => ctrl.push(`<fing startid="#${i}" place="above">${ff}</fing>`));
+        if (o.lhfing && lfo != null) String(lfo).split(' ').forEach(ff => ctrl.push(`<fing startid="#${i}" place="below">${ff}</fing>`)); return; }
       if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; INFO[i] = { len: LEN[d], rest: true }; return; }   // a rest (Lesson 8 on)
       const HL = o.mix && (S.hand || {})[p] === 'L';   // a left-hand note in a right-hand line: stem down, finger below
       if (HL && o.lh) { flush(); const i = nid(); l1 += `<note xml:id="${i}" dur="${DUR[d]}" pname="b" oct="4" head.visible="false" stem.visible="false" class="ghost">${o.words && syl ? `<verse n="1"><syl${wp ? ` wordpos="${wp}" con="d"` : ''}>${syl}</syl></verse>` : ''}</note>`; return; }   // both hands (her 6 Nov 10:09): the left hand's note sits on its own staff, written in S.lh
@@ -490,7 +491,10 @@ function clearFingers(svg) {
     const v = fs.some(f => f.down) ? Math.max(...fs.map(f => f.ny)) : Math.min(...fs.map(f => f.ny)); r.forEach(y => { row[y] = v; }); });
   // a chord's numbers: stacked a full line apart, from the lowest up
   const stackY = {}; F.forEach((f, i) => { if (!f.stack || stackY[i] != null) return; const grp = F.map((g, k) => k).filter(k => k === i || near(i, k)).sort((p, q) => F[q].y - F[p].y);
-    const fsz = +[...svg.matchAll(RE)][i][7]; grp.forEach((k, n) => { stackY[k] = F[grp[0]].y - n * fsz * 0.95; }); });
+    const fsz = +[...svg.matchAll(RE)][i][7]; grp.forEach((k, n) => { stackY[k] = F[grp[0]].y - n * fsz * 0.95; });
+    const top = Math.min(...grp.map(k => stackY[k])) - fsz * 0.75, bot = Math.max(...grp.map(k => stackY[k])) + 20;   // a stack below a down stem: the whole stack moves past the stem's end
+    const hit = stems.filter(t => Math.abs(t.x - xs[i]) < fsz * 0.55 && t.hi > top && t.lo < bot);
+    if (hit.length && F[i].y > Math.min(...hit.map(t => t.lo))) { const d = Math.max(...hit.map(t => t.hi)) + fsz * 0.85 - (top + fsz * 0.75); if (d > 0) grp.forEach(k => { stackY[k] += d; }); } });
   let idx = -1;
   return svg.replace(RE, (m, a, dy, x, c, y, d, fs) => { idx++; dy = +(dy || 0); if (stackY[idx] != null) return a + x + c + Math.round(stackY[idx] - dy) + d + fs;
     const r = row[+y + dy]; return r == null ? m : a + x + c + Math.round(r - dy) + d + fs; });
