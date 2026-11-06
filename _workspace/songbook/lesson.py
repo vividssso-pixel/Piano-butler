@@ -40,7 +40,7 @@ def kb(start=0, tr=0, sharp=None, width=380, fmap=None):
     W = len(whites) * w; width = width * len(whites) / 10 * 1.05
     for i, l in enumerate(whites):
         inpos = start <= i < start + 5; lit = inpos and l in used
-        if fmap is not None: lit = l in fmap and l in used   # the hand's own keys lit (thumb on D: D to A)
+        if fmap is not None: lit = l in fmap and (l in used or SONG.get('_kb_all')) or l in (SONG.get('_kb_extra') or [])   # the hand's own keys lit (thumb on D: D to A); a chord's keys all lit
         out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="3" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.5"/>'
         out += f'<text x="{i * w + w / 2}" y="{H - 12}" text-anchor="middle" font-family="AH" font-weight="700" font-size="17" fill="{N}">{l.upper()}</text>'
         if fmap is not None: inpos = l in fmap; lit = l not in (SONG.get('kb_open') or [])   # a stretch key gets an open circle
@@ -133,7 +133,18 @@ P2 = page(f'''{part(2, 'Take it apart', 'The same song, one piece at a time: fir
 {('<div class="sp"></div>' + TRICK) if TRICK else ''}<div class="end">{ticks(SONG.get('p2_ticks', ['Said it in time', 'Clapped and counted', 'Wrote the letter names']), True)}</div>''', 2)
 
 exec(open('early.py').read())
+def chord_page():   # her 6 Nov 14:24: page 3 unpacks the chords one at a time (meet the chord, find it in the song, play it), the road to the lead sheet
+    C = SONG['chord_page']
+    def ckb(t, fm, extra):
+        SONG['_kb_all'] = 1; SONG['_kb_extra'] = extra; h = f'<div><div class="kbl">{t}</div>{kb(width=C.get("kb_w", 230), fmap=fm)}</div>'; SONG['_kb_all'] = 0; SONG['_kb_extra'] = None; return h
+    kbs = '<div class="kbs">' + ''.join(ckb(t, fm, ex) for t, fm, ex in C['kbs']) + '</div>'
+    return page(f'''{part(3, C.get('title', 'The chords'), C['how'])}
+<div class="sp"></div>{SUB('Meet the chord', C['meet'])}<div class="pos"><div>{kbs}</div><div>{C['meet_note']}</div></div>
+<div class="sp"></div>{SUB('Find it in the song', C['find'])}{''.join(mus(k) for k in C['find_jobs'])}
+<div class="sp"></div>{SUB('Play the chords', C['play'])}{''.join(mus(k) for k in C['play_jobs'])}
+<div class="sp"></div>{LADCHK()}''', 3)
 if SONG.get('kind') == 'ready': P3 = ''
+elif SONG.get('chord_page'): P3 = chord_page()
 elif 'basics' in SONG: P3 = basics_page()
 else: P3 = page(f'''{part(3, 'Play it four ways', 'Each way adds a little more for the left hand. Your teacher tells you which is yours this week.')}
 <div class="lg"><div class="lgl">{legend}</div><div class="lks"><span class="lkh">Left hand</span>{lhkb('way2', 'C', both=True)}</div></div>

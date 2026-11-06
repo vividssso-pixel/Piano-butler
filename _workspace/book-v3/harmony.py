@@ -62,6 +62,19 @@ def snowman(balls, letters=('C', 'E', 'G'), face=None, w=90, hat=True, red0=True
     return o + '</svg>'
 def spanel(n, pic, cap): return f'<div class="pn"><span class="pnum">{n}</span>{pic}<p>{cap}</p></div>'
 
+def guestman(letters, redi=(), w=70, tag=''):
+    ys, rs = [150, 98, 58], [34, 26, 20]
+    o = f'<svg viewBox="0 0 160 250" style="width:{w}px;height:auto;display:block;margin:0 auto">'
+    for i in range(3):
+        red = i in redi
+        o += f'<circle cx="60" cy="{ys[i] + 10}" r="{rs[i]}" fill="{"#fde6dd" if red else "#fff"}" stroke="{R if red else N}" stroke-width="{3 if red else 2.4}"/>'
+        o += f'<text x="{60 + rs[i] + 6}" y="{ys[i] + 20}" font-family="PF" font-size="{34 - i * 3}" font-weight="700" fill="{R if red else N}">{letters[i]}</text>'
+    o += f'<path d="M48,49 L72,49 L69,27 L51,27 Z" fill="{N}"/><line x1="40" x2="80" y1="49" y2="49" stroke="{N}" stroke-width="4" stroke-linecap="round"/>'
+    if tag:   # her 5 Nov: the chord name sits in its own label, clear of the snowman, so it reads as a name
+        tw = 22 + 15 * len(tag.replace('♭', 'b').replace('♯', '#'))
+        o += f'<rect x="{60 - tw / 2}" y="214" width="{tw}" height="32" rx="16" fill="{N}"/><text x="60" y="237" text-anchor="middle" font-family="AH" font-size="22" font-weight="700" fill="#fff">{tag}</text>'
+    return o + '</svg>'
+
 H1 = hpage(f"""{head('Part IV · Harmony · 1', 'Chords and triads', 'Press two or more notes at once and you have a <b>chord</b>. The favourite of all is the <b>triad</b>: three notes stacked like a snowman.')}
 {two(BIGSNOW, '<div class="big3"><div><span>1</span><p>Pick a note: the <b class="co">root</b>, the big ball at the bottom. It holds the chord up and gives it its name.</p></div><div><span>2</span><p>Skip one letter, take the next: <b>E</b>, the <b>3rd</b>.</p></div><div><span>3</span><p>Skip again: <b>G</b>, the <b>5th</b>. C E G is the triad of C.</p></div></div>' + kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), dot(2, '3'), dot(4, '5')], scale=1.0) + '<p class="sm" style="text-align:center;margin:4px 0 0">On the keys: play one, skip one (shaded), play one, skip one, play one.</p>', '1.1fr 1fr')}
 {two(px('h_build', 104, 'The snowman on the staff: three lines in a row (or three spaces).'), '<p>On the staff, each ball sits on the <b>next line up</b> (or the next space up): the root, a <b>3rd</b> above it, a <b>5th</b> above the root.</p><p class="sm">First met: Level ½ (the tonic triad of C, G and F major).</p>', '1fr 1.15fr')}
@@ -123,6 +136,10 @@ H3 = hpage(f"""{head('Part IV · Harmony · 3', 'Chords in a key', 'Build a tria
 css += """
 .snowc{margin:0;font-size:15px;line-height:1.5}
 .home7{display:grid;grid-template-columns:repeat(7,1fr);gap:2px} .hl{font-family:CV;font-size:19px;color:#6d6f9c;text-align:center;margin:-2px 0 6px} .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1.5px dashed #e4572e;padding-top:8px} .g3>div{display:flex;flex-direction:column;align-items:center;text-align:center} .g3 span{font-size:15px;line-height:1.3} .twr{display:flex;gap:10px;align-items:baseline;margin:6px 0 2px} .twr b{font-size:16px} .twr span{font-family:CV;font-size:19px;color:#6d6f9c} .twarrow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-family:CV;font-size:20px;color:#e4572e;height:22px;line-height:22px} .gkb{border:2px solid #26296b;border-radius:10px;padding:8px 10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%} .gkb b{font-size:17px;color:#e4572e} .gkb span{font-size:14px;color:#26296b;margin-bottom:4px}
+.inv3{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0 6px} .ic{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;border:2px solid #e3e1ee;border-radius:10px;padding:8px 12px} .ic>b{font-size:15px} .nt{display:flex;gap:14px;align-items:baseline;font-size:22px;font-weight:700} .pop{color:#26296b} .cls{color:#e4572e} .bs{font-size:13.5px;color:#6d6f9c}
+.rn{font-family:PF,serif;font-weight:700;display:inline-flex;align-items:center;gap:1px} .fg{display:inline-flex;flex-direction:column;font-family:AH,Arial;font-size:.58em;line-height:1;margin-left:1px} .fg i{font-style:normal} .invt td{vertical-align:middle;font-size:17px}
+.hold3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px} .hold7{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:8px 0 2px;text-align:center} .hold7>div{display:flex;flex-direction:column;align-items:center;gap:3px;border:1.5px solid #e3e1ee;border-radius:8px;padding:6px 2px} .hold7 b{font-family:PF;font-size:24px;color:#26296b} .hold7 span{color:#fff;font-weight:800;font-size:13px;border-radius:10px;padding:1px 8px}
+.mel{font-family:PF;font-size:22px;font-weight:700;color:#26296b;text-align:center;margin:2px 0;letter-spacing:.06em}
 .kbt{font-size:16px;font-weight:700;margin:0 0 2px;text-align:center} .gp3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0} .gp3 .pair{gap:4px}
 .pc4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 10px} .pc{border:2px solid #26296b;border-radius:10px;padding:8px 6px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px} .pmark{font-family:PF;font-weight:800;font-size:46px;line-height:1;color:#e4572e;height:48px} .pmark.pw{font-size:28px;line-height:48px} .pc b{font-size:16px} .pc i{font-style:normal;font-size:14px;color:#6d6f9c} .pair{display:flex;align-items:center;justify-content:center;gap:2px} .pf{font-family:CV;font-size:20px;color:#e4572e;line-height:1.1}
 .twmin .fav{background:#fff7f3;border:2px dashed #e4572e;border-radius:8px} .big3.h3x{flex-direction:row;gap:16px;margin:10px 0 4px} .big3.h3x>div{flex:1}
@@ -135,21 +152,27 @@ def pxr(k, ids, h, cap=''):   # a staff picture with chosen notes in red, and a 
     f = ykfig(k, ids, h)
     return f.replace('</div></figure>', '</div>' + (f'<figcaption>{cap}</figcaption>' if cap else '') + '</figure>')
 INV = [['root position', 'the root (C)', 'C', 'I', '5/3', 'Level ½'], ['1st inversion', 'the 3rd (E)', 'C/E', 'Ib', '6/3 (6)', 'Level 3'], ['2nd inversion', 'the 5th (G)', 'C/G', 'Ic', '6/4', 'Level 5']]
-H4 = hpage(f"""{head('Part IV · Harmony · 4', 'Inversions', 'Shuffle a chord’s three notes and it is still the same chord. Root at the bottom: <b>root position</b>. Lift the root to the top and a new note takes the bottom: an <b>inversion</b>. Same name, new bass note.')}
-{pxr('h4_inv', ('n2', 'n7', 'n9'), 90, 'The red note is the root, C. Watch it climb: at the bottom, then on top, then in the middle. The chord is always C major.')}
-{tbl(['Position', 'Bass note', 'Chord symbol', 'Numeral', 'Figures', 'First met'], INV, ['21%', '18%', '17%', '13%', '15%', '16%'])}
-<p class="sm">Only the lowest note decides: E C G, or E G C E, is still a 1st inversion. Chord symbols write the bass after a slash: C/E is a C chord with E in the bass (more uses in Slash chords, p. {{H8}}). Figures count the intervals above the bass, by letters: in E G C, G is a 3rd and C a 6th above E, so 6/3.</p>
-{h3('Roll the bottom note to the top')}
-<div class="fk"><div class="fkf">{kbx('C', 10, W_, 100, label=True, shade={0: '#eef0f8'}, marks=[f'<circle cx="{W_ / 2}" cy="74" r="11" fill="none" stroke="#e4572e" stroke-width="2" stroke-dasharray="3 2"/>', f'<path d="M{W_ / 2},60 C{W_ * 2},2 {W_ * 6},2 {W_ * 7.4},58" fill="none" stroke="#e4572e" stroke-width="2.5"/><path d="M{W_ * 7.4 - 7},52 L{W_ * 7.4 + 1},61 L{W_ * 7.4 + 4},50" fill="none" stroke="#e4572e" stroke-width="2.5"/>', dot(2, 'E', col='#26296b'), dot(4, 'G', col='#26296b'), dot(7, 'C')], scale=1.0)}</div><div>Play C E G, then lift the <b class="co">root C</b> and put it on top (the red arrow): <b>E G C</b>. The E is now the bass: the 1st inversion. Do it again (G C E) for the 2nd inversion. In an inversion the stack has a <b>gap of a 4th</b> (G up to C): the note above the gap is the root.</div></div>
-{inaction('Name this chord: E G C', pxr('h4_name', ('n2', 'n5'), 76), ['<b>Restack it in 3rds</b>, like the snowman: C E G.', '<b>The bottom of the stack is the root:</b> C, so it is C major.', '<b>Which note is in the bass?</b> E, the 3rd: 1st inversion.'], 'E G C is <b>C major, 1st inversion</b>: C/E.')}
-{thinkt('The same three friends in a photo, swapping places: still the same group (the same chord), but whoever stands at the front (the bass) changes the picture.')}
+ROLL = f'<svg viewBox="0 0 70 60" style="width:56px;height:auto"><path d="M8,44 C14,6 52,4 60,30" fill="none" stroke="{R}" stroke-width="3.5"/><path d="M51,25 L61,32 L64,20" fill="none" stroke="{R}" stroke-width="3.5" stroke-linejoin="round"/><text x="35" y="59" text-anchor="middle" font-family="CV" font-size="20" fill="{R}">roll</text></svg>'
+def figs(rn, top='', bot=''):   # a Roman numeral with stacked figures, as written in harmony class: I⁶₄
+    if not top: return f'<span class="rn">{rn}</span>'
+    return f'<span class="rn">{rn}<span class="fg"><i>{top}</i><i>{bot}</i></span></span>'
+INVH = ('<div class="inv3">' + ''.join(f'<div class="ic"><b>{t}</b>{guestman(l, r, 112)}<div class="nt"><span class="pop">{sym}</span><span class="cls">{cl}</span></div><span class="bs">bass: {bs}</span></div>' + (ROLL if i < 2 else '')
+         for i, (t, l, r, sym, cl, bs) in enumerate([('root position', ('C', 'E', 'G'), (0,), 'C', figs('I'), 'C, the root'), ('1st inversion', ('E', 'G', 'C'), (2,), 'C/E', figs('I', '6'), 'E, the 3rd'), ('2nd inversion', ('G', 'C', 'E'), (1,), 'C/G', figs('I', '6', '4'), 'G, the 5th')])) + '</div>')
+H4 = hpage(f"""{head('Part IV · Harmony · 4', 'Inversions', 'Same three notes, a different one at the bottom. The chord keeps its name; only the bass changes. The red ball is the root, C: watch it travel.')}
+{INVH}
+<div class="big3 h3x"><div><span>1</span><p>Start with the snowman <b>C E G</b>: root at the bottom.</p></div><div><span>2</span><p>Roll the bottom ball to the top: <b>E G C</b>. That is the 1st inversion.</p></div><div><span>3</span><p>Roll again: <b>G C E</b>, the 2nd inversion. Still <b>C major</b>.</p></div></div>
+{h3('Two ways to write it')}
+{tbl(['', 'Root position', '1st inversion', '2nd inversion'], [['<b>Chord symbol</b> <span class="lvl2">pop, jazz</span>', 'C', 'C/E', 'C/G'], ['<b>Harmony class</b> <span class="lvl2">numerals</span>', figs('I'), figs('I', '6'), figs('I', '6', '4')], ['<b>Also written</b>', 'Ia, 5/3', 'Ib, 6/3', 'Ic, 6/4'], ['<b>First met</b>', 'Level ½', 'Level 3', 'Level 5']], ['31%', '23%', '23%', '23%'], 'invt')}
+<p class="sm">The little numbers count up from the bass. E G C: C is a <b>6th</b> above E, so I⁶. G C E: E is a 6th and C a <b>4th</b> above G, so I⁶₄. A slash chord just names the bass: C/E (more on p. {{{{H8}}}}).</p>
+{pxr('h4_inv', ('n2', 'n7', 'n9'), 90, 'The same three chords on the staff; the red note is the root, C. To find the root, restack the notes every other letter (like C E G): then the bottom ball is the root.')}
 <!--SPLIT-->
 {h3('Why inversions?')}
 <p>They let your hand <b>move as little as possible</b>: keep any note two chords share, and move the others to the nearest note of the next chord. Left-hand accompaniments and hymn parts are written this way.</p>
-{inaction('Play I, IV, V, I smoothly', px('h4_smooth', 86), ['<b>I:</b> C E G. <b>IV:</b> keep C, move E up to F and G up to A: C F A.', '<b>V:</b> no shared note, so each moves to the nearest: C to B, F to D, A to G: B D G.', '<b>I again:</b> back to C E G. Each finger moved one or two keys.'], 'IV is F/C and V is G/B: <b>inversions</b> keep the hand in one place.')}
+{inaction('Play I, IV, V, I smoothly', px('h4_smooth', 86), ['<b>I:</b> C E G. <b>IV:</b> keep C, move E up to F and G up to A: C F A.', '<b>V:</b> no shared note. C steps down to B, F down to D, A down to G: B D G.', '<b>I again:</b> B up to C, D up to E, G stays: C E G.'], 'IV is F/C and V is G/B: <b>inversions</b> keep the hand in one place.')}
 {youknow('Pachelbel’s Canon, the bass (here in C)', ykfig('yk_canon', ('n2', 'n4', 'n6'), 84), 'The famous bass walks <b>straight down the scale</b>: C B A G F E. It can, because some chords are <b class="co">inversions</b>: G/B, Em/G and C/E put a different note in the bass.', 'Play the bass slowly and hum the famous violin tune over it.')}
 {h3('Chords of C, every position')}
 {tbl(['Chord', 'Root position', '1st inversion', '2nd inversion'], [['<b>I</b> (C)', 'C E G', 'E G C', 'G C E'], ['<b>IV</b> (F)', 'F A C', 'A C F', 'C F A'], ['<b>V</b> (G)', 'G B D', 'B D G', 'D G B'], ['<b>vi</b> (Am)', 'A C E', 'C E A', 'E A C']], ['16%', '28%', '28%', '28%'])}
+{thinkt('The same three friends in a photo, swapping places: still the same group (the same chord), but whoever stands at the front (the bass) changes the picture.')}
 {watch(['Naming a chord from its bass note: in an inversion the bass is not the root. Restack it in 3rds first.', 'Thinking an inversion is a new chord: E G C is still C major.'])}
 {foot('Chords and triads p. {{H1}} · Chords in a key p. {{H3}} · Cadences p. {{H10}}', 'Workbook Harmony 4 · Online: Library › Chords')}""", 70)
 
@@ -337,18 +360,6 @@ H8B = hpage(f"""<div class="kick">Part IV · Harmony · 8 · continued</div>
 {foot('Inversions p. {{H4}} · Colour chords p. {{H6}}', 'Workbook Harmony 8 · Online: Library › Chords')}""", 81)
 
 # ---------- Harmony 9 · Chords from outside the key (direction A: secret, picture first, game, Try it) ----------
-def guestman(letters, redi=(), w=70, tag=''):
-    ys, rs = [150, 98, 58], [34, 26, 20]
-    o = f'<svg viewBox="0 0 160 250" style="width:{w}px;height:auto;display:block;margin:0 auto">'
-    for i in range(3):
-        red = i in redi
-        o += f'<circle cx="60" cy="{ys[i] + 10}" r="{rs[i]}" fill="{"#fde6dd" if red else "#fff"}" stroke="{R if red else N}" stroke-width="{3 if red else 2.4}"/>'
-        o += f'<text x="{60 + rs[i] + 6}" y="{ys[i] + 20}" font-family="PF" font-size="{34 - i * 3}" font-weight="700" fill="{R if red else N}">{letters[i]}</text>'
-    o += f'<path d="M48,49 L72,49 L69,27 L51,27 Z" fill="{N}"/><line x1="40" x2="80" y1="49" y2="49" stroke="{N}" stroke-width="4" stroke-linecap="round"/>'
-    if tag:   # her 5 Nov: the chord name sits in its own label, clear of the snowman, so it reads as a name
-        tw = 22 + 15 * len(tag.replace('♭', 'b').replace('♯', '#'))
-        o += f'<rect x="{60 - tw / 2}" y="214" width="{tw}" height="32" rx="16" fill="{N}"/><text x="60" y="237" text-anchor="middle" font-family="AH" font-size="22" font-weight="700" fill="#fff">{tag}</text>'
-    return o + '</svg>'
 HOME = ''.join(f'<div>{guestman((a, b_, c), (), 78, nm)}</div>' for a, b_, c, nm in [('C', 'E', 'G', 'C'), ('D', 'F', 'A', 'Dm'), ('E', 'G', 'B', 'Em'), ('F', 'A', 'C', 'F'), ('G', 'B', 'D', 'G'), ('A', 'C', 'E', 'Am'), ('B', 'D', 'F', 'B°')])
 
 def gkb(moves, W=40, H=128):   # moves: (from semitone, to semitone, guest name, target name); semitones from C
@@ -423,13 +434,36 @@ H10 = hpage(f"""{head('Part IV · Harmony · 10', 'Cadences', 'A phrase is a mus
 {watch(['Calling every ending on I (C) perfect: a perfect cadence comes <b>from V</b>. F to C is plagal.', 'Mixing up imperfect and perfect: imperfect <b>ends on</b> V; perfect <b>starts on</b> V and lands on I.'])}
 {foot('Chords in a key p. {{H3}} · Seventh chords p. {{H5}} · Chords under a melody p. {{H11}}', 'Workbook Harmony 10 · Online: Library › Cadences')}""", 87)
 
+# ---------- Harmony 11 · Chords under a melody ----------
+HOLD = [('C', ('I', 'IV')), ('D', ('V',)), ('E', ('I',)), ('F', ('IV',)), ('G', ('I', 'V')), ('A', ('IV',)), ('B', ('V',))]
+HCOL = {'I': '#e4572e', 'IV': '#26296b', 'V': '#3f8f6b'}
+HOLDMAP = ('<div class="hold3">' + ''.join(f'<div>{guestman(l, (), 96, t).replace("fill=\"#26296b\"/><text x=\"60\" y=\"237\"", f"fill=\"{HCOL[t]}\"/><text x=\"60\" y=\"237\"")}</div>' for l, t in ((('C', 'E', 'G'), 'I'), (('F', 'A', 'C'), 'IV'), (('G', 'B', 'D'), 'V'))) + '</div>'
+           + '<div class="hold7">' + ''.join(f'<div><b>{n}</b>' + ''.join(f'<span style="background:{HCOL[c]}">{c}</span>' for c in cs) + '</div>' for n, cs in HOLD) + '</div>')
+H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The melody is the singer; the chords are the band. To choose a chord for each bar, look at the melody’s main notes and pick the snowman that holds them.')}
+{h3('Which snowman holds the note?')}
+{HOLDMAP}
+<p class="sm" style="text-align:center">Every note of C major lives in I, IV or V. C and G live in two: let your ear choose.</p>
+<div class="big3 h3x"><div><span>1</span><p>Look at the <b>main notes</b> of the bar: the long ones, and the ones on beats 1 and 3.</p></div><div><span>2</span><p>Find the snowman that holds them: <b>I, IV or V</b>.</p></div><div><span>3</span><p>Play that chord in the left hand while the right hand plays the tune.</p></div></div>
+{h3('Twinkle, Twinkle, with its chords')}
+{px('h12_twk', 96, 'C C G G sit in I (C); A A in IV (F), then G in I; F F in IV, E E in I; D D in V (G), and the last C in I. The chord changes halfway through bars 2, 3 and 4.')}
+{h3('Three ways to play the chord in the left hand')}
+{px('h12_lh', 92, 'Block: all three at once. Broken: one at a time, up and down. Alberti: low, high, middle, high, named after Domenico Alberti, who loved it.')}
+<!--SPLIT-->
+{youknow('Mozart, Sonata in C, K. 545: the left hand', ykfig('h12_545', (), 78), 'The opening left hand is an <b class="co">Alberti bass</b>: C G E G is just the C chord, broken into low, high, middle, high; D G F G is G7 (G B D F, without the B). Mozart wrote it an octave higher, starting on middle C.', 'Play this left hand alone, then add the famous tune: C, E G, B, C D C.')}
+{inaction('Choose the chord: E D C D | E E E', '<p class="mel"><b class="co">E</b> D <b class="co">C</b> D | <b class="co">E</b> E <b class="co">E</b></p><p class="sm" style="text-align:center;margin:0">red = beats 1 and 3</p>', ['<b>Bar 1:</b> the main notes are E and C (beats 1 and 3).', '<b>E and C</b> both live in I.', '<b>Bar 2:</b> E E E lives in I too.'], 'Both bars take <b>I</b> (C). That is the start of Mary Had a Little Lamb.')}
+{game('Pick the snowman', '<div class="gm4" style="grid-template-columns:repeat(3,1fr)">' + ''.join(f'<div><p class="mel">{m}</p><b>{n}</b></div>' for n, m in (('1', 'F A F A'), ('2', 'D B G B'), ('3', 'G E C E'))) + '</div>', 'Each bar is in C major. Which snowman holds its notes: I, IV or V?', '1 IV (F A C) · 2 V (G B D) · 3 I (C E G).')}
+{try10(px('h12_alb', 86), 'Left hand: C G E G, over and over.', 'That is the Alberti bass on the C chord. Keep it going while you hum Twinkle, then try it on F (F C A C) and G (G D B D).')}
+{thinkt('Like picking a coat for the weather: when the tune changes, change the chord.')}
+{watch(['Choosing a chord for a passing note: use the main notes (strong beats, long notes).', 'Playing the left hand louder than the tune: the melody is the star, the chords are the stage.'])}
+{foot('Chords in a key p. {{H3}} · Cadences p. {{H10}}', 'Workbook Harmony 11 · Online: Library › Chords')}""", 89)
+
 css += """
 .big3{display:flex;flex-direction:column;gap:12px;font-size:16px;line-height:1.4} .big3 div{display:flex;gap:10px;align-items:flex-start} .big3 p{margin:0} .big3 span{flex:none;width:26px;height:26px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
 .k7{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:6px 0 4px} .kc{border:1.5px solid #e3e1ee;border-radius:8px;padding:8px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 .ks{font-family:PF,serif;font-size:26px;color:#26296b;line-height:1} .kn{font-size:12.5px;font-weight:700;color:#26296b} .km{font-size:17px;font-weight:700;color:#e4572e} .kw{font-size:11.5px;color:#6d6f9c;line-height:1.3}
 """
 
-_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)), ('H9', H9), ('H10', H10))]
+_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)), ('H9', H9), ('H10', H10), ('H11', H11))]
 html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}</style></head><body>{HOPEN}{"".join(_secs)}{_flowjs}</body></html>'
 open('/mnt/user-data/outputs/house-rooms/handbook-harmony.html', 'w').write(html)
 print('ok')

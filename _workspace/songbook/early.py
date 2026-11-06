@@ -77,7 +77,7 @@ def ready_pages():   # the two pages before Lesson 1
 
 def LADCHK():   # her 5 Nov 21:19: the check as a turtle-to-bird ladder, the can-do ticks in one row above it
     B = SONG['basics']
-    return (f'<div class="chk end"><div class="ch">4 · Check</div>{ticks(B.get("can", []), True)}'
+    return (f'<div class="chk end"><div class="ch">4 · Check</div>{ticks(B.get("can", []), True) if B.get("can") else ""}'
             f'<div class="ck2">I can play it: colour a step each time you climb</div>{ladder(B.get("checks", []))}'
             f'<div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div>')
 

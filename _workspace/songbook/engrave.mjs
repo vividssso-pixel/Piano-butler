@@ -25,7 +25,9 @@ function mei(b0, b1, o) {
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '', run = [];
     const flush = () => { if (run.length) l1 += run.length > 1 ? `<beam>${run.join('')}</beam>` : run[0]; run = []; };   // quavers two to a beam
-    bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; INFO[i] = { len: LEN[d], rest: true }; return; }   // a rest (Lesson 8 on)
+    bar.forEach(([p, d, syl, wp, fo, lfo]) => { if (p.includes('+')) { flush(); const [i, x] = chordXml(p.split('+').map(q => trp(q, o.tr)), d); l1 += x; INFO[i] = { len: LEN[d] };   // a chord in the right hand (her 6 Nov 14:24: the chords one at a time)
+        if (o.fing && fo != null) String(fo).split(' ').forEach(ff => ctrl.push(`<fing startid="#${i}" place="above">${ff}</fing>`)); return; }
+      if (p === 'r') { flush(); const i = nid(); l1 += `<rest xml:id="${i}" dur="${DUR[d]}"/>`; INFO[i] = { len: LEN[d], rest: true }; return; }   // a rest (Lesson 8 on)
       const HL = o.mix && (S.hand || {})[p] === 'L';   // a left-hand note in a right-hand line: stem down, finger below
       if (HL && o.lh) { flush(); const i = nid(); l1 += `<note xml:id="${i}" dur="${DUR[d]}" pname="b" oct="4" head.visible="false" stem.visible="false" class="ghost">${o.words && syl ? `<verse n="1"><syl${wp ? ` wordpos="${wp}" con="d"` : ''}>${syl}</syl></verse>` : ''}</note>`; return; }   // both hands (her 6 Nov 10:09): the left hand's note sits on its own staff, written in S.lh
       const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm, pre: o.pre, staff5: o.staff5, bass: o.bass, hand: HL ? 'LU' : '', lh: !o.staff5 && (o.lhfing || o.lhdown || HL) });
@@ -35,10 +37,11 @@ function mei(b0, b1, o) {
       if (o.lhfing) ctrl.push(`<fing startid="#${i}" place="below">${lfo != null ? lfo : S.lh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
     flush();
     let st2 = '';
-    if (o.lh) { const ch = S.chords[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';
+    const CH = (o.src != null && S.more[o.src].chords) || S.chords;   // a tune of its own brings its own chords
+    if (o.lh) { const ch = CH[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';
       pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d) : noteXml(ps[0], d); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
       st2 = `<staff n="2"><layer n="1">${l2}</layer></staff>`; }
-    if (o.chords) ctrl.push(`<harm staff="1" tstamp="1" place="above">${trChord(S.chords[b], o.tr)}</harm>`);
+    if (o.chords) ctrl.push(`<harm staff="1" tstamp="1" place="above">${o.ask && b > 0 ? '_____' : trChord(CH[b], o.tr)}</harm>`);   // ask: the first name given, the rest to write
     const right = b === S.bars.length - 1 ? ' right="end"' : '';
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff>${st2}${ctrl.splice(0).join('')}</measure>`;
   }
@@ -285,6 +288,9 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy0 ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
+  if (o.chords && !o.fing) { const tops = [...svg.matchAll(/class="stem">\s*<path d="M[\d.]+ (-?[\d.]+) L[\d.]+ (-?[\d.]+)"/g)].map(m => Math.min(+m[1], +m[2]));   // the chord names clear of every stem
+    const base = Math.min(sy0, ...tops) - 160;
+    svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - +y)})">`)); }
   if (o.counts) svg = addCounts(svg);
   // a left-hand line before the staff (her 12:18): the line and the ledgers mean the treble's places, so they go; the notes
   // keep their high and low, the bar lines stay
@@ -430,11 +436,18 @@ function clearFingers(svg) {
     const mid = (Math.min(...hit.map(t => t.lo)) + Math.max(...hit.map(t => t.hi))) / 2, down = y > mid;
     return { y, ny: down ? Math.max(...hit.map(t => t.hi)) + fs * 0.85 : Math.min(...hit.map(t => t.lo)) - 60, down, up: !down }; });
   // numbers within a head's height of each other are one row: if one had to move, the whole row takes the furthest place
-  const row = {}, ys = [...new Set(F.map(f => f.y))].sort((a, b) => a - b), rows = [];
+  const xs = F.map((f, i) => +[...svg.matchAll(RE)][i][3]); const near = (i, k) => k !== i && Math.abs(xs[k] - xs[i]) < 60 && Math.abs(F[k].y - F[i].y) < 800;
+  F.forEach((f, i) => { if (F.some((g, k) => near(i, k))) f.stack = true; });   // a chord's stacked numbers keep their own heights
+  const row = {}, ys = [...new Set(F.filter(f => !f.stack).map(f => f.y))].sort((a, b) => a - b), rows = [];
   ys.forEach(y => { const r = rows[rows.length - 1]; if (r && y - r[r.length - 1] < 450) r.push(y); else rows.push([y]); });
-  rows.forEach(r => { const fs = F.filter(f => r.includes(f.y)); if (!fs.some(f => f.down || f.up)) return;
+  rows.forEach(r => { const fs = F.filter(f => !f.stack && r.includes(f.y)); if (!fs.some(f => f.down || f.up)) return;
     const v = fs.some(f => f.down) ? Math.max(...fs.map(f => f.ny)) : Math.min(...fs.map(f => f.ny)); r.forEach(y => { row[y] = v; }); });
-  return svg.replace(RE, (m, a, dy, x, c, y, d, fs) => { dy = +(dy || 0); const r = row[+y + dy]; return r == null ? m : a + x + c + Math.round(r - dy) + d + fs; });
+  // a chord's numbers: stacked a full line apart, from the lowest up
+  const stackY = {}; F.forEach((f, i) => { if (!f.stack || stackY[i] != null) return; const grp = F.map((g, k) => k).filter(k => k === i || near(i, k)).sort((p, q) => F[q].y - F[p].y);
+    const fsz = +[...svg.matchAll(RE)][i][7]; grp.forEach((k, n) => { stackY[k] = F[grp[0]].y - n * fsz * 0.95; }); });
+  let idx = -1;
+  return svg.replace(RE, (m, a, dy, x, c, y, d, fs) => { idx++; dy = +(dy || 0); if (stackY[idx] != null) return a + x + c + Math.round(stackY[idx] - dy) + d + fs;
+    const r = row[+y + dy]; return r == null ? m : a + x + c + Math.round(r - dy) + d + fs; });
 }
 for (const k of Object.keys(out)) out[k] = clearFingers(reattach(out[k]));
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
