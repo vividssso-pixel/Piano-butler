@@ -133,15 +133,18 @@ P2 = page(f'''{part(2, 'Take it apart', 'The same song, one piece at a time: fir
 {('<div class="sp"></div>' + TRICK) if TRICK else ''}<div class="end">{ticks(SONG.get('p2_ticks', ['Said it in time', 'Clapped and counted', 'Wrote the letter names']), True)}</div>''', 2)
 
 exec(open('early.py').read())
+def STRIP(names):   # the bars as names only, big: the first lead sheet's seed (her 6 Nov 14:54: the chords from the left hand)
+    cells = ''.join(f'<div class="sc">{n}</div>' for n in names)
+    return f'<div class="strip">{cells}</div>'
 def chord_page():   # her 6 Nov 14:24: page 3 unpacks the chords one at a time (meet the chord, find it in the song, play it), the road to the lead sheet
     C = SONG['chord_page']
     def ckb(t, fm, extra):
-        SONG['_kb_all'] = 1; SONG['_kb_extra'] = extra; h = f'<div><div class="kbl">{t}</div>{kb(width=C.get("kb_w", 230), fmap=fm)}</div>'; SONG['_kb_all'] = 0; SONG['_kb_extra'] = None; return h
+        SONG['_kb_all'] = 1; SONG['_kb_extra'] = extra; kc = SONG.get('kb_c'); SONG['kb_c'] = C.get('kb_c', kc or 'middle C'); h = f'<div><div class="kbl">{t}</div>{kb(width=C.get("kb_w", 230), fmap=fm)}</div>'; SONG['_kb_all'] = 0; SONG['_kb_extra'] = None; SONG['kb_c'] = kc or 'middle C'; return h
     kbs = '<div class="kbs">' + ''.join(ckb(t, fm, ex) for t, fm, ex in C['kbs']) + '</div>'
     return page(f'''{part(3, C.get('title', 'The chords'), C['how'])}
-<div class="sp"></div>{SUB('Meet the chord', C['meet'])}<div class="pos"><div>{kbs}</div><div>{C['meet_note']}</div></div>
-<div class="sp"></div>{SUB('Find it in the song', C['find'])}{''.join(mus(k) for k in C['find_jobs'])}
-<div class="sp"></div>{SUB('Play the chords', C['play'])}{''.join(mus(k) for k in C['play_jobs'])}
+<div class="sp"></div>{SUB(C.get('meet_title', 'Meet the chord'), C['meet'])}<div class="pos"><div>{kbs}</div><div>{C['meet_note']}</div></div>
+<div class="sp"></div>{SUB(C.get('find_title', 'Find it in the song'), C['find'])}{''.join(mus(k) for k in C['find_jobs'])}
+<div class="sp"></div>{SUB(C.get('play_title', 'Play the chords'), C['play'])}{''.join(mus(k) for k in C.get('play_jobs', []))}{STRIP(C['strip']) if C.get('strip') else ''}
 <div class="sp"></div>{LADCHK()}''', 3)
 if SONG.get('kind') == 'ready': P3 = ''
 elif SONG.get('chord_page'): P3 = chord_page()
@@ -189,6 +192,7 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .lad{{display:grid;grid-template-columns:118px 34px repeat({len(LSTEPS)},1fr) 34px;gap:6px;align-items:center;margin:3px 0}} .lad.lhd{{margin-bottom:2px}} .lst{{font-size:11px;font-weight:700;color:{MUTE};text-align:center;line-height:1.15}} .lrn{{font-size:14px;font-weight:700}} .lsq{{height:22px;border:1.8px solid {N};border-radius:4px}}
 .yrs{{display:grid;grid-template-columns:1fr 1fr;gap:24px;border-top:1px solid #d9d6ea;padding-top:10px}} .yrs .ticks{{gap:6px;margin:4px 0 0}} .yrs .tk{{font-size:14.5px}} .menu ol{{margin:2px 0 6px;padding-left:20px;font-size:14.5px;line-height:1.55}} .days{{display:flex;gap:9px}} .dy{{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:{MUTE}}}
 [hidden]{{display:none!important}}
+.strip{{display:grid;grid-template-columns:repeat(4,1fr);border-left:2px solid {N};margin:8px 0 0}} .sc{{border-right:2px solid {N};border-top:1.5px solid #d9d6ea;border-bottom:1.5px solid #d9d6ea;padding:8px 0;text-align:center;font-family:'Playfair Display',serif;font-weight:700;font-size:30px;color:{N}}}
 @media print {{ body{{background:#fff}} .pg{{margin:0}} }}''' + EARLY_CSS
 def own_tune(bars):   # her 4 Nov 15:00: make your own -- the rhythm given, a box under each note for its letter
     cells = ''
