@@ -10,7 +10,7 @@ def dot(i, t='', col='#e4572e', y=73):   # her 5 Nov: key markers are outlined (
 YKDAN = '<figure class="vx"><div class="vs">' + P['yk_dan'].replace('<svg ', '<svg style="max-height:72px" ', 1) + '</div></figure>'   # (K. 545 and the Alberti bass wait for Harmony 6, in the bass clef: her 4 Nov)
 for _n in ('n1', 'n2', 'n3', 'n4', 'n5'): YKDAN = YKDAN.replace(f'<g id="{_n}" class="note">', f'<g id="{_n}" class="note" style="fill:#e4572e;color:#e4572e">', 1)
 # ---------- Part III opener ----------
-HTOC = [(t, PM.PAGE[k]) for t, k in (('Chords and triads', 'H1'), ('Four kinds of triad', 'H2'), ('Chords in a key', 'H3'), ('Inversions', 'H4'), ('Seventh chords', 'H5'), ('Colour chords', 'H6'), ('The tower: 9, 11, 13', 'H7'), ('Slash chords', 'H8'), ('Chords from outside the key', 'H9'), ('Cadences', 'H10'), ('Chords under a melody', 'H11'), ('Progressions everywhere', 'H12'), ('Tips: when a chord sounds wrong', 'HT'))]
+HTOC = [(t, PM.PAGE[k]) for t, k in (('Chords and triads', 'H1'), ('Four kinds of triad', 'H2'), ('Chords in a key', 'H3'), ('Inversions', 'H4'), ('Seventh chords', 'H5'), ('Colour chords', 'H6'), ('The tower: 9, 11, 13', 'H7'), ('Slash chords', 'H8'), ('Chords from outside the key', 'M1'), ('Cadences', 'M2'), ('Chords under a melody', 'M3'), ('Progressions everywhere', 'M4'), ('Tips: when a chord sounds wrong', 'HT'))]
 hflow = ''.join(f'<div class="fl"><b>{a}</b><span>{b}</span></div>' + ('<span class="fa">›</span>' if i < 4 else '') for i, (a, b) in enumerate([('Triads', 'the house'), ('Sevenths', 'one more floor'), ('The tower', '9, 11, 13'), ('Slash chords', 'a new bass'), ('Progressions', 'chords that travel')]))
 HOPEN_OLD = f"""<section class="pg part2"><div class="pframe"><div class="pk">Part IV · Which notes sound together</div><div class="pt">Harmony</div><div class="pdv"></div>
 <p class="pl">A melody is the singer; harmony is the band behind it: the chords underneath. Start with the triad, a house of three notes, then build it higher floor by floor, and finish with the chords that close a phrase and carry a song.</p>
@@ -96,7 +96,7 @@ H1 = hpage(f"""{head('Part IV · Harmony · 1', 'Chords and triads', 'Press two 
 {watch(['Stacking 2nds or 4ths: a triad skips exactly one letter each time.', 'Naming a chord from its top note: the root names it (at the bottom when the notes are stacked in 3rds).'])}
 {game('Build one yourself', '<div class="pns">' + spanel('G', skb(n=10, dots=(4, 6, 8), hops=((4, 6), (6, 8)), ghost=(5, 7)) + snowman(3, ('G', 'B', 'D'), w=78), 'Start on G: <b>G B D</b>.') + spanel('F', skb(n=10, dots=(3, 5, 7), hops=((3, 5), (5, 7)), ghost=(4, 6)) + snowman(3, ('F', 'A', 'C'), w=78), 'Start on F: <b>F A C</b>.') + spanel('?', skb(n=10) + snowman(3, ('?', '?', '?'), w=78, red0=False), 'Your turn: start on <b>A</b>. Which three keys?') + '</div>', 'Build the snowman on A: play one, skip one, play one, skip one, play one.', 'A C E, the A minor chord.')}
 {try10(skb(n=8, W=34, fingers=((0, 1), (2, 3), (4, 5)), dots=(0, 2, 4)), 'Thumb on C. Fingers <b class="co">1, 3, 5</b> down together.', 'That is the C chord. Slide your hand to any white key and do it again: the snowman shape always works.')}
-{foot('Counting intervals p. {{S1}} · Major scales p. {{S3}}', 'Workbook Harmony 1 · Online: Library › Chords')}""", 64)
+{foot('Counting intervals p. {{P6}} · Major scales p. {{S1}}', 'Workbook Harmony 1 · Online: Library › Chords')}""", 64)
 
 
 # ---------- Harmony 2 · Four kinds of triad ----------
@@ -110,7 +110,7 @@ YKMOON = ykfig('yk_moon', ('n1', 'n2', 'n3'), 84)
 H2 = hpage(f"""{head('Part IV · Harmony · 2', 'Four kinds of triad', 'Every triad is two 3rds stacked. To tell the kinds apart, count the keys <b>in between</b>, black and white, that you do not play: root to 3rd, then 3rd to 5th. Those two numbers name the kind, and its sound.')}
 {hero(hero_kinds(), 'Count the keys between: 3 + 2 is major, 2 + 3 is minor')}
 {tbl(['Kind', 'Keys between', 'On C', 'Chord name', 'First met'], KINDS, ['20%', '22%', '20%', '20%', '18%'])}
-<p class="sm">Chord names: a letter alone means major (C); m means minor (Cm). You see them above the melody in songbooks and lead sheets: C | Am | F | G. In interval names, 3 keys between is a major 3rd and 2 is a minor 3rd (p. {{{{S2}}}}).</p>
+<p class="sm">Chord names: a letter alone means major (C); m means minor (Cm). You see them above the melody in songbooks and lead sheets: C | Am | F | G. In interval names, 3 keys between is a major 3rd and 2 is a minor 3rd (p. {{{{P7}}}}).</p>
 {h3('Count the keys in between')}
 <div class="fk"><div class="fkf">{kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), semi(W_, '1', 46, '#fff'), semi(W_ * 1.5, '2'), semi(W_ * 2, '3', 46, '#fff'), dot(2, '3'), semi(W_ * 3.5, '1'), semi(W_ * 4, '2', 46, '#fff'), dot(4, '5')], scale=1.0)}</div><div>Play C and E and count the keys you skip, black and white: C♯, D, D♯ is <b class="co">3</b>. Then E to G: F, F♯ is <b class="co">2</b>. <b>3 + 2 is major.</b> Any root works the same way: from D, skip 3 to F♯, then 2 to A: D F♯ A, D major.</div></div>
 {inaction('Major or minor? D F A', kbx('C', 8, W_, 92, label=True, shade={1: '#fde6dd', 3: '#fde6dd', 5: '#fde6dd'}, marks=[dot(1, '1', y=67), dot(3, '3', y=67), dot(5, '5', y=67)], scale=1.0), ['<b>Root to 3rd:</b> D to F skips D♯ and E: <b>2</b>.', '<b>3rd to 5th:</b> F to A skips F♯, G and G♯: <b>3</b>.', '<b>2 + 3</b> is minor.'], 'D F A is <b>D minor</b> (Dm). Three of the white-key triads are minor: D, E and A.')}
@@ -125,7 +125,7 @@ H2 = hpage(f"""{head('Part IV · Harmony · 2', 'Four kinds of triad', 'Every tr
 {game('Which kind?', '<div class="gm4" style="grid-template-columns:repeat(3,1fr)">' + ''.join(f'<div>{guestman(t, (), 80)}<b>{n}</b></div>' for t, n in ((('C', 'E♭', 'G♭'), '1'), (('D', 'F♯', 'A'), '2'), (('E', 'G♯', 'B♯'), '3'))) + '</div>', 'Count the keys between: 3 + 2 major, 2 + 3 minor, 2 + 2 diminished, 3 + 3 augmented.', '1 diminished · 2 major · 3 augmented.')}
 {try10(guestman(('C', 'E', 'G'), (1,), 70, 'C'), 'C E G, then C E♭ G, then C E♭ G♭.', 'Bright, dark, tense. Only the middle ball moves first, then the top one. Listen for the change each time.')}
 {inaction('Build a triad on B', guestman(('B', 'D', 'F'), (), 84, 'B°'), ['<b>Skip a letter:</b> B, D, F.', '<b>Count the keys between:</b> B to D, 2 (C, C♯); D to F, 2 (D♯, E).', '<b>2 + 2:</b> diminished.'], 'B D F is <b>B diminished</b> (B°): the only diminished triad on the white keys.')}
-{foot('Chords and triads p. {{H1}} · Major, minor and perfect p. {{S2}}', 'Workbook Harmony 2 · Online: Library › Chords')}""", 66)
+{foot('Chords and triads p. {{H1}} · Major, minor and perfect p. {{P7}}', 'Workbook Harmony 2 · Online: Library › Chords')}""", 66)
 
 # ---------- Harmony 3 · Chords in a key ----------
 DEG = [['<b>I</b>', 'tonic', 'major', 'C', 'G'], ['ii', 'supertonic', 'minor', 'Dm', 'Am'], ['iii', 'mediant', 'minor', 'Em', 'Bm'], ['<b>IV</b>', 'subdominant', 'major', 'F', 'C'], ['<b>V</b>', 'dominant', 'major', 'G', 'D'], ['vi', 'submediant', 'minor', 'Am', 'Em'], ['vii°', 'leading note', 'diminished', 'B°', 'F♯°']]
@@ -148,7 +148,7 @@ H3 = hpage(f"""{head('Part IV · Harmony · 3', 'Chords in a key', 'Build a tria
 {try10(guestman(('C', 'E', 'G'), (), 70, 'I'), 'Left hand: I IV V I.', 'C, F, G, C, one chord per bar, four beats each. The three primary chords: nearly every nursery tune fits them.')}
 {inaction('Find I, IV and V in F major', '<div class="pair" style="justify-content:center;gap:18px">' + guestman(('F', 'A', 'C'), (), 62, 'I') + guestman(('B♭', 'D', 'F'), (0,), 62, 'IV') + guestman(('C', 'E', 'G'), (), 62, 'V') + '</div>', ['<b>Count up the scale:</b> F G A B♭ C. The 1st note is F, the 4th B♭, the 5th C.', '<b>Build a triad on each,</b> with the key signature’s B♭.', '<b>Check:</b> all three are 3 + 2, major.'], 'In F major: <b>I = F</b>, <b>IV = B♭</b>, <b>V = C</b>.')}
 {inaction('Find V in D minor', guestman(('A', 'C♯', 'E'), (1,), 84, 'A'), ['<b>The 5th note</b> of D minor is A.', '<b>Build the triad:</b> A C E.', '<b>Raise the 7th note of the scale,</b> C to C♯: A C♯ E, major.'], 'V in D minor is <b>A major</b>: the C♯ pulls up to D.')}
-{foot('Four kinds of triad p. {{H2}} · Major scales p. {{S3}} · Cadences p. {{H10}}', 'Workbook Harmony 3 · Online: Library › Chords')}""", 68)
+{foot('Four kinds of triad p. {{H2}} · Major scales p. {{S1}} · Cadences p. {{M2}}', 'Workbook Harmony 3 · Online: Library › Chords')}""", 68)
 css += """
 .snowc{margin:0;font-size:15px;line-height:1.5}
 .home7{display:grid;grid-template-columns:repeat(7,1fr);gap:2px} .hl{font-family:CV;font-size:19px;color:#6d6f9c;text-align:center;margin:-2px 0 6px} .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1.5px dashed #e4572e;padding-top:8px} .g3>div{display:flex;flex-direction:column;align-items:center;text-align:center} .g3 span{font-size:15px;line-height:1.3} .twr{display:flex;gap:10px;align-items:baseline;margin:6px 0 2px} .twr b{font-size:16px} .twr span{font-family:CV;font-size:19px;color:#6d6f9c} .twarrow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-family:CV;font-size:20px;color:#e4572e;height:22px;line-height:22px} .gkb{border:2px solid #26296b;border-radius:10px;padding:8px 10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;height:100%} .gkb b{font-size:17px;color:#e4572e} .gkb span{font-size:14px;color:#26296b;margin-bottom:4px}
@@ -203,7 +203,7 @@ H4 = hpage(f"""{head('Part IV · Harmony · 4', 'Inversions', 'Same three notes,
 {try10(guestman(('E', 'G', 'C'), (2,), 70, 'C/E'), 'Climb the chord.', 'Play C E G, then E G C, then G C E, then C E G an octave up. Same snowman, turning over as it climbs.')}
 {inaction('Write F major in first inversion', guestman(('A', 'C', 'F'), (2,), 76, 'F/A'), ['<b>F major:</b> F A C.', '<b>First inversion:</b> the 3rd, A, goes to the bottom.', '<b>Stack it:</b> A C F.'], 'First inversion of F: <b>A C F</b>, written <b>F/A</b> or <b>IV⁶</b> in C.')}
 {inaction('Find the second inversion of G', guestman(('D', 'G', 'B'), (1,), 76, 'G/D'), ['<b>G major:</b> G B D.', '<b>Second inversion:</b> the 5th, D, goes to the bottom.', '<b>Stack it:</b> D G B.'], 'Second inversion of G: <b>D G B</b>, written <b>G/D</b> or <b>V⁶₄</b> in C.')}
-{foot('Chords and triads p. {{H1}} · Chords in a key p. {{H3}} · Cadences p. {{H10}}', 'Workbook Harmony 4 · Online: Library › Chords')}""", 70)
+{foot('Chords and triads p. {{H1}} · Chords in a key p. {{H3}} · Cadences p. {{M2}}', 'Workbook Harmony 4 · Online: Library › Chords')}""", 70)
 
 # ---------- Harmony 5 · Seventh chords (picture-first, her 5 Nov) ----------
 N, R, PINK, SOFT = '#26296b', '#e4572e', '#fde6dd', '#f6f5fa'
@@ -457,7 +457,7 @@ H9 = hpage(f"""{head('Part IV · Harmony · 9', 'Chords from outside the key', '
 {try10(pxr('h10_iv', ('n9',), 64), 'Play C, F, Fm, C slowly.', 'Hear the A♭ sigh down to G? Now play C, D, G, C: the F♯ pushes up instead. One sighs, one pushes.')}
 {thinkt('A surprise guest at dinner: one new face changes the whole conversation, and then everyone goes home.')}
 {watch(['Following a sharp downwards: sharps push <b>up</b>, flats sigh <b>down</b>.', 'Learning the names first: play it, hear where the guest goes, then name it.', 'Mixing up the relatives: C minor is C major’s twin (same home note). A minor is its neighbour (same key signature). We borrow from the twin.'])}
-{foot('Chords in a key p. {{H3}} · Slash chords p. {{H8}} · Cadences p. {{H10}}', 'Workbook Harmony 9 · Online: Library › Chromatic chords')}""", 82)
+{foot('Chords in a key p. {{H3}} · Slash chords p. {{H8}} · Cadences p. {{M2}}', 'Workbook Harmony 9 · Online: Library › Chromatic chords')}""", 82)
 
 # ---------- Harmony 10 · Cadences (direction A: punctuation cards, game, Try it) ----------
 def arrow_svg(): return f'<svg viewBox="0 0 40 30" style="width:28px;height:auto"><path d="M4,15 L32,15 M24,7 L33,15 L24,23" fill="none" stroke="{R}" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -479,7 +479,7 @@ H10 = hpage(f"""{head('Part IV · Harmony · 10', 'Cadences', 'A phrase is a mus
 {try10(pxr('h11_v7', ('n3',), 56), 'Play G7, then C. The end!', 'Now play G7, then A minor: “huh?!” That is the interrupted cadence. Then play F, then C, and sing “A-men”.')}
 {thinkt('Punctuation in a sentence: a full stop ends it, a comma makes you wait, and a surprise makes you gasp. Music ends its phrases the same way.')}
 {watch(['Calling every ending on I (C) perfect: a perfect cadence comes <b>from V</b>. F to C is plagal.', 'Mixing up imperfect and perfect: imperfect <b>ends on</b> V; perfect <b>starts on</b> V and lands on I.'])}
-{foot('Chords in a key p. {{H3}} · Seventh chords p. {{H5}} · Chords under a melody p. {{H11}}', 'Workbook Harmony 10 · Online: Library › Cadences')}""", 87)
+{foot('Chords in a key p. {{H3}} · Seventh chords p. {{H5}} · Chords under a melody p. {{M3}}', 'Workbook Harmony 10 · Online: Library › Cadences')}""", 87)
 
 # ---------- Harmony 11 · Chords under a melody ----------
 HOLD = [('C', ('I', 'IV')), ('D', ('V',)), ('E', ('I',)), ('F', ('IV',)), ('G', ('I', 'V')), ('A', ('IV',)), ('B', ('V',))]
@@ -501,7 +501,7 @@ H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The 
 {try10(px('h12_alb', 86), 'Left hand: C G E G, over and over.', 'That is the Alberti bass on the C chord. Keep it going while you hum Twinkle, then try it on F (F C A C) and G (G D B D).')}
 {thinkt('Like picking a coat for the weather: when the tune changes, change the chord.')}
 {watch(['Choosing a chord for a passing note: use the main notes (strong beats, long notes).', 'Playing the left hand louder than the tune: the melody is the star, the chords are the stage.'])}
-{foot('Chords in a key p. {{H3}} · Cadences p. {{H10}}', 'Workbook Harmony 11 · Online: Library › Chords')}""", 89)
+{foot('Chords in a key p. {{H3}} · Cadences p. {{M2}}', 'Workbook Harmony 11 · Online: Library › Chords')}""", 89)
 
 # ---------- Harmony 12 · Progressions everywhere + Harmony tips ----------
 FN = {'I': 'home', 'vi': 'home2', 'iii': 'home2', 'IV': 'away', 'ii': 'away', 'V': 'pull', 'V7': 'pull'}
@@ -521,15 +521,24 @@ H12 = hpage(f"""{head('Part IV · Harmony · 12', 'Progressions everywhere', 'A 
 {try10(trip(['I', 'V', 'vi', 'IV']), 'Play C, G, Am, F, four beats each.', 'Go round four times without stopping, left hand plays the chord’s name note (C for C, A for Am), right hand the whole snowman. Hum any tune you like over it.')}
 {thinkt('A walk round the block: leave home, wander, feel the pull, and turn the corner back home.')}
 {watch(['Learning songs one by one: learn the trip by numbers, then change key.', 'Mixing up the pop four and the fifties: same four chords, different order. Listen to which chord comes second.'])}
-{foot('Chords in a key p. {{H3}} · Cadences p. {{H10}} · Chords under a melody p. {{H11}}', 'Workbook Harmony 12 · Online: Library › Chords')}""", 91)
-HT = hpage(f"""{head('Part IV · Harmony · Tips', 'When a chord sounds wrong', 'A chord that sounds wrong usually has one small slip. Name the slip, fix that one note, and the chord comes right.')}
+{foot('Chords in a key p. {{H3}} · Cadences p. {{M2}} · Chords under a melody p. {{M3}}', 'Workbook Harmony 12 · Online: Library › Chords')}""", 91)
+HT = hpage(f"""{head('Part IV · Chords · Tips', 'When a chord sounds wrong', 'A chord that sounds wrong usually has one small slip. Name the slip, fix that one note, and the chord comes right.')}
 {inaction('Fix a sour chord', '<div class="pair" style="justify-content:center">' + guestman(('C', 'E♭', 'G'), (1,), 82, 'C?') + arrow_svg() + guestman(('C', 'E', 'G'), (1,), 82, 'C') + '</div>', ['<b>It sounds dark</b>, but the music wants a bright C chord.', '<b>Count the keys between:</b> 2, then 3. That is minor.', '<b>Move one note:</b> E♭ up to E makes 3 + 2. Bright again.'], 'One note was off: <b>fix the middle of the snowman</b>.')}
 <div class="tip"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
-{tbl(['What you notice', 'Check', 'Turn to'], [['A chord sounds sour', '<b class="co">the kind</b>: keys between, 3 + 2 or 2 + 3', 'p. {{H2}}'], ['Your hand jumps all over', '<b class="co">an inversion</b>: keep the shared note still', 'p. {{H4}}'], ['A big chord sounds muddy', '<b class="co">leave notes out</b>: drop the 5th first', 'p. {{H7}}'], ['A sharp or flat surprises you', '<b class="co">a guest</b>: sharps go up, flats go down', 'p. {{H9}}'], ['The end does not feel finished', '<b class="co">the cadence</b>: end with V → I', 'p. {{H10}}'], ['The left hand fights the tune', '<b class="co">the main notes</b>: pick the snowman holding them', 'p. {{H11}}']], ['36%', '50%', '14%'])}
+{tbl(['What you notice', 'Check', 'Turn to'], [['A chord sounds sour', '<b class="co">the kind</b>: keys between, 3 + 2 or 2 + 3', 'p. {{H2}}'], ['Your hand jumps all over', '<b class="co">an inversion</b>: keep the shared note still', 'p. {{H4}}'], ['A big chord sounds muddy', '<b class="co">leave notes out</b>: drop the 5th first', 'p. {{H7}}'], ['A seventh chord sounds wrong', '<b class="co">the 7th</b>: G7 adds F, ten semitones above G', 'p. {{H5}}'], ['A sus chord sounds unfinished', '<b class="co">the 4th</b>: it wants to fall one key to the 3rd', 'p. {{H6}}'], ['The bass note sounds odd', '<b class="co">the slash</b>: the letter after it is the lowest note', 'p. {{H8}}']], ['36%', '50%', '14%'])}
 </div>
 {h3('Four ways to learn chords fast')}
 <div class="fixes">{''.join(f'<div><span class="rn" style="font-family:AH">{i + 1}</span><b>{a}</b><span>{b_}</span></div>' for i, (a, b_) in enumerate([('Build, then play', 'Say the snowman (C E G) before your fingers go down.'), ('Hands alone first', 'Left hand chords alone, then the tune alone, then together.'), ('One trip a week', 'Learn one progression, then play it in three keys.'), ('Listen for the kind', 'Play major and minor side by side: bright, then dark.')]))}</div>
 {thinkt('Like a mechanic: one odd sound points to one part. Fix that part and the engine runs smoothly.')}""", 93)
+
+MT = hpage(f"""{head('Part IV · Harmony · Tips', 'When the harmony goes wrong', 'Every chord can be right and the music still sound wrong: the ending will not close, or the left hand fights the tune. The slip is in how the chords move. Find which move it is, then fix that one.')}
+{inaction('Fix the ending', '<div class="pair" style="justify-content:center">' + guestman(('C', 'E', 'G'), (), 82, 'I') + arrow_svg() + guestman(('G', 'B', 'D'), (1,), 82, 'V') + '<span style="font-size:30px;color:#c9c7da;margin:0 10px">|</span>' + guestman(('G', 'B', 'D'), (1,), 82, 'V') + arrow_svg() + guestman(('C', 'E', 'G'), (), 82, 'I') + '</div>', ['<b>The piece stops, but it does not feel finished.</b> Look at the last two chords.', '<b>Name them:</b> C then G is I → V. That is a comma, not a full stop.', '<b>Swap the order:</b> G then C is V → I. The red B climbs one key to C, and the music lands.'], 'An ending needs <b>V → I</b>: the last two chords are the full stop.')}
+<div class="tip"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
+{tbl(['What you notice', 'Check', 'Turn to'], [['The end does not feel finished', '<b class="co">the cadence</b>: end with V → I', 'p. {{M2}}'], ['A sharp or flat surprises you', '<b class="co">a guest</b>: sharps go up, flats go down, one key', 'p. {{M1}}'], ['The left hand fights the tune', '<b class="co">the main notes</b>: pick the snowman holding them', 'p. {{M3}}'], ['A new song feels hard to learn', '<b class="co">the trip</b>: find I, IV, V and vi by number', 'p. {{M4}}']], ['36%', '50%', '14%'])}
+</div>
+{h3('Four ways to hear the harmony')}
+<div class="fixes">{''.join(f'<div><span class="rn" style="font-family:AH">{i + 1}</span><b>{a}</b><span>{b_}</span></div>' for i, (a, b_) in enumerate([('Hum the bass', 'Sing the lowest notes: they show where the chords move.'), ('Tick the full stops', 'Mark every V → I in your piece with a red tick.'), ('One trip, three keys', 'Play I–V–vi–IV in C, G and F: same numbers, new letters.'), ('Chord a tune you know', 'Pick I, IV or V for each bar of Twinkle or Happy Birthday.')]))}</div>
+{thinkt('Like a road trip: once you know where home is, every detour makes sense, and every road leads back to I.')}""", 93)
 
 css += """
 .big3{display:flex;flex-direction:column;gap:12px;font-size:16px;line-height:1.4} .big3 div{display:flex;gap:10px;align-items:flex-start} .big3 p{margin:0} .big3 span{flex:none;width:26px;height:26px;border-radius:50%;background:#e4572e;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:14px}
@@ -537,8 +546,16 @@ css += """
 .ks{font-family:PF,serif;font-size:26px;color:#26296b;line-height:1} .kn{font-size:12.5px;font-weight:700;color:#26296b} .km{font-size:17px;font-weight:700;color:#e4572e} .kw{font-size:11.5px;color:#6d6f9c;line-height:1.3}
 """
 
-_secs = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)), ('H9', H9), ('H10', H10), ('H11', H11), ('H12', H12))]
-_secs.append(_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{PM.PAGE["HT"]}</span></div>', HT))
-html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS}</style></head><body>{HOPEN}{"".join(_secs)}{_flowjs}</body></html>'
-open('/mnt/user-data/outputs/house-rooms/handbook-harmony.html', 'w').write(html)
+def _relabel(t, part):   # her 6 Nov: Part IV Chords (1-8) and Part V Harmony in music (9-12 as 1-4)
+    if part == 'H': return t.replace('Part IV · Harmony · ', 'Part IV · Chords · ').replace('PART IV · HARMONY', 'PART IV · CHORDS')
+    t = _re.sub(r'Part IV · Harmony · (\d+)', lambda m: f'Part V · Harmony in music · {int(m.group(1)) - 8}', t)
+    return t.replace('Part IV · Harmony · Tips', 'Part V · Harmony in music · Tips').replace('PART IV · HARMONY', 'PART V · HARMONY IN MUSIC')
+_fix = lambda pg, k: _re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot"><span>{PM.PAGE[k]}</span></div>', pg)
+_secsH = [assemble(k, pg) for k, pg in (('H1', H1), ('H2', H2), ('H3', H3), ('H4', H4), ('H5', (H5A, H5B)), ('H6', (H6A, H6B)), ('H7', (H7A, H7B)), ('H8', (H8A, H8B)))] + [_fix(HT, 'HT')]
+_secsM = [assemble(k, pg) for k, pg in (('M1', H9), ('M2', H10), ('M3', H11), ('M4', H12))] + [_fix(MT, 'MT')]
+HOPEN = opener_art('Part IV · Build them', 'Chords', 'Press three notes at once and you have a chord. Stack them, name them, turn them upside down, add floors. Every chapter of this part is in these four bars of Twinkle.', 'H', PM.PAGE)
+MOPEN = opener_art('Part V · Put them to work', 'Harmony in music', 'A melody is the singer; harmony is the band behind it. Here the chords start moving: guests from outside the key, endings, chords under a tune, and the trips every song takes. All of it is in the same four bars.', 'M', PM.PAGE)
+for name, op, secs, part in (('handbook-harmony.html', HOPEN, _secsH, 'H'), ('handbook-harmony2.html', MOPEN, _secsM, 'M')):
+    html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS}</style></head><body>{op}{_relabel("".join(secs), part)}{_flowjs}</body></html>'
+    open('/mnt/user-data/outputs/house-rooms/' + name, 'w').write(html)
 print('ok')

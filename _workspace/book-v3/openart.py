@@ -92,7 +92,7 @@ def pic_pitch():
     o += G.acc(kx('F4') + W / 2, 'F#4', '♯', ORD)
     for i, n in enumerate(whites):
         o += f'<rect x="{70 + i * W}" y="{ky}" width="{W}" height="{KH}" fill="{"#3a3d7e" if n == "C4" else "none"}" stroke="{OCR}" stroke-width="1.4"/>'
-        if n[0] == 'C': o += lab(kx(n), ky + KH - 8, n, OCR, 11, fam='AH')
+        if n[0] == 'C': o += lab(kx(n), ky + KH + 16, {'C3': 'Bass C', 'C4': 'Middle C', 'C5': 'Treble C'}[n], OCR if n != 'C4' else ORD, 12, fam='AH')
     for i, n in enumerate(whites[:-1]):
         if n[0] in 'CDFGA': o += f'<rect x="{70 + (i + 1) * W - 11}" y="{ky}" width="22" height="58" rx="2" fill="{OCR}"/>'
     for st, n, x in notes:   # the map: a dotted line from the note down to its key
@@ -100,14 +100,17 @@ def pic_pitch():
         o += f'<line x1="{x}" y1="{st.y(n) + 8:.1f}" x2="{tx:.1f}" y2="{ky - 2}" stroke="{OPK}" stroke-width="1.2" stroke-dasharray="3 4" opacity=".9"/>'
         o += f'<circle cx="{tx:.1f}" cy="{ky + (40 if "#" in n else 80)}" r="5" fill="{ORD if n in ("C4", "F#4") else OPK}"/>'
     o += f'<path d="M{kx("F4") + 2},{ky + 80} Q{kx("F4") + 12},{ky + 62} {kx("F4") + W / 2 - 4},{ky + 48}" fill="none" stroke="{ORD}" stroke-width="2.4" stroke-linecap="round"/>'
-    o += lab(kx('C4'), ky + KH + 24, 'C: just left of the two black keys', OPK, 16)
+    o += lab(kx('C4'), ky + KH + 36, 'C: just left of the two black keys', OPK, 16)
     o += call(2, 90, G.y('G4'), 36, 50) + call(2, 92, F.y('F3'), 36, F.y1 + 10)
     o += call(3, kx('A4') + 30, G.y('A4') - 10, kx('A4') + 30, 44) + lab(kx('A4') + 48, 49, 'from G, one step up: A', OPK, 15, 'start')
     o += call(5, kx('F4') + W / 2, G.y('F#4') - 10, kx('F4') - 10, 44) + lab(kx('F4') - 28, 49, '♯: one key to the right', OPK, 15, 'end')
     o += call(4, (kx('F3') + 40 + kx('C4')) / 2 + 10, (G.y1 + F.y1) / 2 + 16, 660, (G.y1 + F.y1) / 2 + 16)
     o += call(1, kx('C5') + 10, ky + 20, 660, ky + 20)
-    return f'<svg viewBox="0 0 700 {ky + KH + 40}" style="width:100%;display:block">{o}</svg>'
-LEG_P = [(1, 'The keyboard', 'two and three black keys; C is left of the two', 'P1'), (2, 'The staff and the clefs', 'the treble clef names G, the bass clef F', 'P2'), (3, 'Reading the notes', 'find a landmark note, then step or skip from it', 'P3'), (4, 'The staff and the keyboard', 'every line and space is one white key', 'P4'), (5, 'Sharps, flats and naturals', 'a sharp moves one key right, a flat one key left', 'P5'), ('★', 'Tips: when a note reads wrong', '', 'PT')]
+    xc, xg, yi = kx('C4'), kx('G4') + 10, G.y1 + 26
+    o += bracket(xc, xg, yi, 'C to G: a 5th', OPK, fs=12)
+    o += call(6, xc - 2, yi, 40, yi) + call(7, xg + 4, yi + 12, 660, yi + 12)
+    return f'<svg viewBox="0 0 700 {ky + KH + 50}" style="width:100%;display:block">{o}</svg>'
+LEG_P = [(1, 'The keyboard', 'two and three black keys; C is left of the two', 'P1'), (2, 'The staff and the clefs', 'the treble clef names G, the bass clef F', 'P2'), (3, 'Reading the notes', 'start from a clef note, then step or skip', 'P3'), (4, 'The staff and the keyboard', 'every line and space is one white key', 'P4'), (5, 'Sharps, flats and naturals', 'a sharp moves one key right, a flat one key left', 'P5'), (6, 'Counting intervals', 'count the notes, both ends: C to G is a 5th', 'P6'), (7, 'Major, minor and perfect', 'count the hops: 7 make a perfect 5th', 'P7'), ('★', 'Tips: when a note reads wrong', '', 'PT')]
 
 # ---------- Part III · Scales and keys ----------
 def pic_scales():
@@ -120,7 +123,6 @@ def pic_scales():
     for i, t in enumerate(steps):
         x0, x1 = xs[i] + 8, xs[i + 1] - 8; red = t == 'S'
         o += f'<path d="M{x0},{yb - 5} V{yb} H{x1} V{yb - 5}" fill="none" stroke="{ORD if red else OCR}" stroke-width="{2 if red else 1.3}"/>' + lab((x0 + x1) / 2, yb + 17, 'semitone' if red else 'tone', ORD if red else OCR, 11, fam='AH')
-    o += bracket(xs[0], xs[2], S.y('B4') - 52, 'a 3rd: 4 semitones, major', OCR, up=True, fs=12)
     o += lab(xs[5], S.y('E5') - 48, 'E minor starts here', OPK, 15)
     o += lab(100, yb + 52, 'last sharp F♯, one key up: G major', OPK, 16, 'start')
     o += f'<path d="M92,{S.y("F5") - 16} Q110,{S.y("F5") - 40} {xs[0] - 6},{S.y("G4") - 10}" fill="none" stroke="{ORD}" stroke-width="1.6" stroke-dasharray="3 3"/>'
@@ -133,13 +135,16 @@ def pic_scales():
         o += lab(x, y + 4.5, m, '#fff' if i == 1 else OCR, 11.5, fam='AH')
     a0, a1 = _om.radians(-76), _om.radians(-50); r2 = R + 38
     o += f'<path d="M{cx + r2 * _om.cos(a0):.1f},{cy + r2 * _om.sin(a0):.1f} A{r2},{r2} 0 0 1 {cx + r2 * _om.cos(a1):.1f},{cy + r2 * _om.sin(a1):.1f}" fill="none" stroke="{OPK}" stroke-width="2.5" stroke-linecap="round"/>' + lab(cx + 26, cy - R - 42, '+1♯', OPK, 14, fam='AH')
-    o += call(1, xs[1], S.y('B4') - 58, xs[1], 30) + call(2, xs[2] + 20, S.y('B4') - 58, xs[2] + 60, 30) + call(3, xs[3] - 8, yb + 2, xs[3] - 8, yb + 62) + call(4, xs[5], S.y('E5') - 36, xs[5] + 60, 30)
-    o += call(5, 86, S.y('F5') - 14, 60, 30) + call(6, 92, yb + 40, 60, yb + 62) + call(7, cx - R - 22, cy, cx - R - 60, cy)
+    o += call(1, xs[3] - 8, yb + 2, xs[3] - 8, yb + 62) + call(2, xs[5], S.y('E5') - 36, xs[5] + 60, 30)
+    o += call(3, 86, S.y('F5') - 14, 60, 30) + call(4, 92, yb + 40, 60, yb + 62) + call(5, cx - R - 22, cy, cx - R - 60, cy)
     return f'<svg viewBox="0 0 760 {yb + 246}" style="width:100%;display:block">{o}</svg>'
-LEG_S = [(1, 'Counting intervals', 'count the letters, both ends: G A B is a 3rd', 'S1'), (2, 'Major, minor and perfect', 'the same number, bigger or smaller', 'S2'), (3, 'Major scales', 'T T S T T T S: the two short steps', 'S3'), (4, 'Minor scales', 'the same notes from the 6th note up', 'S4'), (5, 'Keys and key signatures', 'the sharps at the start apply all the way', 'S5'), (6, 'Finding the key', 'last sharp, one key up; second-last flat', 'S6'), (7, 'The circle of fifths', 'clockwise, one more sharp each step', 'S7'), ('★', 'Tips: when a note sounds wrong', '', 'ST')]
+LEG_S = [(1, 'Major scales', 'T T S T T T S: the two short steps', 'S1'), (2, 'Minor scales', 'the same notes from the 6th note up', 'S2'), (3, 'Keys and key signatures', 'the sharps at the start apply all the way', 'S3'), (4, 'Finding the key', 'last sharp, one key up; second-last flat', 'S4'), (5, 'The circle of fifths', 'clockwise, one more sharp each step', 'S5'), ('★', 'Tips: when a note sounds wrong', '', 'ST')]
 
 # ---------- Part IV · Harmony ----------
-def pic_harmony():
+def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (1-8), 'M' = Harmony in music (old 9-12 as 1-4)
+    MAP = {'H': {1: 1, 2: 2, 3: 3, '4·8': '4·8', 5: 5, 6: 6, 7: 7}, 'M': {9: 1, 10: 2, 11: 3, 12: 4}}[mode]
+    _c = lambda n, *a: call(MAP[n], *a) if n in MAP else ''
+    _l = lambda want, *a: lab(*a) if want == mode else ''
     G = Staff(50, 780, 124, 11, 'G'); F = Staff(50, 780, 240, 11, 'F')
     o = G.lines() + F.lines() + G.clefsym() + F.clefsym() + brace(46, G.y1 - 4 * G.sp, F.y1) + G.tsig(100, 4, 4) + F.tsig(100, 4, 4)
     bars = [122, 262, 402, 542, 780]
@@ -161,20 +166,21 @@ def pic_harmony():
     o += lab(104, yb, 'in C major:', OPK, 11, 'end', 'AH')
     xC, xF, xCE, xFm, xC2, xGs, xG7, xC9 = [pos[k] for k in ('C00', 'F10', 'C/E12', 'Fm20', 'C22', 'Gsus430', 'G731', 'C(add9)32')]
     # above: the tune, and the chords named between the staves
-    o += call(11, bars[0] + 60, G.y('G4') - 40, bars[0] + 60, 26) + lab(bars[0] + 78, 31, 'the tune picks the chords', OPK, 15, 'start')
-    o += call('4·8', xCE, yn - 14, xCE + 26, 26) + call(6, xGs, yn - 14, xGs - 10, 26) + call(5, xG7, yn - 14, xG7 + 22, 26) + call(7, xC9 + 8, F.y('D4') - 8, xC9 + 54, 26)
+    o += _c(11, bars[0] + 60, G.y('G4') - 40, bars[0] + 60, 26) + _l('M', bars[0] + 78, 31, 'the tune picks the chords', OPK, 15, 'start')
+    o += _c('4·8', xCE, yn - 14, xCE + 26, 26) + _c(6, xGs, yn - 14, xGs - 10, 26) + _c(5, xG7, yn - 14, xG7 + 22, 26) + _c(7, xC9 + 8, F.y('D4') - 8, xC9 + 54, 26)
     # below: the numerals row, then the trip
     ya = yb + 36
-    o += call(3, 92, yb + 4, 60, ya) + call(1, xC, F.y('G3') + 10, xC, ya) + call(2, xF, F.y('C3') + 10, xF, ya) + call(9, xFm, F.y('C3') + 10, xFm, ya)
-    o += lab(xF + 18, ya + 5, 'major', OPK, 13, 'start') + lab(xFm + 18, ya + 5, 'a guest note: minor', OPK, 13, 'start')
-    o += call(10, (xG7 + xC9) / 2, yb + 6, (xG7 + xC9) / 2, ya) + lab((xG7 + xC9) / 2 + 16, ya + 5, 'full stop', OPK, 13, 'start')
+    o += _c(3, 92, yb + 4, 60, ya) + _c(1, xC, F.y('G3') + 10, xC, ya) + _c(2, xF, F.y('C3') + 10, xF, ya) + _c(9, xFm, F.y('C3') + 10, xFm, ya)
+    o += _l('H', xF + 18, ya + 5, 'major', OPK, 13, 'start') + _l('M', xFm + 18, ya + 5, 'a guest note: minor', OPK, 13, 'start')
+    o += _c(10, (xG7 + xC9) / 2, yb + 6, (xG7 + xC9) / 2, ya) + _l('M', (xG7 + xC9) / 2 + 16, ya + 5, 'full stop', OPK, 13, 'start')
     yt = ya + 36
-    o += f'<path d="M{xC - 14},{yt - 6} V{yt} H{xC9 + 14} V{yt - 6}" fill="none" stroke="{OPK}" stroke-width="1.3"/>' + call(12, (xC + xC9) / 2, yt, (xC + xC9) / 2, yt + 18) + lab((xC + xC9) / 2 + 18, yt + 23, 'a trip from home and back', OPK, 15, 'start')
-    return f'<svg viewBox="0 0 800 {yt + 36}" style="width:100%;display:block">{o}</svg>'
-LEG_H = [(1, 'Chords and triads', 'three notes stacked like a snowman', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes, a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more floor: G7 pulls home', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), (9, 'Chords from outside the key', 'a guest note: A♭ in C major', 'H9'), (10, 'Cadences', 'V to I ends a phrase like a full stop', 'H10'), (11, 'Chords under a melody', 'the tune’s main notes pick the chord', 'H11'), (12, 'Progressions everywhere', 'the same few trips, in every song', 'H12'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
+    o += (f'<path d="M{xC - 14},{yt - 6} V{yt} H{xC9 + 14} V{yt - 6}" fill="none" stroke="{OPK}" stroke-width="1.3"/>' if mode == 'M' else '') + _c(12, (xC + xC9) / 2, yt, (xC + xC9) / 2, yt + 18) + _l('M', (xC + xC9) / 2 + 18, yt + 23, 'a trip from home and back', OPK, 15, 'start')
+    return f'<svg viewBox="0 0 800 {yt + (36 if mode == "M" else 0)}" style="width:100%;display:block">{o}</svg>'
+LEG_H = [(1, 'Chords and triads', 'three notes stacked like a snowman', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes, a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more floor: G7 pulls home', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
+LEG_M = [(1, 'Chords from outside the key', 'a guest note: A♭ in C major', 'M1'), (2, 'Cadences', 'V to I ends a phrase like a full stop', 'M2'), (3, 'Chords under a melody', 'the tune’s main notes pick the chord', 'M3'), (4, 'Progressions everywhere', 'the same few trips, in every song', 'M4'), ('★', 'Tips: when harmony goes wrong', '', 'MT')]
 
 def opener_art(kick, title, line, part, PAGE, cls=''):
-    pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H)}[part]
+    pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H), 'M': (lambda: pic_harmony('M'), LEG_M)}[part]
     rows = ''.join(f'<div><span class="ln"{" style=\"background:#f4a9bb\"" if n == "★" else ""}>{n}</span><div><b>{t}</b> <span class="pg2">p. {PAGE[k]}</span>' + (f'<br><span>{d}</span>' if d else '') + '</div></div>' for n, t, d, k in leg)
     return f'''<section class="pg part2 {cls}"><div class="pframe"><div class="pk">{kick}</div><div class="pt">{title}</div><div class="pdv"></div>
 <p class="pl">{line}</p>

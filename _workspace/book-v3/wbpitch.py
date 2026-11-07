@@ -16,12 +16,12 @@ def wpx(k, h=70, spx=None):
     return '<figure class="vx px"><div class="vs">' + svg + '</div></figure>'
 def pc(k, lab, h=70): return f'<div class="fc">{wpx(k, 84, 26)}<div class="add">{lab.replace(BOX, WL)}</div></div>'
 def _hbl(hb):   # her 5 Nov (A): topics 1-5 are Part I Pitch (pp. 22-31), 6-12 Part III Scales and keys (pp. 50-63)
-    return ('PITCH · HANDBOOK P. ' + str(22 + 2 * (hb - 22))) if hb < 27 else ('SCALES AND KEYS · HANDBOOK P. ' + str(50 + 2 * (hb - 27)))
+    return ('PITCH · HANDBOOK P. ' + str(22 + 2 * (hb - 22))) if hb < 27 else ('PITCH · HANDBOOK P. ' + str(50 + 2 * (hb - 27))) if hb < 29 else ('SCALES AND KEYS · HANDBOOK P. ' + str(50 + 2 * (hb - 27)))
 def wpage2(inner, n, hb, lab='PITCH'):
     return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{_hbl(hb) if hb else lab}</span></div><div class="rule"></div><div class="body">{inner}</div>
 <div class="sign"><span style="flex:0 0 240px">Date <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
 def tq(kind, topic, title, rule, inner, n, hb):
-    return wpage2(f'<div class="kick">{"Pitch" if hb < 27 else "Scales and keys"} · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
+    return wpage2(f'<div class="kick">{"Pitch" if hb < 29 else "Scales and keys"} · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
 def kbd(start, n, W, H, extra_h=0, **kw):
     s = keyboard(start, n, W, H, **kw)
     if extra_h:   # room under the keys for numbers drawn in marks
@@ -105,15 +105,15 @@ B5 = tq('Use', 'Scales', 'Scales and keys', 'The order of sharps: F C G D A E B.
 {ex(4, 'Play it', 1, 'Play each scale one octave, hands separately. Tick a circle each day it is even and correct.', '<div class="ts6">' + ''.join(f'<div><b>{s}</b>{ticks(4)}</div>' for s in ('G major', 'F major', 'A harmonic minor')) + '</div>')}''', 12, 31)
 
 # ---------- Review, progress, answers (her 5 Nov: one set for Pitch, one for Scales and keys) ----------
-R = wpage2(f'''<div class="kick">Pitch · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 11.</p>
+R = wpage2(f'''<div class="kick">Pitch · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 13.</p>
 {ex(1, 'Name the notes', 1, 'Write the full name of each note.', grid([pc(k, BOX, 58) for k in ('r_t_e5', 'r_b_c3', 'r_t_f#4', 'r_b_g2')], 4))}
 {ex(2, 'Complete it', 2, 'One word or letter in each space.', f'<div class="sent"><p>A semitone higher than E is {BOX} .</p><p>From C to the next C there are {BOX} white keys, counting both.</p><p>A natural sign {LINE.replace("al", "al inl")} a sharp or flat.</p></div>')}
 {ex(3, 'True or false?', 1, 'Circle T or F.', tfrows(('E to F is a tone.', 'An accidental lasts until the end of the bar.', 'A flat lowers a note by a semitone.')))}
-<div class="score">Score <span class="ab"></span> / 10</div>''', 9, None)
-concepts = [('the keyboard and the musical alphabet', 22), ('tones and semitones', 22), ('the staff and the clefs', 24), ('treble clef notes', 26), ('bass clef notes', 26), ('ledger lines', 26), ('the staff and the keyboard', 28), ('sharps, flats and naturals', 30), ('enharmonic names', 30)]
+<div class="score">Score <span class="ab"></span> / 10</div>''', 11, None)
+concepts = [('the keyboard and the musical alphabet', 22), ('tones and semitones', 22), ('the staff and the clefs', 24), ('treble clef notes', 26), ('bass clef notes', 26), ('ledger lines', 26), ('the staff and the keyboard', 28), ('sharps, flats and naturals', 30), ('enharmonic names', 30), ('interval numbers', 50), ('major, minor and perfect intervals', 52)]
 PR = wpage2(f'''<div class="kick">Pitch · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
 {tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in concepts], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
-<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 10, None)
+<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 12, None)
 ans = [('p. 1', 'Groups (A to G, three octaves): twos 3, threes 2 (count whole groups only: a single black key at each end is part of a cut-off group). Keys: 1 D, 2 A, 3 C, 4 E, 5 G, 6 B. Alphabet: B C D · D C B · E F G · A G F.'),
        ('p. 2', 'Cs 3, Fs 3. T/S: S, T, S, T, T, T. Octave: 8 white keys, 12 semitones, middle C. Up or down: F, E, C, B, E, G.'),
        ('p. 3', 'Clefs: treble (G clef), line 2 = G; bass (F clef), line 4 = F. Line or space: line 1, space 2, line 4, space 3, line 2, line 5. Letters: treble spaces F A C E; bass lines G B D F A; bass spaces A C E G.'),
@@ -121,28 +121,28 @@ ans = [('p. 1', 'Groups (A to G, three octaves): twos 3, threes 2 (count whole g
        ('p. 6', 'Ledger lines: A, C, B, C · C, E, B, D. Draw it: treble G line 2, C space 3, E line 1, F space 1; bass A space 1, B line 2, G line 1, E space 3.'),
        ('p. 7', 'Signs: sharp, raises a semitone; flat, lowers a semitone; natural, cancels a sharp or flat. Black keys: 2 D♯/E♭, 3 F♯/G♭, 4 G♯/A♭, 5 A♯/B♭. Notes: F♯, B♭, C♯, E♭, G♯, A♭, F♯, B♭.'),
        ('p. 8', 'Bar: 1 F♯, 2 G, 3 F♯, 4 F (natural), 5 F. Semitone higher / lower: E: F / E♭ · F: F♯ / E · B: C / B♭ · G: G♯ / G♭ (enharmonic names also correct). Enharmonics: D♭, D♯, F♯, B♭, F, B.'),
-       ('p. 9', 'E, C, F♯, G · F, 8, cancels · F, T, T.')]
+       ('p. 9', 'Numbers: 3rd, 5th, 2nd, 6th, 4th, octave, 7th, 3rd. Melodic, harmonic, harmonic, melodic. Semitones: 4, 7, 1, 3, 12, 6. Hand: 2nd, 3rd, 4th, 5th.'),
+       ('p. 10', 'Note above: E, A, B, E, A, F. 3rds: 4 M, 3 m, 3 m, 4 M, 4 M, 3 m.'),
+       ('p. 11', 'E, C, F♯, G · F, 8, cancels · F, T, T.')]
 AN = wpage2(f'''<div class="kick">Pitch · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in ans], ['12%', '88%'], 'ansT')}
-<p class="sm">“Draw it”, “in your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 11, None)
+<p class="sm">“Draw it”, “in your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 13, None)
 SL = 'SCALES AND KEYS'
-R3 = wpage2(f'''<div class="kick">Scales and keys · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 7.</p>
+R3 = wpage2(f'''<div class="kick">Scales and keys · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 5.</p>
 {ex(1, 'Intervals and keys', 2, 'Write the interval number for the first two; the major key for the last two.', grid([pc('r_iv0', 'interval ' + BOX, 66), pc('r_iv1', 'interval ' + BOX, 66), pc('r_ks0', 'major ' + BOX, 66), pc('r_ks1', 'major ' + BOX, 66)], 4, 'lab2'))}
 {ex(2, 'Complete it', 2, 'One word, letter or number in each space.', f'<div class="sent"><p>The relative minor of G major is {BOX} minor.</p><p>In a major scale the semitones fall between degrees 3–4 and {BOX} .</p><p>The major key with one sharp is {BOX} major.</p></div>')}
 {ex(3, 'True or false?', 1, 'Circle T or F.', tfrows(('A key signature applies to every line of the piece.', 'C up to E is a 3rd.', 'A minor 3rd is four semitones.')))}
-<div class="score">Score <span class="ab"></span> / 10</div>''', 5, None, SL)
-concepts3 = [('interval numbers', 50), ('tones and semitones in intervals', 50), ('major and minor 3rds', 52), ('perfect intervals', 52), ('major scales', 54), ('scale degree names', 54), ('minor scales', 56), ('key signatures', 58), ('finding the key', 60), ('the circle of fifths', 62)]
+<div class="score">Score <span class="ab"></span> / 10</div>''', 3, None, SL)
+concepts3 = [('major scales', 54), ('scale degree names', 54), ('minor scales', 56), ('key signatures', 58), ('finding the key', 60), ('the circle of fifths', 62)]
 PR3 = wpage2(f'''<div class="kick">Scales and keys · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
 {tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in concepts3], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
-<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 6, None, SL)
-ans3 = [('p. 1', 'Numbers: 3rd, 5th, 2nd, 6th, 4th, octave, 7th, 3rd. Melodic, harmonic, harmonic, melodic. Semitones: 4, 7, 1, 3, 12, 6. Hand: 2nd, 3rd, 4th, 5th.'),
-       ('p. 2', 'Note above: E, A, B, E, A, F. 3rds: 4 M, 3 m, 3 m, 4 M, 4 M, 3 m.'),
-       ('p. 3', 'F needs a sharp (F♯); semitones 3–4 and 7–8. Pattern: T T S T T T S. Degrees: 2 supertonic, 3 mediant, 4 subdominant, 5 dominant, 6 submediant, 7 leading note. Relative minors: E, D, B, G, C.'),
-       ('p. 4', 'Keys: G / E minor · F / D minor · D / B minor · B♭ / G minor · A / F♯ minor · E♭ / C minor. Minor forms: A harmonic, B natural, C melodic. Sharps F C G D A E B; flats B E A D G C F.'),
-       ('p. 5', '5th, 3rd, D major, F major · E, 7–8, G · T, T, F.')]
+<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 4, None, SL)
+ans3 = [('p. 1', 'F needs a sharp (F♯); semitones 3–4 and 7–8. Pattern: T T S T T T S. Degrees: 2 supertonic, 3 mediant, 4 subdominant, 5 dominant, 6 submediant, 7 leading note. Relative minors: E, D, B, G, C.'),
+       ('p. 2', 'Keys: G / E minor · F / D minor · D / B minor · B♭ / G minor · A / F♯ minor · E♭ / C minor. Minor forms: A harmonic, B natural, C melodic. Sharps F C G D A E B; flats B E A D G C F.'),
+       ('p. 3', '5th, 3rd, D major, F major · E, 7–8, G · T, T, F.')]
 AN3 = wpage2(f'''<div class="kick">Scales and keys · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in ans3], ['12%', '88%'], 'ansT')}
-<p class="sm">“Draw it”, “in your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 7, None, SL)
+<p class="sm">“Draw it”, “in your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 5, None, SL)
 
 css += f'''
 .anrow{{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:6px}} .anrow span{{display:flex;align-items:center;gap:6px;font-size:14px}} .anrow b{{color:{C}}}
@@ -158,9 +158,9 @@ css += f'''
 .fills>.fc>.px{{flex:1;display:flex;align-items:center;justify-content:center;padding:2px 4px}} .fills>.fc>.add{{justify-content:center;text-align:center;gap:6px;flex-wrap:wrap}} .wl{{display:inline-block;width:64px;height:26px;border-bottom:1.6px solid #26296b}} .fills>.fc>.add .wl:only-child, .fills>.fc>.add:not(:has(.wl ~ .wl)) .wl.hasdone{{width:72%}} .lab2 .add .wl{{display:block;margin:2px auto 0}} .ab.wide{{display:none}}
 .fills>.fc>figure.vx{{border:0;background:none;box-shadow:none;height:auto;flex:1 1 auto;padding:0;display:flex;align-items:center}} .fills>.fc>.add{{margin-top:auto !important;padding-top:2px}} .fills>.fc>figure .vs{{display:flex;align-items:center;justify-content:center;width:100%;height:100%}} .fills>.fc>figure svg{{display:block;margin:0 auto}} .fills{{row-gap:10px}}
 '''
-pages = [A1, B1, A2, B2, C2, D2, A3, B3, R, PR, AN]
+pages = [A1, B1, A2, B2, C2, D2, A3, B3, A4, B4, R, PR, AN]
 import re as _re3
-pages3 = [_re3.sub(r'<div class="foot"><span>\d+</span>', f'<div class="foot"><span>{k + 1}</span>', p) for k, p in enumerate([A4, B4, A5, B5])] + [R3, PR3, AN3]
+pages3 = [_re3.sub(r'<div class="foot"><span>\d+</span>', f'<div class="foot"><span>{k + 1}</span>', p) for k, p in enumerate([A5, B5])] + [R3, PR3, AN3]
 FITJS = '''<script>
 // Fit every exercise cell's staff to its drawn content (staff, clef, notes), with a small even margin, so it fills the cell, centred.
 (async function(){ try { await document.fonts.ready; } catch (e) {}
