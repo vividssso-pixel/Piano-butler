@@ -77,41 +77,66 @@ def guestman(letters, redi=(), w=70, tag=''):
 
 
 # ---------- her 7 Nov: the chord metaphor is a layer cake (triad = 3 layers; one more layer per note; decorations for colour chords) ----------
-def _tier(cx, yb, w, h, fill, stroke, sw):   # one cake layer, bottom edge at yb, with a little icing drip line
-    x = cx - w / 2
-    return (f'<rect x="{x:.1f}" y="{yb - h:.1f}" width="{w:.1f}" height="{h:.1f}" rx="5" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
-            f'<path d="M{x + 4:.1f},{yb - h + 6:.1f} q{w * .1:.1f},{h * .35:.1f} {w * .2:.1f},0 t{w * .2:.1f},0 t{w * .2:.1f},0 t{w * .2:.1f},0" fill="none" stroke="{stroke}" stroke-width="1.4" opacity=".55"/>')
-def _cherry(cx, ytop):
-    return f'<path d="M{cx},{ytop - 13} q6,-10 12,-12" fill="none" stroke="#3f8f6b" stroke-width="2"/><circle cx="{cx}" cy="{ytop - 7}" r="7" fill="#e4572e"/>'
-def guestman(letters, redi=(), w=70, tag=''):   # name kept for the callers; draws a three-layer cake
-    ws, hs = [96, 76, 56], [44, 38, 32]
+CAKEFL = [('#f7b6a3', '#e4572e'), ('#fff3d6', '#d9a84e'), ('#f9d9e6', '#d77fa1'), ('#d9ecf7', '#5b9cc8'), ('#e3f2dc', '#6aa85a'), ('#efe3f7', '#9a6bc0'), ('#fde8c8', '#e0963a')]
+def _layer(cx, yb, w, h, i, letter, red=False, seed=0):   # her 7 Nov: a pretty cake layer: pastel sponge, wavy icing, sprinkles, the note in a white disc
+    import random as _rnd; rg = _rnd.Random(seed * 31 + i)
+    f, st = CAKEFL[i % len(CAKEFL)]
+    if red: st = R
+    x, y = cx - w / 2, yb - h
+    o = f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" rx="{h * .2:.1f}" fill="{f}" stroke="{st}" stroke-width="{2.6 if red else 2}"/>'
+    d = f'M{x:.1f},{y + h * .15:.1f} ' + ' '.join(f'q{w / 12:.1f},{(h * .25) if k % 2 == 0 else (-h * .05):.1f} {w / 6:.1f},0' for k in range(6))
+    o += f'<path d="{d} V{y:.1f} H{x:.1f} Z" fill="#fff" stroke="{st}" stroke-width="1.5" stroke-linejoin="round"/>'
+    for _ in range(4):
+        sx = x + 10 + rg.random() * (w - 20); sy = y + h * .45 + rg.random() * h * .35
+        if abs(sx - cx) < h * .45: continue
+        o += f'<rect x="{sx:.0f}" y="{sy:.0f}" width="{h * .15:.1f}" height="{h * .06:.1f}" rx="1" fill="{CAKEFL[(i + 3) % len(CAKEFL)][1]}" transform="rotate({rg.randint(-50, 50)} {sx:.0f} {sy:.0f})"/>'
+    rr = h * .34
+    o += f'<circle cx="{cx}" cy="{y + h * .57:.1f}" r="{rr:.1f}" fill="#fff" stroke="{st}" stroke-width="2"/><text x="{cx}" y="{y + h * .57 + rr * .5:.1f}" text-anchor="middle" font-family="PF,serif" font-size="{rr * 1.35:.1f}" font-weight="700" fill="{R if (red or i == 0) else N}">{letter}</text>'
+    return o
+def _stand(cx, yb, w):
+    return f'<ellipse cx="{cx}" cy="{yb + 5}" rx="{w * .62:.1f}" ry="6" fill="#e6e3ef"/><rect x="{cx - 7}" y="{yb + 5}" width="14" height="10" fill="#c9c7da"/><rect x="{cx - 26}" y="{yb + 14}" width="52" height="5" rx="2.5" fill="#c9c7da"/>'
+def _cherry(cx, ytop, s=1):
+    return f'<path d="M{cx},{ytop - 15 * s} q{6 * s},{-12 * s} {14 * s},{-14 * s}" fill="none" stroke="#3f8f6b" stroke-width="2.4"/><circle cx="{cx}" cy="{ytop - 8 * s}" r="{9 * s}" fill="#d7263d"/><circle cx="{cx - 3 * s}" cy="{ytop - 11 * s}" r="{2.5 * s}" fill="#fff" opacity=".8"/>'
+def _tier(cx, yb, w, h, fill, stroke, sw): return f'<rect x="{cx - w / 2:.1f}" y="{yb - h:.1f}" width="{w:.1f}" height="{h:.1f}" rx="6" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
+def guestman(letters, redi=(), w=70, tag=''):   # name kept for the callers: a pretty three-layer cake
+    ws, hs = [128, 108, 88], [46, 42, 38]
     o = f'<svg viewBox="0 0 160 250" style="width:{w}px;height:auto;display:block;margin:0 auto">'
-    yb = 206; o += f'<rect x="4" y="{yb}" width="112" height="6" rx="3" fill="#c9c7da"/>'
+    yb = 196; o += _stand(80, yb, 128)
     for i in range(3):
-        red = i in redi
-        o += _tier(60, yb, ws[i], hs[i], "#fde6dd" if red else "#fff", R if red else N, 3 if red else 2.4)
-        o += f'<text x="{60 + ws[i] / 2 + 8}" y="{yb - hs[i] / 2 + 11}" font-family="PF" font-size="{34 - i * 3}" font-weight="700" fill="{R if red else N}">{letters[i]}</text>'
-        yb -= hs[i]
-    o += _cherry(60, yb)
+        o += _layer(80, yb, ws[i], hs[i], i, letters[i], i in redi, len(letters[0])); yb -= hs[i]
+    o += _cherry(80, yb)
     if tag:
         tw = 22 + 15 * len(tag.replace('♭', 'b').replace('♯', '#'))
-        o += f'<rect x="{60 - tw / 2}" y="218" width="{tw}" height="30" rx="15" fill="{N}"/><text x="60" y="240" text-anchor="middle" font-family="AH" font-size="21" font-weight="700" fill="#fff">{tag}</text>'
+        o += f'<rect x="{80 - tw / 2}" y="218" width="{tw}" height="30" rx="15" fill="{N}"/><text x="80" y="240" text-anchor="middle" font-family="AH" font-size="21" font-weight="700" fill="#fff">{tag}</text>'
     return o + '</svg>'
-def cake(layers, letters=('C', 'E', 'G'), face=None, w=90, hat=True, red0=True, tags=True):   # the comic panels: a cake of `layers` layers
-    ws, hs = [96, 76, 56], [40, 34, 28]
-    o = f'<svg viewBox="0 0 {160 if tags else 120} 196" style="width:{w}px;height:auto;display:block;margin:0 auto">'
-    yb = 186
-    for i in range(layers):
-        o += _tier(60, yb, ws[i], hs[i], "#fde6dd" if i == 0 else "#fff", R if i == 0 else N, 2.4)
-        if tags: o += f'<text x="{60 + ws[i] / 2 + 6}" y="{yb - hs[i] / 2 + 9}" font-family="PF" font-size="{24 - i * 2}" font-weight="700" fill="{R if i == 0 and red0 else N}">{letters[i]}</text>'
-        yb -= hs[i]
-    if layers == 3 and hat: o += _cherry(60, yb)
+def snowman(balls, letters=('C', 'E', 'G'), face=None, w=90, hat=True, red0=True, tags=True):
+    ws, hs = [118, 98, 78], [40, 36, 32]
+    o = f'<svg viewBox="0 0 160 196" style="width:{w}px;height:auto;display:block;margin:0 auto">'
+    yb = 170; o += _stand(80, yb, 118)
+    for i in range(balls):
+        o += _layer(80, yb, ws[i], hs[i], i, letters[i] if tags else '', False, 1); yb -= hs[i]
+    if balls == 3 and hat: o += _cherry(80, yb, .9)
     return o + '</svg>'
-
-BIGSNOW = '<svg viewBox="0 0 260 300" style="width:100%;max-width:330px;height:auto;display:block;margin:0 auto"><rect x="10" y="280" width="180" height="8" rx="4" fill="#c9c7da"/>' + _tier(100, 280, 160, 70, '#fde6dd', '#e4572e', 3) + _tier(100, 210, 126, 60, '#fff', '#26296b', 3) + _tier(100, 150, 92, 52, '#fff', '#26296b', 3) + _cherry(100, 98) + '<text x="100" y="257" text-anchor="middle" font-family="PF,serif" font-size="36" font-weight="700" fill="#e4572e">C</text><text x="100" y="191" text-anchor="middle" font-family="PF,serif" font-size="32" font-weight="700" fill="#26296b">E</text><text x="100" y="134" text-anchor="middle" font-family="PF,serif" font-size="28" font-weight="700" fill="#26296b">G</text><text x="196" y="252" font-family="AH,Arial" font-size="17" font-weight="700" fill="#e4572e">root</text><text x="176" y="186" font-family="AH,Arial" font-size="17" font-weight="700" fill="#26296b">3rd</text><text x="160" y="130" font-family="AH,Arial" font-size="17" font-weight="700" fill="#26296b">5th</text><text x="200" y="216" font-family="AH,Arial" font-size="13" fill="#8d8fb3">skip D</text><text x="180" y="156" font-family="AH,Arial" font-size="13" fill="#8d8fb3">skip F</text></svg>'
+def building(notes, labels, top_new=1, w=150, h=46):   # a tall pretty cake: one more layer per note
+    n = len(notes); ws = [max(56, 132 - i * 12) for i in range(n)]; hs = [max(28, 42 - i * 2) for i in range(n)]
+    H = sum(hs) + 56; cx = 74
+    VW = max(w + 170, 310)
+    o = f'<svg viewBox="0 0 {VW} {H + 22}" style="width:100%;max-width:{VW}px;height:auto;display:block;margin:0 auto">'
+    yb = H; o += _stand(cx, yb, 132); tops = []
+    for i in range(n):
+        o += _layer(cx, yb, ws[i], hs[i], i, notes[i], i >= n - top_new, 2)
+        o += f'<text x="{cx + 74}" y="{yb - hs[i] / 2 + 6:.1f}" font-family="AH,Arial" font-size="15" font-weight="700" fill="{R if i >= n - top_new else N}">{labels[i]}</text>'
+        tops.append(yb - hs[i]); yb -= hs[i]
+    o += _cherry(cx, yb)
+    if 0 < top_new < n:
+        yt = tops[n - top_new - 1]; xb = cx + 140
+        o += f'<path d="M{xb},{H} h8 V{yt:.1f} h-8" fill="none" stroke="{N}" stroke-width="2"/><text x="{xb + 13}" y="{(H + yt) / 2 + 5:.1f}" font-family="AH,Arial" font-size="14" font-weight="700" fill="{N}">triad</text>'
+        o += f'<path d="M{xb},{yt - 3:.1f} h8 V{yb:.1f} h-8" fill="none" stroke="{R}" stroke-width="2"/><text x="{xb + 13}" y="{(yt + yb) / 2 + 5:.1f}" font-family="AH,Arial" font-size="14" font-weight="700" fill="{R}">+ {"one layer" if top_new == 1 else f"{top_new} layers"}</text>'
+    return o + '</svg>'
+BIGSNOW = building(['C', 'E', 'G'], ['root', '3rd: skip D', '5th: skip F'], 0, w=56).replace('style="width:100%;max-width:', 'style="width:100%;max-height:330px;max-width:1', 1)
 def hero_kinds():   # her 6 Nov: the four kinds side by side, the middle layer (or the top) is what changes
     K = [(('C', 'E', 'G'), (), 'C', 'major', '3 + 2'), (('C', 'E♭', 'G'), (1,), 'Cm', 'minor', '2 + 3'), (('C', 'E♭', 'G♭'), (1, 2), 'C°', 'diminished', '2 + 2'), (('C', 'E', 'G♯'), (2,), 'C+', 'augmented', '3 + 3')]
-    return '<div class="hk4">' + ''.join(f'<div>{guestman(l, r, 112, t)}<b>{n}</b><span>{c}</span></div>' for l, r, t, n, c in K) + '</div>'
+    return '<div class="hk4">' + ''.join(f'<div>{guestman(l, r, 140, t)}<b>{n}</b><span>{c}</span></div>' for l, r, t, n, c in K) + '</div>'
 def hero_keychords():   # the seven cakes of C major; I, IV and V in red
     D = [(('C', 'E', 'G'), 'C', 'I'), (('D', 'F', 'A'), 'Dm', 'ii'), (('E', 'G', 'B'), 'Em', 'iii'), (('F', 'A', 'C'), 'F', 'IV'), (('G', 'B', 'D'), 'G', 'V'), (('A', 'C', 'E'), 'Am', 'vi'), (('B', 'D', 'F'), 'B°', 'vii°')]
     return '<div class="hk7">' + ''.join(f'<div class="{"on" if n in ("I", "IV", "V") else ""}">{guestman(l, (0, 1, 2) if n in ("I", "IV", "V") else (), 74, t)}<b>{n}</b></div>' for l, t, n in D) + '</div>'
@@ -236,23 +261,6 @@ N, R, PINK, SOFT = '#26296b', '#e4572e', '#fde6dd', '#f6f5fa'
 
 def slashman(letters, bass, w=70, tag=''): return '<div class="slm">' + guestman(letters, (), w, tag) + f'<span class="bstone">{bass}</span></div>'
 def bfig(notes, labels, mh=170, tn=1): return building(notes, labels, tn).replace('max-width:', f'max-height:{mh}px;max-width:', 1)
-def building(notes, labels, top_new=1, w=150, h=46):   # her 7 Nov: a taller layer cake, one more layer per note
-    n = len(notes); ws = [max(40, 110 - i * 11) for i in range(n)]; hs = [max(22, 36 - i * 2) for i in range(n)]
-    H = sum(hs) + 50; cx = 62
-    o = f'<svg viewBox="0 0 {w + 160} {H + 10}" style="width:100%;max-width:{w + 160}px;height:auto;display:block;margin:0 auto">'
-    yb = H; o += f'<rect x="2" y="{yb}" width="122" height="6" rx="3" fill="#c9c7da"/>'; tops = []
-    for i in range(n):
-        new = i >= n - top_new
-        o += _tier(cx, yb, ws[i], hs[i], "#fbd2c2" if new else ("#fde6dd" if i == 0 else "#fff"), R if new or i == 0 else N, 2.6 if new else 2.2)
-        o += f'<text x="{cx + 64}" y="{yb - hs[i] / 2 + 7:.1f}" font-family="PF,serif" font-size="{max(16, 23 - i)}" font-weight="700" fill="{R if i == 0 or new else N}">{notes[i]}</text><text x="{cx + 96}" y="{yb - hs[i] / 2 + 6:.1f}" font-family="AH,Arial" font-size="14" fill="{N}">{labels[i]}</text>'
-        tops.append(yb - hs[i]); yb -= hs[i]
-    o += _cherry(cx, yb)
-    if top_new < n:
-        yt = tops[n - top_new - 1]; xb = w + 96
-        o += f'<path d="M{xb},{H} h8 V{yt:.1f} h-8" fill="none" stroke="{N}" stroke-width="2"/><text x="{xb + 13}" y="{(H + yt) / 2 + 5:.1f}" font-family="AH,Arial" font-size="14" font-weight="700" fill="{N}">triad</text>'
-        o += f'<path d="M{xb},{yt - 3:.1f} h8 V{yb:.1f} h-8" fill="none" stroke="{R}" stroke-width="2"/><text x="{xb + 13}" y="{(yt + yb) / 2 + 5:.1f}" font-family="AH,Arial" font-size="14" font-weight="700" fill="{R}">+ {"one layer" if top_new == 1 else f"{top_new} layers"}</text>'
-    return o + '</svg>'
-
 def minikb(keys, nums, W=22, H=90):   # 8 white keys from C; keys = list of (pos, name) where pos counts semitones from C; nums = keys-between labels
     wpos = [0, 2, 4, 5, 7, 9, 11, 12, 14]
     fs = max(13, W * 0.62)   # the count above the keys; the viewBox grows with it so it is never cut off
@@ -354,22 +362,9 @@ H6B = hpage(f"""<div class="kick">Part IV · Harmony · 6 · continued</div>
 {foot('Four kinds of triad p. {{H2}} · Seventh chords p. {{H5}}', 'Workbook Harmony 6 · Online: Library › Chords')}""", 77)
 
 # ---------- Harmony 7 · The tower: 9, 11, 13 (picture-first, her 5 Nov: 'triad on the scale's land, sevenths a floor up, and beyond?') ----------
-def tower(w=150, h=31):
-    fl = [('C', 'root', 0), ('E', '3rd', 0), ('G', '5th', 0), ('B♭', '7th', 1), ('D', '9th', 2), ('F', '11th', 2), ('A', '13th', 2)]
-    n = len(fl); H = n * h + 60
-    o = f'<svg viewBox="0 0 {w + 170} {H}" style="width:100%;max-width:{w + 170}px;height:auto;display:block;margin:0 auto">'
-    o += f'<path d="M6,{H - n * h - 30} L{w / 2 + 6},{H - n * h - 54} L{w + 6},{H - n * h - 30}" fill="none" stroke="{N}" stroke-width="2.5"/>'
-    for i, (nt, lb, k) in enumerate(fl):
-        y = H - 30 - (i + 1) * h
-        fill, st = (PINK, N) if k == 0 else (('#f1effa', N) if k == 1 else ('#fbd2c2', R))
-        o += f'<rect x="10" y="{y}" width="{w - 8}" height="{h - 4}" rx="4" fill="{fill}" stroke="{st}" stroke-width="{2.4 if k == 2 else 2}"/>'
-        o += f'<text x="28" y="{y + 20}" font-family="AH,Arial" font-size="17" font-weight="700" fill="{R if k == 2 else N}">{nt}</text><text x="66" y="{y + 19}" font-family="AH,Arial" font-size="13" fill="{N}">{lb}</text>'
-    def br(a, b, t, col):
-        y1, y2 = H - 30 - a * h - 3, H - 30 - (b + 1) * h + 1
-        return f'<path d="M{w + 12},{y1} L{w + 20},{y1} L{w + 20},{y2} L{w + 12},{y2}" fill="none" stroke="{col}" stroke-width="2"/><text x="{w + 28}" y="{(y1 + y2) / 2 + 5}" font-family="AH,Arial" font-size="13" font-weight="700" fill="{col}">{t}</text>'
-    o += br(0, 2, 'triad', N) + br(3, 3, '+ 7th', N) + br(4, 6, 'top floors', R)
-    o += f'<line x1="0" x2="{w + 20}" y1="{H - 28}" y2="{H - 28}" stroke="{N}" stroke-width="3"/>'
-    return o + '</svg>'
+def tower():   # her 7 Nov: the tall chords as a tall cake: three more layers on top of the seventh
+    return building(['C', 'E', 'G', 'B♭', 'D', 'F', 'A'], ['root', '3rd', '5th', '7th', '9th', '11th', '13th'], 3, w=60).replace('max-width:', 'max-height:270px;max-width:', 1)
+
 def strip():   # two octaves of letters; every other one is a floor of the tower
     L = 'CDEFGABCDEFGA'; W = 34; o = f'<svg viewBox="-2 -4 {len(L) * W + 4} 74" style="width:100%;max-width:{len(L) * W + 4}px;height:auto;display:block;margin:0 auto">'
     for i, c in enumerate(L):
