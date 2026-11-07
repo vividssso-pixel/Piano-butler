@@ -154,7 +154,24 @@ def chord_page():   # her 6 Nov 14:24: page 3 unpacks the chords one at a time (
 <div class="sp"></div>{SUB(C.get('find_title', 'Find it in the song'), C['find'])}{''.join(mus(k) for k in C['find_jobs'])}
 <div class="sp"></div>{SUB(C.get('play_title', 'Play the chords'), C['play'])}{''.join(mus(k) for k in C.get('play_jobs', []))}{STRIP(C['strip']) if C.get('strip') else ''}
 <div class="sp"></div>{LADCHK()}''', 3)
+def lead_page():   # her 7 Nov 13:11: page 3 is a lead sheet in every lesson, with a left-hand pattern that grows
+    L = SONG['lead_page']; P = L.get('pattern')
+    roots = sorted({x[0] for bar in SONG['leadch'] for x in bar}, key=lambda c: 'CDEFGAB'.index(c[0]))
+    names = '<div class="lnames">' + ''.join(f'<span class="lcn">{r}</span>' for r in roots) + '</div>'
+    if P:
+        box = (f'<div class="lpat"><div class="lpt"><div class="kick">{P["title"]}</div><p class="cap2">{P["how"]}</p>{names}</div>'
+               f'<div class="lpm">{mus(L["pjob"])}</div></div>')
+    else:
+        box = (f'<div class="lpat"><div class="lpt"><div class="kick">The names</div><p class="cap2">A name tells the band which chord to play under the tune. '
+               f'Your left hand learns to play them from Lesson 4.</p></div><div class="lpt">{names}</div></div>')
+    steps = '<div class="lsteps">' + ''.join(f'<div class="lst"><span class="pn">{i + 1}</span><span>{t}</span></div>' for i, t in enumerate(L['steps'])) + '</div>'
+    return page(f"""{part(3, 'Lead sheet', L['how'])}
+<div class="sp"></div>{box}
+<div class="sp"></div>{''.join(mus(k) for k in L['jobs'])}
+<div class="sp"></div>{steps}
+<div class="sp"></div>{LADCHK()}""", 3)
 if SONG.get('kind') == 'ready': P3 = ''
+elif SONG.get('lead_page'): P3 = lead_page()
 elif SONG.get('chord_page'): P3 = chord_page()
 elif 'basics' in SONG: P3 = basics_page()
 else: P3 = page(f'''{part(3, 'Play it four ways', 'Each way adds a little more for the left hand. Your teacher tells you which is yours this week.')}
@@ -200,6 +217,10 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .lad{{display:grid;grid-template-columns:118px 34px repeat({len(LSTEPS)},1fr) 34px;gap:6px;align-items:center;margin:3px 0}} .lad.lhd{{margin-bottom:2px}} .lst{{font-size:11px;font-weight:700;color:{MUTE};text-align:center;line-height:1.15}} .lrn{{font-size:14px;font-weight:700}} .lsq{{height:22px;border:1.8px solid {N};border-radius:4px}}
 .yrs{{display:grid;grid-template-columns:1fr 1fr;gap:24px;border-top:1px solid #d9d6ea;padding-top:10px}} .yrs .ticks{{gap:6px;margin:4px 0 0}} .yrs .tk{{font-size:14.5px}} .menu ol{{margin:2px 0 6px;padding-left:20px;font-size:14.5px;line-height:1.55}} .days{{display:flex;gap:9px}} .dy{{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:{MUTE}}}
 .posx{{margin:2px 0 4px}} .posx p{{margin:2px 0}}
+.lpat{{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;align-items:center;border:1.5px solid rgba(38,41,107,.18);border-radius:10px;padding:10px 14px}} .lpat .kick{{margin-bottom:2px}} .lpat p{{margin:2px 0 6px}}
+.lnames{{display:flex;gap:8px;flex-wrap:wrap}} .lcn{{font:700 20px 'AH',Arial;color:#26296b;border:1.5px solid #26296b;border-radius:8px;min-width:40px;text-align:center;padding:3px 8px}}
+.lsteps{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}} .lst{{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}} .lst .pn{{flex:none}}
+.mus g.harm text{{font-family:'AH',Arial,sans-serif!important;font-weight:700;fill:#26296b}}
 .lw2{{display:grid;grid-template-columns:1fr 1.5fr;gap:14px;align-items:stretch}} .lw2>.listen,.lw2>.wow{{margin:0}}
 [hidden]{{display:none!important}}
 .strip{{display:grid;grid-template-columns:repeat(4,1fr);border-left:2px solid {N};margin:8px 0 0}} .sc{{border-right:2px solid {N};border-top:1.5px solid #d9d6ea;border-bottom:1.5px solid #d9d6ea;padding:8px 0;text-align:center;font-family:'Playfair Display',serif;font-weight:700;font-size:30px;color:{N}}}
