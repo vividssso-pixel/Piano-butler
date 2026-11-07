@@ -118,14 +118,14 @@ SUB = lambda t, how: f'<div class="sub"><span>{t}</span></div><p class="how">{ho
 LISTEN = f'<div class="listen">{qr(URL, 52)}<div><div class="lh2">Listen first</div><p>Scan the code: listen to the whole song once, then hum along the second time.</p></div></div>'
 if SONG.get('p1_tight'): LISTEN = LISTEN.replace('listen to the whole song once, then hum along the second time.', 'listen once, then hum along.')
 # p1_tight (her 7 Nov 00:51, '조정해줘'): a long song's page 1 gives its room to the notes -- no chip row, and Listen first and the wow moment side by side
-TOP1 = (f'<div class="lw2">{LISTEN}{WOW}</div>' if SONG.get('p1_tight') else f'<div class="chips"><span class="cl">In this song</span>{chips}</div>\n' + LISTEN)
+TOP1 = (f'<div class="lw2">{LISTEN}{WOW}</div>' if SONG.get('p1_tight') else f'<div class="chips"><span class="cl">In this song</span>{chips}</div>\n' + (f'<div class="lw2">{LISTEN}{WOW}</div>' if WOW else LISTEN))   # the wow beside Listen first, so page 1 keeps its song (7 Nov)
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <p class="lead">{LEAD}</p>
 {TOP1}
 <div class="sp"></div>{part(1, 'Meet the song', SONG.get('sing_how', 'Listen, pointing to each note as it sounds. Then sing it with the words.'))}
 {POS}
 <div class="sp"></div>{LINES('sing')}
-{'' if SONG.get('p1_tight') else WOW}<div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
+<div class="end">{ticks(SONG.get('sing_ticks', ['Listened and pointed', 'Sang it with the words']), True)}</div>''', 1)
 
 NAMES = LINES('name') if not SONG.get('names_row') else '<div class="trow">' + ''.join(mus(k) for k in sorted(k for k in V if k.startswith('name') and k[4:].isdigit())) + '</div>'
 # New in this song: one picture, one line, and where the Handbook takes it further (her 4 Nov 22:08)
@@ -187,7 +187,8 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .pg{{width:794px;height:1123px;background:#fff;margin:0 auto 24px;position:relative;overflow:hidden;padding:42px 58px 0;page-break-after:always}}
 .top{{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.16em;color:#8a8cb0}} .rule{{height:5px;border-top:1.5px solid {N};border-bottom:.6px solid {N};margin:7px 0 18px}}
 .body{{height:965px;overflow:hidden;display:flex;flex-direction:column}} .body>.end{{margin-top:auto}}
-.body>.end:not(:last-child){{margin-top:14px;margin-bottom:22px}} .sp{{flex:1 1 0;min-height:10px;max-height:64px}} .body>.ph{{margin-top:6px}} .body>.mus{{margin-top:6px}}
+.body>.end:not(:last-child){{margin-top:14px;margin-bottom:22px}} .sp{{flex:1 1 0;min-height:30px;max-height:64px}}
+.body .mus+.mus{{margin-top:36px}} .body>.ph{{margin-top:6px}} .body>.mus{{margin-top:6px}}
 .foot{{position:absolute;left:0;right:0;bottom:30px;text-align:center}} .foot span{{display:inline-block;color:{N};font:700 13px 'AH',Arial;letter-spacing:.08em}}
 .kick{{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:{C}}} h1{{font-family:'PF',Georgia,serif;font-size:40px;line-height:1.1;margin:3px 0 8px;font-weight:700}}
 .lead{{font-size:17px;line-height:1.5;margin:0 0 8px}} p{{font-size:16px;line-height:1.5;margin:4px 0 8px}}
@@ -223,9 +224,9 @@ p, .how, .cap2, .lead, .tog span, .lst span{{text-wrap:pretty}}
 .yrs{{display:grid;grid-template-columns:1fr 1fr;gap:24px;border-top:1px solid #d9d6ea;padding-top:10px}} .yrs .ticks{{gap:6px;margin:4px 0 0}} .yrs .tk{{font-size:14.5px}} .menu ol{{margin:2px 0 6px;padding-left:20px;font-size:14.5px;line-height:1.55}} .days{{display:flex;gap:9px}} .dy{{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:700;color:{MUTE}}}
 .posx{{margin:2px 0 4px}} .posx p{{margin:2px 0}}
 .lpat{{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;align-items:center;border:1.5px solid rgba(38,41,107,.18);border-radius:10px;padding:10px 14px}} .lpat .kick{{margin-bottom:2px}} .lpat p{{margin:2px 0 6px}}
-.lnames{{display:flex;gap:8px;flex-wrap:wrap}} .lcn{{font:700 20px 'AH',Arial;color:#26296b;border:1.5px solid #26296b;border-radius:8px;min-width:40px;text-align:center;padding:3px 8px}}
+.lnames{{display:flex;gap:8px;flex-wrap:wrap}} .lcn{{font:700 20px 'AH',Arial;color:#fff;background:#e4572e;border:1.5px solid #e4572e;border-radius:8px;min-width:40px;text-align:center;padding:3px 8px}}
 .lsteps{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}} .lst{{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}} .lst .pn{{flex:none}}
-.mus g.harm text{{font-family:'AH',Arial,sans-serif!important;font-weight:700;fill:#26296b}} .mus g.harm rect.hbox{{fill:#fff;stroke:#26296b;stroke-width:22}}
+.mus g.harm text{{font-family:'AH',Arial,sans-serif!important;font-weight:700;fill:#fff}} .mus g.harm rect.hbox{{fill:#e4572e;stroke:none}}
 .trk{{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:center;border:1.5px dashed rgba(228,87,46,.55);border-radius:10px;padding:8px 14px}} .trk .tog{{margin:0;border:0;padding:0;display:block}} .trk .tog .tgh{{display:block;margin-bottom:3px}}
 .lw2{{display:grid;grid-template-columns:1fr 1.5fr;gap:14px;align-items:stretch}} .lw2>.listen,.lw2>.wow{{margin:0}}
 [hidden]{{display:none!important}}
@@ -255,31 +256,48 @@ if SONG.get('more'):
 <div class="sp"></div><div class="end">{ticks(SONG.get('more_ticks', ['Played the first tune', 'Played the second tune', 'Played my own tune']), True)}</div>''', 4)
 BODY = ready_pages() if SONG.get('kind') == 'ready' else P1 + P2 + P3 + P4
 PAGINATE = r"""<script>
-// Pages grow, the music never shrinks (her 7 Nov 14:11: '페이지 늘어나도 괜찮으니 악보가 줄어들게 하지는 말자'): a page whose
-// content runs past its foot hands its last blocks to a new page right after it (a heading goes with what follows it).
+// Pages grow, the music never shrinks (her 7 Nov 14:11). Each part starts on its own page (14:34: '3번이 페이지 중간에 오지 않게').
+// Inside a part, the blocks go in groups: a heading or a tune's name with its words and its lines. A group that does not fit
+// goes to the next page whole; a tune too tall for any page is cut between its lines, about half and half.
 function paginate(){
   const fits = b => b.scrollHeight <= b.clientHeight + 0.5;
-  // a heading, a tune's name or its one-line how: it stays with the music that follows it
-  const lead = k => !k.matches('.mus, .end, .trk, .lpat, .sp') && !k.querySelector('.mus') && k.getBoundingClientRect().height < 90;
-  for (let pg = document.querySelector('.pg'); pg; pg = pg.nextElementSibling) {
-    if (!pg.classList || !pg.classList.contains('pg')) continue;
-    const body = pg.querySelector('.body'); if (fits(body) || body.children.length < 2) continue;
-    const nx = pg.cloneNode(true), nb = nx.querySelector('.body'); nb.innerHTML = ''; nb.classList.add('cont');
-    while (!fits(body) && body.children.length > 1) nb.prepend(body.lastElementChild);
-    // a new page never holds only the ticks and steps: it takes at least one piece of music (or a real block) with it
-    const real = () => [...nb.children].some(k => k.matches('.mus, .trk, .lpat') || k.querySelector('.mus'));
-    while (!real() && body.children.length > 2) nb.prepend(body.lastElementChild);
-    while (body.children.length > 1 && (body.lastElementChild.matches('.ph, .how, .kick, h1, h2, h3') || lead(body.lastElementChild))) nb.prepend(body.lastElementChild);
-    pg.after(nx);
+  const starts = k => k.matches('.ph, .sub, .kick');
+  const newPage = pg => { const nx = pg.cloneNode(true), nb = nx.querySelector('.body'); nb.innerHTML = ''; nb.classList.add('cont'); pg.after(nx); return nx; };
+  for (const pg0 of [...document.querySelectorAll('.pg')]) {
+    const body0 = pg0.querySelector('.body'); if (fits(body0)) continue;
+    const items = [...body0.children], groups = [];
+    for (const k of items) { if (!groups.length || (starts(k) && groups[groups.length - 1].some(x => !x.matches('.sp')))) groups.push([]); groups[groups.length - 1].push(k); }
+    body0.innerHTML = ''; let pg = pg0, cur = body0;
+    const put = (g) => { g.forEach(k => cur.append(k)); };
+    const take = (g) => { g.forEach(k => k.remove()); };
+    const fresh = () => { pg = newPage(pg); cur = pg.querySelector('.body'); };
+    const lone = () => !cur.children.length;
+    for (let g of groups) {
+      put(g); if (fits(cur)) continue; take(g);
+      if (!g.some(k => k.matches('.mus, .trk, .lpat')) && g.reduce((h, k) => h + k.getBoundingClientRect().height, 0) < 160) {
+        const sps = [...cur.querySelectorAll(':scope > .sp')]; sps.forEach(k => k.style.minHeight = '12px'); put(g); if (fits(cur)) continue; take(g); sps.forEach(k => k.style.minHeight = ''); }
+      const used = () => cur.lastElementChild ? (cur.lastElementChild.getBoundingClientRect().bottom - cur.getBoundingClientRect().top) / cur.clientHeight : 0;
+      let most = false;   // the page is less than half full: fill it, cutting the group between its lines, rather than leave it empty
+      if (!lone() && used() < 0.5 && g.some(k => k.matches('.mus'))) most = true;
+      else if (!lone()) { fresh(); put(g); if (fits(cur)) continue; take(g); }
+      // too tall for a page: cut between its lines, the first part about half the lines (fewer if they do not fit)
+      while (g.length) {
+        const lines = g.map((k, i) => k.matches('.mus') ? i : -1).filter(i => i >= 0);
+        const lone2 = !cur.children.length;
+        let n = most ? lines.length : Math.ceil(lines.length / 2), done = false; most = false;
+        for (; n >= 1; n--) { const a = g.slice(0, lines[n - 1] + 1); put(a); if (fits(cur) || (n === 1 && lone2)) { g = g.slice(lines[n - 1] + 1); done = true; break; } take(a); }
+        if (!done) { if (lone2) { put(g); break; } fresh(); continue; }   // not one line fits here: start the group on a new page
+        if (!g.length) break;
+        if (!g.some(k => k.matches('.mus'))) {   // only the ticks are left: close up this page's spacers a little rather than give them a page
+          const sps = [...cur.querySelectorAll(':scope > .sp')]; sps.forEach(k => k.style.minHeight = '12px'); put(g);
+          if (fits(cur)) { g = []; break; } take(g); sps.forEach(k => k.style.minHeight = ''); }
+        while (g.length && g[0].matches('.sp')) g.shift().remove();
+        fresh(); put(g); if (fits(cur)) { g = []; break; } take(g);
+        if (g.filter(k => k.matches('.mus')).length < 2) { put(g); g = []; }
+      }
+    }
   }
-  // a page made by a spill is filled up with what comes next, so no page is left half empty (the next part starts there)
-  for (const c of [...document.querySelectorAll('.body.cont')]) {
-    const pg = c.closest('.pg'), nx = pg.nextElementSibling; if (!nx || !nx.classList.contains('pg')) continue;
-    const nb = nx.querySelector('.body'), moved = [];
-    while (nb.firstElementChild) { const k = nb.firstElementChild; c.append(k); moved.push(k); if (!fits(c)) { nb.prepend(k); moved.pop(); break; } }
-    while (moved.length && nb.firstElementChild && (moved[moved.length - 1].matches('.ph, .how, .kick, h1, h2, h3, .sp') || lead(moved[moved.length - 1]))) nb.prepend(moved.pop());
-    if (!nb.firstElementChild) nx.remove(); else nb.classList.add('cont');
-  }
+  document.querySelectorAll('.pg').forEach(pg => { const b = pg.querySelector('.body'); while (b.firstElementChild && b.firstElementChild.matches('.sp') && b.classList.contains('cont')) b.firstElementChild.remove(); });
   document.querySelectorAll('.pg .foot span').forEach((f, i) => f.textContent = i + 1);
   window.__paged = 1;
 }
