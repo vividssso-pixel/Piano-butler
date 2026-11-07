@@ -98,7 +98,7 @@ def _stand(cx, yb, w):
 def _cherry(cx, ytop, s=1):
     return f'<path d="M{cx},{ytop - 15 * s} q{6 * s},{-12 * s} {14 * s},{-14 * s}" fill="none" stroke="#3f8f6b" stroke-width="2.4"/><circle cx="{cx}" cy="{ytop - 8 * s}" r="{9 * s}" fill="#d7263d"/><circle cx="{cx - 3 * s}" cy="{ytop - 11 * s}" r="{2.5 * s}" fill="#fff" opacity=".8"/>'
 def _tier(cx, yb, w, h, fill, stroke, sw): return f'<rect x="{cx - w / 2:.1f}" y="{yb - h:.1f}" width="{w:.1f}" height="{h:.1f}" rx="6" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
-def guestman(letters, redi=(), w=70, tag=''):   # name kept for the callers: a pretty three-layer cake
+def cakeman(letters, redi=(), w=70, tag=''):   # a pretty three-layer cake: chapter heroes only (her 7 Nov: one cake per chapter)
     ws, hs = [128, 108, 88], [46, 42, 38]
     o = f'<svg viewBox="0 0 160 250" style="width:{w}px;height:auto;display:block;margin:0 auto">'
     yb = 196; o += _stand(80, yb, 128)
@@ -117,7 +117,7 @@ def snowman(balls, letters=('C', 'E', 'G'), face=None, w=90, hat=True, red0=True
         o += _layer(80, yb, ws[i], hs[i], i, letters[i] if tags else '', False, 1); yb -= hs[i]
     if balls == 3 and hat: o += _cherry(80, yb, .9)
     return o + '</svg>'
-def building(notes, labels, top_new=1, w=150, h=46):   # a tall pretty cake: one more layer per note
+def cake_tall(notes, labels, top_new=1, w=150, h=46):   # a tall pretty cake: chapter heroes only
     n = len(notes); ws = [max(56, 132 - i * 12) for i in range(n)]; hs = [max(28, 42 - i * 2) for i in range(n)]
     H = sum(hs) + 56; cx = 74
     VW = max(w + 170, 310)
@@ -133,13 +133,37 @@ def building(notes, labels, top_new=1, w=150, h=46):   # a tall pretty cake: one
         o += f'<path d="M{xb},{H} h8 V{yt:.1f} h-8" fill="none" stroke="{N}" stroke-width="2"/><text x="{xb + 13}" y="{(H + yt) / 2 + 5:.1f}" font-family="AH,Arial" font-size="14" font-weight="700" fill="{N}">triad</text>'
         o += f'<path d="M{xb},{yt - 3:.1f} h8 V{yb:.1f} h-8" fill="none" stroke="{R}" stroke-width="2"/><text x="{xb + 13}" y="{(yt + yb) / 2 + 5:.1f}" font-family="AH,Arial" font-size="14" font-weight="700" fill="{R}">+ {"one layer" if top_new == 1 else f"{top_new} layers"}</text>'
     return o + '</svg>'
-BIGSNOW = building(['C', 'E', 'G'], ['root', '3rd: skip D', '5th: skip F'], 0, w=56).replace('style="width:100%;max-width:', 'style="width:100%;max-height:330px;max-width:1', 1)
+
+def guestman(letters, redi=(), w=70, tag=''):   # her 7 Nov: everywhere but the chapter heroes, a clean chord stack of letter tiles
+    o = f'<svg viewBox="0 0 160 250" style="width:{w}px;height:auto;display:block;margin:0 auto">'
+    for i in range(3):
+        red = i in redi; y = 150 - i * 62
+        o += f'<rect x="22" y="{y}" width="116" height="54" rx="12" fill="{"#fde6dd" if red else "#fff"}" stroke="{R if red else N}" stroke-width="3"/><text x="80" y="{y + 39}" text-anchor="middle" font-family="PF,serif" font-size="34" font-weight="700" fill="{R if (red or i == 0) else N}">{letters[i]}</text>'
+    if tag:
+        tw = 22 + 15 * len(tag.replace('♭', 'b').replace('♯', '#'))
+        o += f'<rect x="{80 - tw / 2}" y="214" width="{tw}" height="32" rx="16" fill="{N}"/><text x="80" y="237" text-anchor="middle" font-family="AH" font-size="22" font-weight="700" fill="#fff">{tag}</text>'
+    return o + '</svg>'
+def snowman(balls, letters=('C', 'E', 'G'), face=None, w=90, hat=True, red0=True, tags=True):
+    o = f'<svg viewBox="0 0 160 196" style="width:{w}px;height:auto;display:block;margin:0 auto">'
+    for i in range(balls):
+        y = 140 - i * 50
+        o += f'<rect x="30" y="{y}" width="100" height="44" rx="10" fill="#fff" stroke="{N}" stroke-width="2.6"/><text x="80" y="{y + 31}" text-anchor="middle" font-family="PF,serif" font-size="27" font-weight="700" fill="{R if (i == 0 and red0) else N}">{letters[i] if tags else ""}</text>'
+    return o + '</svg>'
+def building(notes, labels, top_new=1, w=150, h=46):   # a tall chord stack with labels (Examples); the pretty tall cake is cake_tall()
+    n = len(notes); th, gap = 40, 6; H = n * (th + gap) + 20
+    o = f'<svg viewBox="0 0 300 {H}" style="width:100%;max-width:300px;height:auto;display:block;margin:0 auto">'
+    for i in range(n):
+        y = H - 14 - (i + 1) * (th + gap); new = i >= n - top_new
+        o += f'<rect x="20" y="{y}" width="96" height="{th}" rx="10" fill="{"#fde6dd" if new else "#fff"}" stroke="{R if new else N}" stroke-width="2.6"/><text x="68" y="{y + 29}" text-anchor="middle" font-family="PF,serif" font-size="24" font-weight="700" fill="{R if (i == 0 or new) else N}">{notes[i]}</text><text x="128" y="{y + 26}" font-family="AH,Arial" font-size="16" font-weight="700" fill="{R if new else N}">{labels[i]}</text>'
+    return o + '</svg>'
+
+BIGSNOW = cake_tall(['C', 'E', 'G'], ['root', '3rd: skip D', '5th: skip F'], 0, w=56).replace('style="width:100%;max-width:', 'style="width:100%;max-height:330px;max-width:1', 1)
 def hero_kinds():   # her 6 Nov: the four kinds side by side, the middle layer (or the top) is what changes
     K = [(('C', 'E', 'G'), (), 'C', 'major', '3 + 2'), (('C', 'E♭', 'G'), (1,), 'Cm', 'minor', '2 + 3'), (('C', 'E♭', 'G♭'), (1, 2), 'C°', 'diminished', '2 + 2'), (('C', 'E', 'G♯'), (2,), 'C+', 'augmented', '3 + 3')]
-    return '<div class="hk4">' + ''.join(f'<div>{guestman(l, r, 140, t)}<b>{n}</b><span>{c}</span></div>' for l, r, t, n, c in K) + '</div>'
+    return '<div class="hk4">' + ''.join(f'<div>{cakeman(l, r, 140, t)}<b>{n}</b><span>{c}</span></div>' for l, r, t, n, c in K) + '</div>'
 def hero_keychords():   # the seven cakes of C major; I, IV and V in red
     D = [(('C', 'E', 'G'), 'C', 'I'), (('D', 'F', 'A'), 'Dm', 'ii'), (('E', 'G', 'B'), 'Em', 'iii'), (('F', 'A', 'C'), 'F', 'IV'), (('G', 'B', 'D'), 'G', 'V'), (('A', 'C', 'E'), 'Am', 'vi'), (('B', 'D', 'F'), 'B°', 'vii°')]
-    return '<div class="hk7">' + ''.join(f'<div class="{"on" if n in ("I", "IV", "V") else ""}">{guestman(l, (0, 1, 2) if n in ("I", "IV", "V") else (), 74, t)}<b>{n}</b></div>' for l, t, n in D) + '</div>'
+    return '<div class="hk7">' + ''.join(f'<div class="{"on" if n in ("I", "IV", "V") else ""}">{cakeman(l, (0, 1, 2) if n in ("I", "IV", "V") else (), 74, t)}<b>{n}</b></div>' for l, t, n in D) + '</div>'
 
 H1 = hpage(f"""{head('Part IV · Harmony · 1', 'Chords and triads', 'Press three or more notes at once and you have a <b>chord</b>. The favourite of all is the <b>triad</b>: three notes stacked like a layer cake.')}
 {two(BIGSNOW, '<div class="big3"><div><span>1</span><p>Pick a note: the <b class="co">root</b>, the big layer at the bottom. It holds the chord up and gives it its name.</p></div><div><span>2</span><p>Skip one letter, take the next: <b>E</b>, the <b>3rd</b>.</p></div><div><span>3</span><p>Skip again: <b>G</b>, the <b>5th</b>. C E G is the triad of C.</p></div></div>' + kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), dot(2, '3'), dot(4, '5')], scale=1.0) + '<p class="sm" style="text-align:center;margin:4px 0 0">On the keys: play one, skip one (shaded), play one, skip one, play one.</p>', '1.1fr 1fr')}
@@ -236,7 +260,7 @@ ROLL = f'<svg viewBox="0 0 70 60" style="width:56px;height:auto"><path d="M8,44 
 def figs(rn, top='', bot=''):   # a Roman numeral with stacked figures, as written in harmony class: I⁶₄
     if not top: return f'<span class="rn">{rn}</span>'
     return f'<span class="rn">{rn}<span class="fg"><i>{top}</i><i>{bot}</i></span></span>'
-INVH = ('<div class="inv3">' + ''.join(f'<div class="ic"><b>{t}</b>{guestman(l, r, 112)}<span class="bs">bottom: {bs}</span></div>' + (ROLL if i < 2 else '')
+INVH = ('<div class="inv3">' + ''.join(f'<div class="ic"><b>{t}</b>{cakeman(l, r, 112)}<span class="bs">bottom: {bs}</span></div>' + (ROLL if i < 2 else '')
          for i, (t, l, r, sym, cl, bs) in enumerate([('root position', ('C', 'E', 'G'), (0,), '', '', 'C, the root'), ('1st inversion', ('E', 'G', 'C'), (2,), '', '', 'E, the 3rd'), ('2nd inversion', ('G', 'C', 'E'), (1,), '', '', 'G, the 5th')])) + '</div>')
 H4 = hpage(f"""{head('Part IV · Harmony · 4', 'Inversions', 'Same three notes, a different one at the bottom. The chord keeps its name; only the bass changes. The red layer is the root, C: watch it travel.')}
 {INVH}
@@ -283,7 +307,7 @@ KINDS7 = [('Cmaj7', 'C E G B', [(0, 'C'), (4, 'E'), (7, 'G'), (11, 'B')], '3 + 2
 CARDS = '<div class="k7">' + ''.join(f'<div class="kc"><b class="ks">{s}</b>{minikb(k, f)}<span class="kn">{n}</span><span class="km">{m}</span><span class="kw">{w}</span></div>' for s, n, k, f, m, w in KINDS7) + '</div>'
 
 H5A = hpage(f"""{head('Part IV · Harmony · 5', 'Seventh chords', 'Add one more layer to the cake and the chord changes colour: dreamy, bluesy, spooky. Same rule as before: skip one note, stack the next. The new note is the <b class="co">7th</b>.')}
-{two(building(['C', 'E', 'G', 'B'], ['root', '3rd', '5th', '7th']), '<div class="big3"><div><span>1</span><p>Build the triad: <b>C E G</b>.</p></div><div><span>2</span><p>Skip one, add the next: <b class="co">B</b>.</p></div><div><span>3</span><p>Count the keys between: <b>3 + 2 + 3</b>. That is <b>Cmaj7</b>.</p></div></div>' + minikb([(0, 'C'), (4, 'E'), (7, 'G'), (11, 'B')], '3 + 2 + 3', 34, 110), '1fr 1.1fr')}
+{two(cake_tall(['C', 'E', 'G', 'B'], ['root', '3rd', '5th', '7th']), '<div class="big3"><div><span>1</span><p>Build the triad: <b>C E G</b>.</p></div><div><span>2</span><p>Skip one, add the next: <b class="co">B</b>.</p></div><div><span>3</span><p>Count the keys between: <b>3 + 2 + 3</b>. That is <b>Cmaj7</b>.</p></div></div>' + minikb([(0, 'C'), (4, 'E'), (7, 'G'), (11, 'B')], '3 + 2 + 3', 34, 110), '1fr 1.1fr')}
 {h3('Five flavours, all on C')}
 {CARDS}
 <p class="sm">How the names work: major triad + major 7th = <b>maj7</b> · major triad + minor 7th = <b>7</b> · minor triad + minor 7th = <b>m7</b> · diminished triad + minor 7th = <b>ø7</b> · diminished triad + diminished 7th = <b>°7</b>.</p>
@@ -363,7 +387,7 @@ H6B = hpage(f"""<div class="kick">Part IV · Harmony · 6 · continued</div>
 
 # ---------- Harmony 7 · The tower: 9, 11, 13 (picture-first, her 5 Nov: 'triad on the scale's land, sevenths a floor up, and beyond?') ----------
 def tower():   # her 7 Nov: the tall chords as a tall cake: three more layers on top of the seventh
-    return building(['C', 'E', 'G', 'B♭', 'D', 'F', 'A'], ['root', '3rd', '5th', '7th', '9th', '11th', '13th'], 3, w=60).replace('max-width:', 'max-height:270px;max-width:', 1)
+    return cake_tall(['C', 'E', 'G', 'B♭', 'D', 'F', 'A'], ['root', '3rd', '5th', '7th', '9th', '11th', '13th'], 3, w=60).replace('max-width:', 'max-height:270px;max-width:', 1)
 
 def strip():   # two octaves of letters; every other one is a floor of the tower
     L = 'CDEFGABCDEFGA'; W = 34; o = f'<svg viewBox="-2 -4 {len(L) * W + 4} 74" style="width:100%;max-width:{len(L) * W + 4}px;height:auto;display:block;margin:0 auto">'
@@ -486,7 +510,7 @@ CADS = [('.', 'Perfect', 'V → I', (('G', 'B', 'D'), 'V'), (('C', 'E', 'G'), 'I
         ('Amen', 'Plagal', 'IV → I', (('F', 'A', 'C'), 'IV'), (('C', 'E', 'G'), 'I'), 'A soft, gentle end.'),
         (',', 'Imperfect', '… → V', (('C', 'E', 'G'), 'I'), (('G', 'B', 'D'), 'V'), 'To be continued…'),
         ('?!', 'Interrupted', 'V → vi', (('G', 'B', 'D'), 'V'), (('A', 'C', 'E'), 'vi'), 'Surprise! Not home.')]
-PCARDS = '<div class="pc4">' + ''.join(f'<div class="pc"><span class="pmark{" pw" if len(m) > 2 else ""}">{m}</span><b>{n}</b><i>{c}</i><div class="pair">{guestman(a[0], (), 56, a[1])}{arrow_svg()}{guestman(z[0], (0, 1, 2), 56, z[1])}</div><span class="pf">{f}</span></div>' for m, n, c, a, z, f in CADS) + '</div>'
+PCARDS = '<div class="pc4">' + ''.join(f'<div class="pc"><span class="pmark{" pw" if len(m) > 2 else ""}">{m}</span><b>{n}</b><i>{c}</i><div class="pair">{cakeman(a[0], (), 56, a[1])}{arrow_svg()}{cakeman(z[0], (0, 1, 2), 56, z[1])}</div><span class="pf">{f}</span></div>' for m, n, c, a, z, f in CADS) + '</div>'
 H10 = hpage(f"""{head('Part IV · Harmony · 10', 'Cadences', 'A phrase is a musical sentence, and it needs punctuation. The last two chords of a phrase are its <b>cadence</b>. They tell you: finished, taking a breath, or surprise!')}
 {PCARDS}
 <div class="big3 h3x"><div><span>1</span><p>Find the end of a phrase: often a long note, or a breath.</p></div><div><span>2</span><p>Name its <b>last two chords</b> with numerals: V I, IV I, anything then V, or V vi.</p></div><div><span>3</span><p>Match the punctuation: full stop ( <b class="co">.</b> ), Amen, comma ( <b class="co">,</b> ) or <b class="co">?!</b></p></div></div>
@@ -508,7 +532,7 @@ H10 = hpage(f"""{head('Part IV · Harmony · 10', 'Cadences', 'A phrase is a mus
 # ---------- Harmony 11 · Chords under a melody ----------
 HOLD = [('C', ('I', 'IV')), ('D', ('V',)), ('E', ('I',)), ('F', ('IV',)), ('G', ('I', 'V')), ('A', ('IV',)), ('B', ('V',))]
 HCOL = {'I': '#e4572e', 'IV': '#26296b', 'V': '#3f8f6b'}
-HOLDMAP = ('<div class="hold3">' + ''.join(f'<div>{guestman(l, (), 96, t).replace("fill=\"#26296b\"/><text x=\"60\" y=\"237\"", f"fill=\"{HCOL[t]}\"/><text x=\"60\" y=\"237\"")}</div>' for l, t in ((('C', 'E', 'G'), 'I'), (('F', 'A', 'C'), 'IV'), (('G', 'B', 'D'), 'V'))) + '</div>'
+HOLDMAP = ('<div class="hold3">' + ''.join(f'<div>{cakeman(l, (), 96, t).replace("fill=\"#26296b\"/><text x=\"80\" y=\"240\"", f"fill=\"{HCOL[t]}\"/><text x=\"80\" y=\"240\"")}</div>' for l, t in ((('C', 'E', 'G'), 'I'), (('F', 'A', 'C'), 'IV'), (('G', 'B', 'D'), 'V'))) + '</div>'
            + '<div class="hold7">' + ''.join(f'<div><b>{n}</b>' + ''.join(f'<span style="background:{HCOL[c]}">{c}</span>' for c in cs) + '</div>' for n, cs in HOLD) + '</div>')
 H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The melody is the singer; the chords are the band. To choose a chord for each bar, look at the melody’s main notes and pick the cake holding them.')}
 {hero(HOLDMAP, 'Which cake holds the tune’s main notes?')}
