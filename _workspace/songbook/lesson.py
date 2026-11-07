@@ -273,10 +273,12 @@ function paginate(){
     // never below 85% of its size; more than that, and it goes on to the next page at full size
     { const ms = [...body0.querySelectorAll('.mus')], w0 = ms.map(m => m.style.maxWidth);
       const over = body0.scrollHeight - body0.clientHeight, mh = ms.reduce((h, m) => h + m.getBoundingClientRect().height, 0);
-      if (ms.length && over < mh * 0.15) {
-        for (let f = 0.98; f >= 0.85; f -= 0.01) { ms.forEach(m => { const r = m.parentElement.getBoundingClientRect().width, cur = m.getBoundingClientRect().width; m.dataset.w = m.dataset.w || cur; m.style.maxWidth = (m.dataset.w * f) + 'px'; }); if (fits(body0)) break; }
+      const lo = body0.querySelector(':scope > .ph .pn') && body0.querySelector(':scope > .ph .pn').textContent.trim() === '+' ? 0.8 : 0.85;   // More to play: down to 80%
+      if (ms.length) {   // always try: the spacers close up a little too (her 16:52: no half-empty last pages)
+        body0.querySelectorAll(':scope > .sp').forEach(k => k.style.minHeight = '16px');
+        for (let f = 0.98; f >= lo; f -= 0.01) { ms.forEach(m => { const r = m.parentElement.getBoundingClientRect().width, cur = m.getBoundingClientRect().width; m.dataset.w = m.dataset.w || cur; m.style.maxWidth = (m.dataset.w * f) + 'px'; }); if (fits(body0)) break; }
         if (fits(body0)) continue;
-        ms.forEach((m, i) => { m.style.maxWidth = w0[i]; delete m.dataset.w; }); } }
+        ms.forEach((m, i) => { m.style.maxWidth = w0[i]; delete m.dataset.w; }); body0.querySelectorAll(':scope > .sp').forEach(k => k.style.minHeight = ''); } }
     const items = [...body0.children], groups = [];
     for (const k of items) { if (!groups.length || (starts(k) && groups[groups.length - 1].some(x => !x.matches('.sp')))) groups.push([]); groups[groups.length - 1].push(k); }
     body0.innerHTML = ''; let pg = pg0, cur = body0;
