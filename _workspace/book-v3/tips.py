@@ -10,7 +10,7 @@ FIG = f'<figure class="vx px tq sixf"><div class="vs">{svg}</div></figure>'
 READ = [('The finger number', '<b class="co">3</b>: the middle finger plays it. Fingering is planned, not guessed.', 'Playing and listening (later)'),
         ('The beat', 'Beat 1 of bar 2, and it is held for <b>two beats</b>.', 'Part II · Time · p. {{T1}}'),
         ('The note name', '<b class="co">E</b>: the white key just right of the two black keys.', 'Part I · Pitch · p. {{P1}}'),
-        ('The chord', 'The <b>C</b> above the staff: this E belongs to the C major chord.', 'Part IV · Harmony · p. {{H1}}'),
+        ('The chord', 'The <b>C</b> above the staff: this E belongs to the C major chord.', 'Part IV · Chords · p. {{H1}}'),
         ('The marks', '<b style="font-family:PF,serif;font-style:italic;font-size:17px">p</b> and the slur: play it softly and smoothly.', 'Expression (later)'),
         ('The phrase', 'The slur ends here, so the note lands gently, like the end of a sentence.', 'Shape and style (later)')]
 T1 = tpage(f"""{head('Putting it together · 1', 'Everything one note tells you', 'Look at the red note. It carries six pieces of information at once, and each one can be read straight off the page. Read all six and the note is right; miss one and it is only nearly right.')}

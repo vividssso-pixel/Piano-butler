@@ -199,13 +199,13 @@ SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the t
  'T1': 'The beat never stops, not even in a rest. Feel it before you play.', 'T2': 'Each note is half the one above it, and every note has a rest twin.',
  'T3': 'A dot adds half. A tie glues two notes into one.', 'T4': 'Top number: how many beats. Bottom number: which note gets one beat.',
  'T5': 'Dotted beats split in three: 6/8 is two big beats.', 'T6': 'Beams group notes into beats; an upbeat borrows from the last bar.', 'T7': 'Keep the beat rock-steady and let the rhythm tease it.',
- 'S1': 'Count the letters, both ends included: C to E is a 3rd.', 'S2': 'Count the semitones: 4 make a major 3rd, 3 a minor 3rd.',
- 'S3': 'Every major scale: tone, tone, semitone, tone, tone, tone, semitone.', 'S4': 'Three minor scales, one home note: only the 6th and 7th change.',
- 'S5': 'The key signature says once, at the start, which notes are always sharp or flat.', 'S6': 'Last sharp, one key up: the major key. Last flat but one: the major key.',
- 'S7': 'Clockwise adds a sharp, anticlockwise adds a flat: every key on one clock.',
+ 'P6': 'Count the letters, both ends included: C to E is a 3rd.', 'P7': 'Count the semitones: 4 make a major 3rd, 3 a minor 3rd.',
+ 'S1': 'Every major scale: tone, tone, semitone, tone, tone, tone, semitone.', 'S2': 'Three minor scales, one home note: only the 6th and 7th change.',
+ 'S3': 'The key signature says once, at the start, which notes are always sharp or flat.', 'S4': 'Last sharp, one key up: the major key. Last flat but one: the major key.',
+ 'S5': 'Clockwise adds a sharp, anticlockwise adds a flat: every key on one clock.',
  'H1': 'Play one, skip one, play one: the snowman rule.', 'H2': 'Count the keys between: 3 + 2 is major, 2 + 3 is minor.', 'H3': 'Build a snowman on every note of the scale: I, IV and V are the strongest.',
  'H4': 'Move the bottom note to the top: same chord, new bass.', 'H5': 'One more floor on the snowman and the chord changes colour.', 'H6': 'Move the 3rd, take it away, or add one note: five new colours.',
- 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'H9': 'Sharp guests push <b>up</b>, flat guests sigh <b>down</b>: follow them one key and you find the next chord.', 'H10': 'Music has full stops and commas too: listen to the last two chords of a phrase.', 'H11': 'Look at the melody’s main notes, then pick the snowman that holds them.', 'H12': 'Most songs take the same few trips: home, away, a pull, and home again.'}
+ 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'M1': 'Sharp guests push <b>up</b>, flat guests sigh <b>down</b>: follow them one key and you find the next chord.', 'M2': 'Music has full stops and commas too: listen to the last two chords of a phrase.', 'M3': 'Look at the melody’s main notes, then pick the snowman that holds them.', 'M4': 'Most songs take the same few trips: home, away, a pull, and home again.'}
 def secret_box(t): return f'<div class="secret1"><span class="sl">The secret</span><span>{t}</span></div>'
 def hand(t, cls=''): return f'<span class="hand3 {cls}">{t}</span>'
 def _unpair(html):
@@ -230,7 +230,7 @@ def assemble(key, pg):   # her 5 Nov: a topic is 2 pages, or 3 when it needs roo
         b0 = secs[0].index('<p class="lead">'); e = secs[0].index('</p>', b0) + 4
         secs[0] = secs[0][:b0] + '<div class="leadrow">' + secs[0][b0:e] + secret_box(SECRETS[key]) + '</div>' + secs[0][e:]
     start, cnt = PM.pages_of(key)
-    if (cnt >= 3 and key not in ('S5',)) or key in ('H12',):   # a topic with room keeps Game and Try it on their own rows
+    if (cnt >= 3 and key not in ('S3',)) or key in ('M4',):   # a topic with room keeps Game and Try it on their own rows
         secs = [_unpair(x) for x in secs]
     while len(secs) < cnt: secs.append(a[:he] + f'<div class="kick fk2">{kick} · continued</div></div>' + foot)
     out = []
