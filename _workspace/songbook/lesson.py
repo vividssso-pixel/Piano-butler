@@ -262,9 +262,21 @@ PAGINATE = r"""<script>
 function paginate(){
   const fits = b => b.scrollHeight <= b.clientHeight + 0.5;
   const starts = k => k.matches('.ph, .sub, .kick');
+  // a tune a little too tall for a page alone: its lines a little smaller (never below 85%) rather than cut
+  const shrink = g => { const ms = g.filter(k => k.matches('.mus')), b = ms.length && ms[0].closest('.body'); if (!b) return false; const w = ms.map(m => m.getBoundingClientRect().width), w0 = ms.map(m => m.style.maxWidth);
+    for (let f = 0.98; f >= 0.85; f -= 0.01) { ms.forEach((m, i) => m.style.maxWidth = (w[i] * f) + 'px'); if (fits(b)) return true; }
+    ms.forEach((m, i) => m.style.maxWidth = w0[i]); return false; };
   const newPage = pg => { const nx = pg.cloneNode(true), nb = nx.querySelector('.body'); nb.innerHTML = ''; nb.classList.add('cont'); pg.after(nx); return nx; };
   for (const pg0 of [...document.querySelectorAll('.pg')]) {
     const body0 = pg0.querySelector('.body'); if (fits(body0)) continue;
+    // case by case (her 15:55-15:56): a part that runs over by a little is drawn a little smaller to keep it on one page,
+    // never below 85% of its size; more than that, and it goes on to the next page at full size
+    { const ms = [...body0.querySelectorAll('.mus')], w0 = ms.map(m => m.style.maxWidth);
+      const over = body0.scrollHeight - body0.clientHeight, mh = ms.reduce((h, m) => h + m.getBoundingClientRect().height, 0);
+      if (ms.length && over < mh * 0.15) {
+        for (let f = 0.98; f >= 0.85; f -= 0.01) { ms.forEach(m => { const r = m.parentElement.getBoundingClientRect().width, cur = m.getBoundingClientRect().width; m.dataset.w = m.dataset.w || cur; m.style.maxWidth = (m.dataset.w * f) + 'px'; }); if (fits(body0)) break; }
+        if (fits(body0)) continue;
+        ms.forEach((m, i) => { m.style.maxWidth = w0[i]; delete m.dataset.w; }); } }
     const items = [...body0.children], groups = [];
     for (const k of items) { if (!groups.length || (starts(k) && groups[groups.length - 1].some(x => !x.matches('.sp')))) groups.push([]); groups[groups.length - 1].push(k); }
     body0.innerHTML = ''; let pg = pg0, cur = body0;
@@ -276,24 +288,24 @@ function paginate(){
       put(g); if (fits(cur)) continue; take(g);
       if (!g.some(k => k.matches('.mus, .trk, .lpat')) && g.reduce((h, k) => h + k.getBoundingClientRect().height, 0) < 160) {
         const sps = [...cur.querySelectorAll(':scope > .sp')]; sps.forEach(k => k.style.minHeight = '12px'); put(g); if (fits(cur)) continue; take(g); sps.forEach(k => k.style.minHeight = ''); }
-      const used = () => cur.lastElementChild ? (cur.lastElementChild.getBoundingClientRect().bottom - cur.getBoundingClientRect().top) / cur.clientHeight : 0;
+      const used = () => [...cur.children].filter(k => !k.matches('.sp')).reduce((h, k) => h + k.getBoundingClientRect().height, 0) / cur.clientHeight;   // spacers stretch, so they do not count
       let most = false;   // the page is less than half full: fill it, cutting the group between its lines, rather than leave it empty
       if (!lone() && used() < 0.5 && g.some(k => k.matches('.mus'))) most = true;
-      else if (!lone()) { fresh(); put(g); if (fits(cur)) continue; take(g); }
-      // too tall for a page: cut between its lines, the first part about half the lines (fewer if they do not fit)
+      else if (!lone()) { fresh(); put(g); if (fits(cur) || shrink(g)) continue; take(g); }
+      else { put(g); if (shrink(g)) continue; take(g); }
+      // too tall for a page: cut between its lines. On a page already started, only if at least half the tune stays there;
+      // on a new page, about half and half. What is left goes on a new page, whole if it fits (a little smaller if need be).
       while (g.length) {
-        const lines = g.map((k, i) => k.matches('.mus') ? i : -1).filter(i => i >= 0);
-        const lone2 = !cur.children.length;
-        let n = most ? lines.length : Math.ceil(lines.length / 2), done = false; most = false;
-        for (; n >= 1; n--) { const a = g.slice(0, lines[n - 1] + 1); put(a); if (fits(cur) || (n === 1 && lone2)) { g = g.slice(lines[n - 1] + 1); done = true; break; } take(a); }
-        if (!done) { if (lone2) { put(g); break; } fresh(); continue; }   // not one line fits here: start the group on a new page
-        if (!g.length) break;
-        if (!g.some(k => k.matches('.mus'))) {   // only the ticks are left: close up this page's spacers a little rather than give them a page
-          const sps = [...cur.querySelectorAll(':scope > .sp')]; sps.forEach(k => k.style.minHeight = '12px'); put(g);
-          if (fits(cur)) { g = []; break; } take(g); sps.forEach(k => k.style.minHeight = ''); }
+        const lines = g.map((k, i) => k.matches('.mus') ? i : -1).filter(i => i >= 0), L = lines.length;
+        let done = false;
+        if (L > 1) for (let n = most ? L - 1 : Math.ceil(L / 2); n >= Math.ceil(L / 2); n--) { const a = g.slice(0, lines[n - 1] + 1); put(a); if (fits(cur) || shrink(a)) { g = g.slice(lines[n - 1] + 1); done = true; break; } take(a); }
+        if (!done) { if (most || !lone()) { most = false; fresh(); put(g); if (fits(cur) || shrink(g)) { g = []; break; } take(g); continue; } put(g); g = []; break; }
+        most = false;
         while (g.length && g[0].matches('.sp')) g.shift().remove();
-        fresh(); put(g); if (fits(cur)) { g = []; break; } take(g);
-        if (g.filter(k => k.matches('.mus')).length < 2) { put(g); g = []; }
+        if (!g.length) break;
+        fresh(); put(g); if (fits(cur) || shrink(g)) { g = []; break; } take(g);
+        if (!g.some(k => k.matches('.mus'))) {   // only the ticks are left: close up the last page's spacers rather than give them a page
+          put(g); g = []; break; }
       }
     }
   }
