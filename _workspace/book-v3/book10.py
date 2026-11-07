@@ -194,12 +194,12 @@ h3{margin:10px 0 5px!important;padding-top:6px!important}
 """
 SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the trick in a sentence
  'P1': 'Find the two black keys: <b>C</b> is always just to their left.', 'P2': 'The treble clef curls round <b>G</b>; the bass clef’s two dots hug <b>F</b>.',
- 'P3': 'Learn three landmark notes, then step or skip from them.', 'P4': 'Every line and every space is one white key, in order.',
+ 'P3': 'Start from a note you know (bass F, Middle C, treble G), then step or skip.', 'P4': 'Every line and every space is one white key, in order.',
  'P5': 'Sharp: the very next key to the <b>right</b>. Flat: the very next key to the <b>left</b>.',
  'T1': 'The beat never stops, not even in a rest. Feel it before you play.', 'T2': 'Each note is half the one above it, and every note has a rest twin.',
  'T3': 'A dot adds half. A tie glues two notes into one.', 'T4': 'Top number: how many beats. Bottom number: which note gets one beat.',
  'T5': 'Dotted beats split in three: 6/8 is two big beats.', 'T6': 'Beams group notes into beats; an upbeat borrows from the last bar.', 'T7': 'Keep the beat rock-steady and let the rhythm tease it.',
- 'P6': 'Count the letters, both ends included: C to E is a 3rd.', 'P7': 'Count the semitones: 4 make a major 3rd, 3 a minor 3rd.',
+ 'P6': 'Count the notes, both ends included: C D E is 3 notes, a 3rd.', 'P7': 'Count the hops: 4 make a major 3rd, 3 a minor 3rd.',
  'S1': 'Every major scale: tone, tone, semitone, tone, tone, tone, semitone.', 'S2': 'Three minor scales, one home note: only the 6th and 7th change.',
  'S3': 'The key signature says once, at the start, which notes are always sharp or flat.', 'S4': 'Last sharp, one key up: the major key. Last flat but one: the major key.',
  'S5': 'Clockwise adds a sharp, anticlockwise adds a flat: every key on one clock.',

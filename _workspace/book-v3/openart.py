@@ -92,7 +92,7 @@ def pic_pitch():
     o += G.acc(kx('F4') + W / 2, 'F#4', '♯', ORD)
     for i, n in enumerate(whites):
         o += f'<rect x="{70 + i * W}" y="{ky}" width="{W}" height="{KH}" fill="{"#3a3d7e" if n == "C4" else "none"}" stroke="{OCR}" stroke-width="1.4"/>'
-        if n[0] == 'C': o += lab(kx(n), ky + KH - 8, n, OCR, 11, fam='AH')
+        if n[0] == 'C': o += lab(kx(n), ky + KH + 16, {'C3': 'Bass C', 'C4': 'Middle C', 'C5': 'Treble C'}[n], OCR if n != 'C4' else ORD, 12, fam='AH')
     for i, n in enumerate(whites[:-1]):
         if n[0] in 'CDFGA': o += f'<rect x="{70 + (i + 1) * W - 11}" y="{ky}" width="22" height="58" rx="2" fill="{OCR}"/>'
     for st, n, x in notes:   # the map: a dotted line from the note down to its key
@@ -100,7 +100,7 @@ def pic_pitch():
         o += f'<line x1="{x}" y1="{st.y(n) + 8:.1f}" x2="{tx:.1f}" y2="{ky - 2}" stroke="{OPK}" stroke-width="1.2" stroke-dasharray="3 4" opacity=".9"/>'
         o += f'<circle cx="{tx:.1f}" cy="{ky + (40 if "#" in n else 80)}" r="5" fill="{ORD if n in ("C4", "F#4") else OPK}"/>'
     o += f'<path d="M{kx("F4") + 2},{ky + 80} Q{kx("F4") + 12},{ky + 62} {kx("F4") + W / 2 - 4},{ky + 48}" fill="none" stroke="{ORD}" stroke-width="2.4" stroke-linecap="round"/>'
-    o += lab(kx('C4'), ky + KH + 24, 'C: just left of the two black keys', OPK, 16)
+    o += lab(kx('C4'), ky + KH + 36, 'C: just left of the two black keys', OPK, 16)
     o += call(2, 90, G.y('G4'), 36, 50) + call(2, 92, F.y('F3'), 36, F.y1 + 10)
     o += call(3, kx('A4') + 30, G.y('A4') - 10, kx('A4') + 30, 44) + lab(kx('A4') + 48, 49, 'from G, one step up: A', OPK, 15, 'start')
     o += call(5, kx('F4') + W / 2, G.y('F#4') - 10, kx('F4') - 10, 44) + lab(kx('F4') - 28, 49, '♯: one key to the right', OPK, 15, 'end')
@@ -109,8 +109,8 @@ def pic_pitch():
     xc, xg, yi = kx('C4'), kx('G4') + 10, G.y1 + 26
     o += bracket(xc, xg, yi, 'C to G: a 5th', OPK, fs=12)
     o += call(6, xc - 2, yi, 40, yi) + call(7, xg + 4, yi + 12, 660, yi + 12)
-    return f'<svg viewBox="0 0 700 {ky + KH + 40}" style="width:100%;display:block">{o}</svg>'
-LEG_P = [(1, 'The keyboard', 'two and three black keys; C is left of the two', 'P1'), (2, 'The staff and the clefs', 'the treble clef names G, the bass clef F', 'P2'), (3, 'Reading the notes', 'find a landmark note, then step or skip from it', 'P3'), (4, 'The staff and the keyboard', 'every line and space is one white key', 'P4'), (5, 'Sharps, flats and naturals', 'a sharp moves one key right, a flat one key left', 'P5'), (6, 'Counting intervals', 'count the letters, both ends: C to G is a 5th', 'P6'), (7, 'Major, minor and perfect', 'count the semitones: 7 make a perfect 5th', 'P7'), ('★', 'Tips: when a note reads wrong', '', 'PT')]
+    return f'<svg viewBox="0 0 700 {ky + KH + 50}" style="width:100%;display:block">{o}</svg>'
+LEG_P = [(1, 'The keyboard', 'two and three black keys; C is left of the two', 'P1'), (2, 'The staff and the clefs', 'the treble clef names G, the bass clef F', 'P2'), (3, 'Reading the notes', 'start from a clef note, then step or skip', 'P3'), (4, 'The staff and the keyboard', 'every line and space is one white key', 'P4'), (5, 'Sharps, flats and naturals', 'a sharp moves one key right, a flat one key left', 'P5'), (6, 'Counting intervals', 'count the notes, both ends: C to G is a 5th', 'P6'), (7, 'Major, minor and perfect', 'count the hops: 7 make a perfect 5th', 'P7'), ('★', 'Tips: when a note reads wrong', '', 'PT')]
 
 # ---------- Part III · Scales and keys ----------
 def pic_scales():
