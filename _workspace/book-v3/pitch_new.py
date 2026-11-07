@@ -49,6 +49,23 @@ def ask(html, ids=(), hide=False):   # her 7 Nov: the Example asks, the result l
         if nid in ids: return head.replace('<tspan font-size', '<tspan fill="#e4572e" font-size') + '?' + tail
         return head + ('' if hide else m.group(2)) + tail
     return _re.sub(r'<g id="([^"]+)" class="note"(?:(?!<g id="[^"]+" class="note").)*?<tspan font-size="\d+px">([^<]*)</tspan>', one, html, flags=_re.S)
+
+def clef_hero():   # her 7 Nov: a magnifying glass on each clef; the line it names in red
+    base = P['hero_clef']
+    for d in ('M0 1080 L3078 1080', 'M0 2520 L3078 2520'):
+        base = base.replace(f'd="{d}"', f'd="{d}" style="stroke:{RED};stroke-width:30"')
+    def lens(x0, y0, w, h, txt, sub):
+        inner = _re.search(r'<svg class="definition-scale"[^>]*>', base).group(0)
+        z = base.replace(inner, f'<svg class="definition-scale" color="black" x="8" y="8" width="104" height="104" viewBox="{x0} {y0} {w} {h}" preserveAspectRatio="xMidYMid meet">', 1)
+        z = _re.sub(r'^<svg viewBox="[^"]*"', '<svg viewBox="0 0 150 150"', z, count=1)
+        cid = f'lens{y0}'
+        z = z.replace('<desc>', f'<defs><clipPath id="{cid}"><circle cx="60" cy="60" r="52"/></clipPath></defs><circle cx="60" cy="60" r="52" fill="#fff"/><g clip-path="url(#{cid})"><desc>', 1)
+        z = z[:z.rindex('</svg>')] + f'</g><circle cx="60" cy="60" r="52" fill="none" stroke="{NAV}" stroke-width="6"/><path d="M98,98 L140,140" stroke="{NAV}" stroke-width="12" stroke-linecap="round"/></svg>'
+        z = z.replace('<svg viewBox="0 0 150 150"', '<svg viewBox="0 0 150 150" style="width:196px;height:196px;flex:none"', 1)
+        return f'<div style="display:flex;align-items:center;gap:12px">{z}<div style="text-align:left;white-space:nowrap"><div style="font-family:AH,Arial;font-weight:700;font-size:16px;color:{NAV}">{txt}</div><div style="font-size:14px;color:{RED};font-weight:700">{sub}</div></div></div>'
+    main = base.replace('<svg ', '<svg style="height:250px;width:auto;max-width:100%" ', 1).replace('font-family="Times,serif"', 'font-family="AH,Arial" font-weight="700"')
+    for n in ('n2', 'n5'): main = main.replace(f'<g id="{n}" class="note">', f'<g id="{n}" class="note" style="fill:{RED};color:{RED}">', 1)
+    return f'<div style="display:flex;justify-content:center;align-items:center;gap:22px"><div>{main}</div><div style="display:flex;flex-direction:column;gap:6px">{lens(560, 380, 1500, 1500, "Treble clef", "curls round line 2: G")}{lens(600, 2200, 1250, 1250, "Bass clef", "its dots hug line 4: F")}</div></div>'
 def kq(*a, **k): return '<figure class="vx kbf">' + qkb(*a, **k) + '</figure>'
 def hops(start_i, black_first, n):
     """arcs for n hops up from white key start_i: walk white/black keys in order (black only where one exists)."""
@@ -69,15 +86,15 @@ css += """
 
 # ---------- 1 The keyboard ----------
 g15 = black_groups('C', 15)
-def hero_families():   # her 7 Nov: C and F are the two axes; every white key belongs to the two-group (C D E) or the three-group (F G A B)
-    W, H = 72, 210
-    marks = [f'<circle cx="{i * W + W / 2}" cy="{H - 52}" r="15" fill="{RED}"/>' for i in (0, 3)]
-    marks += [f'<text x="{W * 1.5}" y="-14" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="{RED}">the two</text>', f'<text x="{W * 5}" y="-14" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="{NAV}">the three</text>']
-    s = keyboard('C', 7, W, H, label=True, shade={0: '#fbd0c2', 1: '#fdeee8', 2: '#fdeee8', 3: '#cfd4ee', 4: BLUE, 5: BLUE, 6: BLUE}, marks=marks,
-                 brackets=[(0, 2, 'C starts the two: C D E', True), (3, 6, 'F starts the three: F G A B', False)], scale=1.0)
-    return s.replace('viewBox="-2 -2 ', 'viewBox="-2 -34 ', 1).replace(f'height:{H + 34:.0f}px', f'height:{H + 66:.0f}px', 1).replace(f'{7 * W + 4} {H + 36}', f'{7 * W + 4} {H + 68}', 1)
+def hero_apart():   # her 7 Nov: pull the two groups apart, so the first key (start) and last key (end) of each are plain to see
+    W, H = 64, 200
+    def grp(start, n, title, col, shade):
+        g = qkb(start, n, W, H, shade={i: shade for i in range(n)} | {0: '#fbd0c2'}, dots=(0,), tags={0: 'start', n - 1: 'end'}, tagcol={0: RED, n - 1: NAV})
+        return f'<div style="text-align:center"><div style="font-family:AH,Arial;font-weight:700;font-size:16px;color:{col};margin-bottom:6px">{title}</div>{g}</div>'
+    arrow = '<svg viewBox="0 0 60 40" style="width:54px"><path d="M6,20 H54 M14,12 L6,20 L14,28 M46,12 L54,20 L46,28" fill="none" stroke="#c9c7da" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    return f'<div style="display:flex;justify-content:center;gap:18px;align-items:flex-start">{grp("C", 3, "2 black keys: C D E", RED, "#fdeee8")}<div style="align-self:center;text-align:center;margin-top:-20px">{arrow}<div style="font-family:CV,cursive;font-size:15px;color:#6d6f9c;line-height:1.1">on the piano<br>E and F touch</div></div>{grp("F", 4, "3 black keys: F G A B", NAV, BLUE)}</div>'
 P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Left is <b>low</b>, right is <b>high</b>. The black keys come in groups of <b>two</b> and <b>three</b>. Each group has a first white key, just to its left: <b>C</b> for the two, <b>F</b> for the three. Find the group, find its first key, then walk on.')}
-{hero(hero_families(), 'Two black keys: C D E · three black keys: F G A B')}
+{hero(hero_apart(), 'Pulled apart: C starts the two, F starts the three · E and B end them')}
 {rule('<b>Find the group, then its first key.</b> Looking for D or E? Find two black keys and start on C. Looking for G, A or B? Find three black keys and start on F. You never have to count from far away.')}
 {two(h3('Seven letters, two families') + '<p>The white keys use seven letters, <b>A B C D E F G</b>, then start again, like the days of the week. They live in two families: <b>C D E</b> round the two black keys, <b>F G A B</b> round the three.</p>',
      h3('The five Cs have names') + '<p>The C nearest the middle is <b>Middle C</b>. The Cs either side are <b>Bass C</b> and <b>Treble C</b>; further out, <b>Low C</b> and <b>High C</b>. From one C to the next is an <b>octave</b>: C D E F G A B C, eight notes, both Cs included.</p>')}
@@ -91,7 +108,7 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Left is <b>low</b
 {game('Which family?', qitems(['D', 'A', 'F', 'E', 'B', 'G'], 6), 'Does each white key live with the <b>two</b> black keys (start on C) or the <b>three</b> (start on F)?', '1 two · 2 three · 3 three (the first) · 4 two (the last) · 5 three (the last) · 6 three.')}
 <!--SPLIT-->
 {inaction('Find Bass C and Treble C', kq('C', 15, 32, 94, tags={7: 'Middle C'}, q=(0, 14), shade={7: '#fbd0c2'}), ['<b>Start on Middle C.</b>', '<b>Walk left</b> to the next pair of black keys. The C just left of it is one <b>?</b>.', '<b>Walk right</b> the same way, to the next pair: the other <b>?</b>.'], 'Left <b>?</b>: <b>Bass C</b>. Right <b>?</b>: <b>Treble C</b>. Each is one octave, eight notes, from Middle C.')}
-{youknow('Hot Cross Buns, on three black keys', kq('E', 5, 52, 130, label=False, nums=(('b', 1, 1, True), ('b', 2, 2, True), ('b', 3, 3, True))), 'Play the group of three black keys from the top: <b class="co">3 2 1</b>, 3 2 1, then 1 1 1 1, 2 2 2 2, 3 2 1. You just played a whole tune without one white key.', 'Find another group of three, higher up, and play it again there.')}
+{youknow('Hot Cross Buns, on three black keys', kq('E', 5, 52, 130, label=False, nums=(('b', 1, 2, True), ('b', 2, 3, True), ('b', 3, 4, True))), 'Right hand, fingers <b>2 3 4</b> on the three black keys. Play from the top: <b class="co">4 3 2</b>, 4 3 2, then 2 2 2 2, 3 3 3 3, 4 3 2. A whole tune, and not one white key.', 'Find another group of three, higher up, and play it again there.')}
 {inaction('Higher or lower?', kq('C', 15, 30, 84, dots=(4, 9), tags={4: 'first', 9: 'second'}, tagcol={4: NAV, 9: NAV}), ['<b>Find the two red keys.</b>', '<b>Which one is further right?</b>', '<b>Right means higher:</b> play both and listen.'], 'The second note is <b>higher</b>: it is to the right. Left is always lower, right always higher.')}
 {watch(['Counting every key from C: find the nearest group and start from its C or F.', 'Mixing up the families: C is left of the <b>two</b> black keys, F left of the <b>three</b>.'])}
 {thinkt('The black keys are bumps you can feel in the dark. Close your eyes and slide your hand along: two bumps, and the key to their left is C; three bumps, and the key to their left is F.')}
@@ -100,7 +117,7 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Left is <b>low</b
 
 # ---------- 2 The staff and the clefs ----------
 P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music is written on a <b>staff</b>: five lines and four spaces, counted from the <b>bottom</b>. Higher on the staff means higher on the keyboard. The <b>clef</b> at the start is the key to the code: it names one line, and every other note follows from it.')}
-{hero(pxh('hero_clef', ('n2', 'n5'), 200), 'The treble clef curls round G · the bass clef’s dots hug F')}
+{hero(clef_hero(), 'Look closely: the treble clef curls round G · the bass clef’s dots hug F')}
 {two(h3('The grand staff') + '<p>Piano music uses two staves joined by a brace: the <b>treble</b> staff on top, usually for the right hand, and the <b>bass</b> staff below, usually for the left. <b>Middle C</b> sits between them on a short line of its own, and can be written in either staff.</p>', px('gs_c', 104, 'Middle C in the treble staff (left) and in the bass staff (right): the same key.'), '1fr 1fr')}
 {h3('Ledger lines: the staff carried on')}
 {two(px('ledger', 84, 'Treble: A, B, C below; A, B, C above.'), px('ledger_b', 84, 'Bass: E, D, C below; C, D, E above.'))}
@@ -114,12 +131,12 @@ P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music 
 {inaction('Read a high note on ledger lines', ask(ykfig('ex_hi', ('n5',), 100), ('n5',)), ['<b>The top line</b> of the treble staff is F.', '<b>Step up</b> one note at a time: G sits on top of the staff, A on the first ledger line.', '<b>Keep stepping</b> to the red note: B above it, then the second ledger line.'], 'Two ledger lines above the treble staff: <b>High C</b>, two octaves above Middle C.')}
 <div class="two" style="grid-template-columns:1.2fr 1fr"><div>{h3('8va: play it an octave higher')}<p>Lots of ledger lines are hard to read. So a very high passage is written on the staff with <b>8va</b> and a dotted line above it: play those notes <b>one octave higher</b>, eight notes up, until the dotted line stops. <b>8vb</b> under the staff means an octave lower.</p></div><div>{thinkt('A clef is a pair of glasses: the same five lines read as different notes, depending on which pair you put on.')}</div></div>
 {game('Treble or bass?', qitems(['the E above Middle C', 'the lowest key on the piano', 'Middle C', 'High C'], 4), 'Which staff would each note be written on?', '1 treble · 2 bass, with ledger lines · 3 either: it sits between the two · 4 treble, two ledger lines up.')}
-{try10(px('gs_c', 100), 'Point, then play.', 'Point to the line the treble clef curls round and play that G. Point to the line between the bass clef’s dots and play that F. Middle C sits between them.')}
+{try10(px('gs_c', 78), 'Point, then play.', 'Point to the line the treble clef curls round and play that G. Point to the line between the bass clef’s dots and play that F. Middle C sits between them.')}
 {foot('Reading the notes p. {{P3}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 23)
 
 # ---------- 3 Reading the notes ----------
 P24 = ppage(f"""{head('Part I · Pitch · 3', 'Reading the notes', 'Every line and space has one letter. You do not have to learn them all at once: start from a note you always know, then <b>step</b> or <b>skip</b> to the one you want.')}
-{hero(pxh('hero_lm', ('n3', 'n6', 'n9'), 214), 'Three notes you always know: bass F, Middle C, treble G')}
+{hero(pxh('hero_lm2', ('n3', 'n6', 'n9', 'n11'), 240), 'Notes you always know: treble G, bass F, and Middle C in either clef')}
 {rule('<b>Step</b>: to the very next line or space (one letter on). <b>Skip</b>: line to the next line, or space to the next space (two letters on).')}
 {two(px('tr_lines', 92, 'Treble lines, E G B D F: <i>Every Good Boy Deserves Fun</i>'), px('tr_spaces', 92, 'Treble spaces, F A C E: they spell <i>FACE</i>'))}
 {two(px('bs_lines', 92, 'Bass lines, G B D F A: <i>Great Big Dragons Fly Away</i>'), px('bs_spaces', 92, 'Bass spaces, A C E G: <i>All Cows Eat Grass</i>'))}
