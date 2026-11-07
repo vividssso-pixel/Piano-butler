@@ -199,11 +199,12 @@ def hopkb(start, n_white, W, H, a, nh, label=True, ends=True, scale=1.0, cap=Non
     for tt, jj in seq[1:nh]:
         if tt == 'w': shade[jj] = '#fdf1ec'
     if t == 'w': shade[j] = '#f6c2b0'
-    nums = [(tt, jj, k + 1, k + 1 == nh) for k, (tt, jj) in enumerate(seq[1:nh + 1])]
-    s = qkb(start, n_white, W, H, nums=nums, shade=shade, label=label, scale=scale, tags={a: 'start'}, tagcol={a: NAV})
+    nums = [(tt, jj, k + 1, False) for k, (tt, jj) in enumerate(seq[1:nh])]   # her 7 Nov: number the keys IN BETWEEN (her snowman count)
+    tg = {a: 'start'}; tc = {a: NAV}
+    s = qkb(start, n_white, W, H, nums=nums, shade=shade, label=label, scale=scale, tags=tg, tagcol=tc)
     if t == 'b':   # the black end key in red
         BW, BH = W * 0.58, H * 0.6; x = (j + 1) * W - BW / 2
-        s = s.replace('<circle', f'<rect x="{x:.1f}" y="0" width="{BW:.1f}" height="{BH:.1f}" rx="1.5" fill="#f3a48c"/><circle', 1)
+        s = s.replace('</svg>', f'<rect x="{x:.1f}" y="0" width="{BW:.1f}" height="{BH:.1f}" rx="1.5" fill="{RED}"/></svg>')
     return s
 P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'How far apart are two notes? That distance is an <b>interval</b>. To give it a number, <b>count the notes</b>: the first note is 1, and you count every letter up to the second, both ends included.')}
 {hero(hero_third(), 'C to E: count the notes, 1 2 3: a 3rd')}
@@ -226,20 +227,20 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'How far apa
 {foot('Major, minor and perfect p. {{P7}} · Major scales p. {{S1}}', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 27)
 
 # ---------- 7 Major, minor and perfect ----------
-iv = [['3rd', '3 (minor)', '4 (major)'], ['4th', '', '5 (perfect)'], ['5th', '', '7 (perfect)'], ['6th', '8 (minor)', '9 (major)'], ['octave', '', '12 (perfect)']]
-P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'C to E and C to E♭ are both 3rds: three notes each. But they sound different, bright and dark. To tell them apart, <b>count the hops</b>: every move to the very next key, black or white, is one hop.')}
-{hero(two(hopkb('C', 7, 40, 128, 0, 4) + '<p class="sm">C to <b class="co">E</b>: 4 hops. A <b>major</b> 3rd: bright.</p>', hopkb('C', 7, 40, 128, 0, 3) + '<p class="sm">C to <b class="co">E♭</b>: 3 hops, one fewer. A <b>minor</b> 3rd: dark.</p>'), 'One hop less: a major 3rd becomes minor')}
-{rule('<b>Count the notes</b> for the number (a 3rd). <b>Count the hops</b> for the size (major or minor). Do not count the key you start on: the first move is hop 1.')}
-{two(tbl(['Number', 'Smaller', 'Main size'], iv, ['30%', '35%', '35%']), '<p><b>3rds and 6ths</b> come in two sizes: <b>major</b>, and <b>minor</b>, one hop smaller.</p><p><b>4ths, 5ths and octaves</b> have one main size, called <b>perfect</b>. They are never major or minor.</p>', '1.15fr 1fr')}
+iv = [['3rd', '2 (minor)', '3 (major)'], ['4th', '', '4 (perfect)'], ['5th', '', '6 (perfect)'], ['6th', '7 (minor)', '8 (major)'], ['octave', '', '11 (perfect)']]
+P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'C to E and C to E♭ are both 3rds: three notes each. But they sound different, bright and dark. To tell them apart, <b>count the keys in between</b>, black and white: the keys you do not play.')}
+{hero(two(hopkb('C', 7, 40, 108, 0, 4) + '<p class="sm">C to <b class="co">E</b>: 3 keys between. A <b>major</b> 3rd: bright.</p>', hopkb('C', 7, 40, 108, 0, 3) + '<p class="sm">C to <b class="co">E♭</b>: 2 keys between, one fewer. A <b>minor</b> 3rd: dark.</p>'), 'One key fewer between: a major 3rd becomes minor')}
+{rule('<b>Count the notes</b> for the number (a 3rd). <b>Count the keys in between</b> for the size (major or minor): black and white, not the two you play.')}
+{two(tbl(['Number', 'Keys between: smaller', 'Main size'], iv, ['30%', '35%', '35%']), '<p><b>3rds and 6ths</b> come in two sizes: <b>major</b>, and <b>minor</b>, one key fewer between.</p><p><b>4ths, 5ths and octaves</b> have one main size, called <b>perfect</b>. They are never major or minor.</p>', '1.15fr 1fr')}
+{inaction('Major or minor 3rd?', kq('C', 8, 40, 92, dots=(0,), bdots=(1,)), ['<b>Count the notes:</b> C D E, three letters, so it is a 3rd.', '<b>Count the keys in between</b> C and the red black key, E♭: C♯, D …', '<b>A major 3rd has 3 between.</b> How many here?'], 'C to E♭ has <b>2 keys between</b>: a <b>minor 3rd</b>.')}
 <!--SPLIT-->
-{inaction('Major or minor 3rd?', kq('C', 8, 40, 110, dots=(0,), bdots=(1,)), ['<b>Count the notes:</b> C D E, three letters, so it is a 3rd.', '<b>Count the hops</b> from C to the red black key, E♭: C♯ 1, D 2 …', '<b>Major has 4 hops.</b> How many here?'], 'C to E♭ is <b>3 hops</b>: a <b>minor 3rd</b>.')}
-{inaction('Name F up to A', hopkb('C', 8, 40, 128, 3, 4), ['<b>Count the notes:</b> F G A is 3, so it is a 3rd.', '<b>Count the hops:</b> every key you land on, black and white, is numbered.', '<b>4 hops or 3?</b>'], 'F to A is 4 hops: a <b>major 3rd</b>, the same size as C to E.')}
-{youknow('Beethoven, Symphony No. 5', ykfig('yk_b5', ('n2','n3','n4','n5'), 112), 'Da-da-da-DUM: G down to <b class="co">E♭</b> is three notes, a 3rd, and 4 hops (F♯, F, E, E♭): a <b>major 3rd</b>.', 'Count the hops from G down to E♭ on the keyboard.')}
+{inaction('Name F up to A', hopkb('C', 8, 40, 128, 3, 4), ['<b>Count the notes:</b> F G A is 3, so it is a 3rd.', '<b>Count the keys in between:</b> they are numbered.', '<b>3 between, or 2?</b>'], 'F to A has 3 keys between: a <b>major 3rd</b>, the same size as C to E.')}
+{youknow('Beethoven, Symphony No. 5', ykfig('yk_b5', ('n2','n3','n4','n5'), 112), 'Da-da-da-DUM: G down to <b class="co">E♭</b> is three notes, a 3rd, with 3 keys between (F♯, F, E): a <b>major 3rd</b>.', 'Count the keys between G and E♭ on the keyboard.')}
 <!--SPLIT-->
-{inaction('Name D up to A', hopkb('C', 8, 40, 128, 1, 7), ['<b>The number:</b> D E F G A, five notes, a 5th.', '<b>The size:</b> count the hops: the numbered keys.', '<b>A 5th of 7 hops</b> is its main size. What is that called?'], 'D up to A is a <b>perfect 5th</b>: 7 hops.')}
-{inaction('Name E up to C', hopkb('C', 8, 36, 124, 2, 8), ['<b>The number:</b> E F G A B C, six notes, a 6th.', '<b>The size:</b> count the hops.', '<b>A major 6th</b> has 9 hops. Is this one more or one fewer?'], 'E up to C is 8 hops, one fewer than major: a <b>minor 6th</b>.')}
-{watch(['Counting white keys only: count every hop, black and white.', 'Counting the start key as hop 1: the first move is hop 1.', 'Calling a 4th or 5th “major”: they are perfect.'])}
+{inaction('Name D up to A', hopkb('C', 8, 40, 128, 1, 7), ['<b>The number:</b> D E F G A, five notes, a 5th.', '<b>The size:</b> count the keys in between: the numbered keys.', '<b>A 5th with 6 between</b> is its main size. What is that called?'], 'D up to A is a <b>perfect 5th</b>: 6 keys between.')}
+{inaction('Name E up to C', hopkb('C', 8, 36, 124, 2, 8), ['<b>The number:</b> E F G A B C, six notes, a 6th.', '<b>The size:</b> count the keys in between.', '<b>A major 6th</b> has 8 between. Is this one more or one fewer?'], 'E up to C has 7 keys between, one fewer than major: a <b>minor 6th</b>.')}
+{watch(['Counting white keys only: count every key between, black and white.', 'Counting the two notes you play: count only the keys in between.', 'Calling a 4th or 5th “major”: they are perfect.'])}
 {thinkt('A major and a minor 3rd are a smile and a frown: the same face, one small change at the corners.')}
-{game('Perfect, major or minor?', qitems(['C–G', 'D–F', 'C–E', 'E–A'], 4), 'Count the notes for the number, then the hops for the size.', '1 perfect 5th (7 hops) · 2 minor 3rd (3) · 3 major 3rd (4) · 4 perfect 4th (5).')}
-{try10(kbx('C', 8, 24, 70, label=True, shade={0: PINK, 2: PINK}, scale=1.0), 'Play C–E, then C–E♭.', 'Bright, then dark. One hop makes the difference: the major 3rd has four, the minor 3rd three.')}
+{game('Perfect, major or minor?', qitems(['C–G', 'D–F', 'C–E', 'E–A'], 4), 'Count the notes for the number, then the keys in between for the size.', '1 perfect 5th (6 between) · 2 minor 3rd (2) · 3 major 3rd (3) · 4 perfect 4th (4).')}
+{try10(kbx('C', 8, 24, 70, label=True, shade={0: PINK, 2: PINK}, scale=1.0), 'Play C–E, then C–E♭.', 'Bright, then dark. One key makes the difference: the major 3rd has three keys between, the minor 3rd two.')}
 {foot('Counting intervals p. {{P6}} · Chords and triads p. {{H1}}', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 28)
