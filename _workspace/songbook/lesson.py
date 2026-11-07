@@ -22,7 +22,7 @@ def mus(k, cls=''):   # a shorter last line keeps the same size of note: its wid
     w = SONG.get('widths', {}).get(k); st = f' style="max-width:{w * 100:.1f}%"' if w else ''
     z = SONG.get('scale', {}).get(k); st = f' style="width:100%;max-width:{z * 100:.1f}%;margin-left:auto;margin-right:auto"' if z else st   # a smaller line, centred
     tag = SONG.get('tags', {}).get(k)   # a hand-position label over the line (her 5 Nov 14:22)
-    return (f'<div class="htag">{tag}</div>' if tag else '') + f'<div class="mus {cls}" data-snip="{k}"{st}>{V[k]}</div>'
+    return (f'<div class="htag">{tag}</div>' if tag else '') + f'<div class="mus {cls}{" brace" if "grpSym" in V[k] else ""}" data-snip="{k}"{st}>{V[k]}</div>'
 def part(n, t, how): return f'<div class="ph"><span class="pn">{n}</span><h2>{t}</h2></div><p class="how">{how}</p>'
 def ticks(items, h=False): return f'<div class="ticks{" h" if h else ""}">' + ''.join(f'<span class="tk"><span class="bx"></span>{t}</span>' for t in items) + '</div>'
 def way(n, t, stars, how, a, b):
@@ -105,7 +105,7 @@ elif 'pos' in SONG and not SONG.get('pos_html'): POS = '<div class="pos"><div>' 
 # her 5 Nov 21:19: the five ideas for teaching it like your own child -- a wow moment, a spot-the-mistake game, a turtle-to-bird ladder, make it yours, a 5-minute menu
 STAR = '<svg width="26" height="26" viewBox="0 0 26 26"><path d="M13 2.5l3.1 6.6 7.2.9-5.3 5 1.4 7.1L13 18.6l-6.4 3.5 1.4-7.1-5.3-5 7.2-.9z" fill="none" stroke="#e4572e" stroke-width="2" stroke-linejoin="round"/></svg>'
 WOW = f'<div class="wow">{STAR}<div><div class="wowh">The wow moment</div><p>{SONG["wow"]}</p></div></div>' if SONG.get('wow') else ''
-TRICK = f'<div class="tog"><span class="tgh">Spot the mistake</span><span>{SONG["trick"]}</span></div>' if SONG.get('trick') else ''
+TRICK = ((f'<div class="trk"><div class="tog"><span class="tgh">Spot the mistake</span><span>{SONG["trick"]}</span></div>{mus("oops1")}</div>') if 'oops1' in V else f'<div class="tog"><span class="tgh">Spot the mistake</span><span>{SONG["trick"]}</span></div>') if SONG.get('trick') else ''   # printed (her 7 Nov: a book for self-learners too)
 TURTLE = '<svg width="34" height="22" viewBox="0 0 34 22"><path d="M5 15 Q7 4 17 4 Q27 4 29 15 Z" fill="none" stroke="#26296b" stroke-width="2" stroke-linejoin="round"/><path d="M11 15v4M23 15v4M29 13h3.5" stroke="#26296b" stroke-width="2" stroke-linecap="round"/><circle cx="32" cy="11.5" r="1.6" fill="#26296b"/></svg>'
 BIRD = '<svg width="34" height="22" viewBox="0 0 34 22"><path d="M3 9 Q10 3 16 12 Q22 3 31 7" fill="none" stroke="#e4572e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 12v6" stroke="#e4572e" stroke-width="2" stroke-linecap="round"/></svg>'
 LSTEPS = SONG.get('ladder', ['With letters', 'No letters', 'With the band', 'Fast'])
@@ -174,19 +174,20 @@ if SONG.get('kind') == 'ready': P3 = ''
 elif SONG.get('lead_page'): P3 = lead_page()
 elif SONG.get('chord_page'): P3 = chord_page()
 elif 'basics' in SONG: P3 = basics_page()
-else: P3 = page(f'''{part(3, 'Play it four ways', 'Each way adds a little more for the left hand. Your teacher tells you which is yours this week.')}
+else: P3 = page(f'''{part(3, 'Play it four ways', 'Each way adds a little more for the left hand. Start with way 1; move on when it feels easy.')}
 <div class="lg"><div class="lgl">{legend}</div><div class="lks"><span class="lkh">Left hand</span>{lhkb('way2', 'C', both=True)}</div></div>
 <div class="sp"></div>{mus('play1')}<div class="sp"></div>{mus('play2')}<div class="sp"></div>
 <div class="tog"><span class="tgh">Play together</span><span>Two players, one song: one plays Way 1, the other a left-hand row. Then swap.</span></div>
 <div class="chk end"><div class="ch">4 · Check</div><div class="cgrid">
 <div>{ticks(['I can say and clap it', 'I can sing it with the words', 'I can name its notes'])}</div>
 <div><div class="ck2">I can play it:</div><div class="ticks h">{''.join(f'<span class="tk"><span class="bx"></span>Way {i}</span>' for i in range(1, 5))}</div>
-<div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 3)
+<div class="tch"><span>Listen back</span><span class="tk"><span class="bx"></span>I recorded it</span><span class="tk"><span class="bx"></span>It sounded right</span></div></div></div></div>''', 3)
 
 css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margin:0;background:#e9e4d8;font-family:'AH',Arial,sans-serif;color:{N}}}
 .pg{{width:794px;height:1123px;background:#fff;margin:0 auto 24px;position:relative;overflow:hidden;padding:42px 58px 0;page-break-after:always}}
 .top{{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.16em;color:#8a8cb0}} .rule{{height:5px;border-top:1.5px solid {N};border-bottom:.6px solid {N};margin:7px 0 18px}}
-.body{{height:965px;overflow:hidden;display:flex;flex-direction:column}} .body>.end{{margin-top:auto}} .sp{{flex:1 1 0;min-height:10px;max-height:64px}} .body>.ph{{margin-top:6px}} .body>.mus{{margin-top:6px}}
+.body{{height:965px;overflow:hidden;display:flex;flex-direction:column}} .body>.end{{margin-top:auto}}
+.body>.end:not(:last-child){{margin-top:14px;margin-bottom:22px}} .sp{{flex:1 1 0;min-height:10px;max-height:64px}} .body>.ph{{margin-top:6px}} .body>.mus{{margin-top:6px}}
 .foot{{position:absolute;left:0;right:0;bottom:30px;text-align:center}} .foot span{{display:inline-block;color:{N};font:700 13px 'AH',Arial;letter-spacing:.08em}}
 .kick{{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:{C}}} h1{{font-family:'PF',Georgia,serif;font-size:40px;line-height:1.1;margin:3px 0 8px;font-weight:700}}
 .lead{{font-size:17px;line-height:1.5;margin:0 0 8px}} p{{font-size:16px;line-height:1.5;margin:4px 0 8px}}
@@ -204,7 +205,11 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .chips{{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 12px}} .cl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-right:4px}} .chip{{border:1.2px solid {N};border-radius:14px;padding:3px 12px;font-size:14px;font-weight:700}}
 .ph{{display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:10px;margin-top:10px}} .pn{{width:30px;height:30px;background:{N};color:#fff;display:inline-flex;align-items:center;justify-content:center;font:700 16px 'AH'}} h2{{font-family:'PF',Georgia,serif;font-size:25px;margin:0}}
 .how{{font-size:15.5px;color:#3d4080;margin:6px 0 6px}}
-.mus svg{{width:100%;height:auto;display:block}} .mus text{{font-family:'AH',Arial !important}} .mus .harm text, .mus g.harm text{{font-family:'PF',Georgia,serif !important;font-weight:700}}
+.mus svg{{width:100%;height:auto;display:block}}
+.mus.brace{{padding-left:3px}} .mus text{{font-family:'AH',Arial !important}} .mus .harm text, .ticks.h{{flex-wrap:wrap;row-gap:6px}}
+.mus[data-snip]{{margin-left:auto;margin-right:auto;width:100%;box-sizing:border-box}}
+p, .how, .cap2, .lead, .tog span, .lst span{{text-wrap:pretty}}
+.mus g.harm text{{font-family:'PF',Georgia,serif !important;font-weight:700}}
 .mus g.fing text{{font-weight:700}} .mus .cnt{{font-family:'AH',Arial !important}}
 .ticks{{display:flex;flex-direction:column;gap:8px;margin:8px 0}} .ticks.h{{flex-direction:row;gap:18px}} .tk{{display:inline-flex;align-items:center;gap:9px;font-size:15.5px;font-weight:700}} .bx{{width:20px;height:20px;border:1.8px solid {N};border-radius:4px;display:inline-block;flex:none}}
 .lw{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}} .lks{{display:flex;align-items:flex-end;gap:12px}} .lkh{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{MUTE};writing-mode:vertical-rl;transform:rotate(180deg)}} .lk{{display:grid;justify-items:center;gap:2px}} .lk b{{font-family:'PF',Georgia,serif;font-size:18px}} .pos{{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;margin:8px 0 10px}} .lg{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;margin-top:6px}} .lgl{{display:grid;gap:7px}} .wl{{display:grid;grid-template-columns:52px 64px 132px minmax(0,1fr);align-items:baseline;gap:8px;font-size:14.5px}} .wl b{{font-family:'PF',Georgia,serif;font-size:17px}} .wl .st{{margin:0;font-size:13px}} .wd{{color:#3d4080;line-height:1.4}} .sh{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin:2px 0 6px}} .lks{{flex-direction:column;align-items:center}} .mat{{display:grid;grid-template-columns:auto auto;gap:10px 18px;align-items:center;justify-content:start;border:1.2px solid #d9d6ea;padding:16px 18px;margin:14px 0 22px}} .mh{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .ts{{display:flex;align-items:center;gap:16px}} .tsn{{display:flex;flex-direction:column;align-items:center;font-family:'PF',Georgia,serif;font-weight:700;font-size:34px;line-height:.82}} .tsx p{{margin:0;font-size:15px}} .nvs{{display:flex;gap:26px}} .nv{{display:flex;align-items:center;gap:8px}} .nv b{{display:block;font-size:15px}} .nv span{{font-size:13px;color:#3d4080}} .bd{{display:flex;gap:3px;margin-top:3px}} .bd i{{width:8px;height:8px;border-radius:50%;background:{C};display:block}} .ib{{display:inline-block;width:46px;height:30px;border:1.8px solid {N};border-radius:4px;vertical-align:middle;margin-left:6px}} .lkc{{font-size:12px;font-weight:700;color:{MUTE};margin-top:4px}} .duet{{border:1.5px dashed {C};border-radius:6px;padding:8px 14px 4px;margin:6px 0 4px}} .dh{{display:flex;gap:14px;align-items:baseline;font-size:14.5px}} .dl{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{MUTE};margin:4px 0 -4px}} .dm{{max-width:84%;margin:0 auto}} .tog{{display:flex;gap:14px;align-items:baseline;border:1.5px dashed {C};border-radius:6px;padding:8px 14px;margin:6px 0 4px;font-size:15px}} .tgh{{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};white-space:nowrap}} .row2{{display:grid;grid-template-columns:1fr 110px;gap:16px;align-items:center}} .qr{{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:{MUTE};letter-spacing:.12em;text-transform:uppercase}} .qrb{{width:96px;height:96px;border:1.5px dashed {HELD};display:flex;align-items:center;justify-content:center;color:{HELD};font-size:14px}}
@@ -220,7 +225,8 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .lpat{{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;align-items:center;border:1.5px solid rgba(38,41,107,.18);border-radius:10px;padding:10px 14px}} .lpat .kick{{margin-bottom:2px}} .lpat p{{margin:2px 0 6px}}
 .lnames{{display:flex;gap:8px;flex-wrap:wrap}} .lcn{{font:700 20px 'AH',Arial;color:#26296b;border:1.5px solid #26296b;border-radius:8px;min-width:40px;text-align:center;padding:3px 8px}}
 .lsteps{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}} .lst{{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.35}} .lst .pn{{flex:none}}
-.mus g.harm text{{font-family:'AH',Arial,sans-serif!important;font-weight:700;fill:#26296b}}
+.mus g.harm text{{font-family:'AH',Arial,sans-serif!important;font-weight:700;fill:#26296b}} .mus g.harm rect.hbox{{fill:#fff;stroke:#26296b;stroke-width:22}}
+.trk{{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:center;border:1.5px dashed rgba(228,87,46,.55);border-radius:10px;padding:8px 14px}} .trk .tog{{margin:0;border:0;padding:0;display:block}} .trk .tog .tgh{{display:block;margin-bottom:3px}}
 .lw2{{display:grid;grid-template-columns:1fr 1.5fr;gap:14px;align-items:stretch}} .lw2>.listen,.lw2>.wow{{margin:0}}
 [hidden]{{display:none!important}}
 .strip{{display:grid;grid-template-columns:repeat(4,1fr);border-left:2px solid {N};margin:8px 0 0}} .sc{{border-right:2px solid {N};border-top:1.5px solid #d9d6ea;border-bottom:1.5px solid #d9d6ea;padding:8px 0;text-align:center;font-family:'Playfair Display',serif;font-weight:700;font-size:30px;color:{N}}}
@@ -248,5 +254,36 @@ if SONG.get('more'):
 {YOURS}
 <div class="sp"></div><div class="end">{ticks(SONG.get('more_ticks', ['Played the first tune', 'Played the second tune', 'Played my own tune']), True)}</div>''', 4)
 BODY = ready_pages() if SONG.get('kind') == 'ready' else P1 + P2 + P3 + P4
-html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{BODY}</body></html>'
+PAGINATE = r"""<script>
+// Pages grow, the music never shrinks (her 7 Nov 14:11: '페이지 늘어나도 괜찮으니 악보가 줄어들게 하지는 말자'): a page whose
+// content runs past its foot hands its last blocks to a new page right after it (a heading goes with what follows it).
+function paginate(){
+  const fits = b => b.scrollHeight <= b.clientHeight + 0.5;
+  // a heading, a tune's name or its one-line how: it stays with the music that follows it
+  const lead = k => !k.matches('.mus, .end, .trk, .lpat, .sp') && !k.querySelector('.mus') && k.getBoundingClientRect().height < 90;
+  for (let pg = document.querySelector('.pg'); pg; pg = pg.nextElementSibling) {
+    if (!pg.classList || !pg.classList.contains('pg')) continue;
+    const body = pg.querySelector('.body'); if (fits(body) || body.children.length < 2) continue;
+    const nx = pg.cloneNode(true), nb = nx.querySelector('.body'); nb.innerHTML = ''; nb.classList.add('cont');
+    while (!fits(body) && body.children.length > 1) nb.prepend(body.lastElementChild);
+    // a new page never holds only the ticks and steps: it takes at least one piece of music (or a real block) with it
+    const real = () => [...nb.children].some(k => k.matches('.mus, .trk, .lpat') || k.querySelector('.mus'));
+    while (!real() && body.children.length > 2) nb.prepend(body.lastElementChild);
+    while (body.children.length > 1 && (body.lastElementChild.matches('.ph, .how, .kick, h1, h2, h3') || lead(body.lastElementChild))) nb.prepend(body.lastElementChild);
+    pg.after(nx);
+  }
+  // a page made by a spill is filled up with what comes next, so no page is left half empty (the next part starts there)
+  for (const c of [...document.querySelectorAll('.body.cont')]) {
+    const pg = c.closest('.pg'), nx = pg.nextElementSibling; if (!nx || !nx.classList.contains('pg')) continue;
+    const nb = nx.querySelector('.body'), moved = [];
+    while (nb.firstElementChild) { const k = nb.firstElementChild; c.append(k); moved.push(k); if (!fits(c)) { nb.prepend(k); moved.pop(); break; } }
+    while (moved.length && nb.firstElementChild && (moved[moved.length - 1].matches('.ph, .how, .kick, h1, h2, h3, .sp') || lead(moved[moved.length - 1]))) nb.prepend(moved.pop());
+    if (!nb.firstElementChild) nx.remove(); else nb.classList.add('cont');
+  }
+  document.querySelectorAll('.pg .foot span').forEach((f, i) => f.textContent = i + 1);
+  window.__paged = 1;
+}
+(document.fonts ? document.fonts.ready : Promise.resolve()).then(() => requestAnimationFrame(paginate));
+</script>"""
+html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{BODY}{PAGINATE}</body></html>'
 open(sys.argv[3], 'w').write(html); print('ok', len(html))

@@ -9,7 +9,7 @@
 const { chromium } = require('playwright');
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }); const p = await b.newPage({ viewport: { width: 900, height: 1200 } });
-  await p.goto('file://' + process.argv[2]); await p.waitForTimeout(400);
+  await p.goto('file://' + process.argv[2]); await p.waitForFunction(() => window.__paged, null, { timeout: 8000 }).catch(() => {}); await p.waitForTimeout(400);
   const r = await p.evaluate(() => {
     const out = [], R = (e) => e.getBoundingClientRect();
     const pages = [...document.querySelectorAll('.pg')];
@@ -58,5 +58,5 @@ const { chromium } = require('playwright');
     out.push('#stats svgs=' + svgs.length + ' ledgers=' + document.querySelectorAll('g.ledgerLines path, line.lledger').length + ' stems=' + document.querySelectorAll('g.stem path').length + ' heads=' + document.querySelectorAll('g.notehead').length);
     return out;
   });
-  r.forEach(x => console.log(x)); console.log(`${r.length} alignment problems`); await b.close();
+  r.forEach(x => console.log(x)); console.log(`${r.filter(x => !x.startsWith('#')).length} alignment problems`); await b.close();
 })();
