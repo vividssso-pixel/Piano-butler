@@ -155,7 +155,7 @@ def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (
         x0 = bars[b] + 22; w = (bars[b + 1] - bars[b] - 26) / 4; t = 0
         for n, k in notes:
             o += G.note(x0 + t * w, n, k, up=True); t += 2 if k == 'm' else 1
-    chords = [(0, 0, ['C3', 'E3', 'G3'], 'C', 'I', 4, ()), (1, 0, ['F2', 'A2', 'C3'], 'F', 'IV', 2, ()), (1, 2, ['E3', 'G3', 'C4'], 'C/E', 'I⁶', 2, ()), (2, 0, ['F2', 'A2', 'C3'], 'Fm', 'iv', 2, ()), (2, 2, ['C3', 'E3', 'G3'], 'C', 'I', 2, ()), (3, 0, ['G2', 'C3', 'D3'], 'Gsus4', 'V', 1, ()), (3, 1, ['G2', 'B2', 'D3', 'F3'], 'G7', 'V⁷', 1, ()), (3, 2, ['C3', 'E3', 'G3'], 'C(add9)', 'I', 2, ('D4',))]
+    chords = [(0, 0, ['C3', 'E3', 'G3'], 'C', 'I', 4, ()), (1, 0, ['F2', 'A2', 'C3'], 'F', 'IV', 2, ()), (1, 2, ['E3', 'G3', 'C4'], 'C/E', 'Ib', 2, ()), (2, 0, ['F2', 'A2', 'C3'], 'Fm', 'iv', 2, ()), (2, 2, ['C3', 'E3', 'G3'], 'C', 'I', 2, ()), (3, 0, ['G2', 'C3', 'D3'], 'Gsus4', 'Vsus4', 1, ()), (3, 1, ['G2', 'B2', 'D3', 'F3'], 'G7', 'V⁷', 1, ()), (3, 2, ['C3', 'E3', 'G3'], 'C(add9)', 'I', 2, ('D4',))]
     pos = {}; yn = G.y1 + 30; yb = F.y1 + 26
     for b, beat, notes, name, num, dur, extra in chords:
         x = bars[b] + 22 + beat * (bars[b + 1] - bars[b] - 26) / 4 + 2; pos[name + str(b) + str(beat)] = x
