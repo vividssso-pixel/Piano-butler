@@ -259,6 +259,7 @@ css += '''
 .px .vs svg{width:100%;height:auto} .px text{font-family:'AH',Arial !important;fill:#26296b !important;font-weight:700} .px text.hl{fill:#e4572e !important} .kbf{display:flex;justify-content:center}
 '''
 import re as _re
+exec(open('/tmp/claude-0/pk/pitch_scales.py').read())   # her 7 Nov: Scales and keys rewritten to the Pitch rules
 PAGES = (P22, P23, P24, P25, P26, P27, P28, P29, P29b, P30, P31, P32)
 # her 5 Nov (A): four parts. Part I Pitch keeps topics 1-5 (pp. 22-31, tips p. 32); topics 6-12 become Part III Scales and keys (pp. 50-63, tips p. 64)
 _KEYS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'S1', 'S2', 'S3', 'S4', 'S5']
@@ -284,10 +285,10 @@ def _slip():
     return '<figure class="vx px"><div class="vs">' + svg.replace('<svg ', '<svg style="max-height:96px" ', 1) + '</div></figure>'
 PT = ppage(f"""{head('Part III · Scales and keys · Tips', 'When a note sounds wrong', 'You read the note right, yet it sounds sour. The slip is usually in the key, not the note. Name the slip first, then fix only that note.')}
 <div class="tip tw"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
-{tbl(['What you notice', 'Check', 'Turn to'], [['A note sounds sour, though you read it right', '<b class="co">the key signature</b>: is this note sharp or flat all the way through?', 'p. {{S3}}'], ['A key with many sharps or flats feels lost', '<b class="co">the circle</b>: clockwise adds a sharp, anticlockwise a flat', 'p. {{S5}}'], ['A minor tune sounds wrong near the end', '<b class="co">the raised 7th</b>: harmonic and melodic minor sharpen it', 'p. {{S2}}'], ['A scale sounds wrong in the middle', '<b class="co">the semitone steps</b>: 3–4 and 7–8 in every major scale', 'p. {{S1}}'], ['A sharp is missing from the key signature', '<b class="co">the order of sharps</b>: F C G D A E B', 'p. {{S3}}'], ['You are not sure which major key it is', '<b class="co">the last sharp</b>: the key is one note above it', 'p. {{S4}}']], ['38%', '46%', '16%'])}
+{tbl(['What you notice', 'Check', 'Turn to'], [['A note sounds sour, though you read it right', '<b class="co">the key signature</b>: is this note sharp or flat all the way through?', 'p. {{S3}}'], ['A key with many sharps or flats feels lost', '<b class="co">the circle</b>: go right for a sharp, left for a flat', 'p. {{S5}}'], ['A minor tune sounds wrong near the end', '<b class="co">the raised 7th</b>: harmonic and melodic minor raise it', 'p. {{S2}}'], ['A scale sounds wrong in the middle', '<b class="co">the short steps</b> (1 hop): 3–4 and 7–8 in every major scale', 'p. {{S1}}'], ['A sharp is missing from the key signature', '<b class="co">the order of sharps</b>: F C G D A E B', 'p. {{S3}}'], ['You are not sure which major key it is', '<b class="co">the last sharp</b>: the key is one hop up from it', 'p. {{S4}}']], ['38%', '46%', '16%'])}
 </div>
-{inaction('Find the slip', _slip(), ['<b>Read the key signature:</b> one sharp, on the top line, F (ringed).', '<b>The red note sits on that line</b>, so the sharp belongs to it too.', '<b>No natural cancels it</b>, so this F is F♯, here and all through the piece.'], 'Play <b>F♯</b>, the black key. Plain F is the most common slip in G major.')}
-{howto('Three checks before you play', ['<b>The key signature:</b> say its sharps or flats aloud.', '<b>The key:</b> name it from the last sharp or the last-but-one flat, then check the last note.', '<b>The scale:</b> play it once, so your fingers know which black keys belong.'])}
+{inaction('Find the slip', _slip(), ['<b>Read the key signature:</b> one sharp, on the top line, F (ringed).', '<b>The red note is an F</b>, so the sharp belongs to it too: every F, high or low.', '<b>No natural cancels it</b>, so this F is F♯, here and all through the piece.'], 'Play <b>F♯</b>, the black key. Plain F is the most common slip in G major.')}
+{howto('Three checks before you play', ['<b>The key signature:</b> say its sharps or flats aloud.', '<b>The key:</b> name it from the last sharp or the second-last flat, then check the last note.', '<b>The scale:</b> play it once, so your fingers know which black keys belong.'])}
 {thinkt('Like proofreading: a spelling mistake jumps out once you know which words you usually get wrong. Keep a short list of your own slips, and check those first.')}""", PM.PAGE['ST'])
 PT = _scales(PT)
 
@@ -302,12 +303,12 @@ def _opener(kick, title, line, boxes, toc):
 OPEN2_OLD = _opener('Part I · Which note', 'Pitch', 'High or low? That is the first question every note answers. Start with the keys under your fingers, then find where they live on the staff and how sharps and flats move them.',
     [('Keyboard', 'high and low, the patterns'), ('Staff', 'lines, spaces and clefs'), ('Reading the notes', 'every note on the staff'), ('Sharps and flats', 'the black keys')],
     [(t, PM.PAGE[k]) for t, k in (('The keyboard', 'P1'), ('The staff and the clefs', 'P2'), ('Reading the notes', 'P3'), ('The staff and the keyboard', 'P4'), ('Sharps, flats and naturals', 'P5'), ('Tips: when a note reads wrong', 'PT'))])
-OPEN3_OLD = _opener('Part III · The ground under the chords', 'Scales and keys', 'Notes travel in families. Measure the distance between two notes, build the scales that whole pieces are made from, then learn to read the key a piece lives in.',
+OPEN3_OLD = _opener('Part III · Notes in families', 'Scales and keys', 'Notes travel in families. Measure the distance between two notes, build the scales that whole pieces are made from, then learn to read the key a piece lives in.',
     [('Intervals', 'the distance between notes'), ('Scales', 'major and minor'), ('Keys', 'signatures and the circle')],
     [(t, PM.PAGE[k]) for t, k in (('Counting intervals', 'P6'), ('Major, minor and perfect', 'P7'), ('Major scales', 'S1'), ('Minor scales', 'S2'), ('Keys and key signatures', 'S3'), ('Finding the key', 'S4'), ('The circle of fifths', 'S5'), ('Tips: when a note sounds wrong', 'ST'))])
 exec(open('/tmp/claude-0/pk/openart.py').read())
 OPEN2 = opener_art('Part I · Which note', 'Pitch', 'High or low? That is the first question every note answers. Start with the keys under your fingers, find where they live on the staff, see how sharps and flats move them, then measure how far apart two notes are. Everything in this part is in this one picture.', 'P', PM.PAGE)
-OPEN3 = opener_art('Part III · The ground under the chords', 'Scales and keys', 'Notes travel in families. Build the scales that whole pieces are made from, then learn to read the key a piece lives in: its signature, its home note, its place on the circle. All of it is in one scale.', 'S', PM.PAGE)
+OPEN3 = opener_art('Part III · Notes in families', 'Scales and keys', 'Notes travel in families. Build the scales that whole pieces are made from, then learn to read the key a piece lives in: its signature, its home note, its place on the circle. All of it is in one scale.', 'S', PM.PAGE)
 def _write(name, body):
     html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS}</style></head><body>{body}{_flowjs}</body></html>'
     open('/mnt/user-data/outputs/house-rooms/' + name, 'w').write(html)
