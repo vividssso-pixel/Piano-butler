@@ -1,13 +1,13 @@
 // Every sign inside its row: lyrics, fingers, chords and counts clear of noteheads and of each other; answer boxes clear of notes.
 const { chromium } = require('playwright');
 (async () => {
-  const b = await chromium.launch(require('fs').existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {}); const p = await b.newPage();
-  await p.goto('file://' + process.argv[2]); await p.waitForTimeout(400);
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }); const p = await b.newPage();
+  await p.goto('file://' + process.argv[2]); await p.waitForFunction(() => window.__paged, null, { timeout: 8000 }).catch(() => {}); await p.waitForTimeout(400);
   const r = await p.evaluate(() => {
     const bad = [], R = (e) => e.getBoundingClientRect(), hit = (a, c, m = 0.5) => a.left < c.right - m && c.left < a.right - m && a.top < c.bottom - m && c.top < a.bottom - m;
     document.querySelectorAll('.mus').forEach((mu, i) => {
       const key = mu.dataset.snip || i;
-      const heads = [...mu.querySelectorAll('g.notehead use')].map(R);
+      const heads = [...mu.querySelectorAll('g.notehead use, ellipse.lhead')].map(R);
       const stems = [...mu.querySelectorAll('g.stem path')].map(R);
       // the ink of each label, not its font box: canvas gives the glyphs' own ascent and descent; then 1.5px of air all round
       const cx = document.createElement('canvas').getContext('2d');

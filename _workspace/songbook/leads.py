@@ -1,9 +1,10 @@
 # Page 3 is a lead sheet in every lesson (her 7 Nov 13:11: '3은 lead sheet으로 고정 ... 실용음악 같이 반주패턴 배우는걸로'):
 # the tune with only chord names above it, and a left-hand accompaniment pattern that grows lesson by lesson.
-#   L1-3  the names only: you play the tune, your teacher (or the band) plays the names
+#   L1-3  the names only: you play the tune, the band on the listening page plays the names
 #   L4-6  tap the root: the left hand plays each name's root once, on beat 1
 #   L7    pattern 1, the root held        L8  pattern 2, the root changes (C, G)
-#   L9    pattern 3, the root twice       L10 pattern 4, oom-pah-pah (3/4)
+#   L9    pattern 3, the root twice       L10 pattern 4, the root on every beat (3/4)
+# Only the root, all the way to Lesson 10 (her 7 Nov 14:02: '루트로만 하고 심플하게 점점 진화'): what changes is how often it sounds.
 # Page 1 of Lessons 7-10 shows the right hand only, big; both hands meet here, from the names.
 # The chord names are a simple harmony for each tune (C, F, G, Am, E, D): for Sohyun to check.
 # Usage: python3 leads.py   (rewrites the ten song files)
@@ -35,8 +36,8 @@ PAT = {   # the pattern, shown on its own: one bar per name, on the King's staff
         'how': 'Held, as in Lesson 7; now watch the name. C: 5 on low C. G: the thumb on G.'},
  'p3': {'title': 'Pattern 3 · The root twice', 'bars': [[n('c3', 'm', 5), n('c3', 'm', 5)], [n('g3', 'm', 1), n('g3', 'm', 1)]], 'chords': ['C', 'G'],
         'how': 'The root on beats 1 and 3: two minims a bar, a slow heartbeat. D (finger 4) joins in bar 7.'},
- 'p4': {'title': 'Pattern 4 · Oom-pah-pah', 'bars': [[n('a3', 'c', 5), n('e4', 'c', 1), n('e4', 'c', 1)], [n('e4', 'c', 1), n('b3', 'c', 4), n('b3', 'c', 4)]], 'chords': ['Am', 'E'],
-        'how': 'The waltz pattern: the root on ONE, then a higher note on two and three. Am: A, E, E. E: E, B, B.'},
+ 'p4': {'title': 'Pattern 4 · The root on every beat', 'bars': [[n('a3', 'c', 5), n('a3', 'c', 5), n('a3', 'c', 5)], [n('e4', 'c', 1), n('e4', 'c', 1), n('e4', 'c', 1)]], 'chords': ['Am', 'E'],
+        'how': 'Still only the root, now on every beat: ONE two three. Am: A with 5. E: E with the thumb.'},
 }
 PAGE = {   # lesson: (pattern, how, steps, keyboard roots)
  'buns': (None, 'A lead sheet is how band players read: the tune, and above it only the chord names. You play the tune; your teacher, or the band on the listening page, plays the names.',
@@ -57,7 +58,7 @@ PAGE = {   # lesson: (pattern, how, steps, keyboard roots)
             ['Tune alone, right hand', 'Pattern alone, reading only the names', 'Together, slowly, then with the band']),
  'surprise': ('p3', 'The tune and its names, C, G and D. The left hand plays pattern 3. In bars 3 and 4 it plays the answer instead (the notes marked L), and in bar 8 it joins the BANG.',
               ['Tune alone, right hand', 'Pattern alone, reading only the names', 'Together, slowly, then with the band']),
- 'elise': ('p4', 'The tune and its names, Am and E, in three-time. The left hand plays pattern 4 from the names: oom-pah-pah. Bar 1 has no name: the right hand starts alone.',
+ 'elise': ('p4', 'The tune and its names, Am and E, in three-time. The left hand plays pattern 4 from the names: the root on every beat. Bar 1 has no name: the right hand starts alone.',
            ['Tune alone, right hand', 'Pattern alone, reading only the names: ONE two three', 'Together, very slowly']),
 }
 RIGHT_ONLY = ['frere', 'london', 'surprise', 'elise']   # page 1: the right hand only, big (both hands meet on page 3)
@@ -82,7 +83,7 @@ for s, lead in LEADS.items():
         for i in range(4): J[f'sing{i + 1}'] = [2 * i, 2 * i + 2, dict(base, **({'meter': 1} if i == 0 else {}))]
     # the lead sheet: the page-1 lines without words, chord names above, a finger on each line's first note
     sing = sorted([k for k in J if k.startswith('sing')], key=lambda k: int(k[4:]))
-    TWO = s in ('buns', 'frere')   # two bars a line where that comes out bigger (measured: Hot Cross Buns 1.34x, Frère 1.19x; the others smaller)
+    TWO = False   # since 7 Nov 14:11 the page grows instead: the lead sheet keeps page 1's lines (was buns, frere at two bars)   # two bars a line where that comes out bigger (measured: Hot Cross Buns 1.34x, Frère 1.19x; the others smaller)
     if TWO:
         src = J[sing[0]][2]; rest = dict(J[sing[1]][2]) if len(sing) > 1 else dict(src)
         sing = [f'_l{i}' for i in range(4)]
