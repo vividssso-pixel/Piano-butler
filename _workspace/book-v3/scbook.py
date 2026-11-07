@@ -48,6 +48,32 @@ STAMP = '<div class="stamp">TOP SECRET</div>'; REV = '<div class="stamp" style="
 PART = 'SCALES AND CHORDS'
 
 def ticks7(hand): return f'<h3 class="sh3">Your seven, {hand}</h3><div class="t7">' + ''.join(f'<div><b>{k}</b><span>{"<i></i>" * 3}</span>{"<em>" + ("1 2 3 4 · 1 2 3 4" if k == "F" and hand == "right hand" else "4 3 2 1 · 4 3 2 1") + "</em>" if (k == "F" and hand == "right hand") or (k == "B" and hand == "left hand") else ""}</div>' for k in 'CDEFGAB') + '</div><p class="sm2" style="text-align:center">One circle each time a scale is clean: slow, even, and without stopping.</p>'
+
+# ---------- Secret 0 · warm-up: five-finger scales (her 7 Nov: 12345 / 54321, the numbers never change, only the key; same order as the scales) ----------
+FIVE = [0, 2, 4, 5, 7]
+def frow(name, white, shift, note, hand='R'):
+    return f'<div class="srow"><div class="slab"><b>{name}</b><span>{note}</span></div>{scalekb(white, [1, 2, 3, 4, 5] if hand == "R" else [5, 4, 3, 2, 1], nw=6, steps=[x + shift for x in FIVE])}</div>'
+FW = [('C', 'all white'), ('D', 'finger 3 on a black key'), ('E', 'fingers 2 and 3 on black keys'), ('F', 'finger 4 on a black key'), ('G', 'all white'), ('A', 'finger 3 on a black key'), ('B', 'fingers 2, 3 and 5 on black keys')]
+FB = [('D♭', 'C', 'thumb on a black key'), ('E♭', 'D', 'thumb on a black key'), ('G♭', 'F', 'thumb on a black key'), ('A♭', 'G', 'thumb on a black key'), ('B♭', 'A', 'thumb on a black key')]
+W1 = spage(f"""{tab(0, 'Warm-up')}{STAMP}
+<h1 class="sh">Five fingers, every key</h1>
+{mission('Before the whole scale: put one finger on each of the <b>first five notes</b> and play <b>1 2 3 4 5</b>, then back <b>5 4 3 2 1</b>. Then move to the next key and do it again.', 'The numbers <b class="co">never change</b>: only your hand moves. Your fingers learn the shape of each key before they have to learn the thumb tuck. Same order as the scales: C D E F G A B.')}
+<div class="tryl">Try it: right hand, up and down, in every white key <span class="hand2" style="font-size:20px">(red = black key · the number is the finger)</span></div>
+<div class="srows c2">{''.join(frow(k + ' five', k, 0, '') for k, _ in FW)}</div>
+{detective('Two of the seven use <b>only white keys</b>. Which two? And in which key does a black key fall under finger <b>4</b> instead of finger 3?')}
+{teach('the left hand plays the same five notes with 5 4 3 2 1 going up. Hands separately first, then together: the numbers mirror, the notes match.')}""", 1, PART)
+W2 = spage(f"""{tab(0, 'revealed')}{REV}
+<h1 class="sh" style="font-size:36px">Same numbers, new keys</h1>
+<div class="secret" style="font-size:19px"><b>C</b> and <b>G</b> are all white. In <b>D</b> and <b>A</b> finger <b>3</b> plays a black key; in <b>E</b>, fingers <b>2 and 3</b>. <b class="co">F</b> is different: its black key, B♭, is under finger <b>4</b>. <b class="co">B</b> uses three black keys.</div>
+<div class="sev2">{''.join(f'<div><b>{k}</b><span>{d}</span></div>' for k, d in FW)}</div>
+<div class="grp">Then the black keys: the group of two, then the group of three</div>
+<div class="srows c2">{''.join(frow(k + ' five', w, 1, d) for k, w, d in FB)}</div>
+<h3 class="sh3">The left hand: same five notes, numbers in a mirror</h3>
+<div class="srows c2">{frow('C five', 'C', 0, 'left hand, 5 4 3 2 1 up', 'L')}{frow('D five', 'D', 0, 'left hand, 5 4 3 2 1 up', 'L')}</div>
+<p class="sm2">On a black key the thumb is fine here: no tuck yet. The full scales will move it to C and F (Secret No. 4).</p>
+{tease(1, 'Now stretch the five into the whole scale: <b>seven white keys, seven scales</b>, right hand.')}
+{unlock(0, 'Play all twelve fives every day for a week: right hand, left hand, then together.')}""", 2, PART)
+
 # ---------- Secret 1 · seven scales, right hand ----------
 S1 = spage(f"""{tab(1, 'Scales')}{STAMP}
 <h1 class="sh">Seven white keys, seven scales</h1>
@@ -55,7 +81,7 @@ S1 = spage(f"""{tab(1, 'Scales')}{STAMP}
 <div class="tryl">Try it: play all seven, right hand, slowly <span class="hand2" style="font-size:20px">(red = black key · the number is the finger · ringed = thumb)</span></div>
 <div class="srows">{rows('R')}</div>
 {detective('Six of the seven scales use <b>the same finger numbers</b>. Which one is different? And in that one, where would the thumb have landed?')}
-{teach('let them play all seven before saying anything. The odd one out is on the next page: it sticks when they find it first.')}""", 1, PART)
+{teach('let them play all seven before saying anything. The odd one out is on the next page: it sticks when they find it first.')}""", 3, PART)
 S2 = spage(f"""{tab(1, 'revealed')}{REV}
 <h1 class="sh" style="font-size:36px">Same fingers, except F</h1>
 <div class="secret" style="font-size:19px"><b>1 2 3 · 1 2 3 4 5</b> for C, D, E, G, A and B. The thumb tucks under after finger 3.<br><b class="co">F major</b> is the one that changes: <b>1 2 3 4 · 1 2 3 4</b>.</div>
@@ -64,7 +90,7 @@ S2 = spage(f"""{tab(1, 'revealed')}{REV}
 <div class="two" style="grid-template-columns:1.2fr 1fr;align-items:center;margin-top:8px"><div>{scalekb('D', RH, W=34, H=92)}</div><div><p class="big2">Everywhere else the thumb plays notes <b class="co">1</b> and <b class="co">4</b>.</p><p>In D major that is D and G: both white. The black keys fall under fingers 2, 3 or 4, where the long fingers reach easily.</p></div></div>
 {ticks7('right hand')}
 {tease(2, 'Now the <b>left hand</b>. Same seven scales, and its own odd one out: Secret No. 2.')}
-{unlock(1, 'In your Workbook: tick each scale when it is clean at a slow, even speed.')}""", 2, PART)
+{unlock(1, 'In your Workbook: tick each scale when it is clean at a slow, even speed.')}""", 4, PART)
 
 # ---------- Secret 2 · seven scales, left hand ----------
 S3 = spage(f"""{tab(2, 'Scales')}{STAMP}
@@ -73,7 +99,7 @@ S3 = spage(f"""{tab(2, 'Scales')}{STAMP}
 <div class="tryl">Try it: play all seven, left hand, slowly <span class="hand2" style="font-size:20px">(start on finger 5, the little finger, and climb)</span></div>
 <div class="srows">{rows('L')}</div>
 {detective('Read the left hand’s numbers <b>backwards</b>, from the top note down. What do you notice? Which scale is the odd one out this time, and is it the same one as for the right hand?')}
-{teach('ask them to say the right-hand numbers while looking at the left-hand picture. The mirror is easier to hear than to see.')}""", 3, PART)
+{teach('ask them to say the right-hand numbers while looking at the left-hand picture. The mirror is easier to hear than to see.')}""", 5, PART)
 S4 = spage(f"""{tab(2, 'revealed')}{REV}
 <h1 class="sh" style="font-size:36px">A mirror, except B</h1>
 <div class="secret" style="font-size:19px">Left hand: <b>5 4 3 2 1 · 3 2 1</b> for C, D, E, F, G and A. From the top it reads 1 2 3 · 1 2 3 4 5: the right hand in a mirror.<br><b class="co">B major</b> is the one that changes: <b>4 3 2 1 · 4 3 2 1</b>.</div>
@@ -84,7 +110,7 @@ S4 = spage(f"""{tab(2, 'revealed')}{REV}
 <div class="two" style="grid-template-columns:1fr 1fr;align-items:start"><div><p><b>Thumbs do not land together.</b> Going up, the right thumb tucks under after note 3; the left thumb plays note 5 and finger 3 crosses over it. That is why hands together feels wobbly at first.</p></div><div><p><b>Practise the join alone:</b> notes 3 4 5 of the scale, both hands, five times. Then the whole scale.</p></div></div>
 {ticks7('left hand')}
 {tease(3, 'Next, the <b>circle</b>: why some scales get sharps and some get flats, and why every white-key scale except F is a sharp key.')}
-{unlock(2, 'Hands separately first, then the join, then together.')}""", 4, PART)
+{unlock(2, 'Hands separately first, then the join, then together.')}""", 6, PART)
 
 
 # ---------- Secret 3 · the circle: right adds a sharp, left adds a flat ----------
@@ -117,7 +143,7 @@ S5 = spage(f"""{tab(3, 'Scales')}{STAMP}
 <div class="two" style="grid-template-columns:1fr 1.05fr;align-items:center;gap:18px"><div>{sevtab}<p class="sm2">Count the black keys you played in Secrets 1 and 2 and write the number.</p></div><div>{circle2(fill={'C': 'home'}, center=('C at the', 'top'))}</div></div>
 <div class="tryl">Try it: on the circle, colour every scale with <b class="co">sharps</b> red and every scale with <b>flats</b> blue. <span class="hand2" style="font-size:20px">(or turn the Scale finder in the app)</span></div>
 {detective('Which side of the circle are the red ones on? Read them clockwise from C: does the number of sharps go up one at a time? And which white-key scale is all alone on the other side?')}
-{teach('let them colour first, with the app’s Scale finder open if you have it: right is ♯, left is ♭. Say nothing about F until they spot it.')}""", 5, PART)
+{teach('let them colour first, with the app’s Scale finder open if you have it: right is ♯, left is ♭. Say nothing about F until they spot it.')}""", 7, PART)
 S6 = spage(f"""{tab(3, 'revealed')}{REV}
 <h1 class="sh" style="font-size:36px">Right for sharps, left for flats</h1>
 <div class="secret" style="font-size:19px">Clockwise from C, each step adds <b class="co">one sharp</b>: G 1, D 2, A 3, E 4, B 5. One step anticlockwise adds <b>one flat</b>: F. So every white-key major is a sharp key <b class="co">except F</b>.</div>
@@ -127,7 +153,7 @@ S6 = spage(f"""{tab(3, 'revealed')}{REV}
 <div class="pair2"><div><b>On the circle</b><span>the only flat white key</span></div><div><b>Under the right hand</b><span>1 2 3 4 · 1 2 3 4</span></div></div>
 <p class="sm2" style="text-align:center">The same B♭ that makes F the flat key also moves the right-hand thumb (Secret No. 1).</p>
 {tease(4, 'The rest of the left side of the circle is the <b>black-key family</b>. Next we play them in keyboard order: the keys of the <b>two black keys</b> first, then the <b>three</b>.')}
-{unlock(3, 'In your Workbook: colour your own circle, and write the number of sharps or flats in each key.')}""", 6, PART)
+{unlock(3, 'In your Workbook: colour your own circle, and write the number of sharps or flats in each key.')}""", 8, PART)
 
 # ---------- Secret 4 · the black-key keys, in keyboard order: the two-black group, then the three ----------
 # fingering exactly as the app's Scale finder (SCALES in drills.src.html)
@@ -146,7 +172,7 @@ S7 = spage(f"""{tab(4, 'Scales')}{STAMP}
 <div class="tryl">Try it: right hand, slowly <span class="hand2" style="font-size:20px">(red = black key · ringed = thumb)</span></div>
 <div class="srows">{brows('R')}</div>
 {detective('Look at the <b>ringed</b> thumbs in all five. What colour are the keys the thumb plays? Which two white keys does it land on most? And which finger starts every scale?')}
-{teach('these fingerings are the ones in the app’s Scale finder; open it on each key and play along. Let them find the thumb rule before you say it.')}""", 7, PART)
+{teach('these fingerings are the ones in the app’s Scale finder; open it on each key and play along. Let them find the thumb rule before you say it.')}""", 9, PART)
 def bt(k): return next(x for x in BLK if x[0] == k)
 S8 = spage(f"""{tab(4, 'revealed')}{REV}
 <h1 class="sh" style="font-size:36px">Thumbs only on white keys</h1>
@@ -158,18 +184,20 @@ S8 = spage(f"""{tab(4, 'revealed')}{REV}
 <div class="t7 t5">{''.join(f'<div><b>{k}</b><span>{"<i></i>" * 3}</span><em>RH {" ".join(map(str, rh[:4]))} …</em></div>' for k, w, sh, rh, lh, grp in BLK)}</div>
 <p class="sm2" style="text-align:center">One circle each time it is clean, hands separately, then together.</p>
 {tease(5, 'Now you have all twelve. Next: play them <b>one after another, up by semitones</b>, C, D♭, D, E♭ … B, hands together.')}
-{unlock(4, 'Colour the flat side of your circle: F, B♭, E♭, A♭, D♭, G♭.')}""", 8, PART)
+{unlock(4, 'Colour the flat side of your circle: F, B♭, E♭, A♭, D♭, G♭.')}""", 10, PART)
 
 CSS2 = f"""
 .mission,.detective,.tease2{{position:relative;border:2px solid {N};border-radius:10px;padding:10px 14px;margin:10px 0;background:#f6f5fa}} .detective{{border-color:{R};background:#fff7f3}} .tease2{{background:#fff}}
 .ml{{display:block;font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:{R};margin-bottom:2px}} .mission p,.detective p,.tease2 p{{margin:3px 0;font-size:16px;line-height:1.5}} .why2{{font-size:15px!important}}
 .tryl{{font-weight:700;font-size:16px;margin:12px 0 2px}} .srows{{display:flex;flex-direction:column;gap:2px}} .srow{{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:end}} .srow svg{{max-height:92px}} .slab b{{display:block;font-size:16px}} .slab span{{font-size:13px;color:#6d6f9c}} .srows .srow svg{{max-height:66px}} .srows{{gap:0}} .t7{{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:6px 0}} .t7>div{{border:1.5px solid {N};border-radius:10px;padding:6px 2px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}} .t7 b{{font-family:PF,serif;font-size:24px}} .t7 span{{display:flex;gap:3px}} .t7 i{{display:inline-block;width:14px;height:14px;border-radius:50%;border:1.5px solid #b9bad6}} .t7 em{{font-style:normal;font-size:10px;font-weight:700;color:{R};line-height:1.2}}
+.srows.c2{{display:grid;grid-template-columns:1fr 1fr;gap:10px 26px}} .srows.c2 .srow{{grid-template-columns:86px 1fr;align-items:center}} .srows.c2 .srow svg{{max-height:96px}}
+.sev2{{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 12px;margin:8px 0}} .sev2>div{{border:1.5px solid #e3e1ee;border-radius:8px;padding:5px 8px}} .sev2 b{{font-size:16px;margin-right:6px}} .sev2 span{{font-size:12.5px;color:#6d6f9c}}
 .grp{{font-family:CV,cursive;font-size:20px;font-weight:700;color:{R};margin:6px 0 0}} .t5{{grid-template-columns:repeat(5,1fr)!important}} .t5 em{{color:#6d6f9c!important}}
 .sev{{width:100%;border-collapse:collapse;font-size:14.5px}} .sev th{{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6d6f9c;text-align:left;border-bottom:1.5px solid {N};padding:4px 6px}} .sev td{{border-bottom:1px solid #e3e1ee;padding:6px}} .sev .bx{{display:inline-block;width:34px;height:24px;border:1.5px solid {N};border-radius:4px}}
 .pair2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0}} .pair2>div{{border:2px solid {R};border-radius:10px;padding:8px 12px;text-align:center}} .pair2 b{{display:block;font-size:16px}} .pair2 span{{font-family:CV,cursive;font-size:22px;font-weight:700;color:{R}}}
 .lines .al{{display:block;height:24px;border-bottom:1.4px solid #c9c7dc}} .teach{{font-size:14px;color:#6d6f9c;border-top:1px dashed #c9c7dc;padding-top:6px;margin-top:10px}}
 .big2{{font-size:18px;font-weight:700;margin:0 0 6px}} .sm2{{font-size:13.5px;color:#6d6f9c;margin:4px 0 0}} .dont{{position:absolute;right:14px;bottom:-14px;font-size:22px;color:{R};transform:rotate(-3deg)}}
 """
-html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{CSS}{CSS2}</style></head><body>{S1}{S2}{S3}{S4}{S5}{S6}{S7}{S8}</body></html>'
+html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{CSS}{CSS2}</style></head><body>{W1}{W2}{S1}{S2}{S3}{S4}{S5}{S6}{S7}{S8}</body></html>'
 open('/mnt/user-data/outputs/house-rooms/scalebook.html', 'w').write(html)
 print('ok')
