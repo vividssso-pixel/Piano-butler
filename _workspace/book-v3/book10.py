@@ -193,7 +193,7 @@ h3{margin:10px 0 5px!important;padding-top:6px!important}
 .gm4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center;align-items:end} .gm4>div{display:flex;flex-direction:column;align-items:center;gap:4px} .gm4 b{font-size:16px;color:#e4572e} .inact,.inact2{margin:8px 0!important} .think{margin:5px 0!important}
 """
 SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the trick in a sentence
- 'P1': 'Find the two black keys: <b>C</b> is always just to their left.', 'P2': 'The treble clef curls round <b>G</b>; the bass clef’s two dots hug <b>F</b>.',
+ 'P1': 'Two black keys: start on C. Three black keys: start on F. Then walk on.', 'P2': 'The treble clef curls round <b>G</b>; the bass clef’s two dots hug <b>F</b>.',
  'P3': 'Start from a note you know (bass F, Middle C, treble G), then step or skip.', 'P4': 'Every line and every space is one white key, in order.',
  'P5': 'Sharp: the very next key to the <b>right</b>. Flat: the very next key to the <b>left</b>.',
  'T1': 'The beat never stops, not even in a rest. Feel it before you play.', 'T2': 'Each note is half the one above it, and every note has a rest twin.',
