@@ -49,7 +49,7 @@ class Staff:
     def tie(s, x0, x1, n, col=OCR):
         y = s.y(n) + s.sp * .8
         return f'<path d="M{x0 + 4},{y:.1f} Q{(x0 + x1) / 2},{y + s.sp * 1.3:.1f} {x1 - 4},{y:.1f}" fill="none" stroke="{col}" stroke-width="2"/>'
-    def chord(s, x, notes, hollow=True, col=OCR, extra=()):   # a snowman: stacked heads (no stem)
+    def chord(s, x, notes, hollow=True, col=OCR, extra=()):   # a cake: stacked heads (no stem)
         return ''.join(s.head(x, n, hollow, col) for n in notes) + ''.join(s.head(x, n, hollow, ORD) for n in extra)
 def brace(x, y0, y1, col=OCR): return f'<path d="M{x},{y0} C{x - 14},{y0 + (y1 - y0) * .25} {x - 14},{y0 + (y1 - y0) * .75} {x},{y1}" fill="none" stroke="{col}" stroke-width="2.2"/><line x1="{x}" x2="{x}" y1="{y0}" y2="{y1}" stroke="{col}" stroke-width="1.5"/>'
 def call(n, x, y, tx, ty, r=12):
@@ -177,7 +177,7 @@ def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (
     yt = ya + 36
     o += (f'<path d="M{xC - 14},{yt - 6} V{yt} H{xC9 + 14} V{yt - 6}" fill="none" stroke="{OPK}" stroke-width="1.3"/>' if mode == 'M' else '') + _c(12, (xC + xC9) / 2, yt, (xC + xC9) / 2, yt + 18) + _l('M', (xC + xC9) / 2 + 18, yt + 23, 'a trip from home and back', OPK, 15, 'start')
     return f'<svg viewBox="0 0 800 {yt + (36 if mode == "M" else 0)}" style="width:100%;display:block">{o}</svg>'
-LEG_H = [(1, 'Chords and triads', 'three notes stacked like a snowman', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes, a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more ball on top: G7', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
+LEG_H = [(1, 'Chords and triads', 'three notes stacked like a layer cake', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes, a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more layer on top: G7', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
 LEG_M = [(1, 'Chords from outside the key', 'a guest note: A♭ in C major', 'M1'), (2, 'Cadences', 'V to I ends a phrase like a full stop', 'M2'), (3, 'Chords under a melody', 'the tune’s main notes pick the chord', 'M3'), (4, 'Progressions everywhere', 'the same few trips, in every song', 'M4'), ('★', 'Tips: when harmony goes wrong', '', 'MT')]
 
 def opener_art(kick, title, line, part, PAGE, cls=''):

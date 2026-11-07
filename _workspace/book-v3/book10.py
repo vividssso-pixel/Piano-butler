@@ -203,9 +203,9 @@ SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the t
  'S1': 'Every major scale: tone, tone, semitone, tone, tone, tone, semitone.', 'S2': 'Minor = the major on the same note with 3, 6 and 7 one key lower.',
  'S3': 'The key signature says once, at the start, which notes are always sharp or flat.', 'S4': 'Last sharp, then the next key up. Second-last flat: that is the key.',
  'S5': 'Go right: one more sharp. Go left: one more flat.',
- 'H1': 'Play one, skip one, play one: the snowman rule.', 'H2': 'Count the keys between: 3 + 2 is major, 2 + 3 is minor.', 'H3': 'Build a snowman on every note of the scale: I, IV and V are the strongest.',
- 'H4': 'Move the bottom note to the top: same chord, new bass.', 'H5': 'One more ball on the snowman and the chord changes colour.', 'H6': 'Move the 3rd, take it away, or add one note: five new colours.',
- 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'M1': 'Sharp guests push <b>up</b>, flat guests sigh <b>down</b>: follow them one key and you find the next chord.', 'M2': 'Music has full stops and commas too: listen to the last two chords of a phrase.', 'M3': 'Look at the melody’s main notes, then pick the snowman that holds them.', 'M4': 'Most songs take the same few trips: home, away, a pull, and home again.'}
+ 'H1': 'Play one, skip one, play one: the cake rule.', 'H2': 'Count the keys between: 3 + 2 is major, 2 + 3 is minor.', 'H3': 'Build a cake on every note of the scale: I, IV and V are the strongest.',
+ 'H4': 'Move the bottom note to the top: same chord, new bass.', 'H5': 'One more layer on the cake and the chord changes colour.', 'H6': 'Move the 3rd, take it away, or add one note: five new colours.',
+ 'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'M1': 'Sharp guests push <b>up</b>, flat guests sigh <b>down</b>: follow them one key and you find the next chord.', 'M2': 'Music has full stops and commas too: listen to the last two chords of a phrase.', 'M3': 'Look at the melody’s main notes, then pick the cake that holds them.', 'M4': 'Most songs take the same few trips: home, away, a pull, and home again.'}
 def secret_box(t): return f'<div class="secret1"><span class="sl">The secret</span><span>{t}</span></div>'
 def hand(t, cls=''): return f'<span class="hand3 {cls}">{t}</span>'
 def _unpair(html):
