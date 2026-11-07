@@ -124,7 +124,7 @@ def pic_scales():
         x0, x1 = xs[i] + 8, xs[i + 1] - 8; red = t == 'S'
         o += f'<path d="M{x0},{yb - 5} V{yb} H{x1} V{yb - 5}" fill="none" stroke="{ORD if red else OCR}" stroke-width="{2 if red else 1.3}"/>' + lab((x0 + x1) / 2, yb + 17, 'semitone' if red else 'tone', ORD if red else OCR, 11, fam='AH')
     o += lab(xs[5], S.y('E5') - 48, 'E minor starts here', OPK, 15)
-    o += lab(100, yb + 52, 'last sharp F♯, one key up: G major', OPK, 16, 'start')
+    o += lab(100, yb + 52, 'last sharp F♯, one hop up: G major', OPK, 16, 'start')
     o += f'<path d="M92,{S.y("F5") - 16} Q110,{S.y("F5") - 40} {xs[0] - 6},{S.y("G4") - 10}" fill="none" stroke="{ORD}" stroke-width="1.6" stroke-dasharray="3 3"/>'
     # a small circle of fifths
     cx, cy, R = 630, yb + 160, 56; MJ = ['C', 'G', 'D', 'A', 'E', 'B', 'F♯', 'D♭', 'A♭', 'E♭', 'B♭', 'F']
@@ -138,7 +138,7 @@ def pic_scales():
     o += call(1, xs[3] - 8, yb + 2, xs[3] - 8, yb + 62) + call(2, xs[5], S.y('E5') - 36, xs[5] + 60, 30)
     o += call(3, 86, S.y('F5') - 14, 60, 30) + call(4, 92, yb + 40, 60, yb + 62) + call(5, cx - R - 22, cy, cx - R - 60, cy)
     return f'<svg viewBox="0 0 760 {yb + 246}" style="width:100%;display:block">{o}</svg>'
-LEG_S = [(1, 'Major scales', 'T T S T T T S: the two short steps', 'S1'), (2, 'Minor scales', 'the same notes from the 6th note up', 'S2'), (3, 'Keys and key signatures', 'the sharps at the start apply all the way', 'S3'), (4, 'Finding the key', 'last sharp, one key up; second-last flat', 'S4'), (5, 'The circle of fifths', 'clockwise, one more sharp each step', 'S5'), ('★', 'Tips: when a note sounds wrong', '', 'ST')]
+LEG_S = [(1, 'Major scales', 'T T S T T T S: the two short steps', 'S1'), (2, 'Minor scales', 'the major with 3, 6 and 7 one key lower', 'S2'), (3, 'Keys and key signatures', 'the sharps at the start apply all the way', 'S3'), (4, 'Finding the key', 'last sharp, one hop up; second-last flat', 'S4'), (5, 'The circle of fifths', 'go right: one more sharp each step', 'S5'), ('★', 'Tips: when a note sounds wrong', '', 'ST')]
 
 # ---------- Part IV · Harmony ----------
 def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (1-8), 'M' = Harmony in music (old 9-12 as 1-4)

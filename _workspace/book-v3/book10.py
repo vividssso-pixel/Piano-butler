@@ -200,9 +200,9 @@ SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the t
  'T3': 'A dot adds half. A tie glues two notes into one.', 'T4': 'Top number: how many beats. Bottom number: which note gets one beat.',
  'T5': 'Dotted beats split in three: 6/8 is two big beats.', 'T6': 'Beams group notes into beats; an upbeat borrows from the last bar.', 'T7': 'Keep the beat rock-steady and let the rhythm tease it.',
  'P6': 'Count the notes, both ends included: C D E is 3 notes, a 3rd.', 'P7': 'Count the hops: 4 make a major 3rd, 3 a minor 3rd.',
- 'S1': 'Every major scale: tone, tone, semitone, tone, tone, tone, semitone.', 'S2': 'Three minor scales, one home note: only the 6th and 7th change.',
- 'S3': 'The key signature says once, at the start, which notes are always sharp or flat.', 'S4': 'Last sharp, one key up: the major key. Last flat but one: the major key.',
- 'S5': 'Clockwise adds a sharp, anticlockwise adds a flat: every key on one clock.',
+ 'S1': 'Every major scale: tone, tone, semitone, tone, tone, tone, semitone.', 'S2': 'Minor = the major on the same note with 3, 6 and 7 one key lower.',
+ 'S3': 'The key signature says once, at the start, which notes are always sharp or flat.', 'S4': 'Last sharp, one hop up. Second-last flat: that is the key.',
+ 'S5': 'Go right: one more sharp. Go left: one more flat.',
  'H1': 'Play one, skip one, play one: the snowman rule.', 'H2': 'Count the keys between: 3 + 2 is major, 2 + 3 is minor.', 'H3': 'Build a snowman on every note of the scale: I, IV and V are the strongest.',
  'H4': 'Move the bottom note to the top: same chord, new bass.', 'H5': 'One more floor on the snowman and the chord changes colour.', 'H6': 'Move the 3rd, take it away, or add one note: five new colours.',
  'H7': 'Keep skipping letters above the 7th: 9, 11, 13 are 2, 4, 6 an octave up.', 'H8': 'Chord before the slash, bass note after it.', 'M1': 'Sharp guests push <b>up</b>, flat guests sigh <b>down</b>: follow them one key and you find the next chord.', 'M2': 'Music has full stops and commas too: listen to the last two chords of a phrase.', 'M3': 'Look at the melody’s main notes, then pick the snowman that holds them.', 'M4': 'Most songs take the same few trips: home, away, a pull, and home again.'}
