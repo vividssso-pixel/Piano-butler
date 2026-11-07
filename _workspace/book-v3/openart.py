@@ -27,7 +27,7 @@ class Staff:
         return s.ledger(x, n, col) + f'<ellipse cx="{x}" cy="{y:.1f}" rx="{r:.1f}" ry="{r * .72:.1f}" transform="rotate(-20 {x} {y:.1f})" fill="{"none" if hollow else col}" stroke="{col}" stroke-width="2.2"/>'
     def note(s, x, n, kind='c', col=OCR, up=None):   # kind: c crotchet, m minim, q quaver, sb semibreve, dc dotted crotchet
         y = s.y(n); i = _idx(n) - s.base; up = (i < 4) if up is None else up
-        o = s.head(x, n, kind in ('m', 'sb'), col)
+        o = s.head(x, n, kind in ('m', 'sb', 'dm'), col)
         if kind != 'sb':
             sx = x + (s.sp * .55 if up else -s.sp * .55); sy = y - 3.3 * s.sp if up else y + 3.3 * s.sp
             o += f'<line x1="{sx:.1f}" x2="{sx:.1f}" y1="{y:.1f}" y2="{sy:.1f}" stroke="{col}" stroke-width="1.8"/>'
@@ -64,7 +64,7 @@ def pic_time():
     S = Staff(40, 760, 160, 12); L = S.lines() + S.clefsym() + S.tsig(104, 4, 4)
     o = L + S.note(130, 'G4') + S.bar(152)
     o += S.note(180, 'A4', 'm') + S.rest(290) + S.beam([338, 374], ['G4', 'A4']) + S.bar(410)
-    o += S.note(438, 'B4', 'dc') + S.note(508, 'A4') + S.note(576, 'G4', 'q') + S.note(614, 'G4') + S.bar(650) + S.note(678, 'G4') + S.tie(614, 678, 'G4') + S.end(740)
+    o += S.note(438, 'B4', 'dc') + S.note(508, 'A4') + S.note(576, 'G4', 'q') + S.note(614, 'G4') + S.bar(650) + S.note(678, 'G4', 'dm') + S.tie(614, 678, 'G4') + S.end(740)
     yb = S.y1 + 44
     for x, t, big in [(180, '1', 1), (240, '2', 0), (290, '3', 0), (350, '4', 0), (438, '1', 1), (478, '2', 0), (542, '3', 0), (614, '4', 0), (678, '1', 1)]:
         o += f'<circle cx="{x + 4}" cy="{yb}" r="{9 if big else 5}" fill="{ORD if big else OCR}"/>' + lab(x + 4, yb + 28, t, ORD if big else OCR, 14, fam='AH')
@@ -75,7 +75,7 @@ def pic_time():
         xs = [112 + g * 92 + k * 26 for k in range(3)]
         o += T.beam(xs, ['E5', 'E5', 'E5']).replace(f'<ellipse cx="{xs[0]}"', f'<ellipse fill-opacity="1" cx="{xs[0]}"')
         o += f'<circle cx="{xs[0]}" cy="{T.y("E5"):.1f}" r="4.6" fill="{ORD}"/>'
-    o += lab(330, yb + 120, 'or three to a beat', OPK, 18, 'start')
+    o += lab(330, yb + 120, 'two beats, three quavers in each', OPK, 18, 'start')
     o += call(4, 118, S.y1 - 3 * S.sp, 100, 60) + call(2, 236, S.y('A4') - 10, 236, 50) + call(6, 360, S.y('A4') - 50, 360, 50) + call(3, 452, S.y('B4') - 12, 452, 50)
     o += call(1, 682, yb, 740, yb) + call(6, 134, S.y('G4') + 8, 100, yb) + call(7, 514, S.y('A4') + 9, 514, yb + 58) + call(3, 648, S.y('G4') + 22, 700, yb + 58) + call(5, 48, yb + 98, 48, yb + 148)
     return f'<svg viewBox="0 0 800 {yb + 160}" style="width:100%;display:block">{o}</svg>'

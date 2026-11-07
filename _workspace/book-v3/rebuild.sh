@@ -5,8 +5,8 @@ P=/tmp/claude-0/pk; H=/mnt/user-data/outputs/house-rooms; O=/mnt/user-data/outpu
 cd /tmp/e2e && node /tmp/claude-0/vrv/center.js $P/wp/wpout_raw.json $P/wp/wpout.json >/dev/null && node $P/wp/crop.js $P/wp/wpout.json $P/wp/wpout_c.json >/dev/null && node $P/wp/vcrop.js $P/wp/wpout_c.json $P/wp/wpout_v.json >/dev/null
 cd $P && for f in book10.py pitch.py harmony.py tips.py; do python3 $f >/dev/null 2>&1 || { echo "FAIL $f"; exit 1; }; done
 (cd /tmp/e2e && node $P/heroshot.js >/dev/null) || { echo "FAIL heroshot"; exit 1; }   # her 6 Nov: the chapter pictures for the workbook Learn pages
-cd $P && for f in wbtime2.py wbpitch.py wbharm.py scbook.py bank.py fun.py fun2.py pgames.py; do python3 $f >/dev/null 2>&1 || { echo "FAIL $f"; exit 1; }; done
-N="handbook-time2 handbook-pitch handbook-scales handbook-harmony handbook-harmony2 handbook-tips workbook-time2 workbook-pitch workbook-scales workbook-harmony scalebook activity-bank-rhythm free-printables-rhythm rhythm-games rhythm-games2 pitch-games"
+cd $P && for f in wbtime2.py wbpitch.py wbharm.py scbook.py acc.py bank.py fun.py fun2.py pgames.py; do python3 $f >/dev/null 2>&1 || { echo "FAIL $f"; exit 1; }; done
+N="accompaniment-sample handbook-time2 handbook-pitch handbook-scales handbook-harmony handbook-harmony2 handbook-tips workbook-time2 workbook-pitch workbook-scales workbook-harmony scalebook activity-bank-rhythm free-printables-rhythm rhythm-games rhythm-games2 pitch-games"
 cd /tmp/e2e && node $P/check.js $(for n in $N; do echo $H/$n.html; done)
 node -e "
 const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const H='$H/';
@@ -28,7 +28,7 @@ PY
 cp $O/rhythm-activities-games.pdf $O/books/; cp $O/pitch-games-draft.pdf $O/books/pitch-games.pdf
 rm -rf $O/books-latest && python3 $P/split/split.py >/dev/null
 mkdir -p "$O/books-latest/3 Activities and games" "$O/books-latest/Whole books (later)"
-cp $O/rhythm-activities-games.pdf "$O/books-latest/3 Activities and games/"; cp $H/scalebook.pdf "$O/books-latest/Whole books (later)/scale-and-chord-book-draft.pdf"; cp $O/pitch-games-draft.pdf "$O/books-latest/3 Activities and games/pitch-games.pdf"
+cp $O/rhythm-activities-games.pdf "$O/books-latest/3 Activities and games/"; cp $H/scalebook.pdf "$O/books-latest/Whole books (later)/scale-and-chord-book-draft.pdf"; cp $H/accompaniment-sample.pdf "$O/books-latest/Whole books (later)/accompaniment-book-sample.pdf"; cp $O/pitch-games-draft.pdf "$O/books-latest/3 Activities and games/pitch-games.pdf"
 cp $O/handbook-part1-pitch.pdf $O/handbook-part2-time.pdf $O/handbook-part3-scales.pdf $O/handbook-part4-chords.pdf $O/handbook-part5-harmony.pdf $H/handbook-tips.pdf $O/workbook-pitch.pdf $O/workbook-time.pdf $O/workbook-scales.pdf $O/workbook-harmony.pdf "$O/books-latest/Whole books (later)/"
 python3 $P/pp/gen.py all >/dev/null
 TS=$(date +%s); S=$O/ship-$TS; mkdir -p $S/src
