@@ -16,16 +16,23 @@ def tone(fs, dur=0.55):
         for h, a in ((1, 1), (2, .45), (3, .22), (4, .12), (5, .06)):
             out += a * np.sin(2 * np.pi * f * h * t) * np.exp(-t * (2.2 + h * 1.1))
     out *= np.minimum(1, t / 0.005); return 0.22 * out / max(1, len(fs) ** .5)
-def _dur(tok):
-    m = re.match(r'(.+?)(?:([/*])(\d))?$', tok); n = m.group(1)
-    return n, (1 / int(m.group(3)) if m.group(2) == '/' else int(m.group(3)) if m.group(2) == '*' else 1)
+def _dur(tok):   # 'F#4/2' half a slot, 'F#4*2' two slots, 'X@96' one beat at 96 a minute
+    m = re.match(r'(.+?)(?:([/*@])(\d+))?$', tok); n = m.group(1); op, v = m.group(2), m.group(3)
+    return n, (1 / int(v) if op == '/' else int(v) if op == '*' else (60 / int(v)) / .62 if op == '@' else 1)
+def click(level):   # her Time chapters: a woodblock-like tick; X strong (beat 1), M medium, x weak
+    t = np.arange(int(SR * .09)) / SR; f = {'X': 1900, 'M': 1500, 'x': 1250}[level]
+    w = (np.sin(2 * np.pi * f * t) + .4 * np.sin(2 * np.pi * f * 2.7 * t)) * np.exp(-t * 60)
+    return w * {'X': .55, 'M': .38, 'x': .26}[level]
 def piano(spec):
     parts = []
     for tok in re.findall(r'\[[^\]]+\]|\S+', spec):
         if tok.startswith('['): parts.append(tone([freq(x) for x in tok[1:-1].split()], 1.1))
         elif tok == '|': parts.append(np.zeros(int(SR * .25)))
         else:   # 'F#4/2' = half a slot (a quaver), 'F#4*2' = two slots (a minim)
-            nm, mul = _dur(tok); parts.append(np.pad(tone([freq(nm)], .5 * min(mul, 1.6)), (0, int(SR * .62 * mul)))[:int(SR * .62 * mul)])
+            nm, mul = _dur(tok); L = int(SR * .62 * mul)
+            if nm in ('X', 'M', 'x'): parts.append(np.pad(click(nm), (0, L))[:L])
+            elif nm == 'R': parts.append(np.zeros(L))
+            else: parts.append(np.pad(tone([freq(nm)], .5 * min(mul, 1.6)), (0, L))[:L])
     return np.concatenate(parts + [np.zeros(int(SR * .3))])
 def say(who, text):
     text = re.sub(r'\b([B-G])s\b', r"\1's", text)   # her 8 Nov: 'Cs' was read letter by letter, 'C-S'; say it 'Cees'

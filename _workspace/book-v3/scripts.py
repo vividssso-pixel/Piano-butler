@@ -219,3 +219,47 @@ CH = {
 ])]),
 **NEW,
 }
+
+NEW['T1'] = ('Pulse, tempo and the bar', [
+ ('The secret', [
+  ('B', 'Pip, put your hand on your heart.', c(47, 'lead')), ('P', 'It is beating. Steady, steady.', c(47, 'lead')),
+  ('B', 'That steady beat is a pulse, and almost every piece of music has one. Its speed is the tempo. Beats travel in groups called bars, and beat one is the strongest.', c(47, 'hero')),
+  ('piano', 'X x x x X x x x X x x x', c(47, 'hero', seq=idx(0, 12))),
+  ('B', 'Here is the secret. The beat never stops, not even in a rest. Feel it before you play.', c(47, 'secret')),
+  ('P', 'So in a rest I still count?', c(47, 'hero')), ('B', 'Always. Listen: in the second bar the notes stop, and the beat goes on.', c(47, 'hero')),
+  ('piano', 'C5 C4 C4 C4 C5 C4 R R C5 C4 C4 C4', c(47, 'hero', seq=idx(0, 12)))]),
+ ('Tempo', [
+  ('B', 'Tempo is measured in beats per minute. A metronome mark at the top of the music shows it. Crotchet equals sixty means sixty beats a minute: one every second.', c(47, 'two')),
+  ('piano', 'X@60 x@60 x@60 x@60', c(47, 'two')), ('B', 'Crotchet equals one hundred and twenty is twice as fast.', c(47, 'two')),
+  ('piano', 'X@120 x@120 x@120 x@120 X@120 x@120 x@120 x@120', c(47, 'two')),
+  ('P', 'Twice as many ticks in the same time.', c(47, 'two'))]),
+ ('Strong and weak beats', [
+  ('B', 'The beats are not all the same. Two beats in a bar go strong, weak, like a march.', c(47, 'two')), ('piano', 'X x X x X x X x', c(47, 'two')),
+  ('B', 'Three go strong, weak, weak, like a waltz.', c(47, 'two')), ('piano', 'X x x X x x X x x', c(47, 'two')),
+  ('B', 'And four go strong, weak, medium, weak, like most songs.', c(47, 'two')), ('piano', 'X x M x X x M x', c(47, 'two')),
+  ('P', 'So Twinkle, Twinkle is in four, and Happy Birthday is in three.', c(48, 'ht')), ('B', 'Exactly. And the Radetzky March is in two.', c(48, 'ht'))]),
+ ('Bars and bar lines', [
+  ('B', 'A bar line divides the music into bars. A double bar line marks the end of a section, or a change. A final bar line, thin then thick, marks the end of the piece.', c(47, 'ht')),
+  ('B', 'And repeat signs: play the passage between them again. If there is no start sign, go back to the beginning.', c(47, 'ht'))]),
+ ('Counting', [
+  ('B', 'Every beat is counted, even inside a long note. Here are three bars of three-four. The red number is where you play; the grey numbers are the beats you hold.', c(48, 'vx')),
+  ('piano', 'X x x X x x X x x', c(48, 'vx', seq=idx(0, 9))),
+  ('B', 'Count aloud at one speed, a little louder on beat one. With a metronome, start slower than you think, and speed up only when the passage is steady.', c(48, 'p'))]),
+ ('Example: march or waltz?', [
+  ('B', 'Is this a march or a waltz? Tap a steady beat as you listen.', c(48, 'ex1')), ('piano', 'C3 G4 G4 C3 G4 G4 C3 G4 G4', c(48, 'ex1', seq=idx(0, 9))),
+  ('B', 'Which beats feel heavier? Count from one heavy beat to the next. Pause and count.', c(48, 'ex1')), ('pause', 3, c(48, 'ex1')),
+  ('P', 'Heavy every three: one two three, one two three. A waltz!', c(48, 'ex1', reveal=True)), ('B', 'Every two would be a march.', c(48, 'ex1', reveal=True))]),
+ ('Example: feel the beat first', [
+  ('B', 'This one says crotchet equals ninety-six: ninety-six beats a minute. Do not start yet. Listen to one full bar, counting one, two, three in your head.', c(48, 'ex2')),
+  ('piano', 'X@96 x@96 x@96', c(48, 'ex2', seq=['#1', '#2', '#3'])),
+  ('B', 'Then step in on the next beat one, the way you step onto a moving escalator.', c(48, 'ex2')),
+  ('piano', 'X@96 x@96 x@96 C4@96 E4@96 G4@96 C5@96 G4@96 E4@96', c(48, 'ex2', seq=['#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9'])),
+  ('P', 'The first note landed right on the beat!', c(48, 'ex2', reveal=True))]),
+ ('Try it', [
+  ('B', 'Hand on your heart. Tap the beat and say one, two, three, four, with one a little louder. Keep going for ten seconds without slowing down.', c(49, 'try10')),
+  ('piano', 'X@80 x@80 x@80 x@80 X@80 x@80 x@80 x@80 X@80 x@80 x@80 x@80', c(49, 'try10', seq=idx(0, 12))),
+  ('B', 'At the New Year concert in Vienna, the audience claps along on every beat of the Radetzky March. That steady clap is the pulse; the tune moves freely over it.', c(49, 'yk')),
+  ('piano', 'X x X x X x', c(49, 'yk', seq=idx(0, 6))),
+  ('B', 'The beat is the stage and the notes are the actors: the stage is there before anyone walks on. So watch it move for a bar, then step in. Until next time, Pip.', c(49, 'think')), ('P', 'One, two, three, four. Goodbye!', c(49, 'think'))])])
+
+CH['T1'] = NEW['T1']
