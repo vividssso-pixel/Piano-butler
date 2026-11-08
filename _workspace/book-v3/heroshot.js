@@ -1,7 +1,7 @@
 // Snapshot each Handbook chapter's opening picture (her 6 Nov) for the workbook's Learn pages. Usage: node heroshot.js
 const {chromium}=require('playwright');const fs=require('fs');
 (async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:820,height:1160},deviceScaleFactor:3});const caps={};
-for(const [f,part] of [['handbook-time2','T'],['handbook-pitch','P'],['handbook-scales','S'],['handbook-harmony','H'],['handbook-harmony2','M']]){
+for(const [f,part] of [['handbook-time2','T'],['handbook-pitch','P'],['handbook-scales','S'],['handbook-harmony','H'],['handbook-harmony2','M'],['handbook-expression','E'],['handbook-shape','F'],['handbook-play','L']]){
  await p.goto('file:///mnt/user-data/outputs/house-rooms/'+f+'.html');await p.waitForTimeout(1800);
  const secs=await p.$$('section.pg');
  for(const s of secs){const k=await s.evaluate(e=>{const m=/· (\d+)$/.exec((e.querySelector('.kick')||{}).textContent||'');return m&&e.querySelector('h1')?m[1]:null;});if(!k)continue;

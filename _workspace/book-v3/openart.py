@@ -27,7 +27,7 @@ class Staff:
         return s.ledger(x, n, col) + f'<ellipse cx="{x}" cy="{y:.1f}" rx="{r:.1f}" ry="{r * .72:.1f}" transform="rotate(-20 {x} {y:.1f})" fill="{"none" if hollow else col}" stroke="{col}" stroke-width="2.2"/>'
     def note(s, x, n, kind='c', col=OCR, up=None):   # kind: c crotchet, m minim, q quaver, sb semibreve, dc dotted crotchet
         y = s.y(n); i = _idx(n) - s.base; up = (i < 4) if up is None else up
-        o = s.head(x, n, kind in ('m', 'sb'), col)
+        o = s.head(x, n, kind in ('m', 'sb', 'dm'), col)
         if kind != 'sb':
             sx = x + (s.sp * .55 if up else -s.sp * .55); sy = y - 3.3 * s.sp if up else y + 3.3 * s.sp
             o += f'<line x1="{sx:.1f}" x2="{sx:.1f}" y1="{y:.1f}" y2="{sy:.1f}" stroke="{col}" stroke-width="1.8"/>'
@@ -49,7 +49,7 @@ class Staff:
     def tie(s, x0, x1, n, col=OCR):
         y = s.y(n) + s.sp * .8
         return f'<path d="M{x0 + 4},{y:.1f} Q{(x0 + x1) / 2},{y + s.sp * 1.3:.1f} {x1 - 4},{y:.1f}" fill="none" stroke="{col}" stroke-width="2"/>'
-    def chord(s, x, notes, hollow=True, col=OCR, extra=()):   # a snowman: stacked heads (no stem)
+    def chord(s, x, notes, hollow=True, col=OCR, extra=()):   # a cake: stacked heads (no stem)
         return ''.join(s.head(x, n, hollow, col) for n in notes) + ''.join(s.head(x, n, hollow, ORD) for n in extra)
 def brace(x, y0, y1, col=OCR): return f'<path d="M{x},{y0} C{x - 14},{y0 + (y1 - y0) * .25} {x - 14},{y0 + (y1 - y0) * .75} {x},{y1}" fill="none" stroke="{col}" stroke-width="2.2"/><line x1="{x}" x2="{x}" y1="{y0}" y2="{y1}" stroke="{col}" stroke-width="1.5"/>'
 def call(n, x, y, tx, ty, r=12):
@@ -64,7 +64,7 @@ def pic_time():
     S = Staff(40, 760, 160, 12); L = S.lines() + S.clefsym() + S.tsig(104, 4, 4)
     o = L + S.note(130, 'G4') + S.bar(152)
     o += S.note(180, 'A4', 'm') + S.rest(290) + S.beam([338, 374], ['G4', 'A4']) + S.bar(410)
-    o += S.note(438, 'B4', 'dc') + S.note(508, 'A4') + S.note(576, 'G4', 'q') + S.note(614, 'G4') + S.bar(650) + S.note(678, 'G4') + S.tie(614, 678, 'G4') + S.end(740)
+    o += S.note(438, 'B4', 'dc') + S.note(508, 'A4') + S.note(576, 'G4', 'q') + S.note(614, 'G4') + S.bar(650) + S.note(678, 'G4', 'dm') + S.tie(614, 678, 'G4') + S.end(740)
     yb = S.y1 + 44
     for x, t, big in [(180, '1', 1), (240, '2', 0), (290, '3', 0), (350, '4', 0), (438, '1', 1), (478, '2', 0), (542, '3', 0), (614, '4', 0), (678, '1', 1)]:
         o += f'<circle cx="{x + 4}" cy="{yb}" r="{9 if big else 5}" fill="{ORD if big else OCR}"/>' + lab(x + 4, yb + 28, t, ORD if big else OCR, 14, fam='AH')
@@ -75,11 +75,11 @@ def pic_time():
         xs = [112 + g * 92 + k * 26 for k in range(3)]
         o += T.beam(xs, ['E5', 'E5', 'E5']).replace(f'<ellipse cx="{xs[0]}"', f'<ellipse fill-opacity="1" cx="{xs[0]}"')
         o += f'<circle cx="{xs[0]}" cy="{T.y("E5"):.1f}" r="4.6" fill="{ORD}"/>'
-    o += lab(330, yb + 120, 'or three to a beat', OPK, 18, 'start')
+    o += lab(330, yb + 120, 'two beats, three quavers in each', OPK, 18, 'start')
     o += call(4, 118, S.y1 - 3 * S.sp, 100, 60) + call(2, 236, S.y('A4') - 10, 236, 50) + call(6, 360, S.y('A4') - 50, 360, 50) + call(3, 452, S.y('B4') - 12, 452, 50)
-    o += call(1, 682, yb, 740, yb) + call(6, 134, S.y('G4') + 8, 100, yb) + call(7, 514, S.y('A4') + 9, 514, yb + 58) + call(3, 648, S.y('G4') + 22, 700, yb + 58) + call(5, 48, yb + 98, 48, yb + 148)
+    o += call(1, 682, yb, 740, yb) + call(6, 134, S.y('G4') + 8, 100, yb) + call(7, 514, S.y('A4') + 9, 514, yb + 58) + call(3, 648, S.y('G4') + 22, 700, yb + 58) + call(5, 48, yb + 98, 48, yb + 148) + call(8, 744, S.y1 - 2 * S.sp, 780, S.y1 - 6 * S.sp)
     return f'<svg viewBox="0 0 800 {yb + 160}" style="width:100%;display:block">{o}</svg>'
-LEG_T = [(1, 'Pulse, tempo and the bar', 'the steady beat underneath; beat 1 is strongest', 'T1'), (2, 'Notes and rests', 'the shape says how long; rests are counted too', 'T2'), (3, 'How long is a note?', 'a dot adds half; a tie glues two notes into one', 'T3'), (4, 'Time signatures', 'four seats in every bar, a crotchet in each', 'T4'), (5, 'Compound and irregular time', 'beats in threes; bars of five or seven', 'T5'), (6, 'Rhythm: groups and upbeats', 'beams show the beats; starting before bar 1', 'T6'), (7, 'Rhythm: off the beat', 'a note between the beats that holds on', 'T7'), ('★', 'Tips: when the rhythm slips', '', 'TT')]
+LEG_T = [(1, 'Pulse, tempo and the bar', 'the steady beat underneath; beat 1 is strongest', 'T1'), (2, 'Notes and rests', 'the shape says how long; rests are counted too', 'T2'), (3, 'How long is a note?', 'a dot adds half; a tie glues two notes into one', 'T3'), (4, 'Time signatures', 'four seats in every bar, a crotchet in each', 'T4'), (5, 'Compound and irregular time', 'beats in threes; bars of five or seven', 'T5'), (6, 'Rhythm: groups and upbeats', 'beams show the beats; starting before bar 1', 'T6'), (7, 'Rhythm: off the beat', 'a note between the beats that holds on', 'T7'), (8, 'Repeats and road signs', 'repeat signs, D.C., D.S., Fine and Coda', 'T8'), ('★', 'Tips: when the rhythm slips', '', 'TT')]
 
 # ---------- Part I · Pitch ----------
 def pic_pitch():
@@ -155,14 +155,15 @@ def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (
         x0 = bars[b] + 22; w = (bars[b + 1] - bars[b] - 26) / 4; t = 0
         for n, k in notes:
             o += G.note(x0 + t * w, n, k, up=True); t += 2 if k == 'm' else 1
-    chords = [(0, 0, ['C3', 'E3', 'G3'], 'C', 'I', 4, ()), (1, 0, ['F2', 'A2', 'C3'], 'F', 'IV', 2, ()), (1, 2, ['E3', 'G3', 'C4'], 'C/E', 'I⁶', 2, ()), (2, 0, ['F2', 'A2', 'C3'], 'Fm', 'iv', 2, ()), (2, 2, ['C3', 'E3', 'G3'], 'C', 'I', 2, ()), (3, 0, ['G2', 'C3', 'D3'], 'Gsus4', 'V', 1, ()), (3, 1, ['G2', 'B2', 'D3', 'F3'], 'G7', 'V⁷', 1, ()), (3, 2, ['C3', 'E3', 'G3'], 'C(add9)', 'I', 2, ('D4',))]
+    chords = [(0, 0, ['C3', 'E3', 'G3'], 'C', 'I', 4, ()), (1, 0, ['F2', 'A2', 'C3'], 'F', 'IV', 2, ()), (1, 2, ['E3', 'G3', 'C4'], 'C/E', 'Ib', 2, ()), (2, 0, ['F2', 'A2', 'C3'], 'Fm', 'iv', 2, ()), (2, 2, ['C3', 'E3', 'G3'], 'C', 'I', 2, ()), (3, 0, ['G2', 'C3', 'D3'], 'Gsus4', 'Vsus4', 1, ()), (3, 1, ['G2', 'B2', 'D3', 'F3'], 'G7', 'V⁷', 1, ()), (3, 2, ['C3', 'E3', 'G3'], 'C(add9)', 'I', 2, ('D4',))]
     pos = {}; yn = G.y1 + 30; yb = F.y1 + 26
     for b, beat, notes, name, num, dur, extra in chords:
         x = bars[b] + 22 + beat * (bars[b + 1] - bars[b] - 26) / 4 + 2; pos[name + str(b) + str(beat)] = x
         o += F.chord(x, notes, dur >= 2, OCR, extra)
-        if name == 'Fm': o += F.acc(x, 'A2', '♭', ORD)
+        if name == 'Fm' and mode == 'M': o += F.acc(x, 'A2', '♭', ORD)
+        dn, dnum = ('F', 'IV') if (name == 'Fm' and mode == 'H') else (name, num)
         if dur == 1: o += f'<line x1="{x + F.sp * .55:.1f}" x2="{x + F.sp * .55:.1f}" y1="{F.y(notes[0]):.1f}" y2="{F.y(notes[-1]) - 3 * F.sp:.1f}" stroke="{OCR}" stroke-width="1.8"/>'
-        o += lab(x, yn, name, OCR, 12.5, fam='AH') + lab(x, yb, num, ORD if (num in ('V⁷', 'I') and b == 3) else OPK, 13, fam='AH')
+        o += lab(x, yn, dn, OCR, 12.5, fam='AH') + lab(x, yb, dnum, ORD if (num in ('V⁷', 'I') and b == 3) else OPK, 13, fam='AH')
     o += lab(104, yb, 'in C major:', OPK, 11, 'end', 'AH')
     xC, xF, xCE, xFm, xC2, xGs, xG7, xC9 = [pos[k] for k in ('C00', 'F10', 'C/E12', 'Fm20', 'C22', 'Gsus430', 'G731', 'C(add9)32')]
     # above: the tune, and the chords named between the staves
@@ -176,11 +177,73 @@ def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (
     yt = ya + 36
     o += (f'<path d="M{xC - 14},{yt - 6} V{yt} H{xC9 + 14} V{yt - 6}" fill="none" stroke="{OPK}" stroke-width="1.3"/>' if mode == 'M' else '') + _c(12, (xC + xC9) / 2, yt, (xC + xC9) / 2, yt + 18) + _l('M', (xC + xC9) / 2 + 18, yt + 23, 'a trip from home and back', OPK, 15, 'start')
     return f'<svg viewBox="0 0 800 {yt + (36 if mode == "M" else 0)}" style="width:100%;display:block">{o}</svg>'
-LEG_H = [(1, 'Chords and triads', 'three notes stacked like a snowman', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes, a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more floor: G7 pulls home', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
+LEG_H = [(1, 'Chords and triads', 'three notes stacked like a layer cake', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes, a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more layer on top: G7', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
 LEG_M = [(1, 'Chords from outside the key', 'a guest note: A♭ in C major', 'M1'), (2, 'Cadences', 'V to I ends a phrase like a full stop', 'M2'), (3, 'Chords under a melody', 'the tune’s main notes pick the chord', 'M3'), (4, 'Progressions everywhere', 'the same few trips, in every song', 'M4'), ('★', 'Tips: when harmony goes wrong', '', 'MT')]
 
+
+# ---------- Part III · Expression (her 8 Nov: the parts the Handbook still needed, in order) ----------
+def pic_expr():
+    S = Staff(40, 760, 170, 12); o = S.lines() + S.clefsym() + S.tsig(104, 4, 4)
+    o += f'<text x="128" y="{S.y1 - 5.6 * S.sp:.0f}" font-family="PF" font-size="20" font-weight="700" fill="{OCR}">Andante</text>'
+    xs = [140, 196, 252, 308]; ns = ['C4', 'E4', 'G4', 'E4']
+    for x, n in zip(xs, ns): o += S.note(x, n)
+    o += f'<path d="M{xs[0] + 4},{S.y("C4") + 11:.0f} Q{(xs[0] + xs[-1]) / 2},{S.y("C4") + 30:.0f} {xs[-1] + 2},{S.y("E4") + 12:.0f}" fill="none" stroke="{OCR}" stroke-width="2"/>' + S.bar(336)
+    xs2 = [362, 412, 462, 512]
+    for x in xs2: o += S.note(x, 'G4') + f'<circle cx="{x}" cy="{S.y("G4") + 15:.0f}" r="2.6" fill="{OCR}"/>'
+    o += S.bar(540) + S.note(580, 'A4', 'm') + f'<text x="572" y="{S.y1 - 4.6 * S.sp:.0f}" font-family="PF" font-size="18" font-style="italic" font-weight="700" fill="{OCR}">tr</text>'
+    o += S.note(660, 'G4', 'm') + f'<path d="M648,{S.y("G4") - 46:.0f} a12,12 0 0 1 24,0" fill="none" stroke="{OCR}" stroke-width="2.4"/><circle cx="660" cy="{S.y("G4") - 50:.0f}" r="2.4" fill="{OCR}"/>' + S.end(740)
+    yd = S.y1 + 66
+    o += f'<text x="132" y="{yd}" font-family="PF" font-size="24" font-style="italic" font-weight="700" fill="{OCR}">p</text><path d="M160,{yd - 9} L320,{yd - 20} M160,{yd - 9} L320,{yd + 2}" stroke="{OCR}" stroke-width="1.8" fill="none"/>'
+    o += f'<text x="350" y="{yd}" font-family="PF" font-size="24" font-style="italic" font-weight="700" fill="{OCR}">f</text>'
+    o += f'<text x="590" y="{S.y1 - 6.4 * S.sp:.0f}" font-family="AH" font-size="15" font-style="italic" fill="{OCR}">rit.</text>'
+    yp = yd + 42
+    o += f'<text x="130" y="{yp}" font-family="PF" font-size="17" font-style="italic" font-weight="700" fill="{OCR}">Ped.</text><path d="M176,{yp - 5} H520" stroke="{OCR}" stroke-width="1.5" stroke-dasharray="5 4"/><text x="528" y="{yp + 2}" font-family="AH" font-size="20" font-weight="700" fill="{OCR}">*</text>'
+    o += lab(420, yp + 44, 'loud and soft, smooth and short, slower, ringing, decorated', OPK, 20)
+    o += call(1, 136, yd - 6, 80, yd - 2) + call(2, 436, S.y("G4") + 18, 436, S.y1 + 40)
+    o += call(2, 226, S.y("C4") + 26, 262, S.y1 + 40) + call(3, 134, S.y1 - 6 * S.sp, 96, S.y1 - 8.4 * S.sp) + call(3, 604, S.y1 - 6.8 * S.sp, 640, S.y1 - 8.4 * S.sp)
+    o += call(4, 150, yp - 6, 92, yp + 26) + call(5, 580, S.y1 - 5.2 * S.sp, 540, S.y1 - 8.4 * S.sp) + call(3, 670, S.y("G4") - 56, 712, S.y1 - 8.4 * S.sp)
+    return f'<svg viewBox="0 0 800 {yp + 60}" style="width:100%;display:block">{o}</svg>'
+LEG_E = [(1, 'Loud and soft', 'p, f and the steps between; hairpins grow and fade', 'E1'), (2, 'Touch: smooth, short, strong', 'slurs, staccato dots, tenuto lines and accents', 'E2'), (3, 'Speed words', 'Andante, Allegro; rit. slows down, a fermata waits', 'E3'), (4, 'The pedals', 'Ped. down, * up: the right pedal keeps notes ringing', 'E4'), (5, 'Ornaments', 'trills, mordents, turns and grace notes', 'E5'), ('★', 'Tips: when your playing sounds flat', '', 'ET')]
+
+# ---------- Part VII · Shape and style; Part VIII · Playing and listening ----------
+def pic_shape():
+    o = ''
+    blocks = [('A', 60, 'question', 'answer'), ('A', 230, 'question', 'answer'), ('B', 400, 'new idea', 'travels'), ('A', 570, 'question', 'home')]
+    for L, x, q, a in blocks:
+        o += f'<rect x="{x}" y="70" width="160" height="70" rx="8" fill="none" stroke="{OCR}" stroke-width="2"/><text x="{x + 80}" y="118" text-anchor="middle" font-family="PF" font-size="40" font-weight="700" fill="{ORD if L == "B" else OCR}">{L}</text>'
+        o += f'<path d="M{x + 8},62 Q{x + 44},36 {x + 78},62" fill="none" stroke="{OPK}" stroke-width="2"/><path d="M{x + 82},62 Q{x + 118},36 {x + 152},62" fill="none" stroke="{OPK}" stroke-width="2"/>'
+    for k in range(3): x = 72 + k * 22; o += f'<circle cx="{x}" cy="{186 - k * 10}" r="6" fill="{OCR}"/>'
+    for k in range(3): x = 160 + k * 22; o += f'<circle cx="{x}" cy="{176 - k * 10}" r="6" fill="{OCR}"/>'
+    o += lab(130, 212, 'a motif, then up a step', OPK, 18)
+    o += f'<line x1="410" y1="190" x2="700" y2="190" stroke="{OCR}" stroke-width="1.6"/><line x1="410" y1="204" x2="700" y2="204" stroke="{OCR}" stroke-width="1.6"/><path d="M420,198 q20,-14 40,0 t40,0 t40,0 t40,0 t40,0 t40,0 t40,0" fill="none" stroke="{OPK}" stroke-width="2"/>'
+    o += lab(556, 232, 'a tune over a rocking left hand', OPK, 18)
+    o += f'<text x="60" y="290" font-family="PF" font-size="20" font-weight="700" fill="{OCR}">Baroque · Classical · Romantic · Modern</text>'
+    o += f'<text x="60" y="318" font-family="AH" font-size="14" fill="{OPK}">C major → G major → C major</text>'
+    o += call(1, 100, 56, 40, 30) + call(2, 160, 160, 210, 170) + call(3, 430, 198, 380, 230) + call(4, 380, 312, 440, 330) + call(5, 470, 62, 470, 24) + call(6, 300, 284, 300, 250)
+    return f'<svg viewBox="0 0 760 350" style="width:100%;display:block">{o}</svg>'
+LEG_F = [(1, 'Motifs and phrases', 'small ideas build sentences: question and answer', 'F1'), (2, 'Repetition and sequence', 'say it again, higher, in another voice, or something new', 'F2'), (3, 'Texture', 'one line, a tune with chords, or tunes woven together', 'F3'), (4, 'Changing key', 'a new sharp that keeps coming back: a new key', 'F4'), (5, 'Form', 'the map of a piece: AB, ABA, ABACA, variations', 'F5'), (6, 'Styles through time', 'Baroque, Classical, Romantic and Modern', 'F6'), ('★', 'Tips: when a piece goes nowhere', '', 'FT')]
+def pic_play(calls=True):
+    o = ''; FC, FT = (OCR, ODK) if calls else (ORD, '#fff')
+    for side, x0, left in (('left hand', 110, True), ('right hand', 450, False)):
+        PW = 170; o += f'<rect x="{x0}" y="150" width="{PW}" height="96" rx="34" fill="none" stroke="{OCR}" stroke-width="2.4"/>'
+        L = {2: 74, 3: 86, 4: 78, 5: 60}
+        for f in (2, 3, 4, 5):
+            k = f - 2; cx = x0 + 28 + k * 38 if not left else x0 + PW - 28 - k * 38; top = 160 - L[f]
+            o += f'<rect x="{cx - 15}" y="{top}" width="30" height="{L[f] + 14}" rx="15" fill="none" stroke="{OCR}" stroke-width="2.4"/>'
+            o += f'<circle cx="{cx}" cy="{top + 18}" r="12" fill="{FC}"/><text x="{cx}" y="{top + 23}" text-anchor="middle" font-family="AH" font-size="14" font-weight="700" fill="{FT}">{f}</text>'
+        ax = x0 + PW - 4 if left else x0 + 4; ay = 214; ang = 55 if left else -55   # thumb at the inner lower corner, pointing out and up
+        sgn = 1 if left else -1
+        o += f'<g transform="rotate({ang} {ax} {ay})"><rect x="{ax - 15 if not left else ax - 15}" y="{ay - 70}" width="30" height="78" rx="15" fill="none" stroke="{OCR}" stroke-width="2.4" transform="translate({sgn * 4},0)"/></g>'
+        import math
+        tx = ax + math.sin(math.radians(ang)) * 52 + sgn * 4; ty = ay - math.cos(math.radians(ang)) * 52
+        o += f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="12" fill="{FC}"/><text x="{tx:.1f}" y="{ty + 5:.1f}" text-anchor="middle" font-family="AH" font-size="14" font-weight="700" fill="{FT}">1</text>'
+        o += lab(x0 + PW / 2, 280, side, OPK, 20)
+    if calls: o += f'<text x="380" y="320" text-anchor="middle" font-family="AH" font-size="15" fill="{OCR}">thumbs are 1 in both hands</text>'
+    if calls: o += call(1, 210, 120, 380, 60) + call(2, 640, 230, 700, 300) + call(3, 90, 300, 40, 330) + call(4, 380, 330, 380, 360) + call(5, 680, 100, 720, 60)
+    return f'<svg viewBox="0 0 760 370" style="width:100%;display:block">{o}</svg>'
+LEG_L = [(1, 'Fingering', 'finger numbers, five-finger positions, thumb under', 'L1'), (2, 'Practising well', 'slow, small chunks, then put it back together', 'L2'), (3, 'Sight-reading', 'scan first, keep going, read ahead', 'L3'), (4, 'Listening', 'clap it back, high or low, major or minor', 'L4'), (5, 'Performing', 'warm up, start calmly, keep going after a slip', 'L5'), ('★', 'Tips: when practice isn’t working', '', 'LT')]
 def opener_art(kick, title, line, part, PAGE, cls=''):
-    pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H), 'M': (lambda: pic_harmony('M'), LEG_M)}[part]
+    pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H), 'M': (lambda: pic_harmony('M'), LEG_M), 'E': (pic_expr, LEG_E), 'F': (pic_shape, LEG_F), 'L': (pic_play, LEG_L)}[part]
     rows = ''.join(f'<div><span class="ln"{" style=\"background:#f4a9bb\"" if n == "★" else ""}>{n}</span><div><b>{t}</b> <span class="pg2">p. {PAGE[k]}</span>' + (f'<br><span>{d}</span>' if d else '') + '</div></div>' for n, t, d, k in leg)
     return f'''<section class="pg part2 {cls}"><div class="pframe"><div class="pk">{kick}</div><div class="pt">{title}</div><div class="pdv"></div>
 <p class="pl">{line}</p>
