@@ -214,7 +214,7 @@ E5 = epage(f'''{head('Part III · Expression · 5', 'Ornaments', 'Ornaments are 
 {try10(ex('o_trill_p', 56), 'A slow trill.', 'Play D and E with fingers 2 and 3, slowly, eight times. Then a little faster. A trill is just that, at speed, with the beat still steady.')}
 {watch(['Adding a sharp or flat that is not there: use the plain next-door letter.', 'Starting the ornament late: it begins on the beat (a crushed note just before it).'])}
 {howto('Practise an ornament', ['<b>Play the main notes</b> alone first, in time.', '<b>Add the ornament slowly</b>, as written-out notes.', '<b>Speed it up</b> bit by bit, keeping the main note on the beat.'])}
-{foot('The keyboard p. {{P1}} · Sharps and flats p. {{P5}}', 'Online: Library › Ornaments')}''', 84)
+{foot('The keyboard p. {{P1}} · Sharps and flats p. {{P6}}', 'Online: Library › Ornaments')}''', 84)
 
 # ---------- Tips ----------
 ET = epage(f'''{head('Part III · Expression · Tips', 'When your playing sounds flat', 'Every note can be right and the music still sound flat. The fix is almost always one sign you read but did not play. Find what you notice, then check that one thing.')}

@@ -196,11 +196,11 @@ h3{margin:10px 0 5px!important;padding-top:6px!important}
 SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the trick in a sentence
  'P1': 'Two black keys: start on C. Three black keys: start on F. Then walk on.', 'P2': 'The treble clef curls round <b>G</b>; the bass clef’s two dots hug <b>F</b>.',
  'P3': 'Every line and every space is one white key, in order.', 'P4': 'Start from a note you know (bass F, Middle C, treble G), then step or skip.',
- 'P5': 'Sharp: the very next key to the <b>right</b>. Flat: the very next key to the <b>left</b>.',
+ 'P5': 'Step out from the nearest staff line: line, space, line. The first ledger line is the one nearest the staff.', 'P6': 'Sharp: the very next key to the <b>right</b>. Flat: the very next key to the <b>left</b>.',
  'T1': 'The beat never stops, not even in a rest. Feel it before you play.', 'T2': 'Each note is half the one above it, and every note has a rest twin.',
  'T3': 'A dot adds half. A tie glues two notes into one.', 'T4': 'Top number: how many beats. Bottom number (in simple time): which note gets one beat.',
  'T5': 'Dotted beats split in three: 6/8 is two big beats.', 'T6': 'Beams group notes into beats; an upbeat borrows from the last bar.', 'T7': 'Keep the beat rock-steady and let the rhythm tease it.', 'T8': 'Follow the map: jump back at the sign, stop at Fine, or jump to the Coda.',
- 'P6': 'Count the notes, both ends included: C D E is 3 notes, a 3rd.', 'P7': 'Count the keys between: 3 make a major 3rd, 2 a minor 3rd.',
+ 'P7': 'The very next key is a semitone; two make a tone. For an interval, count the notes, both ends included.', 'P8': 'Count the keys between: 3 make a major 3rd, 2 a minor 3rd.',
  'S1': 'Every major scale: tone, tone, semitone, tone, tone, tone, semitone.', 'S2': 'Minor = the major on the same note with 3, 6 and 7 one key lower.',
  'S3': 'The key signature says once, at the start, which notes are always sharp or flat.', 'S4': 'Last sharp, then the next key up. Second-last flat: that is the key.',
  'S5': 'Go right: one more sharp. Go left: one more flat.',
@@ -546,6 +546,8 @@ FLOWJS = '''<script>
     for (const L of 'BCDE') { const S = document.querySelector('section[data-flow="' + L + key + '"]'); if (!S) break; chain.push(S); }
     for (let i = 0; i + 1 < chain.length; i++) pair(chain[i], chain[i + 1], 'push');
     for (let i = 0; i + 1 < chain.length; i++) pair(chain[i], chain[i + 1], 'fill');
+    const bh = chain.flatMap(S => [...S.querySelectorAll('.bh')].filter(b => /^Example( \d+)?$/.test(b.textContent.trim())));   // number the Examples in the order they now stand
+    if (bh.length > 1) bh.forEach((b, i) => { b.textContent = 'Example ' + (i + 1); });
   });
   document.body.dataset.flowed = '1';
 })();

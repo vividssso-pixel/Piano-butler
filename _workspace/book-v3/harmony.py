@@ -178,7 +178,7 @@ H1 = hpage(f"""{head('Part IV · Harmony · 1', 'Chords and triads', 'Press thre
 {watch(['Stacking 2nds or 4ths: a triad skips exactly one letter each time.', 'Naming a chord from its top note: the root names it (at the bottom when the notes are stacked in 3rds).'])}
 {game('Build one yourself', '<div class="pns">' + spanel('G', skb(n=10, dots=(4, 6, 8), hops=((4, 6), (6, 8)), ghost=(5, 7)) + cake(3, ('G', 'B', 'D'), w=78), 'Start on G: <b>G B D</b>.') + spanel('F', skb(n=10, dots=(3, 5, 7), hops=((3, 5), (5, 7)), ghost=(4, 6)) + cake(3, ('F', 'A', 'C'), w=78), 'Start on F: <b>F A C</b>.') + spanel('?', skb(n=10) + cake(3, ('?', '?', '?'), w=78, red0=False), 'Your turn: start on <b>A</b>. Which three keys?') + '</div>', 'Build the cake on A: play one, skip one, play one, skip one, play one.', 'A C E: the triad on A.')}
 {try10(skb(n=8, W=34, fingers=((0, 1), (2, 3), (4, 5)), dots=(0, 2, 4)), 'Thumb on C. Fingers <b class="co">1, 3, 5</b> down together.', 'That is the C chord. Slide your hand to any white key and do it again: the cake shape always works.')}
-{foot('Counting intervals p. {{P6}} · Major scales p. {{S1}}', 'Workbook Harmony 1 · Online: Library › Chords')}""", 64)
+{foot('Counting intervals p. {{P7}} · Major scales p. {{S1}}', 'Workbook Harmony 1 · Online: Library › Chords')}""", 64)
 
 
 # ---------- Harmony 2 · Four kinds of triad ----------
@@ -192,7 +192,7 @@ YKMOON = ykfig('yk_moon', ('n1', 'n2', 'n3'), 84)
 H2 = hpage(f"""{head('Part IV · Harmony · 2', 'Four kinds of triad', 'Every triad is two 3rds stacked. To tell the kinds apart, count the keys <b>in between</b>, black and white, that you do not play: root to 3rd, then 3rd to 5th. Those two numbers name the kind, and its sound.')}
 {hero(hero_kinds(), 'Count the keys between: 3 + 2 is major, 2 + 3 is minor')}
 {tbl(['Kind', 'Keys between', 'On C', 'Chord name', 'First met'], KINDS, ['20%', '22%', '20%', '20%', '18%'])}
-<p class="sm">Chord names: a letter alone means major (C); m means minor (Cm). You see them above the melody in songbooks and lead sheets: C | Am | F | G. In interval names, 3 keys between is a major 3rd and 2 is a minor 3rd (p. {{{{P7}}}}).</p>
+<p class="sm">Chord names: a letter alone means major (C); m means minor (Cm). You see them above the melody in songbooks and lead sheets: C | Am | F | G. In interval names, 3 keys between is a major 3rd and 2 is a minor 3rd (p. {{{{P8}}}}).</p>
 {h3('Count the keys in between')}
 <div class="fk"><div class="fkf">{kbx('C', 8, W_, 100, label=True, shade={1: '#eef0f8', 3: '#eef0f8'}, marks=[dot(0, '1'), semi(W_, '1', 46, '#fff'), semi(W_ * 1.5, '2'), semi(W_ * 2, '3', 46, '#fff'), dot(2, '3'), semi(W_ * 3.5, '1'), semi(W_ * 4, '2', 46, '#fff'), dot(4, '5')], scale=1.0)}</div><div>Play C and E and count the keys you skip, black and white: C♯, D, D♯ is <b class="co">3</b>. Then E to G: F, F♯ is <b class="co">2</b>. <b>3 + 2 is major.</b> Any root works the same way: from D, skip 3 to F♯, then 2 to A: D F♯ A, D major.</div></div>
 {inaction('Major or minor? D F A', qtag(kbx('C', 8, W_, 92, label=True, shade={1: '#fde6dd', 3: '#fde6dd', 5: '#fde6dd'}, marks=[dot(1, '1', y=67), dot(3, '3', y=67), dot(5, '5', y=67)], scale=1.0)), ['<b>Root to 3rd:</b> count the keys between D and F, black and white.', '<b>3rd to 5th:</b> count the keys between F and A.', '<b>3 + 2 or 2 + 3?</b>'], 'D to F has 2 between, F to A has 3: <b>2 + 3</b>, so D F A is <b>D minor</b> (Dm).')}
@@ -207,7 +207,7 @@ H2 = hpage(f"""{head('Part IV · Harmony · 2', 'Four kinds of triad', 'Every tr
 {game('Which kind?', '<div class="gm4" style="grid-template-columns:repeat(3,1fr)">' + ''.join(f'<div>{guestman(t, (), 80)}<b>{n}</b></div>' for t, n in ((('C', 'E♭', 'G♭'), '1'), (('D', 'F♯', 'A'), '2'), (('E', 'G♯', 'B♯'), '3'))) + '</div>', 'Count the keys between: 3 + 2 major, 2 + 3 minor, 2 + 2 diminished, 3 + 3 augmented.', '1 diminished · 2 major · 3 augmented.')}
 {try10(guestman(('C', 'E', 'G'), (1,), 70, 'C'), 'C E G, then C E♭ G, then C E♭ G♭.', 'Bright, dark, tense. Only the middle layer moves first, then the top one. Listen for the change each time.')}
 {inaction('What kind is the triad on B?', guestman(('B', 'D', 'F'), (), 84, '?'), ['<b>Skip a letter:</b> B, D, F.', '<b>Count the keys between</b> B and D, then D and F.', '<b>Which kind has those two numbers?</b>'], '2 + 2: B D F is <b>B diminished</b> (B°), the only diminished triad on the white keys.')}
-{foot('Chords and triads p. {{H1}} · Major, minor and perfect p. {{P7}}', 'Workbook Harmony 2 · Online: Library › Chords')}""", 66)
+{foot('Chords and triads p. {{H1}} · Major, minor and perfect p. {{P8}}', 'Workbook Harmony 2 · Online: Library › Chords')}""", 66)
 
 # ---------- Harmony 3 · Chords in a key ----------
 DEG = [['<b>I</b>', 'tonic', 'major', 'C', 'G'], ['ii', 'supertonic', 'minor', 'Dm', 'Am'], ['iii', 'mediant', 'minor', 'Em', 'Bm'], ['<b>IV</b>', 'subdominant', 'major', 'F', 'C'], ['<b>V</b>', 'dominant', 'major', 'G', 'D'], ['vi', 'submediant', 'minor', 'Am', 'Em'], ['vii°', 'leading note', 'diminished', 'B°', 'F♯°']]

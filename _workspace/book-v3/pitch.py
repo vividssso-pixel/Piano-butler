@@ -260,23 +260,23 @@ css += '''
 '''
 import re as _re
 exec(open('/tmp/claude-0/pk/pitch_scales.py').read())   # her 7 Nov: Scales and keys rewritten to the Pitch rules
-PAGES = (P22, P23, P24, P25, P26, P27, P28, P29, P29b, P30, P31, P32)
+PAGES = (P22, P23, P24, P25, P25b, P26, P27, P28, P29, P29b, P30, P31, P32)
 # her 5 Nov (A): four parts. Part I Pitch keeps topics 1-5 (pp. 22-31, tips p. 32); topics 6-12 become Part III Scales and keys (pp. 50-63, tips p. 64)
-_KEYS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'S1', 'S2', 'S3', 'S4', 'S5']
+_KEYS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8', 'S1', 'S2', 'S3', 'S4', 'S5']
 _remap = lambda t: t
 def _scales(t):   # Part III wording for topics 8-12 (her 6 Nov: topics 6-7, the intervals, stay in Part I)
     t = _re.sub(r'Part I · Pitch · (\d+)', lambda m: f'Part III · Scales and keys · {int(m.group(1)) - 7}', t)
     t = t.replace('PART I · PITCH', 'PART III · SCALES AND KEYS').replace('Workbook Pitch 5', 'Workbook Scales and keys 1')
     return t.replace('Chords: Harmony (later)', f'Chords in a key p. {PM.PAGE["H3"]}').replace('Online: Scale finder, Library', 'Online: Library')
-_P1 = ''.join(assemble(k, pg) for k, pg in zip(_KEYS[:7], PAGES[:7])).replace('Chords: Harmony (later)', f'Chords and triads p. {PM.PAGE["H1"]}')
-_P3 = _scales(''.join(assemble(k, pg) for k, pg in zip(_KEYS[7:], PAGES[7:])))
+_P1 = ''.join(assemble(k, pg) for k, pg in zip(_KEYS[:8], PAGES[:8])).replace('Chords: Harmony (later)', f'Chords and triads p. {PM.PAGE["H1"]}')
+_P3 = _scales(''.join(assemble(k, pg) for k, pg in zip(_KEYS[8:], PAGES[8:])))
 
 # ---------- Part I ends with its own tips page ----------
 PT1 = ppage(f"""{head('Part I · Pitch · Tips', 'When a note reads wrong', 'Most wrong notes come from a handful of slips. Name the slip first, then fix only that note: playing the whole line again rarely finds it.')}
 <div class="tip tw"><div class="bh">Tip</div><b class="tt">What you notice, what to check</b>
-{tbl(['What you notice', 'Check', 'Turn to'], [['The left hand reads like the right', '<b class="co">the clef</b>: bass lines are G B D F A, not E G B D F', 'p. {{P2}}'], ['You land an octave too high or too low', '<b class="co">the Cs</b>: find Middle C first, then walk out to Bass C or Treble C', 'p. {{P1}}'], ['Notes above or below the staff slow you down', '<b class="co">the ledger lines</b>: step on from the nearest staff line', 'p. {{P2}}'], ['A sharp or flat vanishes, or stays too long', '<b class="co">the bar line</b>: a sign lasts only to the end of its bar', 'p. {{P5+1}}'], ['You play the black key on the wrong side', '<b class="co">the direction</b>: sharp goes right, flat goes left', 'p. {{P5}}'], ['Two notes sound too close or too far apart', '<b class="co">the interval</b>: count the notes, then the keys between', 'p. {{P7}}']], ['38%', '46%', '16%'])}
+{tbl(['What you notice', 'Check', 'Turn to'], [['The left hand reads like the right', '<b class="co">the clef</b>: bass lines are G B D F A, not E G B D F', 'p. {{P4}}'], ['You land an octave too high or too low', '<b class="co">the Cs</b>: find Middle C first, then walk out to Bass C or Treble C', 'p. {{P1+1}}'], ['Notes above or below the staff slow you down', '<b class="co">the ledger lines</b>: step on from the nearest staff line', 'p. {{P5}}'], ['A sharp or flat vanishes, or stays too long', '<b class="co">the bar line</b>: a sign lasts only to the end of its bar', 'p. {{P6+1}}'], ['You play the black key on the wrong side', '<b class="co">the direction</b>: sharp goes right, flat goes left', 'p. {{P6}}'], ['Two notes sound too close or too far apart', '<b class="co">the interval</b>: count the notes, then the keys between', 'p. {{P8}}']], ['38%', '46%', '16%'])}
 </div>
-{inaction('Spot the slip', '<div style="display:flex;justify-content:center;gap:34px;align-items:flex-end"><div style="flex:0 0 56%">' + ask(ykfig('ex_bf', ('n3',), 110), ('n3',)) + '</div><div style="font-family:CV,cursive;font-size:22px;color:#e4572e;line-height:1.2;padding-bottom:18px">Sam played B.<br>Wrong!</div></div>', ['<b>Check the clef first:</b> this is the bass clef, not the treble.', '<b>Start from the clef note:</b> the dots hug line 4, F.', '<b>Step down</b> to the red note on line 3: F, E …'], 'The note is <b>D</b>. Sam read the bass staff with treble names (treble line 3 is B): the most common slip of all.')}
+{inaction('Spot the slip', '<div style="display:flex;justify-content:center;gap:34px;align-items:flex-end"><div style="flex:0 0 56%">' + ask(ykfig('bs_spaces', ('n2',), 110), ('n2',), True) + '</div><div style="font-family:CV,cursive;font-size:22px;color:#e4572e;line-height:1.2;padding-bottom:18px">Sam played A.<br>Wrong!</div></div>', ['<b>Check the clef first:</b> this is the bass clef, not the treble.', '<b>Use the bass sentence:</b> the spaces are <i>All Cows Eat Grass</i>.', '<b>The red note is in space 2:</b> the second word.'], 'The note is <b>C</b> (<i>Cows</i>): Bass C. Sam read the bass staff with treble names (treble space 2 is A): the most common slip of all.')}
 {howto('Three checks before you read a new line', ['<b>The clefs:</b> which staff is treble, which is bass?', '<b>The clef notes:</b> find treble G, bass F and Middle C, and read the other notes from them.', '<b>The signs:</b> mark each sharp, flat or natural, and see where its bar ends.'])}
 {thinkt('Like reading a map: find the big landmarks first, then the streets around them. A note far from every clef note is the one most often misread.')}""", PM.PAGE['PT'])
 
@@ -302,10 +302,10 @@ def _opener(kick, title, line, boxes, toc):
 <div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p}</span></div>' for x, p in toc)}</div></div></section>"""
 OPEN2_OLD = _opener('Part I · Which note', 'Pitch', 'High or low? That is the first question every note answers. Start with the keys under your fingers, then find where they live on the staff and how sharps and flats move them.',
     [('Keyboard', 'high and low, the patterns'), ('Staff', 'lines, spaces and clefs'), ('Reading the notes', 'every note on the staff'), ('Sharps and flats', 'the black keys')],
-    [(t, PM.PAGE[k]) for t, k in (('The keyboard', 'P1'), ('The staff and the clefs', 'P2'), ('Reading the notes', 'P3'), ('The staff and the keyboard', 'P4'), ('Sharps, flats and naturals', 'P5'), ('Tips: when a note reads wrong', 'PT'))])
+    [(t, PM.PAGE[k]) for t, k in (('The keyboard', 'P1'), ('The staff and the clefs', 'P2'), ('Reading the notes', 'P3'), ('The staff and the keyboard', 'P4'), ('Sharps, flats and naturals', 'P6'), ('Tips: when a note reads wrong', 'PT'))])
 OPEN3_OLD = _opener('Part III · Notes in families', 'Scales and keys', 'Notes travel in families. Measure the distance between two notes, build the scales that whole pieces are made from, then learn to read the key a piece lives in.',
     [('Intervals', 'the distance between notes'), ('Scales', 'major and minor'), ('Keys', 'signatures and the circle')],
-    [(t, PM.PAGE[k]) for t, k in (('Counting intervals', 'P6'), ('Major, minor and perfect', 'P7'), ('Major scales', 'S1'), ('Minor scales', 'S2'), ('Keys and key signatures', 'S3'), ('Finding the key', 'S4'), ('The circle of fifths', 'S5'), ('Tips: when a note sounds wrong', 'ST'))])
+    [(t, PM.PAGE[k]) for t, k in (('Counting intervals', 'P7'), ('Major, minor and perfect', 'P8'), ('Major scales', 'S1'), ('Minor scales', 'S2'), ('Keys and key signatures', 'S3'), ('Finding the key', 'S4'), ('The circle of fifths', 'S5'), ('Tips: when a note sounds wrong', 'ST'))])
 exec(open('/tmp/claude-0/pk/openart.py').read())
 OPEN2 = opener_art('Part I · Which note', 'Pitch', 'High or low? That is the first question every note answers. Start with the keys under your fingers, find where they live on the staff, see how sharps and flats move them, then measure how far apart two notes are. Everything in this part is in this one picture.', 'P', PM.PAGE)
 OPEN3 = opener_art('Part III · Notes in families', 'Scales and keys', 'Notes travel in families. Build the scales that whole pieces are made from, then learn to read the key a piece lives in: its signature, its home note, its place on the circle. All of it is in one scale.', 'S', PM.PAGE)
