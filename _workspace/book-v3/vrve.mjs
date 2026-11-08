@@ -39,6 +39,7 @@ function mei(v) {
     ped: (a, d, f) => `<pedal startid="#n${a}" dir="${d}"${f ? ` form="${f}"` : ''}/>`, dir: (a, ...t) => `<dir startid="#n${a}" place="above"><rend fontstyle="italic">${t.join(' ')}</rend></dir>`,
     dirb: (a, ...t) => `<dir startid="#n${a}" place="below"><rend fontstyle="italic">${t.join(' ')}</rend></dir>`,
     slur: (a, b, c) => `<slur startid="#n${a}" endid="#n${b}" curvedir="${c || 'above'}"/>`, tie: (a, b) => `<tie startid="#n${a}" endid="#n${b}"/>`,
+    harm: (a, ...t) => `<harm startid="#n${a}" place="above">${t.join(' ')}</harm>`,
     tempo: (a, ...t) => `<tempo startid="#n${a}" place="above">${t.join(' ')}</tempo>` };
   for (const c of (v.ctl || [])) { const [k, a, ...r] = c.split(' '); ctl[MEAS[+a] || 0] += D[k](+a, ...r.map(x => isNaN(x) ? x.replace(/_/g, ' ') : +x)); }
   ms = parts.map((p, i) => p + ctl[i] + '</measure>').join('');
