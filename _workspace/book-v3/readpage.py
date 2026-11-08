@@ -51,6 +51,7 @@ for c in CH:
 # her 8 Nov: as each term is spoken, mark its key on the page there and then. Kokoro gives no word timings, so a term's
 # moment is estimated from where it sits in the line (speech runs evenly enough over a short sentence).
 import re as _re
+_LAST = {}
 def _hits(ln):
     c = ln.get('cue') or {}; reg = (REG.get(str(c.get('p', ''))) or {}).get(c.get('r'))
     text = ln.get('text') or ''
@@ -72,8 +73,9 @@ def _hits(ln):
     for n in range(len(out)):   # a repeated name: take the one nearest its neighbours in the sentence
         if pick[n] is None:
             near = [pick[m] for m in sorted(range(len(out)), key=lambda m: abs(m - n)) if m != n and pick[m] is not None]
-            ref = cx(near[0]) if near else None
+            ref = cx(near[0]) if near else _LAST.get((c.get('p'), c.get('r')))
             pick[n] = min(occ[out[n][2]], key=lambda i: abs(cx(i) - ref)) if ref is not None else occ[out[n][2]][0]
+    if pick: _LAST[(c.get('p'), c.get('r'))] = cx(pick[-1])
     return [[round(ln['t0'] + d * a / L - 0.12, 2), '#' + str(pick[n]), a, b] for n, (a, b, nm) in enumerate(out)]
 for c in CH:
     for k in c.get('clips', []):
@@ -104,7 +106,7 @@ select{font:inherit;font-size:15px;color:var(--ink);background:var(--panel);bord
 .sheet{position:relative} .stage{position:relative;width:100%;transform-origin:0 0;transition:transform .6s ease}
 .sheet img{width:100%;height:auto;display:block}
 .hl{position:absolute;border:3px solid var(--accent);border-radius:8px;box-shadow:0 0 0 9999px rgba(20,22,60,.18);} .hl.fog{box-shadow:0 0 0 9999px rgba(246,245,240,.94)} .cov{position:absolute;background:#fff;border-radius:3px;pointer-events:none} .cov.res{background:#fff7f3;border:1.5px dashed #e4572e;display:flex;align-items:center;justify-content:center;font:700 clamp(9px,1.4vw,14px) var(--body);color:#e4572e} .hl{transition:all .5s ease;pointer-events:none}
-.sub mark,#sub mark{background:#fde3d8;color:inherit;border-radius:3px;padding:0 2px} .mk{position:absolute;width:3.2%;aspect-ratio:1;border-radius:50%;border:3px solid var(--accent);background:rgba(228,87,46,.25);transform:translate(-50%,-50%);pointer-events:none;animation:pop .35s ease}
+.sub mark,#sub mark{background:#fde3d8;color:#26296b;border-radius:3px;padding:0 2px} .mk{position:absolute;width:3.2%;aspect-ratio:1;border-radius:50%;border:3px solid var(--accent);background:rgba(228,87,46,.25);transform:translate(-50%,-50%);pointer-events:none;animation:pop .35s ease}
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.4);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
 .sub{min-height:3.2em;margin-top:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;font-size:15.5px}
 .sub b{color:var(--accent);margin-right:6px} .sub:empty{display:none}

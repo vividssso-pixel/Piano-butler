@@ -16,14 +16,19 @@ def tone(fs, dur=0.55):
         for h, a in ((1, 1), (2, .45), (3, .22), (4, .12), (5, .06)):
             out += a * np.sin(2 * np.pi * f * h * t) * np.exp(-t * (2.2 + h * 1.1))
     out *= np.minimum(1, t / 0.005); return 0.22 * out / max(1, len(fs) ** .5)
+def _dur(tok):
+    m = re.match(r'(.+?)(?:([/*])(\d))?$', tok); n = m.group(1)
+    return n, (1 / int(m.group(3)) if m.group(2) == '/' else int(m.group(3)) if m.group(2) == '*' else 1)
 def piano(spec):
     parts = []
     for tok in re.findall(r'\[[^\]]+\]|\S+', spec):
         if tok.startswith('['): parts.append(tone([freq(x) for x in tok[1:-1].split()], 1.1))
         elif tok == '|': parts.append(np.zeros(int(SR * .25)))
-        else: parts.append(tone([freq(tok)], .5)[:int(SR * .62)])
+        else:   # 'F#4/2' = half a slot (a quaver), 'F#4*2' = two slots (a minim)
+            nm, mul = _dur(tok); parts.append(np.pad(tone([freq(nm)], .5 * min(mul, 1.6)), (0, int(SR * .62 * mul)))[:int(SR * .62 * mul)])
     return np.concatenate(parts + [np.zeros(int(SR * .3))])
 def say(who, text):
+    text = re.sub(r'\b([B-G])s\b', r"\1's", text)   # her 8 Nov: 'Cs' was read letter by letter, 'C-S'; say it 'Cees'
     v, sp = VOICE[who]; a, sr = K.create(text, voice=v, speed=sp, lang='en-gb'); return np.asarray(a, dtype=np.float32)
 def render(lines, timed=None):
     out = []; t = 0.0
@@ -41,7 +46,7 @@ def render(lines, timed=None):
             if kind == 'piano':   # one note every 0.62 s (a chord or bar gap counts as its own slot)
                 toks = re.findall(r'\[[^\]]+\]|\S+', val); tt = t; item['notes'] = []
                 for tok in toks:
-                    step = 1.45 if tok.startswith('[') else (.25 if tok == '|' else .62)
+                    step = 1.45 if tok.startswith('[') else (.25 if tok == '|' else .62 * _dur(tok)[1])
                     if tok != '|': item['notes'].append(round(tt, 2))
                     tt += step
             if cue: item['cue'] = cue
