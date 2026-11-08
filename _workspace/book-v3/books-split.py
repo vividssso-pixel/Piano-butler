@@ -140,6 +140,7 @@ h1{{font-size:clamp(38px,6vw,60px);font-weight:900;line-height:1.02}} .lead{{fon
 <div class="shelf">{''.join(cover(b) for b in BOOKS)}</div>
 {''.join(panel(b) for b in BOOKS)}
 <div class="more"><b>Where do I start?</b><a href="Where do I start - the Handbook check.pdf" target="_blank">The Handbook check (printable)</a></div>
+<div class="more"><b>New books</b><a href="Whole books (later)/accompaniment-book-levels-1-3.pdf" target="_blank">The Butler’s Accompaniment Book, Levels 1–3</a></div>
 <div class="more"><b>Activities and games</b><a href="3 Activities and games/rhythm-activities-games.pdf" target="_blank">Rhythm activities and games</a><a href="3 Activities and games/pitch-games.pdf" target="_blank">Pitch games</a></div>
 </div><script>
 document.querySelectorAll('.book').forEach(b => b.addEventListener('click', () => {{
