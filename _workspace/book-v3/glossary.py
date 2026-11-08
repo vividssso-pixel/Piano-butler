@@ -25,7 +25,7 @@ G = [  # (word, definition, chapter key)
  ('homophonic', 'a tune with chords underneath', 'F3'), ('imitation', 'another hand or voice copies the idea', 'F2'), ('interval', 'the distance between two notes', 'P6'),
  ('inversion', 'a chord with a note other than the root at the bottom', 'H4'), ('key', 'the scale a piece is built on, and its home note', 'S3'),
  ('key signature', 'the sharps or flats at the start of every line', 'S3'), ('Largo', 'very slow and broad', 'E3'), ('leading note', 'the 7th note of the scale, one key below home', 'S1'),
- ('ledger line', 'a short line for a note above or below the staff', 'P3'), ('legato', 'smoothly joined', 'E2'), ('major scale', 'tone, tone, semitone, tone, tone, tone, semitone', 'S1'),
+ ('ledger line', 'a short line for a note above or below the staff', 'P4'), ('legato', 'smoothly joined', 'E2'), ('major scale', 'tone, tone, semitone, tone, tone, tone, semitone', 'S1'),
  ('major triad', 'a triad with 3 + 2 keys between', 'H2'), ('metronome mark', '♩ = 76: 76 beats in a minute', 'E3'), ('mezzo (m)', '“half”: mp half soft, mf half loud', 'E1'),
  ('Middle C', 'the C nearest the middle of the keyboard, on a ledger line between the staves', 'P1'), ('minim', 'a note worth two crotchets', 'T2'),
  ('minor scale', 'the major scale on the same note with 3, 6 and 7 one key lower', 'S2'), ('minor triad', 'a triad with 2 + 3 keys between', 'H2'), ('Moderato', 'at a moderate speed', 'E3'),

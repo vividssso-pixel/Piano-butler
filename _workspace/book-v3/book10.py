@@ -117,7 +117,7 @@ NT = {'breve': '𝅜', 'dsb': '𝅝𝅭', 'sb': '𝅝', 'dm': '𝅗𝅥𝅭', 'm
 RS = {'breve': '𝄺', 'dsb': '𝄻𝅭', 'sb': '𝄻', 'dm': '𝄼𝅭', 'm': '𝄼', 'dc': '𝄽𝅭', 'c': '𝄽', 'dq': '𝄾𝅭', 'q': '𝄾', 'sq': '𝄿', 'dsq': '𝅀', 'hdsq': '𝅁'}
 import re as _ro
 _VOID = {'br', 'img', 'hr', 'col', 'input', 'meta', 'link', 'wbr'}
-_TAIL = {'inact': 1, 'inact2': 1, 'game': 1, 'try10': 1, 'gt2': 1, 'howto': 1, 'yk': 2, 'realm': 2, 'think': 3, 'watch': 4, 'links': 9}
+_TAIL = {'xlate': 1, 'inact': 1, 'inact2': 1, 'game': 1, 'try10': 1, 'gt2': 1, 'howto': 1, 'yk': 2, 'realm': 2, 'think': 3, 'watch': 4, 'links': 9}
 def _nodes(t):   # top-level nodes of an HTML fragment (comments kept as their own nodes)
     out, depth, start, pos = [], 0, None, 0
     for m in _ro.finditer(r'<!--.*?-->|<(/?)([a-zA-Z][\w:-]*)((?:[^>"\']|"[^"]*"|\'[^\']*\')*?)(/?)>', t, _ro.S):
@@ -195,7 +195,7 @@ h3{margin:10px 0 5px!important;padding-top:6px!important}
 """
 SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the trick in a sentence
  'P1': 'Two black keys: start on C. Three black keys: start on F. Then walk on.', 'P2': 'The treble clef curls round <b>G</b>; the bass clef’s two dots hug <b>F</b>.',
- 'P3': 'Start from a note you know (bass F, Middle C, treble G), then step or skip.', 'P4': 'Every line and every space is one white key, in order.',
+ 'P3': 'Every line and every space is one white key, in order.', 'P4': 'Start from a note you know (bass F, Middle C, treble G), then step or skip.',
  'P5': 'Sharp: the very next key to the <b>right</b>. Flat: the very next key to the <b>left</b>.',
  'T1': 'The beat never stops, not even in a rest. Feel it before you play.', 'T2': 'Each note is half the one above it, and every note has a rest twin.',
  'T3': 'A dot adds half. A tie glues two notes into one.', 'T4': 'Top number: how many beats. Bottom number (in simple time): which note gets one beat.',
@@ -321,7 +321,7 @@ def hero_sync():   # steady beat dots; a red note lands on the "&" and is held o
     return f'<svg viewBox="0 0 580 156" style="width:100%;max-width:580px">{o}</svg>'
 P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Put your hand on your heart: that steady beat is a <b>pulse</b>, and almost every piece has one. Its speed is the <b>tempo</b>. Beats travel in groups called <b>bars</b>, and beat 1 is the strongest.')}
 {hero(hero_pulse(), 'Beat 1 of every bar is the strongest')}
-{two(h3('Tempo') + f'<p>Tempo is measured in beats per minute. A <b>metronome mark</b> at the top of the music shows it: <span class="mm">{gin("n", "c")} = 60</span> means 60 crotchet beats a minute, one beat a second. <span class="mm">{gin("n", "c")} = 120</span> is twice as fast. Tempo words such as <i>Andante</i> and <i>Allegro</i> come with Expression, later in the book.</p>',
+{two(h3('Tempo') + f'<p>Tempo is measured in beats per minute. A <b>metronome mark</b> at the top of the music shows it: <span class="mm">{gin("n", "c")} = 60</span> means 60 crotchet beats a minute, one beat a second. <span class="mm">{gin("n", "c")} = 120</span> is twice as fast. Speed words such as <i>Andante</i> and <i>Allegro</i> are on p. {{{{E3}}}}.</p>',
      h3('Strong and weak beats') + tbl(['Beats', 'Pattern', 'Feels like'], [['2', '<b>Strong</b> weak', 'a march'], ['3', '<b>Strong</b> weak weak', 'a waltz'], ['4', '<b>Strong</b> weak <b>medium</b> weak', 'most songs']], ['16%', '50%', '34%']))}
 {h3('Bars and bar lines')}
 {tbl(['Sign', 'Name', 'Meaning'], [[bars('bar'), 'bar line', 'divides the music into bars'], [bars('dbl'), 'double bar line', 'marks the end of a section, or a change of time signature or tempo'], [bars('fin'), 'final bar line', 'marks the end of the piece'], [bars('repeat'), 'repeat signs', 'play the passage between them again; if there is no start sign, go back to the beginning']], ['18%', '24%', '58%'])}
@@ -339,7 +339,7 @@ P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Put yo
 {game('How many beats in a bar?', qitems(['● · ·', '● · · ·', '● ·', '● · · ● · ·'], 4), 'The big dot is the strong beat. Count the beats in each bar: 2, 3 or 4?', '1 three (a waltz) · 2 four · 3 two (a march) · 4 three, twice.')}
 {try10(hero_pulse().replace('max-width:690px', 'max-width:260px'), 'Hand on your heart. Tap the beat.', 'Say “1 2 3 4” with your taps, 1 a little louder. Keep going for ten seconds without slowing down.')}
 {howto('Find the beat of a new piece', ['<b>Read the time signature:</b> how many beats in each bar.', '<b>Tap the beat</b> on your knee before you play, counting one bar aloud.', '<b>Start slower</b> than the marked speed, and keep it steady to the end.'])}
-{foot('Time signatures p. {{T4}} · Tempo words: Expression (later)', 'Workbook Level 0 · Pulse · Online: Metronome')}''', 36)
+{foot('Time signatures p. {{T4}} · Speed words p. {{E3}}', 'Workbook Level 0 · Pulse · Online: Metronome')}''', 36)
 
 rows = [('breve', 'breve', 'double whole note', '8', 'Level 4'), ('dsb', 'dotted semibreve', 'dotted whole note', '6', ''), ('sb', 'semibreve', 'whole note', '4', 'Level 0'), ('dm', 'dotted minim', 'dotted half note', '3', 'Level 0'), ('m', 'minim', 'half note', '2', 'Level 0'), ('dc', 'dotted crotchet', 'dotted quarter note', '1½', 'Level ½'),
         ('c', 'crotchet', 'quarter note', '1', 'Level 0'), ('dq', 'dotted quaver', 'dotted eighth note', '¾', 'Level 3'), ('q', 'quaver', 'eighth note', '½', 'Level 0'), ('sq', 'semiquaver', 'sixteenth note', '¼', 'Level 2'), ('dsq', 'demisemiquaver', '32nd note', '⅛', ''), ('hdsq', 'hemidemisemiquaver', '64th note', '¹⁄₁₆', '')]
