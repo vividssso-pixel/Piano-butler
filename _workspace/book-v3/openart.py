@@ -180,8 +180,32 @@ def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (
 LEG_H = [(1, 'Chords and triads', 'three notes stacked like a layer cake', 'H1'), (2, 'Four kinds of triad', 'major 3 + 2, minor 2 + 3', 'H2'), (3, 'Chords in a key', 'Roman numerals: I, IV and V do most of the work', 'H3'), (4, 'Inversions', 'the same notes, a different one at the bottom', 'H4'), (5, 'Seventh chords', 'one more layer on top: G7', 'H5'), (6, 'Colour chords', 'sus and add: a note moved or added', 'H6'), (7, 'The tower: 9, 11, 13', 'keep skipping a letter', 'H7'), (8, 'Slash chords', 'C/E: the chord, then the bass note', 'H8'), ('★', 'Tips: when a chord sounds wrong', '', 'HT')]
 LEG_M = [(1, 'Chords from outside the key', 'a guest note: A♭ in C major', 'M1'), (2, 'Cadences', 'V to I ends a phrase like a full stop', 'M2'), (3, 'Chords under a melody', 'the tune’s main notes pick the chord', 'M3'), (4, 'Progressions everywhere', 'the same few trips, in every song', 'M4'), ('★', 'Tips: when harmony goes wrong', '', 'MT')]
 
+
+# ---------- Part III · Expression (her 8 Nov: the parts the Handbook still needed, in order) ----------
+def pic_expr():
+    S = Staff(40, 760, 170, 12); o = S.lines() + S.clefsym() + S.tsig(104, 4, 4)
+    o += f'<text x="128" y="{S.y1 - 5.6 * S.sp:.0f}" font-family="PF" font-size="20" font-weight="700" fill="{OCR}">Andante</text>'
+    xs = [140, 196, 252, 308]; ns = ['C4', 'E4', 'G4', 'E4']
+    for x, n in zip(xs, ns): o += S.note(x, n)
+    o += f'<path d="M{xs[0] + 4},{S.y("C4") + 11:.0f} Q{(xs[0] + xs[-1]) / 2},{S.y("C4") + 30:.0f} {xs[-1] + 2},{S.y("E4") + 12:.0f}" fill="none" stroke="{OCR}" stroke-width="2"/>' + S.bar(336)
+    xs2 = [362, 412, 462, 512]
+    for x in xs2: o += S.note(x, 'G4') + f'<circle cx="{x}" cy="{S.y("G4") + 15:.0f}" r="2.6" fill="{OCR}"/>'
+    o += S.bar(540) + S.note(580, 'A4', 'm') + f'<text x="572" y="{S.y1 - 4.6 * S.sp:.0f}" font-family="PF" font-size="18" font-style="italic" font-weight="700" fill="{OCR}">tr</text>'
+    o += S.note(660, 'G4', 'm') + f'<path d="M648,{S.y("G4") - 46:.0f} a12,12 0 0 1 24,0" fill="none" stroke="{OCR}" stroke-width="2.4"/><circle cx="660" cy="{S.y("G4") - 50:.0f}" r="2.4" fill="{OCR}"/>' + S.end(740)
+    yd = S.y1 + 66
+    o += f'<text x="132" y="{yd}" font-family="PF" font-size="24" font-style="italic" font-weight="700" fill="{OCR}">p</text><path d="M160,{yd - 9} L320,{yd - 20} M160,{yd - 9} L320,{yd + 2}" stroke="{OCR}" stroke-width="1.8" fill="none"/>'
+    o += f'<text x="350" y="{yd}" font-family="PF" font-size="24" font-style="italic" font-weight="700" fill="{OCR}">f</text>'
+    o += f'<text x="590" y="{S.y1 - 6.4 * S.sp:.0f}" font-family="AH" font-size="15" font-style="italic" fill="{OCR}">rit.</text>'
+    yp = yd + 42
+    o += f'<text x="130" y="{yp}" font-family="PF" font-size="17" font-style="italic" font-weight="700" fill="{OCR}">Ped.</text><path d="M176,{yp - 5} H520" stroke="{OCR}" stroke-width="1.5" stroke-dasharray="5 4"/><text x="528" y="{yp + 2}" font-family="AH" font-size="20" font-weight="700" fill="{OCR}">*</text>'
+    o += lab(420, yp + 44, 'loud and soft, smooth and short, slower, ringing, decorated', OPK, 20)
+    o += call(1, 136, yd - 6, 80, yd - 2) + call(2, 436, S.y("G4") + 18, 436, S.y1 + 40)
+    o += call(2, 226, S.y("C4") + 26, 262, S.y1 + 40) + call(3, 134, S.y1 - 6 * S.sp, 96, S.y1 - 8.4 * S.sp) + call(3, 604, S.y1 - 6.8 * S.sp, 640, S.y1 - 8.4 * S.sp)
+    o += call(4, 150, yp - 6, 92, yp + 26) + call(5, 580, S.y1 - 5.2 * S.sp, 540, S.y1 - 8.4 * S.sp) + call(3, 670, S.y("G4") - 56, 712, S.y1 - 8.4 * S.sp)
+    return f'<svg viewBox="0 0 800 {yp + 60}" style="width:100%;display:block">{o}</svg>'
+LEG_E = [(1, 'Loud and soft', 'p, f and the steps between; hairpins grow and fade', 'E1'), (2, 'Touch: smooth, short, strong', 'slurs, staccato dots, tenuto lines and accents', 'E2'), (3, 'Speed words', 'Andante, Allegro; rit. slows down, a fermata waits', 'E3'), (4, 'The pedals', 'Ped. down, * up: the right pedal keeps notes ringing', 'E4'), (5, 'Ornaments', 'trills, mordents, turns and grace notes', 'E5'), ('★', 'Tips: when your playing sounds flat', '', 'ET')]
 def opener_art(kick, title, line, part, PAGE, cls=''):
-    pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H), 'M': (lambda: pic_harmony('M'), LEG_M)}[part]
+    pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H), 'M': (lambda: pic_harmony('M'), LEG_M), 'E': (pic_expr, LEG_E)}[part]
     rows = ''.join(f'<div><span class="ln"{" style=\"background:#f4a9bb\"" if n == "★" else ""}>{n}</span><div><b>{t}</b> <span class="pg2">p. {PAGE[k]}</span>' + (f'<br><span>{d}</span>' if d else '') + '</div></div>' for n, t, d, k in leg)
     return f'''<section class="pg part2 {cls}"><div class="pframe"><div class="pk">{kick}</div><div class="pt">{title}</div><div class="pdv"></div>
 <p class="pl">{line}</p>
