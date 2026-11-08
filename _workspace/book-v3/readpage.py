@@ -48,6 +48,38 @@ for c in CH:
                 for b in RG[pg]:
                     seen[b['key']] = seen.get(b['key'], 0) + 1; key = b['key'] + (str(seen[b['key']]) if seen[b['key']] > 1 else '')
                     REG[pg][key] = {'b': b['box'], 'l': b['labs'], 'r': b.get('res')}
+# her 8 Nov: as each term is spoken, mark its key on the page there and then. Kokoro gives no word timings, so a term's
+# moment is estimated from where it sits in the line (speech runs evenly enough over a short sentence).
+import re as _re
+def _hits(ln):
+    c = ln.get('cue') or {}; reg = (REG.get(str(c.get('p', ''))) or {}).get(c.get('r'))
+    text = ln.get('text') or ''
+    if not reg or not text or ln.get('who') not in ('B', 'P') or str(c.get('r', '')).startswith('ex'): return []
+    names = sorted({L[0] for L in reg['l'] if _re.search('[A-Z]', L[0]) and L[0] != '?'}, key=len, reverse=True)
+    used = [False] * len(text); out = []
+    for nm in names:
+        for m in _re.finditer(r'(?<![A-Za-z])' + _re.escape(nm) + r'(?![A-Za-z0-9])', text):
+            if any(used[m.start():m.end()]): continue
+            if nm == 'A':   # the article "A" opens a sentence and is followed by a lower-case word
+                pre = text[:m.start()].rstrip()
+                if (pre == '' or pre[-1] in '.!?') and _re.match(r'A [a-z]', text[m.start():]): continue
+            for q in range(m.start(), m.end()): used[q] = True
+            out.append((m.start(), m.end(), nm))
+    out.sort(); d = max(0.3, ln['t1'] - ln['t0'] - 0.35); L = max(1, len(text))
+    labs = reg['l']; occ = {nm: [i for i, x in enumerate(labs) if x[0] == nm] for _, _, nm in out}
+    cx = lambda i: labs[i][1][0] + labs[i][1][2] / 2
+    pick = [occ[nm][0] if len(occ[nm]) == 1 else None for _, _, nm in out]
+    for n in range(len(out)):   # a repeated name: take the one nearest its neighbours in the sentence
+        if pick[n] is None:
+            near = [pick[m] for m in sorted(range(len(out)), key=lambda m: abs(m - n)) if m != n and pick[m] is not None]
+            ref = cx(near[0]) if near else None
+            pick[n] = min(occ[out[n][2]], key=lambda i: abs(cx(i) - ref)) if ref is not None else occ[out[n][2]][0]
+    return [[round(ln['t0'] + d * a / L - 0.12, 2), '#' + str(pick[n]), a, b] for n, (a, b, nm) in enumerate(out)]
+for c in CH:
+    for k in c.get('clips', []):
+        for ln in k['l']:
+            h = _hits(ln)
+            if h: ln['hits'] = h
 DATA = json.dumps(CH, ensure_ascii=False)
 REGD = json.dumps(REG, ensure_ascii=False)
 HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
@@ -72,7 +104,7 @@ select{font:inherit;font-size:15px;color:var(--ink);background:var(--panel);bord
 .sheet{position:relative} .stage{position:relative;width:100%;transform-origin:0 0;transition:transform .6s ease}
 .sheet img{width:100%;height:auto;display:block}
 .hl{position:absolute;border:3px solid var(--accent);border-radius:8px;box-shadow:0 0 0 9999px rgba(20,22,60,.18);} .hl.fog{box-shadow:0 0 0 9999px rgba(246,245,240,.94)} .cov{position:absolute;background:#fff;border-radius:3px;pointer-events:none} .cov.res{background:#fff7f3;border:1.5px dashed #e4572e;display:flex;align-items:center;justify-content:center;font:700 clamp(9px,1.4vw,14px) var(--body);color:#e4572e} .hl{transition:all .5s ease;pointer-events:none}
-.mk{position:absolute;width:3.2%;aspect-ratio:1;border-radius:50%;border:3px solid var(--accent);background:rgba(228,87,46,.25);transform:translate(-50%,-50%);pointer-events:none;animation:pop .35s ease}
+.sub mark,#sub mark{background:#fde3d8;color:inherit;border-radius:3px;padding:0 2px} .mk{position:absolute;width:3.2%;aspect-ratio:1;border-radius:50%;border:3px solid var(--accent);background:rgba(228,87,46,.25);transform:translate(-50%,-50%);pointer-events:none;animation:pop .35s ease}
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.4);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
 .sub{min-height:3.2em;margin-top:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;font-size:15.5px}
 .sub b{color:var(--accent);margin-right:6px} .sub:empty{display:none}
@@ -137,11 +169,12 @@ function play(i) {
 let follow = true;
 const stage = document.getElementById('stage'), ov = document.getElementById('ov'), sub = document.getElementById('sub');
 function clearFollow() { ov.innerHTML = ''; stage.style.transform = ''; sub.textContent = ''; }
-function findLab(reg, name) { const m = reg.l.filter(x => x[0] === name); if (m.length < 2) return m[0]; const q = reg.l.find(x => x[0] === '?'); if (!q) return m[0]; return m.reduce((a, b) => Math.abs(b[1][0] - q[1][0]) < Math.abs(a[1][0] - q[1][0]) ? b : a); }
+function findLab(reg, name) { if (/^#\d+$/.test(name)) return reg.l[+name.slice(1)]; const m = reg.l.filter(x => x[0] === name); if (m.length < 2) return m[0]; const q = reg.l.find(x => x[0] === '?'); if (!q) return m[0]; return m.reduce((a, b) => Math.abs(b[1][0] - q[1][0]) < Math.abs(a[1][0] - q[1][0]) ? b : a); }
 function tick() {
   if (playing < 0) return; const k = CH[ci].clips[playing], t = audio.currentTime; const ln = k.l.find(x => t >= x.t0 && t < x.t1);
   if (!ln) { requestAnimationFrame(tick); return; }
-  sub.innerHTML = ln.text ? `<b>${ln.who === 'B' ? 'Butler' : ln.who === 'P' ? 'Pip' : ''}</b>${ln.text}` : (ln.who === 'piano' ? '<b>♪</b>listen' : '');
+  const hit = ln.hits ? ln.hits.filter(h => h[0] <= t).pop() : null; let txt = ln.text || ''; if (hit) txt = txt.slice(0, hit[2]) + '<mark>' + txt.slice(hit[2], hit[3]) + '</mark>' + txt.slice(hit[3]);
+  sub.innerHTML = ln.text ? `<b>${ln.who === 'B' ? 'Butler' : ln.who === 'P' ? 'Pip' : ''}</b>${txt}` : (ln.who === 'piano' ? '<b>♪</b>listen' : '');
   const c = ln.cue;
   if (c && follow) {
     const pidx = CH[ci].pages.indexOf(c.p); if (pidx >= 0 && pidx !== pi) { pi = pidx; showPage(); }
@@ -150,7 +183,7 @@ function tick() {
       const [x, y, w, h] = reg.b; const S = Math.min(2.2, Math.max(1, 0.94 / w));
       const tx = Math.min(0, Math.max(1 - S, 0.5 - S * (x + w / 2))), ty = Math.min(0, Math.max(1 - S, 0.42 - S * (y + h / 2)));
       stage.style.transform = `translate(${tx * 100}%, ${ty * 100}%) scale(${S})`;
-      let marks = []; if (c.lab) marks = c.lab; if (c.seq && ln.notes) { const i = ln.notes.filter(v => v <= t).length - 1; if (i >= 0) marks = [c.seq[Math.min(i, c.seq.length - 1)]]; }
+      let marks = []; if (c.lab) marks = c.lab; if (hit) marks = [hit[1]]; if (c.seq && ln.notes) { const i = ln.notes.filter(v => v <= t).length - 1; if (i >= 0) marks = [c.seq[Math.min(i, c.seq.length - 1)]]; }
       const exm = /^ex/.test(c.r) && !c.reveal; const vis = new Set([...(c.show || []), ...marks, '?']);
       const key = c.p + c.r + marks.join(',') + (exm ? 'x' + [...vis].join('') : ''); if (ov.dataset.k !== key) { ov.dataset.k = key;
         const covers = exm ? reg.l.filter(L => !vis.has(L[0])).map(L => `<div class="cov" style="left:${L[1][0] * 100 - .3}%;top:${L[1][1] * 100 - .2}%;width:${L[1][2] * 100 + .6}%;height:${L[1][3] * 100 + .4}%"></div>`).join('') + (reg.r ? `<div class="cov res" style="left:${reg.r[0] * 100}%;top:${reg.r[1] * 100}%;width:${reg.r[2] * 100}%;height:${reg.r[3] * 100}%">Answer coming…</div>` : '') : '';
