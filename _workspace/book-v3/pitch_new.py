@@ -118,7 +118,7 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Left is <b>low</b
 {watch(['Counting every key from C: find the nearest group and start from its C or F.', 'Mixing up the families: C is left of the <b>two</b> black keys, F left of the <b>three</b>.'])}
 {thinkt('The black keys are bumps you can feel in the dark. Close your eyes and slide your hand along: two bumps, and the key to their left is C; three bumps, and the key to their left is F.')}
 {try10(qkb('C', 8, 24, 70, dots=(0, 3), scale=1.0), 'Play every C, then every F.', 'Bottom to top, saying the names: Lowest C, Low C, Bass C, Middle C, Treble C, High C, Very High C, Highest C. Then every F: left of the three.')}
-{foot('The staff and the clefs p. {{P2}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 1 · Online: Library › Keyboard')}""", 22)
+{foot('The staff and the clefs p. {{P2}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 1 · Online: Keyboard Patterns · The Musical Alphabet')}""", 22)
 
 # ---------- 2 The staff and the clefs ----------
 P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music is written on a <b>staff</b>: five lines and four spaces, counted from the <b>bottom</b>. Higher on the staff means higher on the keyboard. The <b>clef</b> at the start is the key to the code: it names one line, and every other note follows from it.')}
@@ -130,14 +130,14 @@ P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music 
 <!--SPLIT-->
 {inaction('One line, two notes', '<div style="display:flex;justify-content:center;gap:40px">' + ask(ykfig('tr_lines', ('n1',), 96), ('n1',), True) + ask(ykfig('bs_lines', ('n1',), 96), ('n1',), True) + '</div>', ['<b>Look at the red notes:</b> both sit on the bottom line.', '<b>Now look at the clefs:</b> treble on the left, bass on the right.', '<b>Read each from its clef note:</b> treble G is line 2, so step down (F in the space) to line 1; bass F is line 4, so step down line by line.'], 'Treble bottom line: <b>E</b>. Bass bottom line: <b>G</b>. Same line, different note: always read the <b>clef</b> first.')}
 {inaction('Which staff is this key written on?', kq('C', 15, 32, 98, tags={7: 'Middle C'}, q=(3,), shade={i: (BLUE if i < 7 else '#fdeee8') for i in range(15)}), ['<b>Find Middle C.</b>', '<b>Is the ? to its left or right?</b> Left is lower: the blue half.', '<b>Low keys go on the bass staff</b>, high keys on the treble staff.'], 'The <b>?</b> is below Middle C, so it is written on the <b>bass staff</b>, usually for the left hand.')}
-{youknow('Twinkle, Twinkle, Little Star', ykfig('yk_twk', ('n3','n4','n7'), 74), 'The treble clef curls round <b class="co">line 2: G</b>, the very note Twinkle leaps up to. Middle C hangs on its own ledger line below.', 'Point to the G line, then play C C G G A A G.')}
-{watch(['Reading bass-clef notes as if they were treble: check the clef on every line.', 'Reading ledger lines from the wrong end: start at the staff and step outwards.'])}
+{youknow('Twinkle, Twinkle, Little Star', ykfig('yk_twk', ('n3','n4','n7'), 66), 'The treble clef curls round <b class="co">line 2: G</b>, the very note Twinkle leaps up to.', 'Point to the G line, then play C C G G A A G.')}
+{watch(['Reading bass-clef notes as if they were treble: check the clef on every line.'])}
 <!--SPLIT-->
 {inaction('Read a high note on ledger lines', ask(ykfig('ex_hi', ('n5',), 100), ('n5',)), ['<b>The top line</b> of the treble staff is F.', '<b>Step up</b> one note at a time: G sits on top of the staff, A on the first ledger line.', '<b>Keep stepping</b> to the red note: B above it, then the second ledger line.'], 'Two ledger lines above the treble staff: <b>High C</b>, two octaves above Middle C.')}
 <div class="two" style="grid-template-columns:1.2fr 1fr"><div>{h3('8va: play it an octave higher')}<p>Lots of ledger lines are hard to read. So a very high passage is written on the staff with <b>8va</b> and a dotted line above it: play those notes <b>one octave higher</b>, eight notes up, until the dotted line stops. <b>8vb</b> under the staff means an octave lower.</p></div><div>{thinkt('A clef is a pair of glasses: the same five lines read as different notes, depending on which pair you put on.')}</div></div>
-{game('Treble or bass?', qitems(['the E above Middle C', 'the lowest key on the piano', 'Middle C', 'High C'], 4), 'Which staff would each note be written on?', '1 treble · 2 bass, with ledger lines · 3 either: it sits between the two · 4 treble, two ledger lines up.')}
+{game('Treble or bass?', qitems(['the E above Middle C', 'the lowest key on the piano', 'Middle C', 'High C'], 4), 'Which staff would each note be written on?', '1 treble · 2 bass, with ledger lines · 3 either · 4 treble, two ledger lines up.')}
 {try10(px('gs_c', 78), 'Point, then play.', 'Point to the line the treble clef curls round and play that G. Point to the line between the bass clef’s dots and play that F. Middle C sits between them.')}
-{foot('Reading the notes p. {{P3}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 23)
+{foot('Reading the notes p. {{P3}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 2 · Online: The Staff &amp; the Two Clefs · Ledger Lines')}""", 23)
 
 # ---------- 3 Reading the notes ----------
 P24 = ppage(f"""{head('Part I · Pitch · 3', 'Reading the notes', 'Every line and space has one letter. You do not have to learn them all at once: start from a note you always know, then <b>step</b> or <b>skip</b> to the one you want.')}
@@ -156,7 +156,7 @@ P24 = ppage(f"""{head('Part I · Pitch · 3', 'Reading the notes', 'Every line a
 {thinkt('The clef notes are lamp posts on a dark road: walk from the nearest one and you are never lost.')}
 {game('Name it from the clef note', qitems(['treble line 3', 'treble space 1', 'bass line 3', 'bass space 3'], 4), 'Start from the clef note (treble G on line 2, bass F on line 4), then step or skip.', '1 B (skip up from G) · 2 F (step down from G) · 3 D (two steps down from F) · 4 E (step down from F).')}
 {try10(px('tr_lines', 64), 'Say the treble lines up and down.', '“E G B D F”, then “F D B G E”, out loud, as fast as you can without a slip. Then the spaces: “F A C E”.')}
-{foot('The staff and the clefs p. {{P2}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 24)
+{foot('The staff and the clefs p. {{P2}} · The staff and the keyboard p. {{P4}}', 'Workbook Pitch 3 · Online: Line and Space Names · Steps &amp; Skips')}""", 24)
 
 # ---------- 4 The staff and the keyboard ----------
 P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Each line and each space of the grand staff is one white key. Climb the staff and you climb the keyboard: here are two octaves, from Bass C to Treble C, with Middle C in red where the two staves meet.')}
@@ -173,7 +173,7 @@ P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Eac
 {thinkt('The staff is a ladder laid beside the keyboard: each rung, a line or a space, is the next white key.')}
 {game('Count the notes', qitems(['Middle C up to A', 'Middle C down to E', 'G up to the next G'], 3), 'Count the notes, both ends included. The staff climbs the same way: one line or space per note.', '1 six (C D E F G A) · 2 six (C B A G F E) · 3 eight: an octave.')}
 {try10(kbx('C', 8, 24, 70, label=True, shade={0: PINK, 7: PINK}, scale=1.0), 'Play Middle C, then walk up.', 'Say each white key as you play it, C D E F G A B C, and picture each one climbing the staff: line, space, line, space.')}
-{foot('The keyboard p. {{P1}} · Reading the notes p. {{P3}}', 'Workbook Pitch 1–2 · Online: Library › Staff and clefs')}""", 25)
+{foot('The keyboard p. {{P1}} · Reading the notes p. {{P3}}', 'Workbook Pitch 4 · Online: The Staff &amp; the Two Clefs · Line and Space Names')}""", 25)
 
 # ---------- 5 Sharps, flats and naturals ----------
 acc = [[gsym('♯', 28), 'sharp', 'one key to the right (a semitone higher)', 'Level 0'], [gsym('♭', 28), 'flat', 'one key to the left (a semitone lower)', 'Level 0'], [gsym('♮', 28), 'natural', 'cancels a sharp or flat: back to the white key', 'Level ½']]
@@ -191,7 +191,7 @@ P26 = ppage(f"""{head('Part I · Pitch · 5', 'Sharps, flats and naturals', 'A s
 {watch(['Carrying a sharp or flat past the bar line: after it, the note is plain again.'])}
 {thinkt('A sharp or flat is a sticky note on one line of the staff: it stays stuck until the bar line, then it falls off.')}
 {game('Which key is it?', qitems(['C♯', 'E♭', 'B♯', 'F♭'], 4), 'Sharp: one key to the right. Flat: one key to the left. Which key do you press?', '1 the black key right of C · 2 the black key left of E · 3 the white key C · 4 the white key E.')}
-{foot('Keys and key signatures p. {{S3}}', 'Workbook Pitch 3 · Online: Library › Signs')}""", 26)
+{foot('Keys and key signatures p. {{S3}}', 'Workbook Pitch 5 · Online: Accidentals · Tones &amp; Semitones')}""", 26)
 
 # ---------- 6 Counting intervals ----------
 def hopkb(start, n_white, W, H, a, nh, label=True, ends=True, scale=1.0, cap=None):
@@ -229,7 +229,7 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'How far apa
 {thinkt('Monday to Wednesday is three days, not two: you count the day you start on. Intervals count the same way.')}
 {game('Count the notes', qitems(['C up to G', 'D up to F', 'E up to the next E', 'G up to A'], 4), 'Count every note, both ends included. What is each interval called?', '1 a 5th (C D E F G) · 2 a 3rd · 3 an octave (8) · 4 a 2nd.')}
 {try10(kbx('C', 8, 24, 70, label=True, shade={0: PINK, 4: PINK}, scale=1.0), 'Thumb on C, finger 5 on G.', 'Your hand is a ruler: thumb to little finger on white keys is a 5th. Play it, then thumb to finger 3: a 3rd.')}
-{foot('Major, minor and perfect p. {{P7}} · Major scales p. {{S1}}', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 27)
+{foot('Major, minor and perfect p. {{P7}} · Major scales p. {{S1}}', 'Workbook Pitch 6 · Online: Intervals · Tones &amp; Semitones')}""", 27)
 
 # ---------- 7 Major, minor and perfect ----------
 iv = [['3rd', '2 (minor)', '3 (major)'], ['4th', '', '4 (perfect)'], ['5th', '', '6 (perfect)'], ['6th', '7 (minor)', '8 (major)'], ['octave', '', '11 (perfect)']]
@@ -248,4 +248,4 @@ P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'C to 
 {thinkt('A major and a minor 3rd are a smile and a frown: the same face, one small change at the corners.')}
 {game('Perfect, major or minor?', qitems(['C–G', 'D–F', 'C–E', 'E–A'], 4), 'Count the notes for the number, then the keys in between for the size.', '1 perfect 5th (6 between) · 2 minor 3rd (2) · 3 major 3rd (3) · 4 perfect 4th (4).')}
 {try10(kbx('C', 8, 24, 70, label=True, shade={0: PINK, 2: PINK}, scale=1.0), 'Play C–E, then C–E♭.', 'Bright, then dark. One key makes the difference: the major 3rd has three keys between, the minor 3rd two.')}
-{foot('Counting intervals p. {{P6}} · Chords and triads p. {{H1}}', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 28)
+{foot('Counting intervals p. {{P6}} · Chords and triads p. {{H1}}', 'Workbook Pitch 7 · Online: Intervals (Major or minor 3rd)')}""", 28)
