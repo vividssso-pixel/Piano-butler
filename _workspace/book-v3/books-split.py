@@ -21,6 +21,7 @@ CH = [
  ('Time', 5, 'Compound and irregular time', '6/8, 9/8, 12/8; 5/4, 7/8 and 3 + 3 + 2.', 'hbT', *HB(['T5']), 'wbT', [9, 10], '9–10'),
  ('Time', 6, 'Groups and upbeats', 'Beams, upbeats, triplets, duplets and semiquavers.', 'hbT', *HB(['T6']), 'wbT', [11, 12], '11–12'),
  ('Time', 7, 'Off the beat', 'Syncopation, swing, hemiola, polyrhythm and rubato.', 'hbT', *HB(['T7']), 'wbT', [13, 14], '13–14'),
+ ('Time', 8, 'Repeats and road signs', 'Repeat signs, 1st and 2nd time bars, D.C., D.S., Fine and Coda.', 'hbT', *HB(['T8']), 'wbT', [15], '15'),
  ('Pitch', 4, 'Intervals', 'Counting the distance between notes: numbers, tones and semitones, major, minor and perfect.', 'hbP', *HB(['P6', 'P7']), 'wbP', [9, 10], '9–10'),
  ('Scales', 1, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbS', *HB(['S1', 'S2', 'S3', 'S4', 'S5']), 'wbS', [1, 2], '1–2'),
  ('Harmony', 1, 'Chords and triads', 'Root, 3rd and 5th; play one, skip one; solid and broken chords.', 'hbH', *HB(['H1']), 'wbH', [1, 2], '1–2'),

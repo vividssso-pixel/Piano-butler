@@ -77,9 +77,9 @@ def pic_time():
         o += f'<circle cx="{xs[0]}" cy="{T.y("E5"):.1f}" r="4.6" fill="{ORD}"/>'
     o += lab(330, yb + 120, 'two beats, three quavers in each', OPK, 18, 'start')
     o += call(4, 118, S.y1 - 3 * S.sp, 100, 60) + call(2, 236, S.y('A4') - 10, 236, 50) + call(6, 360, S.y('A4') - 50, 360, 50) + call(3, 452, S.y('B4') - 12, 452, 50)
-    o += call(1, 682, yb, 740, yb) + call(6, 134, S.y('G4') + 8, 100, yb) + call(7, 514, S.y('A4') + 9, 514, yb + 58) + call(3, 648, S.y('G4') + 22, 700, yb + 58) + call(5, 48, yb + 98, 48, yb + 148)
+    o += call(1, 682, yb, 740, yb) + call(6, 134, S.y('G4') + 8, 100, yb) + call(7, 514, S.y('A4') + 9, 514, yb + 58) + call(3, 648, S.y('G4') + 22, 700, yb + 58) + call(5, 48, yb + 98, 48, yb + 148) + call(8, 744, S.y1 - 2 * S.sp, 780, S.y1 - 6 * S.sp)
     return f'<svg viewBox="0 0 800 {yb + 160}" style="width:100%;display:block">{o}</svg>'
-LEG_T = [(1, 'Pulse, tempo and the bar', 'the steady beat underneath; beat 1 is strongest', 'T1'), (2, 'Notes and rests', 'the shape says how long; rests are counted too', 'T2'), (3, 'How long is a note?', 'a dot adds half; a tie glues two notes into one', 'T3'), (4, 'Time signatures', 'four seats in every bar, a crotchet in each', 'T4'), (5, 'Compound and irregular time', 'beats in threes; bars of five or seven', 'T5'), (6, 'Rhythm: groups and upbeats', 'beams show the beats; starting before bar 1', 'T6'), (7, 'Rhythm: off the beat', 'a note between the beats that holds on', 'T7'), ('★', 'Tips: when the rhythm slips', '', 'TT')]
+LEG_T = [(1, 'Pulse, tempo and the bar', 'the steady beat underneath; beat 1 is strongest', 'T1'), (2, 'Notes and rests', 'the shape says how long; rests are counted too', 'T2'), (3, 'How long is a note?', 'a dot adds half; a tie glues two notes into one', 'T3'), (4, 'Time signatures', 'four seats in every bar, a crotchet in each', 'T4'), (5, 'Compound and irregular time', 'beats in threes; bars of five or seven', 'T5'), (6, 'Rhythm: groups and upbeats', 'beams show the beats; starting before bar 1', 'T6'), (7, 'Rhythm: off the beat', 'a note between the beats that holds on', 'T7'), (8, 'Repeats and road signs', 'repeat signs, D.C., D.S., Fine and Coda', 'T8'), ('★', 'Tips: when the rhythm slips', '', 'TT')]
 
 # ---------- Part I · Pitch ----------
 def pic_pitch():

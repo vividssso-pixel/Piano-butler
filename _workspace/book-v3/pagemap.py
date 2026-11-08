@@ -1,12 +1,12 @@
 # One page map for the whole Handbook (her 5 Nov: topics may take 2 or 3 pages, so page numbers are computed, never typed).
 # Write a reference as {{H3}} (first page of Harmony 3) or {{H3+1}} (its second page); page() fills in the number.
 import re
-PARTS = [('P', 'Pitch', 7), ('T', 'Time', 7), ('S', 'Scales and keys', 5), ('H', 'Chords', 8), ('M', 'Harmony in music', 4)]   # her 6 Nov: intervals into Pitch, Harmony split in two
+PARTS = [('P', 'Pitch', 7), ('T', 'Time', 8), ('S', 'Scales and keys', 5), ('H', 'Chords', 8), ('M', 'Harmony in music', 4)]   # her 6 Nov: intervals into Pitch, Harmony split in two
 PLANNED = {}   # chapters planned but not built yet: their numbers follow on, for forward references
 TIPS = {'P': True, 'T': True, 'S': True, 'H': True, 'M': True}
-COUNT = {'H1': 3, 'H2': 3, 'H3': 3, 'H4': 3, 'H5': 3, 'H6': 3, 'H7': 3, 'H8': 3, 'M1': 3, 'M2': 3, 'P1': 4, 'P2': 3, 'P3': 3, 'P4': 3, 'P5': 3, 'P6': 3, 'P7': 3, 'S1': 3, 'S2': 3, 'S3': 3, 'S4': 3, 'S5': 3, 'T1': 3, 'T2': 3, 'T3': 3, 'T4': 3, 'T5': 3, 'T6': 3, 'T7': 3}          # pages per topic; 2 unless set here
+COUNT = {'H1': 3, 'H2': 3, 'H3': 3, 'H4': 3, 'H5': 3, 'H6': 3, 'H7': 3, 'H8': 3, 'M1': 3, 'M2': 3, 'P1': 4, 'P2': 3, 'P3': 3, 'P4': 3, 'P5': 3, 'P6': 3, 'P7': 3, 'S1': 3, 'S2': 3, 'S3': 3, 'S4': 3, 'S5': 3, 'T1': 3, 'T2': 3, 'T3': 3, 'T4': 3, 'T5': 3, 'T6': 3, 'T7': 3, 'T8': 3}          # pages per topic; 2 unless set here
 START = 21          # the Pitch opener
-OLD_PARTS = [('P', 'Pitch', 5), ('T', 'Time', 7), ('S', 'Scales and keys', 7), ('H', 'Harmony', 12)]   # the layout before 6 Nov
+OLD_PARTS = [('P', 'Pitch', 5), ('T', 'Time', 8), ('S', 'Scales and keys', 7), ('H', 'Harmony', 12)]   # the layout before 6 Nov
 RENAME = {'S1': 'P6', 'S2': 'P7', 'S3': 'S1', 'S4': 'S2', 'S5': 'S3', 'S6': 'S4', 'S7': 'S5', 'H9': 'M1', 'H10': 'M2', 'H11': 'M3', 'H12': 'M4'}
 def build(count=None, legacy=False):
     c = {} if legacy else dict(COUNT, **(count or {})); page, n = {}, START
