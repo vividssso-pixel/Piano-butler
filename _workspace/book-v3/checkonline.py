@@ -70,15 +70,16 @@ const parts = [...new Set(BANK.map(c => c.p))];
 let picked = new Set([parts[0]]), queue = [], qi = 0, ans = [], shown = false;
 const app = document.getElementById('app');
 const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pgl = n => (typeof PDF !== 'undefined') ? `<a href="${PDF}#page=${n - 20}" target="_blank" rel="noopener" style="color:inherit">p. ${n}</a>` : `p. ${n}`;
 const pill = s => s == null ? '<span class="pill n">not yet</span>' : s === 3 ? '<span class="pill g">skip</span>' : s === 2 ? '<span class="pill y">skim</span>' : '<span class="pill r">study</span>';
 function home() {
   const firstRed = BANK.find(c => res[c.k] != null && res[c.k] < 2) || BANK.find(c => res[c.k] === 2);
   const done = BANK.filter(c => res[c.k] != null).length;
-  app.innerHTML = (firstRed ? `<div class="next"><div class="kick">Start here</div><b>${esc(firstRed.k)} · ${esc(firstRed.t)}</b><div>Handbook p. ${firstRed.pg}</div></div>` : '') +
+  app.innerHTML = (firstRed ? `<div class="next"><div class="kick">Start here</div><b>${esc(firstRed.k)} · ${esc(firstRed.t)}</b><div>Handbook ${pgl(firstRed.pg)}</div></div>` : '') +
    `<div class="start"><button class="btn" id="go" ${picked.size ? '' : 'disabled'}>Check ${picked.size === 1 ? 'this part' : picked.size + ' parts'}</button>` +
    (done ? `<button class="btn ghost" id="reset">Clear my results</button><span class="dk">${done} of 48 chapters checked</span>` : '') + `</div><div class="parts">` +
    parts.map((p, i) => `<section class="part"><div class="ph"><h3>${esc(p)}</h3><label class="sel"><input type="checkbox" id="pt${i}" data-p="${esc(p)}" ${picked.has(p) ? 'checked' : ''}> check it</label></div>` +
-     BANK.filter(c => c.p === p).map(c => `<div class="ch"><span class="k">${c.k}</span><span class="t">${esc(c.t)}</span><span class="pg">p. ${c.pg}</span>${pill(res[c.k])}</div>`).join('') + `</section>`).join('') + `</div>`;
+     BANK.filter(c => c.p === p).map(c => `<div class="ch"><span class="k">${c.k}</span><span class="t">${esc(c.t)}</span><span class="pg">${pgl(c.pg)}</span>${pill(res[c.k])}</div>`).join('') + `</section>`).join('') + `</div>`;
   app.querySelectorAll('input[data-p]').forEach(x => x.onchange = () => { x.checked ? picked.add(x.dataset.p) : picked.delete(x.dataset.p); home(); });
   document.getElementById('go').onclick = () => { queue = BANK.filter(c => picked.has(c.p)); qi = 0; quiz(); };
   const r = document.getElementById('reset'); if (r) { let armed = false; r.onclick = () => { if (!armed) { armed = true; r.textContent = 'Tap again to clear'; return; } res = {}; save(); home(); }; }
@@ -98,12 +99,13 @@ function quiz() {
     document.getElementById('quit').onclick = home;
     document.getElementById('nx').onclick = () => { if (!shown) { res[c.k] = c.q.filter(([q, o, a], i) => ans[i] === a).length; save(); shown = true; draw(); } else { qi++; qi < queue.length ? quiz() : home(); } };
   };
-  const verdict = () => { const s = res[c.k]; const [bg, t] = s === 3 ? ['var(--goodbg)', 'Skip it: you know this chapter.'] : s === 2 ? ['var(--midbg)', `Skim it: read the Examples on p. ${c.pg}.`] : ['var(--badbg)', `Study it: start reading at p. ${c.pg}.`];
+  const verdict = () => { const s = res[c.k]; const [bg, t] = s === 3 ? ['var(--goodbg)', 'Skip it: you know this chapter.'] : s === 2 ? ['var(--midbg)', `Skim it: read the Examples on ${pgl(c.pg)}.`] : ['var(--badbg)', `Study it: start reading at ${pgl(c.pg)}.`];
     return `<div class="verdict" style="background:${bg}">${s} of 3 right. ${t}</div>`; };
   draw(); window.scrollTo(0, 0);
 }
 home();
 </script>'''
 open('/tmp/claude-0/-home-claude/52a2d1ee-1a91-5ee7-bfb7-a2b3df8fcebc/scratchpad/check/handbook-check.html', 'w').write(page.replace('__DATA__', data))
-open('/tmp/claude-0/pk/handbook-check-online.html', 'w').write('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">' + page.replace('__DATA__', data).replace('<title>', '<title>', 1) + '</html>')
+site = page.replace('const BANK = __DATA__;', 'const BANK = __DATA__; const PDF = "handbook-draft.pdf";')
+open('/tmp/claude-0/pk/handbook-check-online.html', 'w').write('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">' + site.replace('__DATA__', data) + '</html>')
 print('ok online')
