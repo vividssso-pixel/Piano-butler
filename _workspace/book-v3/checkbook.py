@@ -59,6 +59,7 @@ PAGJS = '''<script>
   const over = () => { const lim = page.querySelector('.foot').getBoundingClientRect().top - 24; let m = 0; [...body.children].forEach(c => m = Math.max(m, c.getBoundingClientRect().bottom)); return m > lim; };
   fresh();
   [...pool.children].forEach(el => { body.appendChild(el); if (over() && body.children.length > 2) { body.removeChild(el); const last = body.lastElementChild; const carry = last && last.classList.contains('ph') ? last : null; if (carry) body.removeChild(carry); fresh(); if (carry) body.appendChild(carry); body.appendChild(el); } });
+  if (page) page.dataset.end = '1';   // the last question page may end short: the answers follow
   pool.remove(); tpl.remove();
   document.querySelectorAll('section.pg').forEach((s, i) => { s.querySelector('.foot span').textContent = i + 1; });
   const map = [...document.querySelectorAll('section.pg')].findIndex(s => s.querySelector('.mapg')) + 1;

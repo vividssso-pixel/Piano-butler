@@ -37,6 +37,26 @@ def piano(spec):
 def say(who, text):
     text = re.sub(r'\b([B-G])s\b', r"\1's", text)   # her 8 Nov: 'Cs' was read letter by letter, 'C-S'; say it 'Cees'
     v, sp = VOICE[who]; a, sr = K.create(text, voice=v, speed=sp, lang='en-gb'); return np.asarray(a, dtype=np.float32)
+_WORD = {}
+NUMW = {'1': 'One', '2': 'Two', '3': 'Three', '4': 'Four', '5': 'Five', '6': 'Six', '&': 'and'}
+def word(w):
+    if w not in _WORD:
+        a = say('B', NUMW.get(w, w) + '.'); k = np.where(np.abs(a) > 0.02)[0]
+        _WORD[w] = a[max(0, k[0] - 200):k[-1] + 400] if len(k) else a
+    return _WORD[w]
+def count(spec):   # {'beats': click tokens, 'notes': piano tokens (optional), 'say': '1 2 3 …' one word per beat, '-' for silence}
+    toks = spec['beats'].split(); times = []; t = 0.0
+    for tok in toks: times.append(t); t += .62 * _dur(tok)[1]
+    tracks = [piano(spec['beats']) * .8]
+    if spec.get('notes'): tracks.append(piano(spec['notes']))
+    v = np.zeros(int(SR * (t + 1)))
+    for w, t0 in zip(spec.get('say', '').split(), times):
+        if w == '-': continue
+        a = word(w) * .9; i = int(SR * t0); v[i:i + len(a)] += a[:len(v) - i]
+    tracks.append(v)
+    L = max(len(x) for x in tracks); out = np.zeros(L)
+    for x in tracks: out[:len(x)] += x
+    return out, times
 def render(lines, timed=None):
     out = []; t = 0.0
     for ln in lines:
@@ -44,12 +64,14 @@ def render(lines, timed=None):
         if kind in VOICE: seg = [say(kind, val), np.zeros(int(SR * .35))]
         elif kind == 'piano': seg = [piano(val)]
         elif kind == 'pause': seg = [np.zeros(int(SR * val))]
+        elif kind == 'count': cw, ctimes = count(val); seg = [cw]
         else: seg = []
         dur = sum(len(x) for x in seg) / SR
         if timed is not None:
             item = {'t0': round(t, 2), 't1': round(t + dur, 2), 'who': kind}
             if kind in VOICE: item['text'] = val
             if kind == 'pause': item['text'] = 'Pause and try.'
+            if kind == 'count': item['who'] = 'piano'; item['notes'] = [round(t + x, 2) for x in ctimes]
             if kind == 'piano':   # one note every 0.62 s (a chord or bar gap counts as its own slot)
                 toks = re.findall(r'\[[^\]]+\]|\S+', val); tt = t; item['notes'] = []
                 for tok in toks:
@@ -70,6 +92,7 @@ if __name__ == '__main__':
     for k in keys:
         title, clips = CH[k]; d = f'{OUT}/{k}'; os.makedirs(d, exist_ok=True); allw = []; meta = []
         for i, (ct, lines) in enumerate(clips):
+            if ct == 'The secret': ct = title   # her 8 Nov: the first clip is named after the chapter
             tl = []; w = render(lines, tl); allw += [w, np.zeros(int(SR * .8))]
             fn = f'{i + 1:02d}-{re.sub(r"[^a-z0-9]+", "-", ct.lower()).strip("-")}.mp3'; mp3(w, f'{d}/{fn}'); meta.append({'title': ct, 'file': fn, 'sec': round(len(w) / SR), 'lines': tl})
         mp3(np.concatenate(allw), f'{d}/{k}-all.mp3')

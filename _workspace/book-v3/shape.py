@@ -283,7 +283,7 @@ L4 = lpage(f'''{head('Part VIII · Playing and listening · 4', 'Listening', 'Yo
 {game('Which song?', qitems(['5th up', 'octave up', '4th up'], 3), 'Name a song with that leap near the start.', '1 Twinkle · 2 Somewhere over the Rainbow · 3 Amazing Grace.')}
 {try10(ex('l_min', 64), 'Bright or dark?', 'Ask someone to play major or minor chords in any order. Say “bright” or “dark” for each. Ten in a row?')}
 {watch(['Guessing from the hands: close your eyes and listen.'])}
-{foot('Intervals p. {{P7}} · Cadences p. {{M2}}', 'Online: Ear trainer')}''', 166)
+{foot('Intervals p. {{P8}} · Cadences p. {{M2}}', 'Online: Ear trainer')}''', 166)
 
 # ---------- VIII.5 Performing ----------
 STEPS = [['<b>Before</b>', 'warm up your hands; practise starting, not only the whole piece; play it to a friend or family first'], ['<b>At the piano</b>', 'adjust the bench; feet flat; breathe out; feel one bar of the beat in your head'],

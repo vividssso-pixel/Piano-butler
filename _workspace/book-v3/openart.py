@@ -102,15 +102,15 @@ def pic_pitch():
     o += f'<path d="M{kx("F4") + 2},{ky + 80} Q{kx("F4") + 12},{ky + 62} {kx("F4") + W / 2 - 4},{ky + 48}" fill="none" stroke="{ORD}" stroke-width="2.4" stroke-linecap="round"/>'
     o += lab(kx('C4'), ky + KH + 36, 'C: just left of the two black keys', OPK, 16)
     o += call(2, 90, G.y('G4'), 36, 50) + call(2, 92, F.y('F3'), 36, F.y1 + 10)
-    o += call(3, kx('A4') + 30, G.y('A4') - 10, kx('A4') + 30, 44) + lab(kx('A4') + 48, 49, 'from G, one step up: A', OPK, 15, 'start')
-    o += call(5, kx('F4') + W / 2, G.y('F#4') - 10, kx('F4') - 10, 44) + lab(kx('F4') - 28, 49, '♯: one key to the right', OPK, 15, 'end')
-    o += call(4, (kx('F3') + 40 + kx('C4')) / 2 + 10, (G.y1 + F.y1) / 2 + 16, 660, (G.y1 + F.y1) / 2 + 16)
+    o += call(4, kx('A4') + 30, G.y('A4') - 10, kx('A4') + 30, 44) + lab(kx('A4') + 48, 49, 'from G, one step up: A', OPK, 15, 'start')
+    o += call(6, kx('F4') + W / 2, G.y('F#4') - 10, kx('F4') - 10, 44) + lab(kx('F4') - 28, 49, '♯: one key to the right', OPK, 15, 'end')
+    o += call(3, (kx('F3') + 40 + kx('C4')) / 2 + 10, (G.y1 + F.y1) / 2 + 16, 660, (G.y1 + F.y1) / 2 + 16) + call(5, kx('C4') + 9, G.y('C4'), 660, G.y('C4') - 4)
     o += call(1, kx('C5') + 10, ky + 20, 660, ky + 20)
     xc, xg, yi = kx('C4'), kx('G4') + 10, G.y1 + 26
     o += bracket(xc, xg, yi, 'C to G: a 5th', OPK, fs=12)
-    o += call(6, xc - 2, yi, 40, yi) + call(7, xg + 4, yi + 12, 660, yi + 12)
+    o += call(7, xc - 2, yi, 40, yi) + call(8, xg + 4, yi + 12, 660, yi + 12)
     return f'<svg viewBox="0 0 700 {ky + KH + 50}" style="width:100%;display:block">{o}</svg>'
-LEG_P = [(1, 'The keyboard', 'two and three black keys; C is left of the two', 'P1'), (2, 'The staff and the clefs', 'the treble clef names G, the bass clef F', 'P2'), (3, 'Reading the notes', 'start from a clef note, then step or skip', 'P3'), (4, 'The staff and the keyboard', 'every line and space is one white key', 'P4'), (5, 'Sharps, flats and naturals', 'a sharp moves one key right, a flat one key left', 'P5'), (6, 'Counting intervals', 'count the notes, both ends: C to G is a 5th', 'P6'), (7, 'Major, minor and perfect', 'count the keys between: 6 make a perfect 5th', 'P7'), ('★', 'Tips: when a note reads wrong', '', 'PT')]
+LEG_P = [(1, 'The keyboard', 'two and three black keys; C is left of the two', 'P1'), (2, 'The staff and the clefs', 'the treble clef names G, the bass clef F', 'P2'), (3, 'The staff and the keyboard', 'every line and space is one white key', 'P3'), (4, 'Reading the notes', 'start from a clef note, then step or skip', 'P4'), (5, 'Ledger lines', 'step out from the staff; Middle C has its own', 'P5'), (6, 'Sharps, flats and naturals', 'a sharp moves one key right, a flat one key left', 'P6'), (7, 'Counting intervals', 'count the notes, both ends: C to G is a 5th', 'P7'), (8, 'Major, minor and perfect', 'count the keys between: 6 make a perfect 5th', 'P8'), ('★', 'Tips: when a note reads wrong', '', 'PT')]
 
 # ---------- Part III · Scales and keys ----------
 def pic_scales():

@@ -77,8 +77,24 @@ def hops(start_i, black_first, n):
         if _WH[j % 7] in 'CDFGA': keys.append(j + 1)
     return [(keys[k], keys[k + 1]) for k in range(n)]
 def xlate(t, body): return f'<div class="xlate xbox"><div class="xbh">Extra · going further</div><b class="it">{t}</b>{body}</div>'
+def staff_kb(svg, red=(), gap=260):   # her 8 Nov: a keyboard drawn under the staff, each white key under its own note, so the page shows which key each note means
+    vb = _re.search(r'<svg viewBox="0 0 ([\d.]+) ([\d.]+)"', svg); W, H = float(vb.group(1)), float(vb.group(2))
+    ivb = _re.search(r'<svg class="definition-scale" color="black" viewBox="0 0 ([\d.]+) ([\d.]+)">', svg); IW, IH = float(ivb.group(1)), float(ivb.group(2)); k = IW / W
+    notes = sorted((float(x) + 146, nid) for nid, x in _re.findall(r'<g id="(n\d+)" class="note">.*?<use xlink:href="#[^"]*" x="([\d.]+)"', svg, flags=_re.S))
+    xs = [x for x, _ in notes]; d = (xs[-1] - xs[0]) / (len(xs) - 1); top = IH + gap; kh = d * 3.2
+    letters = 'GABCDEF'; out = []
+    for i, (x, nid) in enumerate(notes):
+        fill = '#fbd0c2' if nid in red else '#fff'
+        out.append(f'<rect x="{x - d / 2:.0f}" y="{top:.0f}" width="{d:.0f}" height="{kh:.0f}" fill="{fill}" stroke="#26296b" stroke-width="22"/>')
+        if nid in red: out.append(f'<circle cx="{x:.0f}" cy="{top + kh - d * .55:.0f}" r="{d * .2:.0f}" fill="#e4572e"/>')
+    for i, (x, nid) in enumerate(notes[:-1]):
+        if letters[i % 7] in 'CDFGA': out.append(f'<rect x="{x + d / 2 - d * .29:.0f}" y="{top:.0f}" width="{d * .58:.0f}" height="{kh * .6:.0f}" fill="#26296b"/>')
+    nH = H + (gap + kh + 60) / k
+    svg = svg.replace(vb.group(0), f'<svg viewBox="0 0 {W} {nH:.2f}"', 1).replace(ivb.group(0), f'<svg class="definition-scale" color="black" viewBox="0 0 {IW} {nH * k:.1f}">', 1)
+    i = svg.rindex('</svg>'); i = svg.rindex('</svg>', 0, i)
+    return svg[:i] + '<g class="kbunder">' + ''.join(out) + '</g>' + svg[i:]
 def pxc(k, ids, h):   # a staff picture with the landmark notes (and their letters) in red, the other letters navy
-    s = P[k].replace('<svg ', '<svg style="max-height:%dpx;width:auto;max-width:100%%" ' % h, 1)
+    s = (staff_kb(P[k], ids) if k == 'gs_climb' else P[k]).replace('<svg ', '<svg style="max-height:%dpx;width:auto;max-width:100%%" ' % h, 1)
     for n in ids: s = s.replace(f'<g id="{n}" class="note">', f'<g id="{n}" class="note" style="fill:#e4572e;color:#e4572e">', 1)
     return '<div class="vs">' + s.replace('font-family="Times,serif"', 'font-family="AH,Arial" font-weight="700"') + '</div>'
 def kfig(start, n, blk, wht, W=36, H=104):   # her 8 Nov: a small keyboard beside each sign Example, the keys named on them
@@ -153,7 +169,7 @@ P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music 
 # ---------- 3 The staff and the keyboard (her 8 Nov: before reading, so 2-3-4 never repeat) ----------
 P24 = ppage(f"""{head('Part I · Pitch · 3', 'The staff and the keyboard', 'Each line and each space of the grand staff is one white key. Climb the staff and you climb the keyboard: here are two octaves, from Bass C to Treble C, with Middle C in red where the two staves meet.')}
 <figure class="vx px mapf"><div class="vs">{P['map'].replace('<svg ', '<svg style="max-height:520px" ', 1)}</div></figure>
-{rule('One step on the staff (line to space, or space to line) is the very next <b>white</b> key. The black keys sit in between; how they are written is the next chapter (p.&nbsp;{{P5}}).')}
+{rule('One step on the staff (line to space, or space to line) is the very next <b>white</b> key. The black keys sit in between; how they are written is the next chapter (p.&nbsp;{{P6}}).')}
 <p>Up the staff is to the <b>right</b> on the keyboard; down the staff is to the <b>left</b>. A note on a line and the note in the space just above it are next-door white keys, so no key is ever missed out.</p>
 {inaction('From the page to the key', px('lm_b', 84), ['<b>Name the note:</b> line 4 of the bass staff, between the clef’s dots, is F.', '<b>On the piano,</b> find the three black keys just below Middle C.', '<b>F is the first key</b> of that family: play it with the left hand.'], 'The bass-clef F is the <b>F just below Middle C</b>: left of the three black keys under it.')}
 {inaction('Mirror notes either side of Middle C', '<div style="width:70%;margin:0 auto">' + ask(px('landmarks', 220), ('n3', 'n4')) + '</div>', ['<b>Treble G:</b> the three black keys just above Middle C; G is the second key, after F.', '<b>Bass F:</b> the three black keys just below Middle C; F is the first key.', '<b>Now count each from Middle C:</b> C D E F G up, C B A G F down. Which number?'], 'Both are <b>note 5</b>: treble G and bass F are mirror images, the same distance either side of Middle C.')}
@@ -168,36 +184,53 @@ P24 = ppage(f"""{head('Part I · Pitch · 3', 'The staff and the keyboard', 'Eac
 
 # ---------- 4 Reading the notes ----------
 P25 = ppage(f"""{head('Part I · Pitch · 4', 'Reading the notes', 'Every line and space has one letter. You do not have to learn them all at once: start from a note you always know, then <b>step</b> or <b>skip</b> to the one you want.')}
-{hero(pxc('gs_climb', ('n15', 'n28', 'n32'), 210), 'Middle C in the middle; treble G and bass F, the clef notes, either side. Every line and space is the next letter.')}
+{hero(pxc('gs_climb', ('n15', 'n28', 'n32'), 330), 'Middle C in the middle; treble G and bass F, the clef notes, either side. Every line and space is the next letter.')}
 {rule('<b>Step</b>: to the very next line or space (one letter on). <b>Skip</b>: line to the next line, or space to the next space (two letters on).')}
+{h3('Line note or space note?')}<p>A <b>line note</b> has the line running through its middle. A <b>space note</b> sits between two lines and touches both. Count both from the bottom: line 1 is the bottom line, space 1 the bottom space.</p>
 {h3('Words to remember the lines and spaces')}
 {tbl(['Staff', 'Lines (bottom to top)', 'Spaces (bottom to top)'], [['Treble', '<b>E G B D F</b>: <i>Every Good Boy Deserves Fun</i>', '<b>F A C E</b>: they spell <i>FACE</i>'], ['Bass', '<b>G B D F A</b>: <i>Great Big Dragons Fly Away</i>', '<b>A C E G</b>: <i>All Cows Eat Grass</i>']], ['16%', '44%', '40%'])}
 <!--SPLIT-->
-{inaction('Read a note you are not sure of', ask(px('ia_read', 84), (), True), ['<b>The clef:</b> treble, so the clef note is G, on line 2.', '<b>From G, skip up</b> line to line: one letter jumped each time.', '<b>Count the skips</b> up to the other red note, on line 4: G, then B, then …'], 'The red note is <b>D</b>: G, B, D, two skips up from the clef’s G.')}
-{inaction('Read a bass note from the clef', ask(ykfig('ex_bf', ('n3',), 88), ('n3',)), ['<b>The bass clef’s dots</b> sit either side of line 4: that line is F.', '<b>Step down</b> to the space below.', '<b>One more step down</b> to the red note on line 3.'], 'F, E, <b>D</b>: bass line 3 is D, two steps down from the clef’s F.')}
-{inaction('One line, two notes', '<div style="display:flex;justify-content:center;gap:40px">' + ask(ykfig('tr_lines', ('n1',), 96), ('n1',), True) + ask(ykfig('bs_lines', ('n1',), 96), ('n1',), True) + '</div>', ['<b>Look at the red notes:</b> both sit on the bottom line.', '<b>Now look at the clefs:</b> treble on the left, bass on the right.', '<b>Read each from its clef note:</b> treble G is line 2, so step down (F in the space) to line 1; bass F is line 4, so step down line by line.'], 'Treble bottom line: <b>E</b>. Bass bottom line: <b>G</b>. Same line, different note: always read the <b>clef</b> first.')}
+{inaction('Read a note you are not sure of', ask(px('ia_read', 84), (), True), ['<b>Treble lines</b> from the bottom: <i>Every Good Boy Deserves Fun</i>.', '<b>The red note is on line 4:</b> the fourth word. Which word, which letter?', '<b>Check it</b> from the clef note: G on line 2, skip to B, skip to …'], 'Line 4 is <i>Deserves</i>: <b>D</b>. And from the clef: G, B, D, two skips up.')}
+{inaction('Read a bass note from the clef', ask(ykfig('ex_bf', ('n3',), 88), ('n3',)), ['<b>Bass lines</b> from the bottom: <i>Great Big Dragons Fly Away</i>.', '<b>The red note is on line 3:</b> the third word. Which letter?', '<b>Check it</b> from the clef note: the dots hug F on line 4; step down to E, then …'], 'Line 3 is <i>Dragons</i>: <b>D</b>. And from the clef: F, E, D, two steps down.')}
+{inaction('One line, two notes', '<div style="display:flex;justify-content:center;gap:40px">' + ask(ykfig('tr_lines', ('n1',), 96), ('n1',), True) + ask(ykfig('bs_lines', ('n1',), 96), ('n1',), True) + '</div>', ['<b>Look at the red notes:</b> both sit on the bottom line.', '<b>Now look at the clefs:</b> treble on the left, bass on the right.', '<b>Use each clef’s sentence:</b> the first word of the treble lines, <i>Every…</i>; the first word of the bass lines, <i>Great…</i>.'], 'Treble bottom line: <b>E</b> (<i>Every</i>). Bass bottom line: <b>G</b> (<i>Great</i>). Same line, different note: always read the <b>clef</b> first.')}
 <!--SPLIT-->
 {inaction('Find Treble C on the staff', ask(ykfig('tr_spaces', ('n3',), 88), ('n3',), True), ['<b>These notes sit in the spaces.</b> The bottom space is F.', '<b>Step up through the spaces:</b> F, A … they spell a word.', '<b>The red note is space 3.</b> Which letter is it?'], 'F A <b>C</b> E: space 3 is <b>C</b>, Treble C, the same C you found on the keyboard, one octave above Middle C.')}
 {inaction('Find Bass C on the staff', ask(ykfig('bs_spaces', ('n2',), 88), ('n2',), True), ['<b>These notes sit in the bass spaces.</b> The bottom space is A: <i>All</i>.', '<b>Say the next word:</b> <i>All Cows</i> …', '<b>The red note is space 2.</b> Which letter?'], 'A <b>C</b> E G: space 2 of the bass staff is <b>C</b>, Bass C, one octave below Middle C.')}
 {try10(px('tr_lines', 64), 'Say the treble lines up and down.', '“E G B D F”, then “F D B G E”, out loud, as fast as you can without a slip. Then the spaces: “F A C E”.')}
 <!--SPLIT-->
-<div class="xlate">{h3('Ledger lines: the staff carried on')}
-{two(px('ledger', 72, 'Treble: A, B, C below; A, B, C above.'), px('ledger_b', 72, 'Bass: E, D, C below; C, D, E above.'))}
-<p>Notes too high or too low for the staff sit on short extra lines called <b>ledger lines</b>, spaced exactly like the staff lines. Read them by stepping on from the nearest staff line: line, space, line, space.</p></div>
-{inaction('Read a high note on ledger lines', ask(ykfig('ex_hi', ('n5',), 100), ('n5',)), ['<b>The top line</b> of the treble staff is F.', '<b>Step up</b> one note at a time: G sits on top of the staff, A on the first ledger line.', '<b>Keep stepping</b> to the red note: B above it, then the second ledger line.'], 'Two ledger lines above the treble staff: <b>High C</b>, two octaves above Middle C.')}
-{xlate('Too many ledger lines? 8va', '<p>Very high notes need lots of ledger lines, and lots of ledger lines are hard to read. So a high passage is often written lower, with <b>8va</b> and a dotted line above it: play those notes <b>one octave higher</b> (eight notes up, from a C to the next C, p. {{P1+1}}) until the dotted line stops. <b>8vb</b> under the notes means an octave lower.</p>')}
 {game('Name it from the clef note', qitems(['treble line 3', 'treble space 1', 'bass line 3', 'bass space 3'], 4), 'Start from the clef note (treble G on line 2, bass F on line 4), then step or skip.', '1 B (skip up from G) · 2 F (step down from G) · 3 D (two steps down from F) · 4 E (step down from F).')}
+{howto('Read a new note in three moves', ['<b>Look at the clef</b>: treble or bass? That decides every letter.', '<b>Find the nearest note you know</b>: treble G, bass F or Middle C, or use the sentence for lines or spaces.', '<b>Step or skip</b> to the new note, say its name, then play it.'])}
+{xlate('Read the shape, not just the notes', '<p>Good readers see the jumps before the letters. Notes that touch, line then space, are a <b>step</b>: the next letter. Notes with one line between them, line to line or space to space, are a <b>skip</b>: one letter missed out. Name the first note, then let the shape name the rest: up a step, up a skip, down a step.</p>')}
 {youknow('Mary Had a Little Lamb', ykfig('yk_mary', ('n1','n2','n3'), 96), 'E D C: <b class="co">line, space, Middle C’s own little line</b>, one step down each time. Read the shape and the tune walks down with it.', 'Read the notes aloud before you play them.')}
 {thinkt('The clef notes are lamp posts on a dark road: walk from the nearest one and you are never lost.')}
-{watch(['Naming bass notes with treble names: in the bass, the bottom line is G, not E.', 'Mixing up step and skip: a step changes line to space; a skip stays on lines (or on spaces).', 'Reading ledger lines from the wrong end: step out from the staff.'])}
-{foot('The staff and the clefs p. {{P2}} · The staff and the keyboard p. {{P3}}', 'Workbook Pitch 4 · Online: Line and Space Names · Steps &amp; Skips · Ledger Lines')}""", 25)
+{watch(['Naming bass notes with treble names: in the bass, the bottom line is G, not E.', 'Mixing up step and skip: a step changes line to space; a skip stays on lines (or on spaces).', 'Mistaking a space note for a line note: a line runs through a line note; a space note sits between two lines.', 'Counting lines from the top: line 1 is always the bottom line.'])}
+{foot('The staff and the keyboard p. {{P3}} · Ledger lines p. {{P5}}', 'Workbook Pitch 4 · Online: Line and Space Names · Steps &amp; Skips')}""", 25)
 
-# ---------- 5 Sharps, flats and naturals ----------
+# ---------- 5 Ledger lines (her 8 Nov: its own chapter, after reading) ----------
+P25b = ppage(f"""{head('Part I · Pitch · 5', 'Ledger lines', 'Some notes are too high or too low for the staff. They sit on short extra lines called <b>ledger lines</b>, spaced exactly like the staff lines. Read them the way you read the staff: step out from the nearest staff line, line, space, line.')}
+{hero(side(px('gs_c2', 150), kfig('A', 5, {}, {2: ('Middle C', True)}, W=40, H=120)), 'Middle C sits on a ledger line of its own: below the treble staff, or above the bass staff. One key, two ways to write it.')}
+{h3('Below and above the staff')}
+{two(px('ledger', 90, 'Treble: A, B, C below; A, B, C above.'), px('ledger_b', 90, 'Bass: E, D, C below; C, D, E above.'))}
+<p>Name ledger notes by stepping out from the staff, one letter at a time. Treble: below the bottom line E come D, then Middle C on the first ledger line, then B and A. Above the top line F come G, A on the first ledger line, B, then C on the second. Bass: below the bottom line G come F, E on the first ledger line, D, C; above the top line A come B, then Middle C.</p>
+{rule('<b>Count ledger lines from the staff outwards.</b> The first ledger line is the one nearest the staff. Step out line, space, line, and never skip one.')}
+<!--SPLIT-->
+{inaction('Read a high note on ledger lines', ask(ykfig('ex_hi', ('n5',), 100), ('n5',)), ['<b>The top line</b> of the treble staff is F.', '<b>Step up</b> one note at a time: G sits on top of the staff, A on the first ledger line.', '<b>Keep stepping</b> to the red note: B above it, then the second ledger line.'], 'Two ledger lines above the treble staff: <b>High C</b>, two octaves above Middle C.')}
+{inaction('Read a low note on ledger lines', ask(ykfig('ex_lo', ('n5',), 100), ('n5',)), ['<b>The bottom line</b> of the bass staff is G.', '<b>Step down</b> one note at a time: F in the space below, E on the first ledger line.', '<b>Keep stepping</b> to the red note: D below it, then the second ledger line.'], 'Two ledger lines below the bass staff: <b>Low C</b>, two octaves below Middle C.')}
+{inaction('Middle C, two ways', side(px('gs_c2', 96), kfig('A', 5, {}, {2: ('', True)}, W=34, H=96)), ['<b>Treble staff:</b> Middle C hangs on the first ledger line below.', '<b>Bass staff:</b> Middle C sits on the first ledger line above.', '<b>Find both on the keyboard.</b> Are they different keys?'], 'The same key, <b>Middle C</b>: the right hand reads it in the treble, the left hand in the bass.')}
+<div class="xlate">{h3('The four first ledger lines')}{tbl(['Where', 'First ledger line', 'Note'], [['Treble, below the staff', 'just under line 1', '<b>Middle C</b>'], ['Bass, above the staff', 'just over line 5', '<b>Middle C</b>'], ['Treble, above the staff', 'just over line 5', '<b>A</b>'], ['Bass, below the staff', 'just under line 1', '<b>E</b>']], ['40%', '35%', '25%'])}<p class="sm">Two of them are the same key, Middle C. The other two are not: always look at the clef first.</p></div>
+{xlate('Too many ledger lines? 8va', '<p>Very high notes need lots of ledger lines, and lots of ledger lines are hard to read. So a high passage is often written lower, with <b>8va</b> and a dotted line above it: play those notes <b>one octave higher</b> (eight notes up, from a C to the next C, p. {{P1+1}}) until the dotted line stops. <b>8vb</b> under the notes means an octave lower.</p>')}
+{game('Name the ledger note', qitems(['treble, first ledger line below', 'bass, first ledger line above', 'treble, first ledger line above', 'bass, first ledger line below'], 4), 'Step out from the nearest staff line.', '1 Middle C · 2 Middle C · 3 A · 4 E.')}
+{try10(px('ledger', 64), 'Say the ledger notes.', 'Treble: A, B, C below; A, B, C above. Point to each one, say it, then play it.')}
+{thinkt('Ledger lines are the staff’s ladder carried on past its ends: the same rungs, just shorter.')}
+{watch(['Reading ledger lines from the wrong end: step out from the staff.', 'Counting from the outside in: the first ledger line is the one nearest the staff.'])}
+{foot('Reading the notes p. {{P4}} · Sharps, flats and naturals p. {{P6}}', 'Workbook Pitch 5 · Online: Ledger Lines')}""", 26)
+
+# ---------- 6 Sharps, flats and naturals ----------
 acc = [[gsym('♯', 28), 'sharp', 'one key to the right (a semitone higher)', 'Level 0'], [gsym('♭', 28), 'flat', 'one key to the left (a semitone lower)', 'Level 0'], [gsym('♮', 28), 'natural', 'cancels a sharp or flat: back to the white key', 'Level ½']]
-P26 = ppage(f"""{head('Part I · Pitch · 5', 'Sharps, flats and naturals', 'A sign in front of a note moves it to the very next key. <b>Sharp</b>: one key to the <b>right</b>, a <b>semitone</b> higher. <b>Flat</b>: one key to the <b>left</b>, a semitone lower. Usually that next key is black, which is how the black keys get their names.')}
+P26 = ppage(f"""{head('Part I · Pitch · 6', 'Sharps, flats and naturals', 'A sign in front of a note moves it to the very next key. <b>Sharp</b>: one key to the <b>right</b>, a <b>semitone</b> higher. <b>Flat</b>: one key to the <b>left</b>, a semitone lower. Usually that next key is black, which is how the black keys get their names.')}
 {hero(keyboard('C', 5, 64, 190, label=True, shade={1: BLUE}, marks=[f'<circle cx="{1.5 * 64}" cy="150" r="13" fill="#fff" stroke="{NAV}" stroke-width="2.4"/>', f'<circle cx="{2 * 64}" cy="72" r="13" fill="{RED}"/>', f'<circle cx="{1 * 64}" cy="72" r="13" fill="{RED}"/>', f'<text x="{2 * 64}" y="40" text-anchor="middle" font-family="AH,Arial" font-size="17" font-weight="700" fill="#fff">D♯</text>', f'<text x="{1 * 64}" y="40" text-anchor="middle" font-family="AH,Arial" font-size="17" font-weight="700" fill="#fff">D♭</text>', f'<path d="M{1.5 * 64 + 8},132 Q{1.75 * 64},100 {2 * 64 - 4},90" fill="none" stroke="{RED}" stroke-width="3.5" stroke-linecap="round" marker-end="url(#ah)"/>', f'<path d="M{1.5 * 64 - 8},132 Q{1.25 * 64},100 {1 * 64 + 4},90" fill="none" stroke="{RED}" stroke-width="3.5" stroke-linecap="round" marker-end="url(#ah)"/>', f'<defs><marker id="ah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="{RED}"/></marker></defs>'], scale=1.0), '♯ one key right · ♭ one key left')}
 {tbl(['Sign', 'Name', 'What it does', 'First met'], acc, ['12%', '20%', '50%', '18%'])}
-<p class="sm">A <b>semitone</b> is the smallest step on the piano: from one key to the very next, black or white (American books call it a <i>half step</i>). More on p. {{{{P6+1}}}}.</p>
+<p class="sm">A <b>semitone</b> is the smallest step on the piano: from one key to the very next, black or white (American books call it a <i>half step</i>). More on p. {{{{P7+1}}}}.</p>
 {rule('<b>A sign belongs to one note.</b> It changes only that line or space, in that octave, and only until the bar line. The same letter in another octave, and every other note, stays as it is.')}
 <!--SPLIT-->
 {inaction('Find F♯', kq('C', 8, 40, 96, label=False, qb=(3,), dots=(3,), tags={3: 'F'}, tagcol={3: NAV}), ['<b>Find F</b> (the red dot): just left of the three black keys.', '<b>Sharp means right:</b> move to the very next key.', '<b>Is it black or white?</b> Put your finger on it.'], 'The <b>?</b> is <b>F♯</b>: the first black key of the group of three.')}
@@ -210,7 +243,7 @@ P26 = ppage(f"""{head('Part I · Pitch · 5', 'Sharps, flats and naturals', 'A s
 {watch(['Carrying a sharp or flat past the bar line: after it, the note is plain again.'])}
 {thinkt('A sharp or flat is a sticky note on one line of the staff: it stays stuck until the bar line, then it falls off.')}
 {game('Which key is it?', qitems(['C♯', 'E♭', 'B♯', 'F♭'], 4), 'Sharp: one key to the right. Flat: one key to the left. Which key do you press?', '1 the black key right of C · 2 the black key left of E · 3 the white key C · 4 the white key E.')}
-{foot('Keys and key signatures p. {{S3}}', 'Workbook Pitch 5 · Online: Accidentals · Tones &amp; Semitones')}""", 26)
+{foot('Keys and key signatures p. {{S3}}', 'Workbook Pitch 6 · Online: Accidentals · Tones &amp; Semitones')}""", 26)
 
 # ---------- 6 Counting intervals ----------
 def hopkb(start, n_white, W, H, a, nh, label=True, ends=True, scale=1.0, cap=None):
@@ -230,7 +263,7 @@ def hopkb(start, n_white, W, H, a, nh, label=True, ends=True, scale=1.0, cap=Non
         BW, BH = W * 0.58, H * 0.6; x = (j + 1) * W - BW / 2
         s = s.replace('</svg>', f'<rect x="{x:.1f}" y="0" width="{BW:.1f}" height="{BH:.1f}" rx="1.5" fill="{RED}"/></svg>')
     return s
-P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'How far apart are two notes? That distance is an <b>interval</b>. To give it a number, <b>count the notes</b>: the first note is 1, and you count every letter up to the second, both ends included.')}
+P27 = ppage(f"""{head('Part I · Pitch · 7', 'Counting intervals', 'How far apart are two notes? That distance is an <b>interval</b>. To give it a number, <b>count the notes</b>: the first note is 1, and you count every letter up to the second, both ends included.')}
 {hero(hero_third(), 'C to E: count the notes, 1 2 3: a 3rd')}
 {rule('<b>Count the notes</b> for the number: start at 1 on the first note. C to E is C D E: 3 notes, a <b>3rd</b>. Sharps and flats never change the number.')}
 {h3('Interval numbers from C')}
@@ -248,11 +281,11 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'How far apa
 {thinkt('Monday to Wednesday is three days, not two: you count the day you start on. Intervals count the same way.')}
 {game('Count the notes', qitems(['C up to G', 'D up to F', 'E up to the next E', 'G up to A'], 4), 'Count every note, both ends included. What is each interval called?', '1 a 5th (C D E F G) · 2 a 3rd · 3 an octave (8) · 4 a 2nd.')}
 {try10(kbx('C', 8, 24, 70, label=True, shade={0: PINK, 4: PINK}, scale=1.0), 'Thumb on C, finger 5 on G.', 'Your hand is a ruler: thumb to little finger on white keys is a 5th. Play it, then thumb to finger 3: a 3rd.')}
-{foot('Major, minor and perfect p. {{P7}} · Major scales p. {{S1}}', 'Workbook Pitch 6 · Online: Intervals · Tones &amp; Semitones')}""", 27)
+{foot('Major, minor and perfect p. {{P8}} · Major scales p. {{S1}}', 'Workbook Pitch 7 · Online: Intervals · Tones &amp; Semitones')}""", 27)
 
 # ---------- 7 Major, minor and perfect ----------
 iv = [['3rd', '2 (minor)', '3 (major)'], ['4th', '', '4 (perfect)'], ['5th', '', '6 (perfect)'], ['6th', '7 (minor)', '8 (major)'], ['octave', '', '11 (perfect)']]
-P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'C to E and C to E♭ are both 3rds: three notes each. But they sound different, bright and dark. To tell them apart, <b>count the keys in between</b>, black and white: the keys you do not play.')}
+P28 = ppage(f"""{head('Part I · Pitch · 8', 'Major, minor and perfect', 'C to E and C to E♭ are both 3rds: three notes each. But they sound different, bright and dark. To tell them apart, <b>count the keys in between</b>, black and white: the keys you do not play.')}
 {hero(two(hopkb('C', 7, 40, 108, 0, 4) + '<p class="sm">C to <b class="co">E</b>: 3 keys between. A <b>major</b> 3rd: bright.</p>', hopkb('C', 7, 40, 108, 0, 3) + '<p class="sm">C to <b class="co">E♭</b>: 2 keys between, one fewer. A <b>minor</b> 3rd: dark.</p>'), 'One key fewer between: a major 3rd becomes minor')}
 {rule('<b>Count the notes</b> for the number (a 3rd). <b>Count the keys in between</b> for the size (major or minor): black and white, not the two you play.')}
 {two(tbl(['Number', 'Keys between: smaller', 'Main size'], iv, ['30%', '35%', '35%']), '<p><b>3rds and 6ths</b> come in two sizes: <b>major</b>, and <b>minor</b>, one key fewer between.</p><p><b>4ths, 5ths and octaves</b> have one main size, called <b>perfect</b>. They are never major or minor.</p>', '1.15fr 1fr')}
@@ -267,4 +300,4 @@ P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'C to 
 {thinkt('A major and a minor 3rd are a smile and a frown: the same face, one small change at the corners.')}
 {game('Perfect, major or minor?', qitems(['C–G', 'D–F', 'C–E', 'E–A'], 4), 'Count the notes for the number, then the keys in between for the size.', '1 perfect 5th (6 between) · 2 minor 3rd (2) · 3 major 3rd (3) · 4 perfect 4th (4).')}
 {try10(kbx('C', 8, 24, 70, label=True, shade={0: PINK, 2: PINK}, scale=1.0), 'Play C–E, then C–E♭.', 'Bright, then dark. One key makes the difference: the major 3rd has three keys between, the minor 3rd two.')}
-{foot('Counting intervals p. {{P6}} · Chords and triads p. {{H1}}', 'Workbook Pitch 7 · Online: Intervals (Major or minor 3rd)')}""", 28)
+{foot('Counting intervals p. {{P7}} · Chords and triads p. {{H1}}', 'Workbook Pitch 8 · Online: Intervals (Major or minor 3rd)')}""", 28)

@@ -52,31 +52,42 @@ for c in CH:
 # moment is estimated from where it sits in the line (speech runs evenly enough over a short sentence).
 import re as _re
 _LAST = {}
-def _hits(ln):
-    c = ln.get('cue') or {}; reg = (REG.get(str(c.get('p', ''))) or {}).get(c.get('r'))
-    text = ln.get('text') or ''
-    if not reg or not text or ln.get('who') not in ('B', 'P') or str(c.get('r', '')).startswith('ex'): return []
-    names = sorted({L[0] for L in reg['l'] if _re.search('[A-Z]', L[0]) and L[0] != '?'}, key=len, reverse=True)
+_ALIAS = {'♯': ['sharp'], '♭': ['flat'], '♮': ['natural'], '2nd': ['second'], '3rd': ['third'], '4th': ['fourth'], '5th': ['fifth'], '6th': ['sixth'], '7th': ['seventh'], '8ve': ['octave'], 'unison': ['unison'],
+          'melodic': ['melodic'], 'harmonic': ['harmonic'], 'Treble clef': ['treble clef'], 'Bass clef': ['bass clef']}
+def _spoken(nm):   # how a label is said aloud: 'F♯' -> 'F sharp', '3rd' -> 'third'
+    out = [nm] if _re.search('[A-Z]', nm) and nm != '?' else []
+    m = _re.match(r'^([A-G])([♯♭♮])$', nm)
+    if m: out.append(m.group(1) + {'♯': ' sharp', '♭': ' flat', '♮': ' natural'}[m.group(2)])
+    return out + _ALIAS.get(nm, [])
+def _hits(ln):   # her 8 Nov: every key, note or sign the voice names is marked the moment it is said, anywhere on the page
+    c = ln.get('cue') or {}; page = REG.get(str(c.get('p', ''))) or {}; text = ln.get('text') or ''
+    if not page or not text or ln.get('who') not in ('B', 'P') or str(c.get('r', '')).startswith('ex'): return []
+    order = [c.get('r')] + [k for k in page if k != c.get('r') and not k.startswith('ex') and k in page]
     used = [False] * len(text); out = []
-    for nm in names:
-        for m in _re.finditer(r'(?<![A-Za-z])' + _re.escape(nm) + r'(?![A-Za-z0-9])', text):
-            if any(used[m.start():m.end()]): continue
-            if nm == 'A':   # the article "A" opens a sentence and is followed by a lower-case word
-                pre = text[:m.start()].rstrip()
-                if (pre == '' or pre[-1] in '.!?') and _re.match(r'A [a-z]', text[m.start():]): continue
-            for q in range(m.start(), m.end()): used[q] = True
-            out.append((m.start(), m.end(), nm))
+    for rk in order:
+        reg = page.get(rk)
+        if not reg: continue
+        names = sorted({(sp, L[0]) for L in reg['l'] for sp in _spoken(L[0])}, key=lambda x: len(x[0]), reverse=True)
+        for sp, nm in names:
+            for m in _re.finditer(r'(?<![A-Za-z])' + _re.escape(sp) + r'(?![A-Za-z0-9])', text):
+                if any(used[m.start():m.end()]): continue
+                if sp == 'A':   # the article "A" opens a sentence and is followed by a lower-case word
+                    pre = text[:m.start()].rstrip()
+                    if (pre == '' or pre[-1] in '.!?') and _re.match(r'A [a-z]', text[m.start():]): continue
+                for q in range(m.start(), m.end()): used[q] = True
+                out.append((m.start(), m.end(), nm, rk))
     out.sort(); d = max(0.3, ln['t1'] - ln['t0'] - 0.35); L = max(1, len(text))
-    labs = reg['l']; occ = {nm: [i for i, x in enumerate(labs) if x[0] == nm] for _, _, nm in out}
-    cx = lambda i: labs[i][1][0] + labs[i][1][2] / 2
-    pick = [occ[nm][0] if len(occ[nm]) == 1 else None for _, _, nm in out]
-    for n in range(len(out)):   # a repeated name: take the one nearest its neighbours in the sentence
+    cx = lambda rk, i: page[rk]['l'][i][1][0] + page[rk]['l'][i][1][2] / 2
+    occ = [[i for i, x in enumerate(page[rk]['l']) if x[0] == nm] for _, _, nm, rk in out]
+    pick = [o[0] if len(o) == 1 else None for o in occ]
+    for n in range(len(out)):   # a repeated name: take the one nearest its neighbours in the same picture
         if pick[n] is None:
-            near = [pick[m] for m in sorted(range(len(out)), key=lambda m: abs(m - n)) if m != n and pick[m] is not None]
-            ref = cx(near[0]) if near else _LAST.get((c.get('p'), c.get('r')))
-            pick[n] = min(occ[out[n][2]], key=lambda i: abs(cx(i) - ref)) if ref is not None else occ[out[n][2]][0]
-    if pick: _LAST[(c.get('p'), c.get('r'))] = cx(pick[-1])
-    return [[round(ln['t0'] + d * a / L - 0.12, 2), '#' + str(pick[n]), a, b] for n, (a, b, nm) in enumerate(out)]
+            rk = out[n][3]
+            near = [pick[m] for m in sorted(range(len(out)), key=lambda m: abs(m - n)) if m != n and pick[m] is not None and out[m][3] == rk]
+            ref = cx(rk, near[0]) if near else _LAST.get((c.get('p'), rk))
+            pick[n] = min(occ[n], key=lambda i: abs(cx(rk, i) - ref)) if ref is not None else occ[n][0]
+    for n in range(len(out)): _LAST[(c.get('p'), out[n][3])] = cx(out[n][3], pick[n])
+    return [[round(ln['t0'] + d * a / L - 0.12, 2), '#' + str(pick[n]), a, b, rk] for n, (a, b, nm, rk) in enumerate(out)]
 for c in CH:
     for k in c.get('clips', []):
         for ln in k['l']:
@@ -86,10 +97,11 @@ PRACT = {   # chapter: (workbook pages in the merged workbook draft, [(drill id,
     'P1': ((1, 2), [('first-steps', 'Keyboard Patterns', ''), ('note-names', 'The Musical Alphabet', '')]),
     'P2': ((3, 4), [('staff', 'The Staff & the Two Clefs', '')]),
     'P3': ((5, 6), [('staff', 'The Staff & the Two Clefs', ''), ('whole-staff', 'Line and Space Names', '')]),
-    'P4': ((7, 9), [('whole-staff', 'Line and Space Names', ''), ('reading-steps', 'Steps & Skips', ''), ('ledger-lines', 'Ledger Lines', '')]),
-    'P5': ((10, 11), [('accidentals', 'Accidentals', ''), ('tones', 'Tones & Semitones', '')]),
-    'P6': ((12, 13), [('intervals', 'Intervals', ''), ('tones', 'Tones & Semitones', '')]),
-    'P7': ((14, 15), [('intervals', 'Intervals', '')]),
+    'P4': ((7, 8), [('whole-staff', 'Line and Space Names', ''), ('reading-steps', 'Steps & Skips', '')]),
+    'P5': ((9, 10), [('ledger-lines', 'Ledger Lines', '')]),
+    'P6': ((11, 12), [('accidentals', 'Accidentals', ''), ('tones', 'Tones & Semitones', '')]),
+    'P7': ((13, 14), [('intervals', 'Intervals', ''), ('tones', 'Tones & Semitones', '')]),
+    'P8': ((15, 16), [('intervals', 'Intervals', '')]),
 }
 for c in CH:
     if c['k'] in PRACT: c['pr'] = PRACT[c['k']]
@@ -171,7 +183,7 @@ function drawSide() {
   const c = CH[ci];
   side.innerHTML = `<div class="kick">${c.part}</div><h2>${c.t}</h2>` + (c.clips ? `<button class="play" id="all"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 2l12 7-12 7z" fill="currentColor"/></svg>${playing >= 0 ? 'Playing…' : 'Listen to the whole chapter'}</button><div class="ctl"><button class="btn" id="pp">${audio.paused ? '▶ Resume' : '❚❚ Pause'}</button>${[0.8, 1, 1.2, 1.5].map(v => `<button class="btn sp${v === rate ? ' on' : ''}" data-v="${v}">${v}×</button>`).join('')}</div><div class="clips">` +
     c.clips.map((k, i) => `<button class="clip${i === playing ? ' on' : ''}" data-i="${i}"><span class="n">${i + 1}</span><span>${k.t}</span><span class="s">${Math.floor(k.s / 60)}:${String(k.s % 60).padStart(2, '0')}</span></button>`).join('') + '</div>'
-    : `<p class="none">No audio for this chapter yet. The pages are all here.</p>`) + (c.pr ? `<div class="prac"><div class="ph">Practise it</div><a href="${site('books/workbook-draft.pdf')}#page=${c.pr[0][0]}" target="_blank" rel="noopener">Workbook pp. ${c.pr[0][0]}–${c.pr[0][1]}</a>${c.pr[1].map(d => `<a class="dr" href="${site('drills.html')}?drill=${d[0]}${d[2] || '&tab=learn'}" target="_blank" rel="noopener">Drill: ${d[1]}</a>`).join('')}</div>` : '') + `<label class="follow"><input type="checkbox" id="fol" ${follow ? 'checked' : ''}> Follow on the page</label><p class="who">The Butler explains, Pip asks. Each Example asks first, then pauses so you can try.</p>`;
+    : `<p class="none">No audio for this chapter yet. The pages are all here.</p>`) + (c.pr ? `<div class="prac"><div class="ph">Practise it</div><a href="${site('books/workbook-draft.pdf')}#page=${c.pr[0][0]}" target="_blank" rel="noopener">Workbook pp. ${c.pr[0][0]}–${c.pr[0][1]}</a>${c.pr[1].map(d => `<a class="dr" href="${site('drills.html')}?drill=${d[0]}${d[2] || '&tab=learn'}" target="_blank" rel="noopener">Drill: ${d[1]}</a>`).join('')}</div>` : '') + `<label class="follow"><input type="checkbox" id="fol" ${follow ? 'checked' : ''}> Follow on the page</label><p class="who">The Butler explains, Clara asks. Each Example asks first, then pauses so you can try.</p>`;
   const fo = document.getElementById('fol'); if (fo) fo.onchange = () => { follow = fo.checked; };
   if (c.clips) { const pp = document.getElementById('pp'); pp.disabled = playing < 0; pp.onclick = () => { if (audio.paused) { audio.play().catch(() => {}); } else audio.pause(); drawSide(); };
     side.querySelectorAll('.sp').forEach(b => b.onclick = () => { rate = +b.dataset.v; audio.playbackRate = rate; drawSide(); });
@@ -189,18 +201,18 @@ function tick() {
   if (playing < 0) return; const k = CH[ci].clips[playing], t = audio.currentTime; const ln = k.l.find(x => t >= x.t0 && t < x.t1);
   if (!ln) { requestAnimationFrame(tick); return; }
   const hit = ln.hits ? ln.hits.filter(h => h[0] <= t).pop() : null; let txt = ln.text || ''; if (hit) txt = txt.slice(0, hit[2]) + '<mark>' + txt.slice(hit[2], hit[3]) + '</mark>' + txt.slice(hit[3]);
-  sub.innerHTML = ln.text ? `<b>${ln.who === 'B' ? 'Butler' : ln.who === 'P' ? 'Pip' : ''}</b>${txt}` : (ln.who === 'piano' ? '<b>♪</b>listen' : '');
+  sub.innerHTML = ln.text ? `<b>${ln.who === 'B' ? 'Butler' : ln.who === 'P' ? 'Clara' : ''}</b>${txt}` : (ln.who === 'piano' ? '<b>♪</b>listen' : '');
   const c = ln.cue;
   if (c && follow) {
     const pidx = CH[ci].pages.indexOf(c.p); if (pidx >= 0 && pidx !== pi) { pi = pidx; showPage(); }
-    const reg = (REG[c.p] || {})[c.r];
+    const hr = hit && hit[4] ? hit[4] : c.r; const reg = (REG[c.p] || {})[hr];
     if (reg) {
       const [x, y, w, h] = reg.b; const S = Math.min(2.2, Math.max(1, 0.94 / w));
       const tx = Math.min(0, Math.max(1 - S, 0.5 - S * (x + w / 2))), ty = Math.min(0, Math.max(1 - S, 0.42 - S * (y + h / 2)));
       stage.style.transform = `translate(${tx * 100}%, ${ty * 100}%) scale(${S})`;
-      let marks = []; if (c.lab) marks = c.lab; if (hit) marks = [hit[1]]; if (c.seq && ln.notes) { const i = ln.notes.filter(v => v <= t).length - 1; if (i >= 0) marks = [c.seq[Math.min(i, c.seq.length - 1)]]; }
+      let marks = []; if (c.lab && hr === c.r) marks = c.lab; if (hit) marks = [hit[1]]; if (c.seq && ln.notes) { const i = ln.notes.filter(v => v <= t).length - 1; if (i >= 0) marks = [c.seq[Math.min(i, c.seq.length - 1)]]; }
       const exm = /^ex/.test(c.r) && !c.reveal; const vis = new Set([...(c.show || []), ...marks, '?']);
-      const key = c.p + c.r + marks.join(',') + (exm ? 'x' + [...vis].join('') : ''); if (ov.dataset.k !== key) { ov.dataset.k = key;
+      const key = c.p + hr + marks.join(',') + (exm ? 'x' + [...vis].join('') : ''); if (ov.dataset.k !== key) { ov.dataset.k = key;
         const covers = exm ? reg.l.filter(L => !vis.has(L[0])).map(L => `<div class="cov" style="left:${L[1][0] * 100 - .3}%;top:${L[1][1] * 100 - .2}%;width:${L[1][2] * 100 + .6}%;height:${L[1][3] * 100 + .4}%"></div>`).join('') + (reg.r ? `<div class="cov res" style="left:${reg.r[0] * 100}%;top:${reg.r[1] * 100}%;width:${reg.r[2] * 100}%;height:${reg.r[3] * 100}%">Answer coming…</div>` : '') : '';
         ov.innerHTML = covers + `<div class="hl${/^ex/.test(c.r) ? ' fog' : ''}" style="left:${x * 100 - .6}%;top:${y * 100 - .4}%;width:${w * 100 + 1.2}%;height:${h * 100 + .8}%"></div>` +
           marks.map(m => findLab(reg, m)).filter(Boolean).map(L => `<div class="mk" style="left:${(L[1][0] + L[1][2] / 2) * 100}%;top:${(L[1][1] + L[1][3] / 2) * 100}%;width:${Math.max(3.2, L[1][2] * 100 + 2.4)}%"></div>`).join(''); }

@@ -6,7 +6,7 @@ page = r'''<title>Where Do I Start?</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Playfair+Display:wght@700;800&display=swap">
 <style>
-/* Layout: one column, a book-like card per chapter; the map of all 48 chapters is the home screen */
+/* Layout: one column, a book-like card per chapter; the map of all 49 chapters is the home screen */
 :root{--bg:#fbfaf6;--card:#ffffff;--ink:#26296b;--soft:#5a5d8f;--line:#e3e1ee;--accent:#e4572e;--good:#2f7d4a;--goodbg:#e3f1e6;--mid:#a56a00;--midbg:#fdf1d6;--badbg:#fde3d8;
  --display:'Playfair Display',Georgia,serif;--body:'Atkinson Hyperlegible',system-ui,sans-serif}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15163a;--card:#1e2050;--ink:#eceefe;--soft:#b3b5dc;--line:#33366e;--accent:#ff7a52;--good:#7fd39a;--goodbg:#1f3b2c;--mid:#f0c060;--midbg:#3b3018;--badbg:#45261e;color-scheme:dark}}
@@ -77,7 +77,7 @@ function home() {
   const done = BANK.filter(c => res[c.k] != null).length;
   app.innerHTML = (firstRed ? `<div class="next"><div class="kick">Start here</div><b>${esc(firstRed.k)} · ${esc(firstRed.t)}</b><div>Handbook ${pgl(firstRed.pg)}</div></div>` : '') +
    `<div class="start"><button class="btn" id="go" ${picked.size ? '' : 'disabled'}>Check ${picked.size === 1 ? 'this part' : picked.size + ' parts'}</button>` +
-   (done ? `<button class="btn ghost" id="reset">Clear my results</button><span class="dk">${done} of 48 chapters checked</span>` : '') + `</div><div class="parts">` +
+   (done ? `<button class="btn ghost" id="reset">Clear my results</button><span class="dk">${done} of 49 chapters checked</span>` : '') + `</div><div class="parts">` +
    parts.map((p, i) => `<section class="part"><div class="ph"><h3>${esc(p)}</h3><label class="sel"><input type="checkbox" id="pt${i}" data-p="${esc(p)}" ${picked.has(p) ? 'checked' : ''}> check it</label></div>` +
      BANK.filter(c => c.p === p).map(c => `<div class="ch"><span class="k">${c.k}</span><span class="t">${esc(c.t)}</span><span class="pg">${pgl(c.pg)}</span>${pill(res[c.k])}</div>`).join('') + `</section>`).join('') + `</div>`;
   app.querySelectorAll('input[data-p]').forEach(x => x.onchange = () => { x.checked ? picked.add(x.dataset.p) : picked.delete(x.dataset.p); home(); });

@@ -1,12 +1,12 @@
 # Scripts for "Butler explains", Part I Pitch. Follow each chapter's order: picture and secret, Examples, Try it.
-# B = the Butler, P = Pip (a student). Every Example asks first; the answer comes after a pause, as in the book.
+# B = the Butler, P = Clara (a student). Every Example asks first; the answer comes after a pause, as in the book.
 def c(p, r, **k): d = {'p': p, 'r': r}; d.update(k); return d
 def idx(a, b): return ['#%d' % i for i in range(a, b)]
 W = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
 NEW = {
 'P2': ('The staff and the clefs', [
  ('The secret', [
-  ('B', 'Pip, music is written on a staff: five lines and four spaces, counted from the bottom.', c(27, 'lead')), ('P', 'Higher on the staff means higher on the piano?', c(27, 'lead')),
+  ('B', 'Clara, music is written on a staff: five lines and four spaces, counted from the bottom.', c(27, 'lead')), ('P', 'Higher on the staff means higher on the piano?', c(27, 'lead')),
   ('B', 'Always. But five lines alone do not tell us the notes. For that we need a clef: the key to the code.', c(27, 'hero')),
   ('B', 'Look closely. The treble clef curls round line two. That line is G.', c(27, 'hero')), ('piano', 'G4', c(27, 'hero', seq=['G'])),
   ('B', 'The bass clef has two dots, and they hug line four. That line is F.', c(27, 'hero')), ('piano', 'F3', c(27, 'hero', seq=['F'])),
@@ -25,7 +25,7 @@ NEW = {
   ('B', 'A clef is a pair of glasses: the same five lines read as different notes, depending on which pair you put on. Until next time.', c(28, 'think'))])]),
 'P3': ('The staff and the keyboard', [
  ('The secret', [
-  ('B', 'Pip, here is the secret of this chapter. Every line and every space of the staff is one white key, in order.', c(29, 'secret')),
+  ('B', 'Clara, here is the secret of this chapter. Every line and every space of the staff is one white key, in order.', c(29, 'secret')),
   ('P', 'So climbing the staff is climbing the keyboard?', c(29, 'vx')),
   ('B', 'Exactly. Here are two octaves, from Bass C up to Treble C, with Middle C where the two staves meet.', c(29, 'vx')),
   ('piano', 'C3 D3 E3 F3 G3 A3 B3 C4 D4 E4 F4 G4 A4 B4 C5', c(29, 'vx', seq=idx(0, 15))),
@@ -95,8 +95,8 @@ NEW = {
   ('B', 'Two ledger lines up: High C. And when notes go even higher, music often writes them lower, with an ottava sign and a dotted line: play them one octave higher.', c(35, 'xlate'))]),
  ('Try it', [
   ('B', 'Mary Had a Little Lamb. E, D, C: line, space, and Middle C’s own little line, one step down each time.', c(35, 'yk')), ('piano', 'E4 D4 C4 D4 E4 E4 E4*2', c(35, 'yk', seq=idx(0, 7))),
-  ('B', 'Your mission: in a piece you play, find the clef notes first, then step or skip from them. The clef notes are lamp posts on a dark road. Until next time, Pip.', c(35, 'think')), ('P', 'Goodbye!', c(35, 'think'))])]),
-'P5': ('Sharps, flats and naturals', [
+  ('B', 'Your mission: in a piece you play, find the clef notes first, then step or skip from them. The clef notes are lamp posts on a dark road. Until next time, Clara.', c(35, 'think')), ('P', 'Goodbye!', c(35, 'think'))])]),
+'P6': ('Sharps, flats and naturals', [
  ('The secret', [
   ('P', 'What are those little signs in front of some notes?', c(36, 'lead')),
   ('B', 'Signs that move a note to the very next key. A sharp: one key to the right, a semitone higher. A flat: one key to the left, a semitone lower.', c(36, 'secret')),
@@ -104,7 +104,7 @@ NEW = {
   ('B', 'And a natural cancels a sharp or flat: back to the white key.', c(36, 'ht')),
   ('B', 'One rule to remember. A sign belongs to one note: it changes only that line or space, in that octave, and only until the bar line. The same letter in another octave stays as it is.', c(36, 'rule'))]),
  ('Example: find F sharp', [
-  ('B', 'Find F sharp, Pip.', c(36, 'ex1', show=[])), ('P', 'F is just left of the three black keys.', c(36, 'ex1', show=['F'], lab=['F'])),
+  ('B', 'Find F sharp, Clara.', c(36, 'ex1', show=[])), ('P', 'F is just left of the three black keys.', c(36, 'ex1', show=['F'], lab=['F'])),
   ('B', 'Sharp means right: the very next key. Black or white? Pause and put your finger on it.', c(36, 'ex1', show=['F'], lab=['?'])), ('pause', 3, c(36, 'ex1', show=['F'], lab=['?'])),
   ('P', 'Black! The first black key of the three.', c(36, 'ex1', lab=['?'], reveal=True)), ('piano', 'F4 F#4', c(36, 'ex1', seq=['F', '?'], reveal=True)), ('B', 'Correct: F sharp.', c(36, 'ex1', reveal=True))]),
  ('Example: find B flat', [
@@ -123,9 +123,9 @@ NEW = {
  ('Try it', [
   ('B', 'Beethoven’s Für Elise begins on E and the black key just left of it: D sharp. The sharp is written again in the new bar, because the bar line wiped it out. And later in that bar the D has a natural sign, so it is plain D again.', c(38, 'yk')), ('piano', 'E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4*2', c(38, 'yk')),
   ('B', 'Your mission: play E and D sharp back and forth, then find F sharp and B flat in three different places on the piano. A sign is a sticky note: it falls off at the bar line.', c(38, 'think'))])]),
-'P6': ('Counting intervals', [
+'P7': ('Counting intervals', [
  ('The secret', [
-  ('B', 'Pip, how far apart are two notes? That distance is an interval.', c(39, 'lead')), ('P', 'How do I measure it?', c(39, 'lead')),
+  ('B', 'Clara, how far apart are two notes? That distance is an interval.', c(39, 'lead')), ('P', 'How do I measure it?', c(39, 'lead')),
   ('B', 'Count the notes, both ends included. C to E: C, D, E. Three notes: a third.', c(39, 'hero')), ('piano', 'C4 D4 E4 | [C4 E4]', c(39, 'hero', seq=['#7', '#8', '#9', '#9'])),
   ('B', 'And sharps and flats never change the number.', c(39, 'rule')),
   ('B', 'From C, the numbers go: unison, second, third, fourth, fifth, sixth, seventh, octave.', c(39, 'vx')), ('piano', 'C4 D4 E4 F4 G4 A4 B4 C5', c(39, 'vx', seq=['unison', '2nd', '3rd', '4th', '5th', '6th', '7th', '8ve'])),
@@ -151,9 +151,9 @@ NEW = {
   ('B', 'Thumb on C, finger five on G: your hand is a ruler, and that is a fifth. Thumb to finger three: a third.', c(40, 'try10')), ('piano', '[C4 G4] | [C4 E4]', c(40, 'try10')),
   ('B', 'Twinkle, Twinkle begins with a leap.', c(41, 'yk')), ('piano', 'C4 C4 G4 G4', c(41, 'yk', seq=['1', '1', '5', '5'])), ('P', 'C up to G: five notes. A fifth!', c(41, 'yk')),
   ('B', 'Monday to Wednesday is three days, not two: you count the day you start on. Intervals count the same way. Your mission: find a third, a fifth and an octave from any C.', c(41, 'think'))])]),
-'P7': ('Major, minor and perfect', [
+'P8': ('Major, minor and perfect', [
  ('The secret', [
-  ('B', 'Pip, two thirds can sound different. Listen.', c(42, 'lead')), ('piano', '[C4 E4] | [C4 Eb4]', c(42, 'lead')), ('P', 'The first is bright. The second is darker.', c(42, 'lead')),
+  ('B', 'Clara, two thirds can sound different. Listen.', c(42, 'lead')), ('piano', '[C4 E4] | [C4 Eb4]', c(42, 'lead')), ('P', 'The first is bright. The second is darker.', c(42, 'lead')),
   ('B', 'Both are thirds: three notes each. To tell them apart, count the keys in between, black and white, but not the two you play.', c(42, 'secret')),
   ('B', 'C to E has three keys between: C sharp, D, D sharp. A major third.', c(42, 'hero')), ('piano', 'C#4 D4 D#4', c(42, 'hero', seq=idx(7, 10))),
   ('B', 'C to E flat has only two between, one fewer. A minor third.', c(42, 'hero')), ('piano', 'C#4 D4', c(42, 'hero', seq=idx(18, 20))),
@@ -176,13 +176,13 @@ NEW = {
  ('Try it', [
   ('B', 'Play C and E, then C and E flat. Bright, then dark. One key makes the difference.', c(44, 'try10')), ('piano', '[C4 E4] | [C4 Eb4]', c(44, 'try10')),
   ('B', 'And Beethoven’s Fifth: da-da-da-dum. G down to E flat is a third, with three keys between: a major third.', c(44, 'yk')), ('piano', 'G4/2 G4/2 G4/2 Eb4*3', c(44, 'yk', seq=idx(0, 4))),
-  ('B', 'A major and a minor third are a smile and a frown: the same face, one small change at the corners. Until next time, Pip.', c(44, 'think')), ('P', 'Goodbye!', c(44, 'think'))])]),
+  ('B', 'A major and a minor third are a smile and a frown: the same face, one small change at the corners. Until next time, Clara.', c(44, 'think')), ('P', 'Goodbye!', c(44, 'think'))])]),
 }
 
 CH = {
 'P1': ('The keyboard', [
  ('The secret', [
-  ('B', 'Good day. I am your Piano Butler, and this is Pip.', {'p': 22, 'r': 'h:The keyboard'}), ('P', 'Hello! Today is the keyboard, right? There are so many keys. Do I have to count them all?', {'p': 22, 'r': 'hero'}),
+  ('B', 'Good day. I am your Piano Butler, and this is Clara.', {'p': 22, 'r': 'h:The keyboard'}), ('P', 'Hello! Today is the keyboard, right? There are so many keys. Do I have to count them all?', {'p': 22, 'r': 'hero'}),
   ('B', 'Never. Let us start with one fact. Left is low.', {'p': 22, 'r': 'hero'}), ('piano', 'C2', {'p': 22, 'r': 'hero'}), ('B', 'Right is high.', {'p': 22, 'r': 'hero'}), ('piano', 'C6', {'p': 22, 'r': 'hero'}),
   ('P', 'Low on the left, high on the right. Easy.', {'p': 22, 'r': 'hero'}), ('B', 'Now look at the black keys. They come in little groups: two, then three. Two, three, all the way along.', {'p': 22, 'r': 'hero'}),
   ('P', 'Like bumps on a road.', {'p': 22, 'r': 'hero'}), ('B', 'Exactly. Here is the secret. Every group has a first white key, just to its left. Next to the two black keys, the first key is C. Next to the three, it is F.', {'p': 22, 'r': 'secret'}),
@@ -207,7 +207,7 @@ CH = {
   ('P', 'Eight Cs! But the five in the middle are the ones I will use most.', {'p': 23, 'r': 'keep2'}),
   ('B', 'Exactly. Theory books and apps give them numbers instead: C1 to C8, with Middle C as C4. And from one C to the next is an octave: eight notes, both Cs counted.', {'p': 23, 'r': 'keep2'})]),
  ('Example: find G', [
-  ('B', 'Pip, find G for me. Do not count from the bottom.', {'p': 24, 'r': 'ex1', 'show': []}), ('P', 'Hmm. G lives with F, G, A and B, so I look for three black keys.', {'p': 24, 'r': 'ex1', 'show': []}),
+  ('B', 'Clara, find G for me. Do not count from the bottom.', {'p': 24, 'r': 'ex1', 'show': []}), ('P', 'Hmm. G lives with F, G, A and B, so I look for three black keys.', {'p': 24, 'r': 'ex1', 'show': []}),
   ('B', 'And the first key of that family?', {'p': 24, 'r': 'ex1', 'show': []}), ('P', 'F, just left of the three.', {'p': 24, 'r': 'ex1', 'lab': ['F'], 'show': ['F']}), ('B', 'Now walk on one key. Pause and find it yourself.', {'p': 24, 'r': 'ex1', 'lab': ['?'], 'show': ['F']}), ('pause', 4, {'p': 24, 'r': 'ex1', 'lab': ['?'], 'show': ['F']}),
   ('P', 'G! The key after F.', {'p': 24, 'r': 'ex1', 'lab': ['?'], 'reveal': True}), ('piano', 'F4 G4', {'p': 24, 'r': 'ex1', 'seq': ['F', '?'], 'reveal': True}), ('B', 'No need to start from C and count five. Find the group, find its first key, walk on.', {'p': 24, 'r': 'ex1', 'reveal': True})]),
  ('Example: find E', [
@@ -224,12 +224,12 @@ CH = {
 
 NEW['T1'] = ('Pulse, tempo and the bar', [
  ('The secret', [
-  ('B', 'Pip, put your hand on your heart.', c(47, 'lead')), ('P', 'It is beating. Steady, steady.', c(47, 'lead')),
+  ('B', 'Clara, put your hand on your heart.', c(47, 'lead')), ('P', 'It is beating. Steady, steady.', c(47, 'lead')),
   ('B', 'That steady beat is a pulse, and almost every piece of music has one. Its speed is the tempo. Beats travel in groups called bars, and beat one is the strongest.', c(47, 'hero')),
-  ('piano', 'X x x x X x x x X x x x', c(47, 'hero', seq=idx(0, 12))),
+  ('count', {'beats': 'X x x x X x x x X x x x', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(47, 'hero', seq=idx(0, 12))),
   ('B', 'Here is the secret. The beat never stops, not even in a rest. Feel it before you play.', c(47, 'secret')),
   ('P', 'So in a rest I still count?', c(47, 'hero')), ('B', 'Always. Listen: in the second bar the notes stop, and the beat goes on.', c(47, 'hero')),
-  ('piano', 'C5 C4 C4 C4 C5 C4 R R C5 C4 C4 C4', c(47, 'hero', seq=idx(0, 12)))]),
+  ('count', {'beats': 'X x x x X x x x X x x x', 'notes': 'C5 C4 C4 C4 C5 C4 R R C5 C4 C4 C4', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(47, 'hero', seq=idx(0, 12)))]),
  ('Tempo', [
   ('B', 'Tempo is measured in beats per minute. A metronome mark at the top of the music shows it. Crotchet equals sixty means sixty beats a minute: one every second.', c(47, 'two')),
   ('piano', 'X@60 x@60 x@60 x@60', c(47, 'two')), ('B', 'Crotchet equals one hundred and twenty is twice as fast.', c(47, 'two')),
@@ -245,23 +245,23 @@ NEW['T1'] = ('Pulse, tempo and the bar', [
   ('B', 'And repeat signs: play the passage between them again. If there is no start sign, go back to the beginning.', c(47, 'ht'))]),
  ('Counting', [
   ('B', 'Every beat is counted, even inside a long note. Here are three bars of three-four. The red number is where you play; the grey numbers are the beats you hold.', c(48, 'vx')),
-  ('piano', 'C4 C4 C4 C4*2 C4 C4*3', c(48, 'vx', seq=['#0', '#1', '#2', '#3', '#5', '#6'])),
+  ('count', {'beats': 'X x x X x x X x x', 'notes': 'C4 C4 C4 C4*2 C4 C4*3', 'say': '1 2 3 1 2 3 1 2 3'}, c(48, 'vx', seq=idx(0, 9))),
   ('B', 'Count aloud at one speed, a little louder on beat one. With a metronome, start slower than you think, and speed up only when the passage is steady.', c(48, 'p'))]),
  ('Example: march or waltz?', [
   ('B', 'Is this a march or a waltz? Tap a steady beat as you listen.', c(48, 'ex1')), ('piano', 'C3 G4 G4 C3 G4 G4 C3 G4 G4', c(48, 'ex1', seq=idx(0, 9))),
   ('B', 'Which beats feel heavier? Count from one heavy beat to the next. Pause and count.', c(48, 'ex1')), ('pause', 3, c(48, 'ex1')),
-  ('P', 'Heavy every three: one two three, one two three. A waltz!', c(48, 'ex1', reveal=True)), ('B', 'Every two would be a march.', c(48, 'ex1', reveal=True))]),
+  ('P', 'Heavy every three: one two three, one two three. A waltz!', c(48, 'ex1', reveal=True)), ('count', {'beats': 'X x x X x x X x x', 'notes': 'C3 G4 G4 C3 G4 G4 C3 G4 G4', 'say': '1 2 3 1 2 3 1 2 3'}, c(48, 'ex1', seq=idx(0, 9), reveal=True)), ('B', 'Every two would be a march.', c(48, 'ex1', reveal=True))]),
  ('Example: feel the beat first', [
   ('B', 'This one says crotchet equals ninety-six: ninety-six beats a minute. Do not start yet. Listen to one full bar, counting one, two, three in your head.', c(48, 'ex2')),
-  ('piano', 'X@96 x@96 x@96', c(48, 'ex2')),
+  ('count', {'beats': 'X@96 x@96 x@96', 'say': '1 2 3'}, c(48, 'ex2')),
   ('B', 'Then step in on the next beat one, the way you step onto a moving escalator.', c(48, 'ex2')),
-  ('piano', 'X@96 x@96 x@96 C4@96 C4@96 C4@96 C4@48 C4@96 C4@32', c(48, 'ex2', seq=['', '', '', '#1', '#2', '#3', '#4', '#6', '#7'])),
+  ('count', {'beats': 'X@96 x@96 x@96 X@96 x@96 x@96 X@96 x@96 x@96 X@96 x@96 x@96', 'notes': 'R@96 R@96 R@96 C4@96 C4@96 C4@96 C4@48 C4@96 C4@32', 'say': '1 2 3 1 2 3 1 2 3 1 2 3'}, c(48, 'ex2', seq=['', '', '', '#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9'])),
   ('P', 'The first note landed right on the beat!', c(48, 'ex2', reveal=True))]),
  ('Try it', [
   ('B', 'Hand on your heart. Tap the beat and say one, two, three, four, with one a little louder. Keep going for ten seconds without slowing down.', c(49, 'try10')),
-  ('piano', 'X@80 x@80 x@80 x@80 X@80 x@80 x@80 x@80 X@80 x@80 x@80 x@80', c(49, 'try10', seq=idx(0, 12))),
+  ('count', {'beats': 'X@80 x@80 x@80 x@80 X@80 x@80 x@80 x@80 X@80 x@80 x@80 x@80', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(49, 'try10', seq=idx(0, 12))),
   ('B', 'At the New Year concert in Vienna, the audience claps along on every beat of the Radetzky March. That steady clap is the pulse; the tune moves freely over it.', c(49, 'yk')),
-  ('piano', 'X x X x X x', c(49, 'yk', seq=idx(0, 6))),
-  ('B', 'The beat is the stage and the notes are the actors: the stage is there before anyone walks on. So watch it move for a bar, then step in. Until next time, Pip.', c(49, 'think')), ('P', 'One, two, three, four. Goodbye!', c(49, 'think'))])])
+  ('count', {'beats': 'X x X x X x', 'say': '1 2 1 2 1 2'}, c(49, 'yk', seq=idx(0, 6))),
+  ('B', 'The beat is the stage and the notes are the actors: the stage is there before anyone walks on. So watch it move for a bar, then step in. Until next time, Clara.', c(49, 'think')), ('P', 'One, two, three, four. Goodbye!', c(49, 'think'))])])
 
 CH['T1'] = NEW['T1']
