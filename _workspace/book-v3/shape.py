@@ -260,7 +260,7 @@ L3 = lpage(f'''{head('Part VIII · Playing and listening · 3', 'Sight-reading',
 {howto('Read ahead', ['<b>While you play</b> one bar, let your eyes move to the next.', '<b>Practise it:</b> cover each bar with a card as you play it.', '<b>Read shapes</b> (steps, skips, chords), not single notes.'])}
 {thinkt('Sight-reading is like reading aloud: you look a few words ahead, and if you trip on one, the sentence goes on.')}
 {watch(['Choosing a speed you cannot keep: sight-read slowly.', 'Looking down at your hands: keep your eyes on the music.', 'Skipping the scan: thirty seconds of looking saves many wrong notes.'])}
-{foot('Reading the notes p. {{P3}} · Repetition and sequence p. {{F2}}', 'Online: Sight-reading trainer')}''', 164)
+{foot('Reading the notes p. {{P4}} · Repetition and sequence p. {{F2}}', 'Online: Sight-reading trainer')}''', 164)
 
 # ---------- VIII.4 Listening ----------
 SONGS = [['major 2nd', 'Frère Jacques (Frè-re)'], ['major 3rd', 'Oh When the Saints (Oh when)'], ['perfect 4th', 'Amazing Grace (A-ma)'], ['perfect 5th', 'Twinkle (twin-kle <b>TWIN</b>: the 2nd to the 3rd note)'], ['major 6th', 'My Bonnie (My Bon-)'], ['octave', 'Somewhere over the Rainbow (Some-where)']]

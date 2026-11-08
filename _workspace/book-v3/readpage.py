@@ -84,12 +84,12 @@ for c in CH:
             if h: ln['hits'] = h
 PRACT = {   # chapter: (workbook pages in the merged workbook draft, [(drill id, drill name, extra query)])
     'P1': ((1, 2), [('first-steps', 'Keyboard Patterns', ''), ('note-names', 'The Musical Alphabet', '')]),
-    'P2': ((3, 4), [('staff', 'The Staff & the Two Clefs', ''), ('ledger-lines', 'Ledger Lines', '')]),
-    'P3': ((5, 6), [('whole-staff', 'Line and Space Names', ''), ('reading-steps', 'Steps & Skips', '')]),
-    'P4': ((7, 8), [('staff', 'The Staff & the Two Clefs', ''), ('whole-staff', 'Line and Space Names', '')]),
-    'P5': ((9, 10), [('accidentals', 'Accidentals', ''), ('tones', 'Tones & Semitones', '')]),
-    'P6': ((11, 12), [('intervals', 'Intervals', ''), ('tones', 'Tones & Semitones', '')]),
-    'P7': ((13, 14), [('intervals', 'Intervals', '')]),
+    'P2': ((3, 4), [('staff', 'The Staff & the Two Clefs', '')]),
+    'P3': ((5, 6), [('staff', 'The Staff & the Two Clefs', ''), ('whole-staff', 'Line and Space Names', '')]),
+    'P4': ((7, 9), [('whole-staff', 'Line and Space Names', ''), ('reading-steps', 'Steps & Skips', ''), ('ledger-lines', 'Ledger Lines', '')]),
+    'P5': ((10, 11), [('accidentals', 'Accidentals', ''), ('tones', 'Tones & Semitones', '')]),
+    'P6': ((12, 13), [('intervals', 'Intervals', ''), ('tones', 'Tones & Semitones', '')]),
+    'P7': ((14, 15), [('intervals', 'Intervals', '')]),
 }
 for c in CH:
     if c['k'] in PRACT: c['pr'] = PRACT[c['k']]

@@ -117,7 +117,7 @@ NT = {'breve': '𝅜', 'dsb': '𝅝𝅭', 'sb': '𝅝', 'dm': '𝅗𝅥𝅭', 'm
 RS = {'breve': '𝄺', 'dsb': '𝄻𝅭', 'sb': '𝄻', 'dm': '𝄼𝅭', 'm': '𝄼', 'dc': '𝄽𝅭', 'c': '𝄽', 'dq': '𝄾𝅭', 'q': '𝄾', 'sq': '𝄿', 'dsq': '𝅀', 'hdsq': '𝅁'}
 import re as _ro
 _VOID = {'br', 'img', 'hr', 'col', 'input', 'meta', 'link', 'wbr'}
-_TAIL = {'inact': 1, 'inact2': 1, 'game': 1, 'try10': 1, 'gt2': 1, 'howto': 1, 'yk': 2, 'realm': 2, 'think': 3, 'watch': 4, 'links': 9}
+_TAIL = {'xlate': 1, 'inact': 1, 'inact2': 1, 'game': 1, 'try10': 1, 'gt2': 1, 'howto': 1, 'yk': 2, 'realm': 2, 'think': 3, 'watch': 4, 'links': 9}
 def _nodes(t):   # top-level nodes of an HTML fragment (comments kept as their own nodes)
     out, depth, start, pos = [], 0, None, 0
     for m in _ro.finditer(r'<!--.*?-->|<(/?)([a-zA-Z][\w:-]*)((?:[^>"\']|"[^"]*"|\'[^\']*\')*?)(/?)>', t, _ro.S):
@@ -195,7 +195,7 @@ h3{margin:10px 0 5px!important;padding-top:6px!important}
 """
 SECRETS = {   # her 5 Nov (A): every topic opens with its one-line secret, the trick in a sentence
  'P1': 'Two black keys: start on C. Three black keys: start on F. Then walk on.', 'P2': 'The treble clef curls round <b>G</b>; the bass clef’s two dots hug <b>F</b>.',
- 'P3': 'Start from a note you know (bass F, Middle C, treble G), then step or skip.', 'P4': 'Every line and every space is one white key, in order.',
+ 'P3': 'Every line and every space is one white key, in order.', 'P4': 'Start from a note you know (bass F, Middle C, treble G), then step or skip.',
  'P5': 'Sharp: the very next key to the <b>right</b>. Flat: the very next key to the <b>left</b>.',
  'T1': 'The beat never stops, not even in a rest. Feel it before you play.', 'T2': 'Each note is half the one above it, and every note has a rest twin.',
  'T3': 'A dot adds half. A tie glues two notes into one.', 'T4': 'Top number: how many beats. Bottom number (in simple time): which note gets one beat.',

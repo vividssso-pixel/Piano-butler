@@ -10,97 +10,99 @@ NEW = {
   ('B', 'Always. But five lines alone do not tell us the notes. For that we need a clef: the key to the code.', c(27, 'hero')),
   ('B', 'Look closely. The treble clef curls round line two. That line is G.', c(27, 'hero')), ('piano', 'G4', c(27, 'hero', seq=['G'])),
   ('B', 'The bass clef has two dots, and they hug line four. That line is F.', c(27, 'hero')), ('piano', 'F3', c(27, 'hero', seq=['F'])),
-  ('P', 'The treble clef curls round G. The bass clef’s dots hug F.', c(27, 'secret')),
-  ('B', 'Piano music joins the two staves with a brace: treble on top, usually the right hand; bass below, usually the left. Middle C sits between them, on a short line of its own.', c(27, 'two')), ('piano', 'C4', c(27, 'two'))]),
- ('Ledger lines', [
-  ('P', 'What about notes above or below the staff?', c(27, 'h:Ledger lines: the staff carried on')),
-  ('B', 'They sit on short extra lines called ledger lines, spaced just like the staff lines. Step on from the nearest staff line: line, space, line, space.', c(28, 'two')),
-  ('B', 'In the treble: A, B, C below the staff, and A, B, C above it.', c(28, 'two')), ('piano', 'A3 B3 C4 | A5 B5 C6', c(28, 'two', seq=idx(0, 6))),
-  ('B', 'In the bass: E, D, C below, and C, D, E above.', c(28, 'two')), ('piano', 'E2 D2 C2 | C4 D4 E4', c(28, 'two', seq=idx(6, 12))),
-  ('P', 'That is a lot of little lines.', c(28, 'two2')),
-  ('B', 'So a very high passage is often written lower, with an ottava sign and a dotted line above it: play those notes one octave higher, until the dotted line stops. Under the staff, it means an octave lower.', c(28, 'two2'))]),
- ('Example: one line, two notes', [
-  ('B', 'Here is a puzzle. Two red notes, both on the bottom line: one in the treble staff, one in the bass. Same line. Same note?', c(28, 'ex1')),
-  ('P', 'I think so?', c(28, 'ex1')), ('B', 'Read each from its clef. Pause and try.', c(28, 'ex1')), ('pause', 4, c(28, 'ex1')),
-  ('P', 'Treble: G is line two. Step down, F in the space, then the bottom line is E.', c(28, 'ex1', lab=['#0'])), ('piano', 'E4', c(28, 'ex1', seq=['#0'])),
-  ('B', 'And the bass? F is line four. Step down line by line.', c(28, 'ex1')), ('P', 'F, D, B, G. The bottom line is G!', c(28, 'ex1', lab=['#1'], reveal=True)), ('piano', 'G2', c(28, 'ex1', seq=['#1'], reveal=True)),
-  ('B', 'Same line, different note. Always read the clef first.', c(28, 'ex1', reveal=True))]),
+  ('P', 'The treble clef curls round G. The bass clef’s dots hug F.', c(27, 'secret'))]),
+ ('The grand staff', [
+  ('B', 'Piano music joins two staves with a brace. The treble staff is on top, usually for the right hand. The bass staff is below, usually for the left.', c(27, 'two')),
+  ('B', 'And Middle C sits between them, on a short line of its own. It can be written in either staff: the same key.', c(27, 'two')), ('piano', 'C4', c(27, 'two'))]),
  ('Example: which staff?', [
-  ('B', 'Now a key on the piano. Which staff would it be written on?', c(28, 'ex2', show=['Middle C'])),
-  ('P', 'First I find Middle C. The question mark is to its left.', c(28, 'ex2', show=['Middle C'], lab=['Middle C'])),
-  ('B', 'Left is lower. And low keys go on which staff? Pause and think.', c(28, 'ex2', show=['Middle C'], lab=['?'])), ('pause', 3, c(28, 'ex2', show=['Middle C'], lab=['?'])),
-  ('P', 'The bass staff, usually for the left hand!', c(28, 'ex2', reveal=True)), ('B', 'Quite right.', c(28, 'ex2', reveal=True))]),
- ('Example: a high note', [
-  ('B', 'A high note on ledger lines. Start from the top line of the treble staff: F.', c(29, 'ex3', show=['F'], lab=['F'])),
-  ('P', 'Then G on top of the staff, A on the first ledger line, B above it.', c(29, 'ex3', show=['F', 'G', 'A', 'B'])), ('piano', 'F5 G5 A5 B5', c(29, 'ex3', seq=['F', 'G', 'A', 'B'], show=['F', 'G', 'A', 'B'])),
-  ('B', 'And the red note, on the second ledger line? Pause and try.', c(29, 'ex3', show=['F', 'G', 'A', 'B'], lab=['?'])), ('pause', 3, c(29, 'ex3', show=['F', 'G', 'A', 'B'], lab=['?'])),
-  ('P', 'C! High C.', c(29, 'ex3', lab=['?'], reveal=True)), ('piano', 'C6', c(29, 'ex3', seq=['?'], reveal=True)),
-  ('B', 'Two ledger lines up: High C, two octaves above Middle C.', c(29, 'ex3', reveal=True))]),
+  ('B', 'Here is a key on the piano. Which staff would it be written on?', c(28, 'ex1', show=['Middle C'])),
+  ('P', 'First I find Middle C. The question mark is to its left.', c(28, 'ex1', show=['Middle C'], lab=['Middle C'])),
+  ('B', 'Left is lower. And low keys go on which staff? Pause and think.', c(28, 'ex1', show=['Middle C'], lab=['?'])), ('pause', 3, c(28, 'ex1', show=['Middle C'], lab=['?'])),
+  ('P', 'The bass staff, usually for the left hand!', c(28, 'ex1', reveal=True)), ('B', 'Quite right. High keys go on the treble staff.', c(28, 'ex1', reveal=True))]),
  ('Try it', [
-  ('B', 'Point to the line the treble clef curls round, and play that G. Then the line between the bass clef’s dots, and play that F. Middle C sits between them.', c(29, 'try10')), ('pause', 4, c(29, 'try10')), ('piano', 'G4 F3 C4', c(29, 'try10')),
-  ('B', 'And a tune you know. Twinkle, Twinkle starts on Middle C and leaps up to G, the treble clef’s very own line.', c(29, 'yk')), ('piano', 'C4 C4 G4 G4 A4 A4 G4*2', c(29, 'yk', seq=idx(0, 7))),
-  ('B', 'Your mission: before you play any piece, find the G line and the F line. A clef is a pair of glasses: put on the right pair first.', c(29, 'watch'))])]),
-'P3': ('Reading the notes', [
+  ('B', 'Point to the line the treble clef curls round, and play that G. Then the line between the bass clef’s dots, and play that F. Middle C sits between them.', c(28, 'gt2')), ('pause', 4, c(28, 'gt2')), ('piano', 'G4 F3 C4', c(28, 'gt2')),
+  ('B', 'And a tune you know. Twinkle, Twinkle leaps up to G, the treble clef’s very own line.', c(28, 'yk')), ('piano', 'C4 C4 G4 G4 A4 A4 G4*2', c(28, 'yk', seq=idx(0, 7))),
+  ('B', 'A clef is a pair of glasses: the same five lines read as different notes, depending on which pair you put on. Until next time.', c(28, 'think'))])]),
+'P3': ('The staff and the keyboard', [
  ('The secret', [
-  ('P', 'Do I have to learn every line and space by heart?', c(30, 'lead')),
-  ('B', 'Not at once. Start from a note you always know: treble G, bass F, or Middle C.', c(30, 'hero')), ('piano', 'G4 F3 C4', c(30, 'hero', seq=['G', 'F', 'Middle C'])),
-  ('P', 'And then?', c(30, 'rule')),
-  ('B', 'Then step or skip. A step goes to the very next line or space: one letter on. A skip goes line to line, or space to space: two letters on.', c(30, 'rule')), ('piano', 'G4 A4 | G4 B4', c(30, 'rule'))]),
- ('Words to remember', [
-  ('B', 'If you like little sentences, here are four. Treble lines: E G B D F. Every Good Boy Deserves Fun.', c(30, 'two')), ('piano', 'E4 G4 B4 D5 F5', c(30, 'two', seq=idx(0, 5))),
-  ('B', 'The treble spaces spell a word: F A C E, face.', c(30, 'two')), ('piano', 'F4 A4 C5 E5', c(30, 'two', seq=idx(5, 9))),
-  ('B', 'Bass lines: G B D F A. Great Big Dragons Fly Away.', c(30, 'two2')), ('piano', 'G2 B2 D3 F3 A3', c(30, 'two2', seq=idx(0, 5))),
-  ('B', 'Bass spaces: A C E G. All Cows Eat Grass.', c(30, 'two2')), ('piano', 'A2 C3 E3 G3', c(30, 'two2', seq=idx(5, 9)))]),
- ('Example: read from the clef note', [
-  ('B', 'A treble note you are not sure of, on line four. Start from the clef note.', c(31, 'ex1')),
-  ('P', 'G is line two. Skip up to line three: B. Skip again to line four.', c(31, 'ex1')), ('pause', 3, c(31, 'ex1')),
-  ('P', 'D!', c(31, 'ex1', reveal=True)), ('piano', 'G4 B4 D5', c(31, 'ex1', reveal=True)), ('B', 'G, B, D: two skips up from the clef’s G.', c(31, 'ex1', reveal=True))]),
- ('Example: a bass note', [
-  ('B', 'Now the bass staff, line three.', c(31, 'ex2', show=[])),
-  ('P', 'The dots hug line four: F. Step down to the space: E. Step down again to line three.', c(31, 'ex2', show=['F', 'E'])), ('piano', 'F3 E3', c(31, 'ex2', seq=['F', 'E'], show=['F', 'E'])), ('pause', 3, c(31, 'ex2', show=['F', 'E'], lab=['?'])),
-  ('P', 'D.', c(31, 'ex2', lab=['?'], reveal=True)), ('piano', 'F3 E3 D3', c(31, 'ex2', seq=['F', 'E', '?'], reveal=True)), ('B', 'Correct. F, E, D.', c(31, 'ex2', reveal=True))]),
- ('Example: Treble C and Bass C', [
-  ('B', 'Find Treble C on the staff. These notes sit in the spaces.', c(31, 'ex3')),
-  ('P', 'The treble spaces spell face. F, A, and space three is C!', c(31, 'ex3', lab=['?'], reveal=True)), ('piano', 'F4 A4 C5', c(31, 'ex3', reveal=True)),
-  ('B', 'Treble C, one octave above Middle C. And in the bass spaces?', c(32, 'ex4')),
-  ('P', 'All Cows. Space two is C: Bass C!', c(32, 'ex4', lab=['?'], reveal=True)), ('piano', 'A2 C3', c(32, 'ex4', reveal=True)),
-  ('B', 'One octave below Middle C. The same Cs you found on the keyboard.', c(32, 'ex4', reveal=True))]),
- ('Try it', [
-  ('B', 'Say the treble lines up and down, as fast as you can without a slip. E G B D F. F D B G E.', c(31, 'try10')), ('pause', 5, c(31, 'try10')),
-  ('B', 'Then Mary Had a Little Lamb. E, D, C: line, space, ledger line, one step down each time.', c(32, 'yk')), ('piano', 'E4 D4 C4 D4 E4 E4 E4*2', c(32, 'yk', seq=idx(0, 7))),
-  ('B', 'Your mission: in a piece you play, find the clef notes first, then step or skip from them. The clef notes are lamp posts on a dark road.', c(32, 'think'))])]),
-'P4': ('The staff and the keyboard', [
- ('The secret', [
-  ('B', 'Pip, every line and every space of the grand staff is one white key, in order.', c(33, 'lead')), ('P', 'So climbing the staff is climbing the keyboard?', c(33, 'vx')),
-  ('B', 'Exactly. Here are two octaves, from Bass C up to Treble C, with Middle C where the two staves meet.', c(33, 'vx')),
-  ('piano', 'C3 D3 E3 F3 G3 A3 B3 C4 D4 E4 F4 G4 A4 B4 C5', c(33, 'vx', seq=idx(0, 15))),
-  ('B', 'Middle C can be written in either staff: on a ledger line below the treble, or above the bass. Same key; the hand that plays it chooses.', c(33, 'p')),
-  ('B', 'One step on the staff, line to space, is the very next white key. The black keys sit in between: they come in the next chapter.', c(33, 'rule'))]),
+  ('B', 'Pip, here is the secret of this chapter. Every line and every space of the staff is one white key, in order.', c(29, 'secret')),
+  ('P', 'So climbing the staff is climbing the keyboard?', c(29, 'vx')),
+  ('B', 'Exactly. Here are two octaves, from Bass C up to Treble C, with Middle C where the two staves meet.', c(29, 'vx')),
+  ('piano', 'C3 D3 E3 F3 G3 A3 B3 C4 D4 E4 F4 G4 A4 B4 C5', c(29, 'vx', seq=idx(0, 15))),
+  ('B', 'One step on the staff, from a line to the space next to it, is the very next white key. Up the staff is to the right; down is to the left.', c(29, 'rule')),
+  ('B', 'The black keys sit in between. How they are written comes in chapter five.', c(29, 'p'))]),
  ('Example: from the page to the key', [
-  ('B', 'A note on line four of the bass staff. Which key is it?', c(34, 'ex1', show=['Middle C'])),
-  ('P', 'Line four, between the clef’s dots: F.', c(34, 'ex1', show=['Middle C', 'F'], lab=['F'])),
-  ('B', 'And where is it on the piano? Pause and find it.', c(34, 'ex1', show=['Middle C', 'F'])), ('pause', 3, c(34, 'ex1', show=['Middle C', 'F'])),
-  ('P', 'The three black keys just below Middle C. F is the first key of that family.', c(34, 'ex1', reveal=True)), ('piano', 'F3', c(34, 'ex1', reveal=True))]),
+  ('B', 'A note on line four of the bass staff. Which key is it?', c(30, 'ex1', show=['Middle C'])),
+  ('P', 'Line four, between the clef’s dots: F.', c(30, 'ex1', show=['Middle C', 'F'], lab=['F'])),
+  ('B', 'And where is it on the piano? Pause and find it.', c(30, 'ex1', show=['Middle C', 'F'])), ('pause', 3, c(30, 'ex1', show=['Middle C', 'F'])),
+  ('P', 'The three black keys just below Middle C. F is the first key of that family.', c(30, 'ex1', reveal=True)), ('piano', 'F3', c(30, 'ex1', reveal=True))]),
  ('Example: mirror notes', [
-  ('B', 'Here is something lovely. Find treble G and bass F on the piano.', c(34, 'ex2', show=['Middle C'])),
-  ('P', 'Treble G: the second key of the three black keys just above Middle C. Bass F: the first key of the three just below.', c(34, 'ex2', show=['Middle C'])),
-  ('B', 'Now count each from Middle C. Up to G, down to F. Pause and count.', c(34, 'ex2', show=['Middle C'])), ('pause', 4, c(34, 'ex2', show=['Middle C'])),
-  ('P', 'C D E F G: five. C B A G F: five as well!', c(34, 'ex2', reveal=True)), ('piano', 'C4 D4 E4 F4 G4 | C4 B3 A3 G3 F3', c(34, 'ex2', reveal=True)),
-  ('B', 'Mirror images, the same distance either side of Middle C.', c(34, 'ex2', reveal=True))]),
+  ('B', 'Here is something lovely. Find treble G and bass F on the piano.', c(30, 'ex2', show=['Middle C'])),
+  ('P', 'Treble G: the second key of the three black keys just above Middle C. Bass F: the first key of the three just below.', c(30, 'ex2', show=['Middle C'])),
+  ('B', 'Now count each from Middle C. Up to G, down to F. Pause and count.', c(30, 'ex2', show=['Middle C'])), ('pause', 4, c(30, 'ex2', show=['Middle C'])),
+  ('P', 'C D E F G: five. C B A G F: five as well!', c(30, 'ex2', reveal=True)), ('piano', 'C4 D4 E4 F4 G4 | C4 B3 A3 G3 F3', c(30, 'ex2', reveal=True)),
+  ('B', 'Mirror images, the same distance either side of Middle C.', c(30, 'ex2', reveal=True))]),
  ('Example: from the key to the page', [
-  ('B', 'I play the third white key up from Middle C.', c(34, 'ex3', show=['Middle C'])), ('piano', 'C4 D4 E4', c(34, 'ex3', seq=['Middle C', '', '?'], show=['Middle C'])),
-  ('P', 'C one, D two, E three. It is E.', c(34, 'ex3', lab=['?'], show=['Middle C'])),
-  ('B', 'And on the staff?', c(34, 'ex3', show=['Middle C'])), ('P', 'Middle C on its ledger line, D in the space under the staff, E on the bottom line.', c(34, 'ex3', reveal=True)), ('B', 'Precisely.', c(34, 'ex3', reveal=True))]),
+  ('B', 'I play the third white key up from Middle C.', c(30, 'ex3', show=['Middle C'])), ('piano', 'C4 D4 E4', c(30, 'ex3', seq=['Middle C', '', '?'], show=['Middle C'])),
+  ('P', 'C one, D two, E three. It is E.', c(30, 'ex3', lab=['?'], show=['Middle C'])),
+  ('B', 'And on the staff? Climb the same way.', c(30, 'ex3', show=['Middle C'])), ('P', 'Middle C on its little line, D in the space just under the staff, E on the bottom line.', c(30, 'ex3', reveal=True)), ('B', 'Precisely.', c(30, 'ex3', reveal=True))]),
  ('Try it', [
-  ('B', 'Play Middle C and walk up the white keys, saying each name, and picture each one climbing the staff: line, space, line, space.', c(35, 'try10')), ('piano', 'C4 D4 E4 F4 G4 A4 B4 C5', c(35, 'try10', seq=idx(0, 8))),
-  ('B', 'Then Frère Jacques in both hands. The right hand plays C D E C; the left hand plays the same letters one octave lower, in the bass clef.', c(35, 'yk')), ('piano', 'C4 D4 E4 C4 | C3 D3 E3 C3', c(35, 'yk', seq=idx(0, 4) + idx(0, 4))),
-  ('B', 'The staff is a ladder laid beside the keyboard: every rung is the next white key.', c(35, 'think'))])]),
+  ('B', 'Play Middle C and walk up the white keys, saying each name, and picture each one climbing the staff: line, space, line, space.', c(31, 'try10')), ('piano', 'C4 D4 E4 F4 G4 A4 B4 C5', c(31, 'try10', seq=idx(0, 8))),
+  ('B', 'Then Frère Jacques in both hands. The right hand plays C D E C; the left hand plays the same letters one octave lower, in the bass clef.', c(31, 'yk')), ('piano', 'C4 D4 E4 C4 | C3 D3 E3 C3', c(31, 'yk', seq=idx(0, 4) + idx(0, 4))),
+  ('B', 'The staff is a ladder laid beside the keyboard: every rung is the next white key.', c(31, 'think'))])]),
+'P4': ('Reading the notes', [
+ ('The secret', [
+  ('P', 'Do I have to learn every line and space by heart?', c(32, 'lead')),
+  ('B', 'Not at once. Start from a note you always know: Middle C in the middle, treble G and bass F either side.', c(32, 'hero', lab=['#19', '#2', '#15'])),
+  ('piano', 'C4 G4 F3', c(32, 'hero', seq=['#19', '#2', '#15'])),
+  ('B', 'Every line and space is the next letter. Listen to the whole staircase, from bass G to treble F.', c(32, 'hero')),
+  ('piano', 'G2/2 A2/2 B2/2 C3/2 D3/2 E3/2 F3/2 G3/2 A3/2 B3/2 C4/2 D4/2 E4/2 F4/2 G4/2 A4/2 B4/2 C5/2 D5/2 E5/2 F5/2', c(32, 'hero', seq=idx(9, 21) + idx(0, 9))),
+  ('P', 'And how do I move?', c(32, 'rule')),
+  ('B', 'Step or skip. A step goes to the very next line or space: one letter on. A skip goes line to line, or space to space: two letters on.', c(32, 'rule')), ('piano', 'G4 A4 | G4 B4', c(32, 'rule'))]),
+ ('Words to remember', [
+  ('B', 'If you like little sentences, here are four. Treble lines: E G B D F. Every Good Boy Deserves Fun. The treble spaces spell a word: face.', c(32, 'ht')),
+  ('B', 'Bass lines: G B D F A. Great Big Dragons Fly Away. Bass spaces: A C E G. All Cows Eat Grass.', c(32, 'ht'))]),
+ ('Example: read from the clef note', [
+  ('B', 'A treble note you are not sure of, on line four. Start from the clef note.', c(32, 'ex1')),
+  ('P', 'G is line two. Skip up to line three: B. Skip again to line four.', c(32, 'ex1')), ('pause', 3, c(32, 'ex1')),
+  ('P', 'D!', c(32, 'ex1', reveal=True)), ('piano', 'G4 B4 D5', c(32, 'ex1', reveal=True)), ('B', 'G, B, D: two skips up from the clef’s G.', c(32, 'ex1', reveal=True))]),
+ ('Example: a bass note', [
+  ('B', 'Now the bass staff, line three.', c(33, 'ex2', show=[])),
+  ('P', 'The dots hug line four: F. Step down to the space: E. Step down again to line three.', c(33, 'ex2', show=['F', 'E'])), ('piano', 'F3 E3', c(33, 'ex2', seq=['F', 'E'], show=['F', 'E'])), ('pause', 3, c(33, 'ex2', show=['F', 'E'], lab=['?'])),
+  ('P', 'D.', c(33, 'ex2', lab=['?'], reveal=True)), ('piano', 'F3 E3 D3', c(33, 'ex2', seq=['F', 'E', '?'], reveal=True)), ('B', 'Correct. F, E, D.', c(33, 'ex2', reveal=True))]),
+ ('Example: one line, two notes', [
+  ('B', 'Here is a puzzle. Two red notes, both on the bottom line: one in the treble staff, one in the bass. Same line. Same note?', c(33, 'ex3')),
+  ('P', 'I think so?', c(33, 'ex3')), ('B', 'Read each from its clef. Pause and try.', c(33, 'ex3')), ('pause', 4, c(33, 'ex3')),
+  ('P', 'Treble: G is line two. Step down, F in the space, then the bottom line is E.', c(33, 'ex3', lab=['#0'])), ('piano', 'E4', c(33, 'ex3', seq=['#0'])),
+  ('B', 'And the bass? F is line four. Step down line by line.', c(33, 'ex3')), ('P', 'F, D, B, G. The bottom line is G!', c(33, 'ex3', lab=['#1'], reveal=True)), ('piano', 'G2', c(33, 'ex3', seq=['#1'], reveal=True)),
+  ('B', 'Same line, different note. Always read the clef first.', c(33, 'ex3', reveal=True))]),
+ ('Example: Treble C and Bass C', [
+  ('B', 'Find Treble C on the staff. These notes sit in the spaces.', c(33, 'ex4')),
+  ('P', 'The treble spaces spell face. F, A, and space three is C!', c(33, 'ex4', lab=['?'], reveal=True)), ('piano', 'F4 A4 C5', c(33, 'ex4', reveal=True)),
+  ('B', 'Treble C, one octave above Middle C. And in the bass spaces?', c(34, 'ex5')),
+  ('P', 'All Cows. Space two is C: Bass C!', c(34, 'ex5', lab=['?'], reveal=True)), ('piano', 'A2 C3', c(34, 'ex5', reveal=True)),
+  ('B', 'One octave below Middle C. Now say the treble lines up and down, as fast as you can without a slip.', c(34, 'try10')), ('pause', 4, c(34, 'try10'))]),
+ ('Ledger lines', [
+  ('P', 'What about notes above or below the staff?', c(34, 'xlate')),
+  ('B', 'They sit on short extra lines called ledger lines, spaced just like the staff lines. Step on from the nearest staff line: line, space, line, space.', c(34, 'xlate')),
+  ('B', 'In the treble: A, B, C below the staff, and A, B, C above it.', c(34, 'xlate')), ('piano', 'A3 B3 C4 | A5 B5 C6', c(34, 'xlate', seq=idx(0, 6))),
+  ('B', 'In the bass: E, D, C below, and C, D, E above.', c(34, 'xlate')), ('piano', 'E2 D2 C2 | C4 D4 E4', c(34, 'xlate', seq=idx(6, 12)))]),
+ ('Example: a high note', [
+  ('B', 'A high note on ledger lines. Start from the top line of the treble staff: F.', c(34, 'ex6', show=['F'], lab=['F'])),
+  ('P', 'Then G on top of the staff, A on the first ledger line, B above it.', c(34, 'ex6', show=['F', 'G', 'A', 'B'])), ('piano', 'F5 G5 A5 B5', c(34, 'ex6', seq=['F', 'G', 'A', 'B'], show=['F', 'G', 'A', 'B'])),
+  ('B', 'And the red note, on the second ledger line? Pause and try.', c(34, 'ex6', show=['F', 'G', 'A', 'B'], lab=['?'])), ('pause', 3, c(34, 'ex6', show=['F', 'G', 'A', 'B'], lab=['?'])),
+  ('P', 'C! High C.', c(34, 'ex6', lab=['?'], reveal=True)), ('piano', 'C6', c(34, 'ex6', seq=['?'], reveal=True)),
+  ('B', 'Two ledger lines up: High C. And when notes go even higher, music often writes them lower, with an ottava sign and a dotted line: play them one octave higher.', c(35, 'xlate'))]),
+ ('Try it', [
+  ('B', 'Mary Had a Little Lamb. E, D, C: line, space, and Middle C’s own little line, one step down each time.', c(35, 'yk')), ('piano', 'E4 D4 C4 D4 E4 E4 E4*2', c(35, 'yk', seq=idx(0, 7))),
+  ('B', 'Your mission: in a piece you play, find the clef notes first, then step or skip from them. The clef notes are lamp posts on a dark road. Until next time, Pip.', c(35, 'think')), ('P', 'Goodbye!', c(35, 'think'))])]),
 'P5': ('Sharps, flats and naturals', [
  ('The secret', [
   ('P', 'What are those little signs in front of some notes?', c(36, 'lead')),
-  ('B', 'Signs that move a note to the very next key. A sharp: one key to the right. A flat: one key to the left.', c(36, 'secret')),
+  ('B', 'Signs that move a note to the very next key. A sharp: one key to the right, a semitone higher. A flat: one key to the left, a semitone lower.', c(36, 'secret')),
   ('B', 'Usually that next key is black, and that is how the black keys get their names. D sharp is just right of D. D flat is just left of it.', c(36, 'hero')), ('piano', 'D4 D#4 | D4 Db4', c(36, 'hero', seq=['D', 'D♯', 'D', 'D♭'])),
-  ('B', 'And a natural cancels a sharp or flat: back to the white key.', c(36, 'ht'))]),
+  ('B', 'And a natural cancels a sharp or flat: back to the white key.', c(36, 'ht')),
+  ('B', 'One rule to remember. A sign belongs to one note: it changes only that line or space, in that octave, and only until the bar line. The same letter in another octave stays as it is.', c(36, 'rule'))]),
  ('Example: find F sharp', [
   ('B', 'Find F sharp, Pip.', c(36, 'ex1', show=[])), ('P', 'F is just left of the three black keys.', c(36, 'ex1', show=['F'], lab=['F'])),
   ('B', 'Sharp means right: the very next key. Black or white? Pause and put your finger on it.', c(36, 'ex1', show=['F'], lab=['?'])), ('pause', 3, c(36, 'ex1', show=['F'], lab=['?'])),
@@ -119,7 +121,7 @@ NEW = {
   ('B', 'Same sound, two names: we call them enharmonic. And E sharp, one key right of E?', c(38, 'ex5', show=['F♯', 'G♭', 'C♯', 'D♭', 'E♯'], lab=['E♯'])), ('pause', 3, c(38, 'ex5', show=['F♯', 'G♭', 'C♯', 'D♭', 'E♯'])),
   ('P', 'There is no black key there. So E sharp is the white key F!', c(38, 'ex5', reveal=True)), ('piano', 'E4 F4', c(38, 'ex5', reveal=True))]),
  ('Try it', [
-  ('B', 'Beethoven’s Für Elise begins on E and the black key just left of it: D sharp. The sharp is written again in the new bar, because the bar line wiped it out.', c(38, 'yk')), ('piano', 'E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4*2', c(38, 'yk')),
+  ('B', 'Beethoven’s Für Elise begins on E and the black key just left of it: D sharp. The sharp is written again in the new bar, because the bar line wiped it out. And later in that bar the D has a natural sign, so it is plain D again.', c(38, 'yk')), ('piano', 'E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4*2', c(38, 'yk')),
   ('B', 'Your mission: play E and D sharp back and forth, then find F sharp and B flat in three different places on the piano. A sign is a sticky note: it falls off at the bar line.', c(38, 'think'))])]),
 'P6': ('Counting intervals', [
  ('The secret', [
@@ -243,7 +245,7 @@ NEW['T1'] = ('Pulse, tempo and the bar', [
   ('B', 'And repeat signs: play the passage between them again. If there is no start sign, go back to the beginning.', c(47, 'ht'))]),
  ('Counting', [
   ('B', 'Every beat is counted, even inside a long note. Here are three bars of three-four. The red number is where you play; the grey numbers are the beats you hold.', c(48, 'vx')),
-  ('piano', 'X x x X x x X x x', c(48, 'vx', seq=idx(0, 9))),
+  ('piano', 'C4 C4 C4 C4*2 C4 C4*3', c(48, 'vx', seq=['#0', '#1', '#2', '#3', '#5', '#6'])),
   ('B', 'Count aloud at one speed, a little louder on beat one. With a metronome, start slower than you think, and speed up only when the passage is steady.', c(48, 'p'))]),
  ('Example: march or waltz?', [
   ('B', 'Is this a march or a waltz? Tap a steady beat as you listen.', c(48, 'ex1')), ('piano', 'C3 G4 G4 C3 G4 G4 C3 G4 G4', c(48, 'ex1', seq=idx(0, 9))),
@@ -251,9 +253,9 @@ NEW['T1'] = ('Pulse, tempo and the bar', [
   ('P', 'Heavy every three: one two three, one two three. A waltz!', c(48, 'ex1', reveal=True)), ('B', 'Every two would be a march.', c(48, 'ex1', reveal=True))]),
  ('Example: feel the beat first', [
   ('B', 'This one says crotchet equals ninety-six: ninety-six beats a minute. Do not start yet. Listen to one full bar, counting one, two, three in your head.', c(48, 'ex2')),
-  ('piano', 'X@96 x@96 x@96', c(48, 'ex2', seq=['#1', '#2', '#3'])),
+  ('piano', 'X@96 x@96 x@96', c(48, 'ex2')),
   ('B', 'Then step in on the next beat one, the way you step onto a moving escalator.', c(48, 'ex2')),
-  ('piano', 'X@96 x@96 x@96 C4@96 E4@96 G4@96 C5@96 G4@96 E4@96', c(48, 'ex2', seq=['#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9'])),
+  ('piano', 'X@96 x@96 x@96 C4@96 C4@96 C4@96 C4@48 C4@96 C4@32', c(48, 'ex2', seq=['', '', '', '#1', '#2', '#3', '#4', '#6', '#7'])),
   ('P', 'The first note landed right on the beat!', c(48, 'ex2', reveal=True))]),
  ('Try it', [
   ('B', 'Hand on your heart. Tap the beat and say one, two, three, four, with one a little louder. Keep going for ten seconds without slowing down.', c(49, 'try10')),

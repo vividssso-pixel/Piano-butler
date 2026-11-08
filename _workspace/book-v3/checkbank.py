@@ -2,7 +2,7 @@
 # 3/3 = skip it, 2/3 = skim it, 0-1 = study it. One bank feeds the printed booklet (checkbook.py) and the online check (check-online).
 import json, random, sys
 sys.path.insert(0, '/tmp/claude-0/pk'); import pagemap as PM
-TITLES = {'P1': 'The keyboard', 'P2': 'The staff and the clefs', 'P3': 'Reading the notes', 'P4': 'The staff and the keyboard', 'P5': 'Sharps, flats and naturals', 'P6': 'Counting intervals', 'P7': 'Major, minor and perfect',
+TITLES = {'P1': 'The keyboard', 'P2': 'The staff and the clefs', 'P3': 'The staff and the keyboard', 'P4': 'Reading the notes', 'P5': 'Sharps, flats and naturals', 'P6': 'Counting intervals', 'P7': 'Major, minor and perfect',
           'T1': 'Pulse, tempo and the bar', 'T2': 'Notes and rests', 'T3': 'How long is a note?', 'T4': 'Time signatures', 'T5': 'Compound and irregular time', 'T6': 'Rhythm: groups and upbeats', 'T7': 'Rhythm: off the beat', 'T8': 'Repeats and road signs',
           'E1': 'Loud and soft', 'E2': 'Touch: smooth, short, strong', 'E3': 'Speed words', 'E4': 'The pedals', 'E5': 'Ornaments',
           'S1': 'Major scales', 'S2': 'Minor scales', 'S3': 'Keys and key signatures', 'S4': 'Finding the key', 'S5': 'The circle of fifths',
@@ -15,8 +15,8 @@ PARTS = [('P', 'Part I · Pitch'), ('T', 'Part II · Time'), ('E', 'Part III · 
 Q = {
  'P1': [('The white key just left of a group of two black keys is…', 'C', 'F', 'D'), ('The white key just left of a group of three black keys is…', 'F', 'C', 'G'), ('Moving to the right on the keyboard, the notes get…', 'higher', 'lower', 'louder')],
  'P2': [('The treble clef curls round the line for…', 'G', 'F', 'C'), ('The two dots of the bass clef hug the line for…', 'F', 'G', 'A'), ('How many lines does a staff have?', '5', '4', '6')],
- 'P3': [('In the treble clef, the bottom line is…', 'E', 'F', 'G'), ('In the treble clef, the spaces from the bottom spell…', 'F A C E', 'E G B D', 'A C E G'), ('Middle C is written…', 'on a ledger line between the two staves', 'on the top line of the treble staff', 'in the middle of the bass staff')],
- 'P4': [('Moving up one line or space on the staff moves you…', 'one white key up', 'one black key up', 'two white keys up'), ('From a line to the next line up is…', 'a skip (a 3rd)', 'a step (a 2nd)', 'an octave'), ('Bass F (between the bass clef’s dots) and treble G (where the treble clef curls) are…', 'the same distance either side of Middle C', 'the same key', 'next-door keys')],
+ 'P3': [('Moving up one line or space on the staff moves you…', 'one white key up', 'one black key up', 'two white keys up'), ('From a line to the next line up is…', 'a skip (a 3rd)', 'a step (a 2nd)', 'an octave'), ('Bass F (between the bass clef’s dots) and treble G (where the treble clef curls) are…', 'the same distance either side of Middle C', 'the same key', 'next-door keys')],
+ 'P4': [('In the treble clef, the bottom line is…', 'E', 'F', 'G'), ('In the treble clef, the spaces from the bottom spell…', 'F A C E', 'E G B D', 'A C E G'), ('Middle C is written…', 'on a ledger line between the two staves', 'on the top line of the treble staff', 'in the middle of the bass staff')],
  'P5': [('A sharp moves a note…', 'one key to the right', 'one key to the left', 'one octave up'), ('A sharp written in front of a note lasts…', 'until the end of the bar', 'for the whole piece', 'for that one note only'), ('F♯ and G♭ are…', 'one key with two names', 'two different keys', 'both white keys')],
  'P6': [('C up to E is a…', '3rd', '2nd', '4th'), ('C up to G is a…', '5th', '4th', '6th'), ('D up to the next D is a…', 'octave (8th)', '7th', '9th')],
  'P7': [('A major 3rd has how many keys in between?', '3', '2', '4'), ('A perfect 5th has how many keys in between?', '6', '5', '7'), ('C up to E♭ is a…', 'minor 3rd', 'major 3rd', 'perfect 4th')],
