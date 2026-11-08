@@ -267,6 +267,8 @@ css += '.opt5 .row b{flex:0 0 30%} .opt5 .tf{letter-spacing:0;white-space:nowrap
 def _write(fn, pages, first):
     pages = [re.sub(r'<div class="foot"><span>\d+</span>', f'<div class="foot"><span>{k + 1}</span>', p, count=1) for k, p in enumerate(pages)]
     h = _LG(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}{SIZEJS}</body></html>', first).replace('</style></head>', firstdone.CSS + '</style></head>', 1))
+    h = re.sub(r'<div class="wbhd"><div><div class="kick">(.*?)</div>', r'<div class="kick">\1</div><div class="wbhd"><div>', h)   # review: the kicker runs full width above the picture
+    h = re.sub(r'max-height:\d+px;max-width:\d+%"', 'width:46%;max-height:none;flex:0 0 46%"', h)
     open(f'/mnt/user-data/outputs/house-rooms/{fn}.html', 'w').write(h)
 _write('workbook-expression', [EA1, EB1, EA2, EB2, EA3, EB3, EA4, EB4, EA5, EB5, ER, EP, EAN], EFIRST)
 _write('workbook-shape', [FA1, FB1, FA2, FB2, FA3, FB3, FA4, FB4, FA5, FB5, FA6, FB6, FR, FP, FAN], FFIRST)
