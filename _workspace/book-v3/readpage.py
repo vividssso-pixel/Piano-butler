@@ -67,7 +67,7 @@ def _hits(ln):   # her 8 Nov: every key, note or sign the voice names is marked 
     for rk in order:
         reg = page.get(rk)
         if not reg: continue
-        names = sorted({(sp, L[0]) for L in reg['l'] for sp in _spoken(L[0])}, key=lambda x: len(x[0]), reverse=True)
+        names = sorted({(sp, L[0]) for L in reg['l'] for sp in _spoken(L[0]) if rk == c.get('r') or len(sp) > 2}, key=lambda x: len(x[0]), reverse=True)   # single letters only in the picture being talked about
         for sp, nm in names:
             for m in _re.finditer(r'(?<![A-Za-z])' + _re.escape(sp) + r'(?![A-Za-z0-9])', text):
                 if any(used[m.start():m.end()]): continue
