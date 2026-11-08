@@ -82,6 +82,17 @@ for c in CH:
         for ln in k['l']:
             h = _hits(ln)
             if h: ln['hits'] = h
+PRACT = {   # chapter: (workbook pages in the merged workbook draft, [(drill id, drill name, extra query)])
+    'P1': ((1, 2), [('first-steps', 'Keyboard Patterns', ''), ('note-names', 'The Musical Alphabet', '')]),
+    'P2': ((3, 4), [('staff', 'The Staff & the Two Clefs', ''), ('ledger-lines', 'Ledger Lines', '')]),
+    'P3': ((5, 6), [('whole-staff', 'Line and Space Names', ''), ('reading-steps', 'Steps & Skips', '')]),
+    'P4': ((7, 8), [('staff', 'The Staff & the Two Clefs', ''), ('whole-staff', 'Line and Space Names', '')]),
+    'P5': ((9, 10), [('accidentals', 'Accidentals', ''), ('tones', 'Tones & Semitones', '')]),
+    'P6': ((11, 12), [('intervals', 'Intervals', ''), ('tones', 'Tones & Semitones', '')]),
+    'P7': ((13, 14), [('intervals', 'Intervals', '')]),
+}
+for c in CH:
+    if c['k'] in PRACT: c['pr'] = PRACT[c['k']]
 DATA = json.dumps(CH, ensure_ascii=False)
 REGD = json.dumps(REG, ensure_ascii=False)
 HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
@@ -111,6 +122,7 @@ select{font:inherit;font-size:15px;color:var(--ink);background:var(--panel);bord
 .sub{min-height:3.2em;margin-top:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;font-size:15.5px}
 .sub b{color:var(--accent);margin-right:6px} .sub:empty{display:none}
 .ctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px} .ctl .btn{padding:6px 12px;font-size:14px} .ctl .sp{font-size:12.5px;padding:4px 7px;border-radius:999px} .ctl .sp.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.prac{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px} .prac .ph{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)} .prac a{display:block;font-weight:700;font-size:14.5px;color:var(--ink);text-decoration:none;border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--bg)} .prac a.dr{border-color:var(--accent)} .prac a:hover{border-color:var(--accent)}
 .follow{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--soft);margin-top:8px}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
 button{font:inherit;cursor:pointer;color:var(--ink)}
@@ -154,11 +166,12 @@ function showPage() {
   document.getElementById('prev').disabled = ci === 0 && pi === 0; document.getElementById('next').disabled = ci === CH.length - 1 && pi === c.pages.length - 1;
   const nx = CH[ci + 1]; if (nx) { const im = new Image(); im.src = `pages/p${pad(nx.pages[0])}.webp`; }
 }
+function site(p) { const local = location.protocol === 'file:' || /thepianobutler\.com$/.test(location.hostname); return (local ? '../../' : 'https://thepianobutler.com/') + p; }
 function drawSide() {
   const c = CH[ci];
   side.innerHTML = `<div class="kick">${c.part}</div><h2>${c.t}</h2>` + (c.clips ? `<button class="play" id="all"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 2l12 7-12 7z" fill="currentColor"/></svg>${playing >= 0 ? 'Playing…' : 'Listen to the whole chapter'}</button><div class="ctl"><button class="btn" id="pp">${audio.paused ? '▶ Resume' : '❚❚ Pause'}</button>${[0.8, 1, 1.2, 1.5].map(v => `<button class="btn sp${v === rate ? ' on' : ''}" data-v="${v}">${v}×</button>`).join('')}</div><div class="clips">` +
     c.clips.map((k, i) => `<button class="clip${i === playing ? ' on' : ''}" data-i="${i}"><span class="n">${i + 1}</span><span>${k.t}</span><span class="s">${Math.floor(k.s / 60)}:${String(k.s % 60).padStart(2, '0')}</span></button>`).join('') + '</div>'
-    : `<p class="none">No audio for this chapter yet. The pages are all here.</p>`) + `<label class="follow"><input type="checkbox" id="fol" ${follow ? 'checked' : ''}> Follow on the page</label><p class="who">The Butler explains, Pip asks. Each Example asks first, then pauses so you can try.</p>`;
+    : `<p class="none">No audio for this chapter yet. The pages are all here.</p>`) + (c.pr ? `<div class="prac"><div class="ph">Practise it</div><a href="${site('books/workbook-draft.pdf')}#page=${c.pr[0][0]}" target="_blank" rel="noopener">Workbook pp. ${c.pr[0][0]}–${c.pr[0][1]}</a>${c.pr[1].map(d => `<a class="dr" href="${site('drills.html')}?drill=${d[0]}${d[2] || '&tab=learn'}" target="_blank" rel="noopener">Drill: ${d[1]}</a>`).join('')}</div>` : '') + `<label class="follow"><input type="checkbox" id="fol" ${follow ? 'checked' : ''}> Follow on the page</label><p class="who">The Butler explains, Pip asks. Each Example asks first, then pauses so you can try.</p>`;
   const fo = document.getElementById('fol'); if (fo) fo.onchange = () => { follow = fo.checked; };
   if (c.clips) { const pp = document.getElementById('pp'); pp.disabled = playing < 0; pp.onclick = () => { if (audio.paused) { audio.play().catch(() => {}); } else audio.pause(); drawSide(); };
     side.querySelectorAll('.sp').forEach(b => b.onclick = () => { rate = +b.dataset.v; audio.playbackRate = rate; drawSide(); });
