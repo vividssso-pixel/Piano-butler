@@ -204,8 +204,46 @@ def pic_expr():
     o += call(4, 150, yp - 6, 92, yp + 26) + call(5, 580, S.y1 - 5.2 * S.sp, 540, S.y1 - 8.4 * S.sp) + call(3, 670, S.y("G4") - 56, 712, S.y1 - 8.4 * S.sp)
     return f'<svg viewBox="0 0 800 {yp + 60}" style="width:100%;display:block">{o}</svg>'
 LEG_E = [(1, 'Loud and soft', 'p, f and the steps between; hairpins grow and fade', 'E1'), (2, 'Touch: smooth, short, strong', 'slurs, staccato dots, tenuto lines and accents', 'E2'), (3, 'Speed words', 'Andante, Allegro; rit. slows down, a fermata waits', 'E3'), (4, 'The pedals', 'Ped. down, * up: the right pedal keeps notes ringing', 'E4'), (5, 'Ornaments', 'trills, mordents, turns and grace notes', 'E5'), ('★', 'Tips: when your playing sounds flat', '', 'ET')]
+
+# ---------- Part VII · Shape and style; Part VIII · Playing and listening ----------
+def pic_shape():
+    o = ''
+    blocks = [('A', 60, 'question', 'answer'), ('A', 230, 'question', 'answer'), ('B', 400, 'new idea', 'travels'), ('A', 570, 'question', 'home')]
+    for L, x, q, a in blocks:
+        o += f'<rect x="{x}" y="70" width="160" height="70" rx="8" fill="none" stroke="{OCR}" stroke-width="2"/><text x="{x + 80}" y="118" text-anchor="middle" font-family="PF" font-size="40" font-weight="700" fill="{ORD if L == "B" else OCR}">{L}</text>'
+        o += f'<path d="M{x + 8},62 Q{x + 44},36 {x + 78},62" fill="none" stroke="{OPK}" stroke-width="2"/><path d="M{x + 82},62 Q{x + 118},36 {x + 152},62" fill="none" stroke="{OPK}" stroke-width="2"/>'
+    for k in range(3): x = 72 + k * 22; o += f'<circle cx="{x}" cy="{186 - k * 10}" r="6" fill="{OCR}"/>'
+    for k in range(3): x = 160 + k * 22; o += f'<circle cx="{x}" cy="{176 - k * 10}" r="6" fill="{OCR}"/>'
+    o += lab(130, 212, 'a motif, then up a step', OPK, 18)
+    o += f'<line x1="410" y1="190" x2="700" y2="190" stroke="{OCR}" stroke-width="1.6"/><line x1="410" y1="204" x2="700" y2="204" stroke="{OCR}" stroke-width="1.6"/><path d="M420,198 q20,-14 40,0 t40,0 t40,0 t40,0 t40,0 t40,0 t40,0" fill="none" stroke="{OPK}" stroke-width="2"/>'
+    o += lab(556, 232, 'a tune over a rocking left hand', OPK, 18)
+    o += f'<text x="60" y="290" font-family="PF" font-size="20" font-weight="700" fill="{OCR}">Baroque · Classical · Romantic · Modern</text>'
+    o += f'<text x="60" y="318" font-family="AH" font-size="14" fill="{OPK}">C major → G major → C major</text>'
+    o += call(1, 100, 56, 40, 30) + call(2, 160, 160, 210, 170) + call(3, 430, 198, 380, 230) + call(4, 380, 312, 440, 330) + call(5, 470, 62, 470, 24) + call(6, 300, 284, 300, 250)
+    return f'<svg viewBox="0 0 760 350" style="width:100%;display:block">{o}</svg>'
+LEG_F = [(1, 'Motifs and phrases', 'small ideas build sentences: question and answer', 'F1'), (2, 'Repetition and sequence', 'say it again, higher, in another voice, or something new', 'F2'), (3, 'Texture', 'one line, a tune with chords, or tunes woven together', 'F3'), (4, 'Changing key', 'a new sharp that keeps coming back: a new key', 'F4'), (5, 'Form', 'the map of a piece: AB, ABA, ABACA, variations', 'F5'), (6, 'Styles through time', 'Baroque, Classical, Romantic and Modern', 'F6'), ('★', 'Tips: when a piece goes nowhere', '', 'FT')]
+def pic_play(calls=True):
+    o = ''; FC, FT = (OCR, ODK) if calls else (ORD, '#fff')
+    for side, x0, left in (('left hand', 110, True), ('right hand', 450, False)):
+        PW = 170; o += f'<rect x="{x0}" y="150" width="{PW}" height="96" rx="34" fill="none" stroke="{OCR}" stroke-width="2.4"/>'
+        L = {2: 74, 3: 86, 4: 78, 5: 60}
+        for f in (2, 3, 4, 5):
+            k = f - 2; cx = x0 + 28 + k * 38 if not left else x0 + PW - 28 - k * 38; top = 160 - L[f]
+            o += f'<rect x="{cx - 15}" y="{top}" width="30" height="{L[f] + 14}" rx="15" fill="none" stroke="{OCR}" stroke-width="2.4"/>'
+            o += f'<circle cx="{cx}" cy="{top + 18}" r="12" fill="{FC}"/><text x="{cx}" y="{top + 23}" text-anchor="middle" font-family="AH" font-size="14" font-weight="700" fill="{FT}">{f}</text>'
+        ax = x0 + PW - 4 if left else x0 + 4; ay = 214; ang = 55 if left else -55   # thumb at the inner lower corner, pointing out and up
+        sgn = 1 if left else -1
+        o += f'<g transform="rotate({ang} {ax} {ay})"><rect x="{ax - 15 if not left else ax - 15}" y="{ay - 70}" width="30" height="78" rx="15" fill="none" stroke="{OCR}" stroke-width="2.4" transform="translate({sgn * 4},0)"/></g>'
+        import math
+        tx = ax + math.sin(math.radians(ang)) * 52 + sgn * 4; ty = ay - math.cos(math.radians(ang)) * 52
+        o += f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="12" fill="{FC}"/><text x="{tx:.1f}" y="{ty + 5:.1f}" text-anchor="middle" font-family="AH" font-size="14" font-weight="700" fill="{FT}">1</text>'
+        o += lab(x0 + PW / 2, 280, side, OPK, 20)
+    if calls: o += f'<text x="380" y="320" text-anchor="middle" font-family="AH" font-size="15" fill="{OCR}">thumbs are 1 in both hands</text>'
+    if calls: o += call(1, 210, 120, 380, 60) + call(2, 640, 230, 700, 300) + call(3, 90, 300, 40, 330) + call(4, 380, 330, 380, 360) + call(5, 680, 100, 720, 60)
+    return f'<svg viewBox="0 0 760 370" style="width:100%;display:block">{o}</svg>'
+LEG_L = [(1, 'Fingering', 'finger numbers, five-finger positions, thumb under', 'L1'), (2, 'Practising well', 'slow, small chunks, then put it back together', 'L2'), (3, 'Sight-reading', 'scan first, keep going, read ahead', 'L3'), (4, 'Listening', 'clap it back, high or low, major or minor', 'L4'), (5, 'Performing', 'warm up, start calmly, keep going after a slip', 'L5'), ('★', 'Tips: when practice isn’t working', '', 'LT')]
 def opener_art(kick, title, line, part, PAGE, cls=''):
-    pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H), 'M': (lambda: pic_harmony('M'), LEG_M), 'E': (pic_expr, LEG_E)}[part]
+    pic, leg = {'T': (pic_time, LEG_T), 'P': (pic_pitch, LEG_P), 'S': (pic_scales, LEG_S), 'H': (pic_harmony, LEG_H), 'M': (lambda: pic_harmony('M'), LEG_M), 'E': (pic_expr, LEG_E), 'F': (pic_shape, LEG_F), 'L': (pic_play, LEG_L)}[part]
     rows = ''.join(f'<div><span class="ln"{" style=\"background:#f4a9bb\"" if n == "★" else ""}>{n}</span><div><b>{t}</b> <span class="pg2">p. {PAGE[k]}</span>' + (f'<br><span>{d}</span>' if d else '') + '</div></div>' for n, t, d, k in leg)
     return f'''<section class="pg part2 {cls}"><div class="pframe"><div class="pk">{kick}</div><div class="pt">{title}</div><div class="pdv"></div>
 <p class="pl">{line}</p>

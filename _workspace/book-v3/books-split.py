@@ -2,7 +2,7 @@
 import os, subprocess, html
 from pypdf import PdfReader, PdfWriter
 O = '/mnt/user-data/outputs/books-latest/'
-SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/user-data/outputs/handbook-part2-time.pdf', 'wbP': '/mnt/user-data/outputs/workbook-pitch.pdf', 'wbT': '/mnt/user-data/outputs/workbook-time.pdf', 'hbX': '/mnt/user-data/outputs/house-rooms/handbook-tips.pdf', 'hbH': '/mnt/user-data/outputs/handbook-part5-chords.pdf', 'hbM': '/mnt/user-data/outputs/handbook-part6-harmony.pdf', 'hbS': '/mnt/user-data/outputs/handbook-part4-scales.pdf', 'hbE': '/mnt/user-data/outputs/handbook-part3-expression.pdf', 'wbS': '/mnt/user-data/outputs/workbook-scales.pdf', 'wbH': '/mnt/user-data/outputs/workbook-harmony.pdf'}
+SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/user-data/outputs/handbook-part2-time.pdf', 'wbP': '/mnt/user-data/outputs/workbook-pitch.pdf', 'wbT': '/mnt/user-data/outputs/workbook-time.pdf', 'hbX': '/mnt/user-data/outputs/house-rooms/handbook-tips.pdf', 'hbH': '/mnt/user-data/outputs/handbook-part5-chords.pdf', 'hbM': '/mnt/user-data/outputs/handbook-part6-harmony.pdf', 'hbS': '/mnt/user-data/outputs/handbook-part4-scales.pdf', 'hbE': '/mnt/user-data/outputs/handbook-part3-expression.pdf', 'hbF': '/mnt/user-data/outputs/handbook-part7-shape.pdf', 'hbL': '/mnt/user-data/outputs/handbook-part8-playing.pdf', 'wbS': '/mnt/user-data/outputs/workbook-scales.pdf', 'wbH': '/mnt/user-data/outputs/workbook-harmony.pdf'}
 # chapter: (part, n, title, blurb, handbook pages in its PDF (1-based), printed pp, workbook pages, workbook printed pp)
 import sys as _sy; _sy.path.insert(0, '/tmp/claude-0/pk'); import pagemap as PM
 def HB(keys):   # pdf pages (1-based, opener = 1) and printed pages of a run of topics, from the page map
@@ -41,12 +41,23 @@ CH = [
  ('Music', 2, 'Cadences', 'Musical punctuation: perfect, plagal, imperfect and interrupted cadences.', 'hbM', *HB(['M2']), 'wbH', [19, 20], '19–20'),
  ('Music', 3, 'Chords under a melody', 'Which snowman holds the note; Twinkle with its chords; block, broken and Alberti bass.', 'hbM', *HB(['M3']), 'wbH', [21, 22], '21–22'),
  ('Music', 4, 'Progressions everywhere', 'The famous chord trips by number: the pop four, the fifties, the jazz three-step, the canon; same trip in any key.', 'hbM', *HB(['M4']), 'wbH', [23, 24], '23–24'),
+ ('Shape', 1, 'Motifs and phrases', 'Motifs, 4-bar phrases, question and answer.', 'hbF', *HB(['F1']), None, [], ''),
+ ('Shape', 2, 'Repetition and sequence', 'Repetition, sequences, imitation and contrast.', 'hbF', *HB(['F2']), None, [], ''),
+ ('Shape', 3, 'Texture', 'One line, melody and accompaniment, Alberti bass, polyphony.', 'hbF', *HB(['F3']), None, [], ''),
+ ('Shape', 4, 'Changing key', 'Modulation to the nearest keys and how to spot it.', 'hbF', *HB(['F4']), None, [], ''),
+ ('Shape', 5, 'Form', 'Binary, ternary, rondo, variations, strophic, verse and chorus.', 'hbF', *HB(['F5']), None, [], ''),
+ ('Shape', 6, 'Styles through time', 'Baroque, Classical, Romantic and Modern, and how to play each.', 'hbF', *HB(['F6']), None, [], ''),
+ ('Play', 1, 'Fingering', 'Finger numbers, five-finger position, thumb under and finger over.', 'hbL', *HB(['L1']), None, [], ''),
+ ('Play', 2, 'Practising well', 'A fifteen-minute plan, chunks, the metronome ladder.', 'hbL', *HB(['L2']), None, [], ''),
+ ('Play', 3, 'Sight-reading', 'The thirty-second scan, patterns, keeping going.', 'hbL', *HB(['L3']), None, [], ''),
+ ('Play', 4, 'Listening', 'Major or minor, intervals by song, finished or not, clapping back.', 'hbL', *HB(['L4']), None, [], ''),
+ ('Play', 5, 'Performing', 'A routine, recovering from slips, playing from memory.', 'hbL', *HB(['L5']), None, [], ''),
 ]
-EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'), ('hb', 'Expr', 'Part III opener', 'hbE', [1], 'The map of Part III and its contents.'), ('hb', 'Scales', 'Part IV opener', 'hbS', [1], 'The map of Part IV and its contents.'), ('hb', 'Harmony', 'Part V opener', 'hbH', [1], 'The map of Part V and its contents.'), ('hb', 'Music', 'Part VI opener', 'hbM', [1], 'The map of Part VI and its contents.'),
+EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'), ('hb', 'Expr', 'Part III opener', 'hbE', [1], 'The map of Part III and its contents.'), ('hb', 'Scales', 'Part IV opener', 'hbS', [1], 'The map of Part IV and its contents.'), ('hb', 'Harmony', 'Part V opener', 'hbH', [1], 'The map of Part V and its contents.'), ('hb', 'Music', 'Part VI opener', 'hbM', [1], 'The map of Part VI and its contents.'), ('hb', 'Shape', 'Part VII opener', 'hbF', [1], 'The map of Part VII and its contents.'), ('hb', 'Play', 'Part VIII opener', 'hbL', [1], 'The map of Part VIII and its contents.'), ('hb', 'Shape', 'Tips: when a piece goes nowhere', 'hbF', HB(['FT'])[0], f'The end of Part VII (p. {PM.PAGE["FT"]}).'), ('hb', 'Play', 'Tips: when practice isn’t working', 'hbL', HB(['LT'])[0], f'The end of Part VIII (p. {PM.PAGE["LT"]}).'),
          ('hb', 'Pitch', 'Tips: when a note reads wrong', 'hbP', HB(['PT'])[0], f'The end of Part I: the usual reading slips, what to check, and where to turn (p. {PM.PAGE["PT"]}).'), ('hb', 'Time', 'Tips: when the rhythm slips', 'hbT', HB(['TT'])[0], f'The end of Part II: what to check when the rhythm slips, and four ways to steady it (p. {PM.PAGE["TT"]}).'), ('hb', 'Expr', 'Tips: when your playing sounds flat', 'hbE', HB(['ET'])[0], f'The end of Part III: what to check when every note is right but the music sounds flat (p. {PM.PAGE["ET"]}).'), ('hb', 'Scales', 'Tips: when a note sounds wrong', 'hbS', HB(['ST'])[0], f'The end of Part IV: the usual key slips, what to check, and where to turn (p. {PM.PAGE["ST"]}).'), ('hb', 'Harmony', 'Tips: when a chord sounds wrong', 'hbH', HB(['HT'])[0], f'The end of Part V: the usual chord slips, what to check, and where to turn (p. {PM.PAGE["HT"]}).'), ('hb', 'Music', 'Tips: when the harmony goes wrong', 'hbM', HB(['MT'])[0], f'The end of Part VI: endings, guests, the left hand against the tune, and four ways to hear the harmony (p. {PM.PAGE["MT"]}).'),
          ('hb', 'Harmony', 'Putting it together', 'hbX', [1, 2], 'The closing pages of the Handbook: everything one note tells you; when a passage won’t come right (pp. ' + f'{PM.PAGE["X"]}–{PM.PAGE["X"] + 1}' + ').'), ('wb', 'Harmony', 'Answers', 'wbH', [25, 26], 'Every answer, Harmony 1–12.'),
          ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [11, 12, 13], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [15, 16, 17], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Scales', 'Review, progress and answers', 'wbS', [3, 4, 5], 'A ten-minute review, the progress chart and every answer.')]
-PNUM = {'Pitch': '1', 'Time': '2', 'Expr': '3', 'Scales': '4', 'Harmony': '5', 'Music': '6'}
+PNUM = {'Pitch': '1', 'Time': '2', 'Expr': '3', 'Scales': '4', 'Harmony': '5', 'Music': '6', 'Shape': '7', 'Play': '8'}
 R = {k: PdfReader(v) for k, v in SRC.items()}
 def slug(x): return ''.join(c if c.isalnum() else '-' for c in x.lower()).strip('-').replace('--', '-')
 def cut(src, pages, path):
@@ -56,8 +67,8 @@ def cut(src, pages, path):
 def thumb(src, page, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     subprocess.run(['pdftoppm', '-jpeg', '-jpegopt', 'quality=82', '-r', '60', '-f', str(page), '-l', str(page), '-singlefile', SRC[src], path[:-4]], check=True)
-cards = {'hb': {'Pitch': [], 'Time': [], 'Expr': [], 'Scales': [], 'Harmony': [], 'Music': [], 'Tips': []}, 'wb': {'Pitch': [], 'Time': [], 'Scales': [], 'Harmony': []}}
-PARTN = {'Pitch': 'Part I · Pitch', 'Time': 'Part II · Time', 'Expr': 'Part III · Expression', 'Scales': 'Part IV · Scales and keys', 'Harmony': 'Part V · Chords', 'Music': 'Part VI · Harmony in music', 'Tips': 'Tips'}
+cards = {'hb': {'Pitch': [], 'Time': [], 'Expr': [], 'Scales': [], 'Harmony': [], 'Music': [], 'Shape': [], 'Play': [], 'Tips': []}, 'wb': {'Pitch': [], 'Time': [], 'Scales': [], 'Harmony': []}}
+PARTN = {'Pitch': 'Part I · Pitch', 'Time': 'Part II · Time', 'Expr': 'Part III · Expression', 'Scales': 'Part IV · Scales and keys', 'Harmony': 'Part V · Chords', 'Music': 'Part VI · Harmony in music', 'Shape': 'Part VII · Shape and style', 'Play': 'Part VIII · Playing and listening', 'Tips': 'Tips'}
 WBN = {'Pitch': 'Pitch', 'Time': 'Time', 'Scales': 'Scales and keys', 'Harmony': 'Chords and harmony', 'Music': 'Chords and harmony'}
 WBP = lambda p: 'Harmony' if p == 'Music' else p   # one workbook for Parts V and VI (Expression has none yet)
 for part, n, title, blurb, hs, hp, hpp, ws, wp, wpp in CH:
@@ -87,6 +98,8 @@ BOOKS = [('hbP', 'hb', 'Pitch', 'The Piano Butler Handbook', 'Part I', 'Pitch', 
          ('wbS', 'wb', 'Scales', 'The Piano Butler Workbook', 'Workbook', 'Scales and keys', 'Learn and Use pages for scales and keys, review and answers', 'Whole books (later)/workbook-scales.pdf'),
          ('hbH', 'hb', 'Harmony', 'The Piano Butler Handbook', 'Part V', 'Chords', 'Triads, the four kinds, chords in a key, inversions, sevenths, colour chords, 9 11 13, slash chords', 'Whole books (later)/handbook-part5-chords.pdf'),
          ('hbM', 'hb', 'Music', 'The Piano Butler Handbook', 'Part VI', 'Harmony in music', 'Guest chords, cadences, chords under a melody, famous progressions', 'Whole books (later)/handbook-part6-harmony.pdf'),
+         ('hbF', 'hb', 'Shape', 'The Piano Butler Handbook', 'Part VII', 'Shape and style', 'Motifs, phrases, texture, changing key, form and styles', 'Whole books (later)/handbook-part7-shape.pdf'),
+         ('hbL', 'hb', 'Play', 'The Piano Butler Handbook', 'Part VIII', 'Playing and listening', 'Fingering, practising, sight-reading, listening and performing', 'Whole books (later)/handbook-part8-playing.pdf'),
          ('wbH', 'wb', 'Harmony', 'The Piano Butler Workbook', 'Workbook', 'Chords and harmony', 'Learn and Use pages for Chords and for Harmony in music', 'Whole books (later)/workbook-harmony.pdf')]
 TS = lambda t: (' style="font-size:10cqw;line-height:11.5cqw;white-space:normal"' if len(t) > 15 else ' style="font-size:10cqw;line-height:12.5cqw"') if len(t) > 10 else ''   # her 5 Nov: long titles (Scales and keys) stay inside the frame
 def cover(b):
