@@ -120,6 +120,11 @@ for c in CH:
                 ln['lens'] = {'k': lk, 'at': [round(tm(a), 2) for a in at], 'full': prev == lk}
                 ln.pop('hits', None)
             prev = lk
+for c in CH:   # her 9 Nov: animations that make an idea click (black-key groups lighting in turn, ...)
+    for k in c.get('clips', []):
+        for ln in k['l']:
+            a_ = (ln.get('cue') or {}).get('anim')
+            if a_: ln['lens'] = {'k': a_, 'at': [], 'full': True}; ln.pop('hits', None)
 for c in CH:   # her 9 Nov: fold the grand staff at Middle C and the two notes meet, like a decalcomania
     for k in c.get('clips', []):
         for ln in k['l']:
@@ -311,6 +316,9 @@ function drawLens(L, t) {
   if (L.k === 'auto') return drawAuto(L, t);
   if (L.k === 'rhy') return drawRhy(L, t);
   if (L.k === 'mirror') return drawMirror(L);
+  if (L.k === 'groups') return drawGroups(L);
+  if (L.k === 'lines') return drawLinesAnim();
+  if (L.k === 'glasses') return drawGlasses();
   const [name, subt, clef, items] = LENSD[L.k]; const n = items.length;
   const cnt = L.at.length ? L.at.filter(v => v <= t).length : n; const shown = L.full ? n : cnt, cur = cnt - 1;
   const key = L.k + shown + ':' + cur; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
@@ -483,6 +491,44 @@ function drawMirror(L) {   // the grand staff folds at Middle C: the top note la
   g += `<g class="meet" style="opacity:0">${head(db, ACC, ACC)}<text x="${NX}" y="${Y(lo) + 6}" text-anchor="middle" font-size="17" font-weight="700" fill="${ACC}" ${F}>they meet: mirror notes</text></g>`;
   const VH = Y(lo) + 20;
   lensShell(key, '♪ Fold the grand staff at Middle C', `<svg viewBox="0 0 ${X1 + 50} ${VH}" role="img" aria-label="${lt} and ${lb} are mirror notes either side of Middle C">${g}</svg>`);
+}
+
+function drawGroups(L) {   // the black keys light up group by group: every two starts on C, every three on F
+  const key = 'groups'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const N = 21, W = 26, H = 120, BH = 74, INK = '#26296b', ACC = '#e4572e', F = 'font-family="Atkinson Hyperlegible,sans-serif"';
+  let g = '', bl = '', lab = '', d = 0;
+  for (let i = 0; i < N; i++) g += `<rect x="${i * W}" y="0" width="${W}" height="${H}" fill="#fff" stroke="${INK}" stroke-width="1.4"/>`;
+  for (let o = 0; o < 3; o++) {
+    const b = o * 7;
+    [[b, b + 1, 'two', ACC, b, 'C'], [b + 3, b + 5, 'three', '#5b6fd6', b + 3, 'F']].forEach(([s0, s1, nm, col, fk, ln], gi) => {
+      const delay = (o * 2 + gi) * .55 + .3;
+      for (let k = s0; k <= s1; k++) bl += `<rect x="${(k + 1) * W - W * .3}" y="0" width="${W * .6}" height="${BH}" rx="2" fill="${INK}"><animate attributeName="fill" from="${INK}" to="${col}" begin="${delay}s" dur=".3s" fill="freeze"/></rect>`;
+      lab += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="${delay + .25}s" dur=".3s" fill="freeze"/><rect x="${fk * W + 1}" y="${BH + 4}" width="${W - 2}" height="${H - BH - 6}" fill="${col}" opacity=".22"/><text x="${fk * W + W / 2}" y="${H - 10}" text-anchor="middle" font-size="16" font-weight="700" fill="${col}" ${F}>${ln}</text></g>`;
+    });
+  }
+  const svg = `<svg viewBox="-6 -30 ${N * W + 12} ${H + 40}" role="img" aria-label="Black keys in groups of two and three; C starts each two, F each three"><text x="0" y="-12" font-size="14" font-weight="700" fill="${ACC}" ${F}>two black keys: start on C</text><text x="${N * W}" y="-12" text-anchor="end" font-size="14" font-weight="700" fill="#5b6fd6" ${F}>three black keys: start on F</text>${g}${lab}${bl}</svg>`;
+  lensShell(key, '♪ Two, three, two, three …', svg);
+}
+
+function drawLinesAnim() {   // lines 1-5 rise from the bottom, then spaces 1-4
+  const key = 'lines'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const INK = '#26296b', ACC = '#e4572e', F = 'font-family="Atkinson Hyperlegible,sans-serif"', SP = 26, Y = st => 30 + (8 - st) * SP / 2;
+  let g = '';
+  for (let k = 0; k < 5; k++) { const d = .3 + k * .45, y = Y(2 * k);
+    g += `<line x1="120" x2="520" y1="${y}" y2="${y}" stroke="${INK}" stroke-width="2.2"/><g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="${d}s" dur=".25s" fill="freeze"/><line x1="120" x2="520" y1="${y}" y2="${y}" stroke="${ACC}" stroke-width="4"><animate attributeName="stroke" from="${ACC}" to="${INK}" begin="${d + .4}s" dur=".4s" fill="freeze"/></line><text x="108" y="${y + 6}" text-anchor="end" font-size="17" font-weight="700" fill="${INK}" ${F}>line ${k + 1}</text></g>`; }
+  for (let k = 0; k < 4; k++) { const d = 2.7 + k * .45, y = Y(2 * k + 1);
+    g += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="${d}s" dur=".25s" fill="freeze"/><rect x="122" y="${y - SP / 2 + 3}" width="396" height="${SP - 6}" fill="${ACC}" opacity=".14"/><text x="532" y="${y + 6}" font-size="17" font-weight="700" fill="${ACC}" ${F}>space ${k + 1}</text></g>`; }
+  lensShell(key, '♪ Five lines, four spaces: from the bottom', `<svg viewBox="0 0 640 ${Y(0) + 26}" role="img" aria-label="Lines 1 to 5 and spaces 1 to 4, counted from the bottom">${g}</svg>`);
+}
+function drawGlasses() {   // the same note on the bottom line: through treble glasses it is E, through bass glasses G
+  const key = 'glasses'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const INK = '#26296b', ACC = '#e4572e', F = 'font-family="Atkinson Hyperlegible,sans-serif"', SP = 24, Y = st => 34 + (8 - st) * SP / 2, H = SP / 2;
+  let g = ''; for (let k = 0; k < 5; k++) g += `<line x1="40" x2="560" y1="${Y(2 * k)}" y2="${Y(2 * k)}" stroke="${INK}" stroke-width="2.2"/>`;
+  g += `<ellipse cx="300" cy="${Y(0)}" rx="15" ry="11" transform="rotate(-20 300 ${Y(0)})" fill="${ACC}"/>`;
+  const sw = (on) => `<animate attributeName="opacity" values="${on ? '1;1;0;0;1' : '0;0;1;1;0'}" keyTimes="0;.45;.5;.95;1" dur="3.2s" repeatCount="indefinite"/>`;
+  g += `<g>${sw(true)}<path d="${GCLEF}" transform="translate(56 ${Y(2)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/><text x="340" y="${Y(0) + 8}" font-size="30" font-weight="700" fill="${ACC}" ${F}>E</text><text x="420" y="${Y(8) - 12}" font-size="15" fill="#5a5d8f" ${F}>treble glasses</text></g>`;
+  g += `<g opacity="0">${sw(false)}<path d="${FCLEF}" transform="translate(56 ${Y(6)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/><text x="340" y="${Y(0) + 8}" font-size="30" font-weight="700" fill="${ACC}" ${F}>G</text><text x="420" y="${Y(8) - 12}" font-size="15" fill="#5a5d8f" ${F}>bass glasses</text></g>`;
+  lensShell(key, '♪ Same line, different glasses', `<svg viewBox="0 0 600 ${Y(0) + 34}" role="img" aria-label="The bottom line is E in the treble clef and G in the bass clef">${g}</svg>`);
 }
 function tick() {
   if (playing < 0) return; const k = CH[ci].clips[playing], t = audio.currentTime; const ln = k.l.find(x => t >= x.t0 && t < x.t1);
