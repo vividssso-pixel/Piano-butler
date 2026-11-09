@@ -126,8 +126,8 @@ sys.path.insert(0, '/tmp/claude-0/tts'); import importlib; _S = importlib.import
 # Time chapters: a rhythm lens. The beats in boxes (1 2 3 …, beat one strongest), the notes above in real note values,
 # each with a bar showing how long it lasts; the current beat and note light up as they sound.
 def _durs(tok):
-    m = _re.match(r'(.+?)(?:([/*@])(\d+))?$', tok); n_, op, v = m.group(1), m.group(2), m.group(3)
-    return n_, .62 * (1 / int(v) if op == '/' else int(v) if op == '*' else (60 / int(v)) / .62 if op == '@' else 1)
+    m = _re.match(r'(.+?)(?:([/*@])(\d+(?:\.\d+)?))?$', tok.rstrip('~')); n_, op, v = m.group(1), m.group(2), m.group(3)
+    return n_, .62 * (1 / float(v) if op == '/' else float(v) if op == '*' else (60 / float(v)) / .62 if op == '@' else 1)
 for c in CH:
     if c['k'] not in _S.CH or not c['k'].startswith('T'): continue
     sc = [ls for _, ls in _S.CH[c['k']][1]]
@@ -155,7 +155,7 @@ for c in CH:
             notes = []; t_ = ln['t0']; pos = 0.0
             for x in nt:
                 nm, sec = _durs(x); d = round(sec / bsec, 3)
-                notes.append([round(t_ - .03, 2), round(pos, 3), d, 1 if nm == 'R' else 0]); t_ += sec; pos += d
+                notes.append([round(t_ - .03, 2), round(pos, 3), d, 1 if nm == 'R' else 0, 1 if x.endswith('~') else 0]); t_ += sec; pos += d
             bars = [b[3] for b in beats if b[1] == 'X'] or [0]
             ln['lens'] = {'k': 'rhy', 'beats': beats, 'ands': ands, 'notes': notes, 'bars': bars, 'n': round(cum[-1] / bsec, 3), 'at': [b[0] for b in beats], 'full': True}
 for c in CH:
@@ -220,8 +220,8 @@ select{font:inherit;font-size:15px;color:var(--ink);background:var(--panel);bord
 .sub b{color:var(--accent);margin-right:6px} .sub:empty{display:none}
 .ctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px} .ctl .btn{padding:6px 12px;font-size:14px} .ctl .sp{font-size:12.5px;padding:4px 7px;border-radius:999px} .ctl .sp.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .prac{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px} .prac .ph{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)} .prac a{display:block;font-weight:700;font-size:14.5px;color:var(--ink);text-decoration:none;border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--bg)} .prac a.dr{border-color:var(--accent)} .prac a:hover{border-color:var(--accent)}
-.lens{position:absolute;left:5%;right:5%;top:4%;background:#fff;border:4px solid var(--accent);border-radius:22px;box-shadow:0 10px 30px rgba(20,22,60,.28);padding:6px 10px 2px;animation:lz .35s ease;z-index:3;pointer-events:none} .lens .lh{display:flex;align-items:center;gap:6px;font:700 clamp(10px,1.6vw,14px) var(--body);letter-spacing:.12em;text-transform:uppercase;color:#e4572e} .lens svg{display:block;width:100%;height:auto}
-#lens.bot .lens{top:auto;bottom:4%}
+#lens:not(:empty){position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,245,240,.82);z-index:3;pointer-events:none}   /* her 9 Nov: one place to look - the lens in the middle, the page faded behind */
+.lens{position:relative;width:90%;background:#fff;border:4px solid var(--accent);border-radius:22px;box-shadow:0 10px 30px rgba(20,22,60,.28);padding:6px 10px 2px;animation:lz .35s ease;z-index:3;pointer-events:none} .lens .lh{display:flex;align-items:center;gap:6px;font:700 clamp(10px,1.6vw,14px) var(--body);letter-spacing:.12em;text-transform:uppercase;color:#e4572e} .lens svg{display:block;width:100%;height:auto}
 @keyframes lz{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
 .follow{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--soft);margin-top:8px}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
@@ -362,14 +362,14 @@ function drawAuto(L, t) {
   if (!KB && staff !== 't') g += `<path d="${FCLEF}" transform="translate(28 ${Y(24)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/>`;
   if (!KB) g += `<line x1="20" x2="20" y1="${Y(lines[lines.length - 1])}" y2="${Y(lines[0])}" stroke="${INK}" stroke-width="2"/>`;
   const x0 = 110, x1 = 560, dx = n > 1 ? Math.min(90, (x1 - x0) / (n - 1)) : 0, X = i => (n > 1 ? x0 + ((x1 - x0) - dx * (n - 1)) / 2 : (x0 + x1) / 2) + i * dx;
-  const lw = Math.min(26, dx * .42 + 8);
+  const lw = n > 1 ? Math.max(20, Math.min(26, dx * .42 + 8)) : 26;   // her 9 Nov: a lone Middle C lost its ledger line under the head
   cols.forEach((col, i) => {
     const x = X(i), on = i === cur, done = i < cur, c = on ? ACC : done ? INK : GR;
     if (!KB) col.forEach(p => {
       const leds = []; const top = staff === 'b' ? 26 : 38, bot = staff === 't' ? 30 : 18;
       for (let k = top + 2; k <= p.d; k += 2) leds.push(k); for (let k = bot - 2; k >= p.d; k -= 2) leds.push(k);
       if (staff === 'g' && p.d === 28) leds.push(28);
-      leds.forEach(k => g += `<line x1="${x - lw}" x2="${x + lw}" y1="${Y(k)}" y2="${Y(k)}" stroke="${on && k === p.d ? ACC : INK}" stroke-width="${on && k === p.d ? 4 : 2.2}"/>`);
+      leds.forEach(k => g += `<line x1="${x - lw}" x2="${x + lw}" y1="${Y(k)}" y2="${Y(k)}" stroke="${INK}" stroke-width="${on && k === p.d ? 3.4 : 2.4}"/>`);
       const rx = (on ? 1.15 : 1) * H * 1.1, ry = (on ? 1.15 : 1) * H * .82;
       g += `<ellipse cx="${x}" cy="${Y(p.d)}" rx="${rx}" ry="${ry}" transform="rotate(-20 ${x} ${Y(p.d)})" fill="${on ? ACC : '#fff'}" stroke="${c}" stroke-width="${H > 10 ? 3 : 2.4}"/>`;
       if (p.acc || p.nat) g += `<text x="${x - rx - 4}" y="${Y(p.d) + H * .7}" text-anchor="end" font-size="${H * 2.2}" fill="${c}" ${F}>${p.acc === '#' ? '♯' : p.acc === 'b' ? '♭' : '♮'}</text>`;
@@ -430,6 +430,8 @@ function drawRhy(L, t) {
       if (d < 4) { const sx = x + SPc * 1.18 - 1; g += `<line x1="${sx}" x2="${sx}" y1="${LY - 2}" y2="${LY - SPc * 3.4}" stroke="${col}" stroke-width="2.2"/>`; stems.push([i, sx, d, col, pos]); }
       if (d === 3 || d === 1.5 || d === 0.75) g += `<circle cx="${x + SPc * 1.6}" cy="${LY - 6}" r="2.8" fill="${col}"/>`;
     });
+    NT.forEach((n, i) => { if (!n[4] || !NT[i + 1]) return; const x1 = X(n[1]) + 6 + SPc * .6, x2 = X(NT[i + 1][1]) + 6 + SPc * .6, on = i === cn || i + 1 === cn, col = on ? ACC : i < cn ? INK : '#9a9cc0';   // a tie: one sound across both notes
+      g += `<path d="M${x1 + 4} ${LY + 7} Q${(x1 + x2) / 2} ${LY + 17} ${x2 - 4} ${LY + 7}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round"/>`; });
     // quavers: beam two in the same beat, otherwise a flag
     const q = stems.filter(s => s[2] <= 0.75); const used = new Set();
     q.forEach((s, j) => { const nx = q[j + 1]; if (used.has(s[0])) return;
