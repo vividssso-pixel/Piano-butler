@@ -9,8 +9,8 @@ NEW = {
   ('B', 'Clara, music is written on a staff: five lines and four spaces, counted from the bottom.', c(27, 'lead')), ('P', 'Higher on the staff means higher on the piano?', c(27, 'lead')),
   ('B', 'Always. But five lines alone do not tell us the notes. For that we need a clef: the key to the code.', c(27, 'hero')),
   ('B', 'Look closely. And now, as I promised, may I present Their Majesties, who rule these two staves.', c(27, 'hero')),
-  ('Q', 'Good day, Clara. I am the Queen of the treble staff. See how my clef curls round line two? That line is my G.', c(27, 'hero')), ('piano', 'G4', c(27, 'hero', seq=['G'])),
-  ('K', 'And I am the King of the bass staff. My clef’s two dots hug line four. That line is my F, and the low notes are my kingdom.', c(27, 'hero')), ('piano', 'F3', c(27, 'hero', seq=['F'])),
+  ('Q', 'Good day, Clara. I am the Queen of the treble staff. See how my clef curls round line two? That line is my G, which is why my clef is also called the G clef.', c(27, 'hero')), ('piano', 'G4', c(27, 'hero', seq=['G'])),
+  ('K', 'And I am the King of the bass staff. My clef’s two dots hug line four. That line is my F, so my clef is the F clef, and the low notes are my kingdom.', c(27, 'hero')), ('piano', 'F3', c(27, 'hero', seq=['F'])),
   ('P', 'A Queen for the high notes and a King for the low ones! The treble clef curls round G. The bass clef’s dots hug F.', c(27, 'secret'))]),
  ('The grand staff', [
   ('B', 'Piano music joins two staves with a brace. The treble staff is on top, usually for the right hand. The bass staff is below, usually for the left.', c(27, 'two')),

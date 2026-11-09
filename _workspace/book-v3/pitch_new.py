@@ -65,7 +65,7 @@ def clef_hero():   # her 7 Nov: a magnifying glass on each clef; the line it nam
         return f'<div style="display:flex;align-items:center;gap:12px">{z}<div style="text-align:left;white-space:nowrap"><div style="font-family:AH,Arial;font-weight:700;font-size:16px;color:{NAV}">{txt}</div><div style="font-size:14px;color:{RED};font-weight:700">{sub}</div></div></div>'
     main = base.replace('<svg ', '<svg style="height:250px;width:auto;max-width:100%" ', 1).replace('font-family="Times,serif"', 'font-family="AH,Arial" font-weight="700"')
     for n in ('n2', 'n5'): main = main.replace(f'<g id="{n}" class="note">', f'<g id="{n}" class="note" style="fill:{RED};color:{RED}">', 1)
-    return f'<div style="display:flex;justify-content:center;align-items:center;gap:22px"><div>{main}</div><div style="display:flex;flex-direction:column;gap:6px">{lens(560, 380, 1500, 1500, "Treble clef", "curls round line 2: G")}{lens(600, 2200, 1250, 1250, "Bass clef", "its dots hug line 4: F")}</div></div>'
+    return f'<div style="display:flex;justify-content:center;align-items:center;gap:22px"><div>{main}</div><div style="display:flex;flex-direction:column;gap:6px">{lens(560, 380, 1500, 1500, "Treble clef = G clef", "curls round line 2: G")}{lens(600, 2200, 1250, 1250, "Bass clef = F clef", "its dots hug line 4: F")}</div></div>'
 def kq(*a, **k): return '<figure class="vx kbf">' + qkb(*a, **k) + '</figure>'
 def hops(start_i, black_first, n):
     """arcs for n hops up from white key start_i: walk white/black keys in order (black only where one exists)."""
@@ -155,7 +155,7 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Left is <b>low</b
 
 # ---------- 2 The staff and the clefs ----------
 P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music is written on a <b>staff</b>: five lines and four spaces, counted from the <b>bottom</b>. Higher on the staff means higher on the keyboard. The <b>clef</b> at the start is the key to the code: it names one line, and every other note follows from it.')}
-{hero(clef_hero(), 'Look closely: the treble clef curls round G · the bass clef’s dots hug F')}
+{hero(clef_hero(), 'The treble clef is the <b>G clef</b>: it curls round G · the bass clef is the <b>F clef</b>: its dots hug F')}
 {two(h3('The grand staff') + '<p>Piano music uses two staves joined by a brace: the <b>treble</b> staff on top, usually for the right hand, and the <b>bass</b> staff below, usually for the left. <b>Middle C</b> sits between them on a short line of its own, and can be written in either staff.</p>', px('gs_c', 104, 'Middle C in the treble staff (left) and in the bass staff (right): the same key.'), '1fr 1fr')}
 <!--SPLIT-->
 {inaction('Which staff is this key written on?', kq('C', 15, 32, 98, tags={7: 'Middle C'}, q=(3,), shade={i: (BLUE if i < 7 else '#fdeee8') for i in range(15)}), ['<b>Find Middle C.</b>', '<b>Is the ? to its left or right?</b> Left is lower: the blue half.', '<b>Low keys go on the bass staff</b>, high keys on the treble staff.'], 'The <b>?</b> is below Middle C, so it is written on the <b>bass staff</b>, usually for the left hand.')}

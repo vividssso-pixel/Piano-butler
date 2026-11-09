@@ -333,7 +333,7 @@ function drawLens(L, t) {
     const leds = []; if (st < 0) for (let k = -2; k >= st; k -= 2) leds.push(k); if (st > 8) for (let k = 10; k <= st; k += 2) leds.push(k);
     leds.forEach(k => { const lon = on && k === st; g += `<line x1="${x - 30}" x2="${x + 30}" y1="${Y(k)}" y2="${Y(k)}" stroke="${lon ? ACC : INK}" stroke-width="${lon ? 5 : 2.6}"/>`; });
     g += `<ellipse cx="${x}" cy="${y}" rx="${on ? 17 : 14}" ry="${on ? 12.5 : 10.5}" transform="rotate(-20 ${x} ${y})" fill="${on ? ACC : '#fff'}" stroke="${col}" stroke-width="3.2"/>`;
-    g += `<text x="${x}" y="${Y(hi) - 24}" text-anchor="middle" font-size="${on ? 30 : 24}" font-weight="700" fill="${col}" ${F}>${lt}</text>`;
+    g += `<text x="${x}" y="${Y(hi) - 24}" text-anchor="middle" font-size="${on ? 30 : 24}" font-weight="700" fill="${col}" ${F} stroke="#fff" stroke-width="5" paint-order="stroke">${lt}</text>`;
     g += `<text x="${x}" y="${labY}" text-anchor="middle" font-size="15" font-weight="${on ? 700 : 400}" fill="${on ? ACC : '#5a5d8f'}" ${F}>${lab}</text>`;
     if (word) g += `<text x="${x}" y="${labY + 22}" text-anchor="middle" font-size="16" font-style="italic" font-weight="${on ? 700 : 400}" fill="${col}" ${F}>${word}</text>`;
   }
@@ -465,24 +465,24 @@ function drawRhy(L, t) {
 
 function drawMirror(L) {   // the grand staff folds at Middle C: the top note lands on its mirror note below
   const key = 'mirror' + L.m; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
-  const P = { GF: [32, 24, 'Treble G', 'Bass F', '4 steps up', '4 steps down'], CC: [42, 14, 'High C', 'Low C', 'two ledger lines above', 'two ledger lines below'] }[L.m];
+  const P = { GF: [32, 24, 'Treble G', 'Bass F', 'note 5 up from Middle C', 'note 5 down from Middle C'], CC: [42, 14, 'High C', 'Low C', 'two ledger lines above', 'two ledger lines below'] }[L.m];
   const [dt, db, lt, lb, st, sb] = P, ACC = '#e4572e', INK = '#26296b', F = 'font-family="Atkinson Hyperlegible,sans-serif"';
-  const H = 8, hi = Math.max(40, dt + 2), lo = Math.min(16, db - 2), Y = d => 24 + (hi - d) * H, MC = Y(28), X0 = 70, X1 = 540, NX = 330;
+  const H = 10, hi = Math.max(40, dt + 2), lo = Math.min(16, db - 2), Y = d => 20 + (hi - d) * H, MC = Y(28), X0 = 30, X1 = 470, NX = 290;
   const staff = (ds, col, w) => ds.map(d => `<line x1="${X0}" x2="${X1}" y1="${Y(d)}" y2="${Y(d)}" stroke="${col}" stroke-width="${w}"/>`).join('');
   const leds = (d, col) => { let o = ''; if (d > 38) for (let k = 40; k <= d; k += 2) o += `<line x1="${NX - 22}" x2="${NX + 22}" y1="${Y(k)}" y2="${Y(k)}" stroke="${col}" stroke-width="2.2"/>`; if (d < 18) for (let k = 16; k >= d; k -= 2) o += `<line x1="${NX - 22}" x2="${NX + 22}" y1="${Y(k)}" y2="${Y(k)}" stroke="${col}" stroke-width="2.2"/>`; return o; };
   const head = (d, fill, col) => `<ellipse cx="${NX}" cy="${Y(d)}" rx="12" ry="9" transform="rotate(-20 ${NX} ${Y(d)})" fill="${fill}" stroke="${col}" stroke-width="3"/>`;
   let g = staff([30, 32, 34, 36, 38], INK, 2) + staff([18, 20, 22, 24, 26], INK, 2);
   g += `<path d="${GCLEF}" transform="translate(${X0 + 8} ${Y(32)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/><path d="${FCLEF}" transform="translate(${X0 + 8} ${Y(24)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/>`;
-  g += `<line x1="${X0 - 30}" x2="${X1 + 20}" y1="${MC}" y2="${MC}" stroke="${ACC}" stroke-width="2" stroke-dasharray="6 5"/><text x="${X1 + 22}" y="${MC + 4}" font-size="13" font-weight="700" fill="${ACC}" ${F}>fold at Middle C</text>`;
+  g += `<line x1="${X0 - 30}" x2="${X1 + 20}" y1="${MC}" y2="${MC}" stroke="${ACC}" stroke-width="2" stroke-dasharray="6 5"/><text x="${X1 + 6}" y="${MC + 5}" font-size="15" font-weight="700" fill="${ACC}" ${F}>fold</text>`;
   g += `<line x1="${NX - 60}" x2="${NX - 36}" y1="${MC}" y2="${MC}" stroke="${INK}" stroke-width="2.2"/><ellipse cx="${NX - 48}" cy="${MC}" rx="11" ry="8" transform="rotate(-20 ${NX - 48} ${MC})" fill="#fff" stroke="${INK}" stroke-width="2.6"/>`;
   g += leds(dt, INK) + head(dt, '#fff', INK) + leds(db, INK) + head(db, '#fff', INK);
-  g += `<text x="${NX + 26}" y="${Y(dt) + 5}" font-size="15" font-weight="700" fill="${INK}" ${F}>${lt}</text><text x="${NX + 26}" y="${Y(db) + 5}" font-size="15" font-weight="700" fill="${INK}" ${F}>${lb}</text>`;
-  g += `<text x="${NX - 74}" y="${(Y(dt) + MC) / 2 + 4}" text-anchor="end" font-size="12" fill="#5a5d8f" ${F}>${st}</text><text x="${NX - 74}" y="${(Y(db) + MC) / 2 + 4}" text-anchor="end" font-size="12" fill="#5a5d8f" ${F}>${sb}</text>`;
+  g += `<text x="${NX + 26}" y="${Y(dt) + 5}" font-size="17" font-weight="700" fill="${INK}" ${F} stroke="#fff" stroke-width="5" paint-order="stroke">${lt}</text><text x="${NX + 26}" y="${Y(db) + 5}" font-size="17" font-weight="700" fill="${INK}" ${F} stroke="#fff" stroke-width="5" paint-order="stroke">${lb}</text>`;
+  g += `<text x="${NX + 26}" y="${Y(dt) + 22}" font-size="13" fill="#5a5d8f" ${F} stroke="#fff" stroke-width="5" paint-order="stroke">${st}</text><text x="${NX + 26}" y="${Y(db) + 22}" font-size="13" fill="#5a5d8f" ${F} stroke="#fff" stroke-width="5" paint-order="stroke">${sb}</text>`;
   // the folding copy of the top half
   g += `<g class="fold" style="transform-box:view-box;transform-origin:0 ${MC}px">${staff([30, 32, 34, 36, 38], ACC, 1.6)}${leds(dt, ACC)}${head(dt, ACC, ACC)}</g>`;
-  g += `<g class="meet" style="opacity:0">${head(db, ACC, ACC)}<text x="${NX}" y="${Y(lo) + 6}" text-anchor="middle" font-size="15" font-weight="700" fill="${ACC}" ${F}>they meet: mirror notes</text></g>`;
-  const VH = Y(lo) + 16;
-  lensShell(key, '♪ Fold the grand staff', `<svg viewBox="0 0 ${X1 + 160} ${VH}" role="img" aria-label="${lt} and ${lb} are mirror notes either side of Middle C">${g}</svg>`);
+  g += `<g class="meet" style="opacity:0">${head(db, ACC, ACC)}<text x="${NX}" y="${Y(lo) + 6}" text-anchor="middle" font-size="17" font-weight="700" fill="${ACC}" ${F}>they meet: mirror notes</text></g>`;
+  const VH = Y(lo) + 20;
+  lensShell(key, '♪ Fold the grand staff at Middle C', `<svg viewBox="0 0 ${X1 + 50} ${VH}" role="img" aria-label="${lt} and ${lb} are mirror notes either side of Middle C">${g}</svg>`);
 }
 function tick() {
   if (playing < 0) return; const k = CH[ci].clips[playing], t = audio.currentTime; const ln = k.l.find(x => t >= x.t0 && t < x.t1);
