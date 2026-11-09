@@ -343,3 +343,66 @@ NEW['T2'] = ('Notes and rests', [
   ('count', {'beats': 'X x M x X x M x', 'notes': 'C4 C4 G4 G4 A4 A4 G4*2', 'say': '1 2 3 4 1 2 3 4'}, c(55, 'yk')),
   ('B', 'A rest is not a gap in the music; it is music you can’t hear. Keep counting through it. Until next time, Clara.', c(55, 'yk')), ('P', 'One, two, three, four. Goodbye!', c(55, 'yk'))])])
 CH['T2'] = NEW['T2']
+
+NEW['T3'] = ('How long is a note?', [
+ ('The secret', [
+  ('P', 'What if I need a note longer than its shape?', c(56, 'lead')),
+  ('B', 'Two signs stretch it, Clara: the dot and the tie. When a crotchet is one beat, a minim lasts two. Put a dot after it, and the dot adds half of two: one more beat. Two plus one: three beats.', c(56, 'hero')),
+  ('B', 'Listen: a minim, then a dotted minim. Count with me.', c(56, 'hero')),
+  ('count', {'beats': 'X x M x X x M x', 'notes': 'C4*2 R*2 C4*3 R', 'say': '1 2 3 4 1 2 3 4'}, c(56, 'hero')),
+  ('B', 'That is the secret. A dot adds half. A tie glues two notes into one sound.', c(56, 'secret'))]),
+ ('The dot', [
+  ('B', 'A dot always adds half of its own note. A dotted crotchet is one plus a half: one and a half beats. Here it is, then a quaver, then a minim. Hold the dotted crotchet through "one and two", and the quaver lands on the "and".', c(56, 'two')),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4*1.5 C4/2 C4*2', 'say': '1 & 2 & 3 & 4 &'}, c(56, 'two'))]),
+ ('The tie', [
+  ('B', 'A tie is a curve joining two notes of the same pitch. Play the first and hold through the second. Never play the second again. And a tie can cross a bar line, which a dot cannot.', c(56, 'two')),
+  ('count', {'beats': 'X x X x', 'notes': 'C4 C4~ C4 C4', 'say': '1 2 1 2'}, c(56, 'two')),
+  ('P', 'One sound from beat two, right over the bar line to beat one.', c(56, 'two'))]),
+ ('The dot, in pizzas', [
+  ('B', 'In pizzas: a dotted minim is two pizzas, plus one more for the dot. A dotted crotchet is one pizza plus half. A dotted quaver is half a pizza plus a quarter. The dot is always half of whatever its note is worth.', c(56, 'pzbox')),
+  ('B', 'Going further: a second dot adds half of the first dot. A double-dotted minim lasts two, plus one, plus a half: three and a half beats. You will not need it for a while.', c(56, 'xbox'))]),
+ ('Tie or slur?', [
+  ('B', 'Careful: two curves look alike. A tie joins the same pitch: play once and hold. Here, G for four beats, then E for four.', c(57, 'two')),
+  ('count', {'beats': 'X x M x X x M x', 'notes': 'G4*2~ G4*2 E4*2~ E4*2', 'say': '1 2 3 4 1 2 3 4'}, c(57, 'two')),
+  ('B', 'A slur joins different pitches: play every note, smoothly joined. That smooth playing is called legato. Listen: every note sounds.', c(57, 'two')),
+  ('count', {'beats': 'X x M x X x M x', 'notes': 'C4 D4 E4 F4 G4*4', 'say': '1 2 3 4 1 2 3 4'}, c(57, 'two')),
+  ('B', 'Your two-minute drill: clap a dotted minim, then a dotted crotchet and a quaver, then two tied crotchets. Count aloud, and never clap a tied note twice.', c(57, 'drill'))]),
+ ('Example: dot or tie?', [
+  ('B', 'Which is longer: the dotted minim, or the minim tied to a crotchet? Add up each one. Pause and try.', c(57, 'ex1')),
+  ('pause', 4, c(57, 'ex1')),
+  ('P', 'Dotted minim: two plus one, three. Tied notes: two plus one, three. The same!', c(57, 'ex1', reveal=True)),
+  ('count', {'beats': 'X x x X x x', 'notes': 'C4*3 C4*2~ C4', 'say': '1 2 3 1 2 3'}, c(57, 'ex1', reveal=True)),
+  ('B', 'Both last three beats. But only the tie could cross a bar line.', c(57, 'ex1', reveal=True))]),
+ ('Example: Ode to Joy', [
+  ('B', 'You already know a dotted crotchet: Beethoven’s Ode to Joy. Listen to bars three and four. The red E is dotted: hold it through "one and two". The quaver D falls on the "and", and the last D takes beats three and four.', c(57, 'ex2')),
+  ('count', {'beats': 'X x M x X/2 R/2 x/2 R/2 M x', 'notes': 'C4 C4 D4 E4 E4*1.5 D4/2 D4*2', 'say': '1 2 3 4 1 & 2 & 3 4'}, c(57, 'ex2', reveal=True)),
+  ('P', 'Long, short, then long. It leans before it lands!', c(57, 'ex2', reveal=True))]),
+ ('Example: which is longer?', [
+  ('B', 'A dotted minim, or a minim tied to a quaver? Count the pizzas. Pause and try.', c(57, 'ex3')),
+  ('pause', 4, c(57, 'ex3')),
+  ('P', 'Three against two and a half. The dotted minim is longer, by half a beat.', c(57, 'ex3', reveal=True)),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4*3 R', 'say': '1 & 2 & 3 & 4 &'}, c(57, 'ex3', reveal=True)),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4*2~ C4/2 R/2 R', 'say': '1 & 2 & 3 & 4 &'}, c(57, 'ex3', reveal=True))]),
+ ('Game: how many beats?', [
+  ('B', 'Game time. With a crotchet as one beat, how long does each one last: a dotted minim, a dotted crotchet, and a minim tied to a crotchet? Pause and count.', c(58, 'game')),
+  ('pause', 5, c(58, 'game')),
+  ('P', 'Three. One and a half. And three again.', c(58, 'game', reveal=True))]),
+ ('Try it', [
+  ('B', 'Clap once, and hold for three, saying one, two, three: a dotted minim.', c(58, 'try10')),
+  ('count', {'beats': 'X x x X x x', 'notes': 'C4*3 C4*3', 'say': '1 2 3 1 2 3'}, c(58, 'try10')),
+  ('B', 'Then a dotted crotchet and a quaver: clap on one, hold through "and two", and clap again on the "and".', c(58, 'try10')),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 X/2 R/2 x/2 R/2', 'notes': 'C4*1.5 C4/2 C4*1.5 C4/2', 'say': '1 & 2 & 1 & 2 &'}, c(58, 'try10'))]),
+ ('Example: a dotted crotchet and a quaver', [
+  ('B', 'How many beats are a dotted crotchet and a quaver together? And where does the quaver fall? Pause and try.', c(58, 'ex4')),
+  ('pause', 4, c(58, 'ex4')),
+  ('P', 'One and a half, plus a half: two beats. The quaver lands on the "and" of two.', c(58, 'ex4', reveal=True)),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2', 'notes': 'C4*1.5 C4/2', 'say': '1 & 2 &'}, c(58, 'ex4', reveal=True))]),
+ ('Example: how long do you hold a tie?', [
+  ('B', 'Play the first note and count. When you reach the tie, do you play the second note again? Pause and think.', c(58, 'ex5')),
+  ('pause', 4, c(58, 'ex5')),
+  ('P', 'No! I keep holding and add both notes: two beats, beat two and then beat one of the next bar.', c(58, 'ex5', reveal=True)),
+  ('count', {'beats': 'X x X x', 'notes': 'C4 C4~ C4 C4', 'say': '1 2 1 2'}, c(58, 'ex5', reveal=True))]),
+ ('Watch out', [
+  ('B', 'Three traps. A dot adds half of its own note, not of the next one. A curve between two different pitches is a slur, not a tie. And there are two kinds of dot: after the head, it adds length; above or below the head, it means staccato, short.', c(58, 'watch')),
+  ('B', 'A dot is a little loan of time; a tie is a bridge between two notes. Until next time, Clara.', c(58, 'watch')), ('P', 'One, two, three. Goodbye!', c(58, 'watch'))])])
+CH['T3'] = NEW['T3']

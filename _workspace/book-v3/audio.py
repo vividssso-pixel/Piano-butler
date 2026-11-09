@@ -17,8 +17,15 @@ def tone(fs, dur=0.55):
             out += a * np.sin(2 * np.pi * f * h * t) * np.exp(-t * (2.2 + h * 1.1))
     out *= np.minimum(1, t / 0.005); return 0.22 * out / max(1, len(fs) ** .5)
 def _dur(tok):   # 'F#4/2' half a slot, 'F#4*2' two slots, 'X@96' one beat at 96 a minute
-    m = re.match(r'(.+?)(?:([/*@])(\d+))?$', tok); n = m.group(1); op, v = m.group(2), m.group(3)
-    return n, (1 / int(v) if op == '/' else int(v) if op == '*' else (60 / int(v)) / .62 if op == '@' else 1)
+    m = re.match(r'(.+?)(?:([/*@])(\d+(?:\.\d+)?))?$', tok.rstrip('~')); n = m.group(1); op, v = m.group(2), m.group(3)
+    return n, (1 / float(v) if op == '/' else float(v) if op == '*' else (60 / float(v)) / .62 if op == '@' else 1)
+def untie(spec):   # Time 3: 'C4*2~ C4' is one sound of 3 slots (a tie); the lens still draws both notes
+    out = []; carry = 0
+    for tok in spec.split():
+        n, mul = _dur(tok)
+        if tok.endswith('~'): carry += mul; continue
+        out.append(f'{n}*{carry + mul:g}' if carry else tok); carry = 0
+    return ' '.join(out)
 def click(level):   # her Time chapters: a woodblock-like tick; X strong (beat 1), M medium, x weak
     t = np.arange(int(SR * .09)) / SR; f = {'X': 1900, 'M': 1500, 'x': 1250}[level]
     w = (np.sin(2 * np.pi * f * t) + .4 * np.sin(2 * np.pi * f * 2.7 * t)) * np.exp(-t * 60)
@@ -48,7 +55,7 @@ def count(spec):   # {'beats': click tokens, 'notes': piano tokens (optional), '
     toks = spec['beats'].split(); times = []; t = 0.0
     for tok in toks: times.append(t); t += .62 * _dur(tok)[1]
     tracks = [piano(spec['beats']) * .8]
-    if spec.get('notes'): tracks.append(piano(spec['notes']))
+    if spec.get('notes'): tracks.append(piano(untie(spec['notes'])))
     v = np.zeros(int(SR * (t + 1)))
     for w, t0 in zip(spec.get('say', '').split(), times):
         if w == '-': continue
