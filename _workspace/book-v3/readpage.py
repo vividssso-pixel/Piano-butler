@@ -318,6 +318,8 @@ function drawLens(L, t) {
   if (L.k === 'mirror') return drawMirror(L);
   if (L.k === 'groups') return drawGroups(L);
   if (L.k === 'lines') return drawLinesAnim();
+  if (L.k === 'stepskip') return drawStepSkip();
+  if (L.k === 'sharpflat') return drawSharpFlat();
   if (L.k === 'glasses') return drawGlasses();
   const [name, subt, clef, items] = LENSD[L.k]; const n = items.length;
   const cnt = L.at.length ? L.at.filter(v => v <= t).length : n; const shown = L.full ? n : cnt, cur = cnt - 1;
@@ -529,6 +531,32 @@ function drawGlasses() {   // the same note on the bottom line: through treble g
   g += `<g>${sw(true)}<path d="${GCLEF}" transform="translate(56 ${Y(2)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/><text x="340" y="${Y(0) + 8}" font-size="30" font-weight="700" fill="${ACC}" ${F}>E</text><text x="420" y="${Y(8) - 12}" font-size="15" fill="#5a5d8f" ${F}>treble glasses</text></g>`;
   g += `<g opacity="0">${sw(false)}<path d="${FCLEF}" transform="translate(56 ${Y(6)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/><text x="340" y="${Y(0) + 8}" font-size="30" font-weight="700" fill="${ACC}" ${F}>G</text><text x="420" y="${Y(8) - 12}" font-size="15" fill="#5a5d8f" ${F}>bass glasses</text></g>`;
   lensShell(key, '♪ Same line, different glasses', `<svg viewBox="0 0 600 ${Y(0) + 34}" role="img" aria-label="The bottom line is E in the treble clef and G in the bass clef">${g}</svg>`);
+}
+
+function drawStepSkip() {   // a note steps to the next line/space, then skips line to line
+  const key = 'stepskip'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const INK = '#26296b', ACC = '#e4572e', BL = '#5b6fd6', F = 'font-family="Atkinson Hyperlegible,sans-serif"', SP = 26, Y = st => 30 + (8 - st) * SP / 2;
+  let g = ''; for (let k = 0; k < 5; k++) g += `<line x1="40" x2="600" y1="${Y(2 * k)}" y2="${Y(2 * k)}" stroke="${INK}" stroke-width="2.2"/>`;
+  g += `<path d="${GCLEF}" transform="translate(52 ${Y(2)}) scale(${SP / 250} ${-SP / 250})" fill="${INK}"/>`;
+  const nh = (x, st, col, extra = '') => `<ellipse cx="${x}" cy="${Y(st)}" rx="16" ry="12" transform="rotate(-20 ${x} ${Y(st)})" fill="${col}" ${extra}/>`;
+  // step: G (line 2) -> A (space 2)
+  g += nh(200, 2, INK) + `<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin=".6s" dur=".3s" fill="freeze"/>${nh(270, 3, ACC)}<path d="M200 ${Y(2) - 20} Q235 ${Y(3) - 56} 270 ${Y(3) - 18}" fill="none" stroke="${ACC}" stroke-width="3"/><text x="235" y="${Y(8) - 10}" text-anchor="middle" font-size="18" font-weight="700" fill="${ACC}" ${F}>step: G → A</text></g>`;
+  // skip: G (line 2) -> B (line 3)
+  g += nh(400, 2, INK) + `<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="2s" dur=".3s" fill="freeze"/>${nh(490, 4, BL)}<path d="M400 ${Y(2) - 20} Q445 ${Y(4) - 64} 490 ${Y(4) - 18}" fill="none" stroke="${BL}" stroke-width="3"/><text x="445" y="${Y(8) - 10}" text-anchor="middle" font-size="18" font-weight="700" fill="${BL}" ${F}>skip: G → B</text></g>`;
+  lensShell(key, '♪ Step or skip', `<svg viewBox="0 0 640 ${Y(0) + 24}" role="img" aria-label="A step goes to the next line or space; a skip goes line to line">${g}</svg>`);
+}
+
+function drawSharpFlat() {   // a sharp slides one key right, a flat one key left
+  const key = 'sharpflat'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const INK = '#26296b', ACC = '#e4572e', BL = '#5b6fd6', F = 'font-family="Atkinson Hyperlegible,sans-serif"', W = 70, H = 190, BH = 118, N = 5;
+  let g = ''; const L = 'CDEFG';
+  for (let i = 0; i < N; i++) g += `<rect x="${i * W}" y="40" width="${W}" height="${H}" fill="${i === 1 ? '#eef0fb' : '#fff'}" stroke="${INK}" stroke-width="1.6"/><text x="${i * W + W / 2}" y="${40 + H - 12}" text-anchor="middle" font-size="18" font-weight="700" fill="${INK}" ${F}>${L[i]}</text>`;
+  [0, 1, 3].forEach(i => g += `<rect x="${(i + 1) * W - W * .3}" y="40" width="${W * .6}" height="${BH}" rx="3" fill="${INK}"/>`);
+  const dy = 40 + H - 50, by = 40 + BH - 26;
+  g += `<circle cx="${1.5 * W}" cy="${dy}" r="14" fill="${ACC}"><animate attributeName="cx" values="${1.5 * W};${2 * W};${2 * W};${1.5 * W};${1.5 * W};${W};${W};${1.5 * W}" keyTimes="0;.12;.4;.5;.55;.67;.95;1" dur="4.4s" repeatCount="indefinite"/><animate attributeName="cy" values="${dy};${by};${by};${dy};${dy};${by};${by};${dy}" keyTimes="0;.12;.4;.5;.55;.67;.95;1" dur="4.4s" repeatCount="indefinite"/></circle>`;
+  g += `<text x="${2 * W}" y="26" text-anchor="middle" font-size="20" font-weight="700" fill="${ACC}" ${F}>♯ one key right: D♯<animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;.1;.42;.5;1" dur="4.4s" repeatCount="indefinite"/></text>`;
+  g += `<text x="${W}" y="26" text-anchor="middle" font-size="20" font-weight="700" fill="${BL}" opacity="0" ${F}>♭ one key left: D♭<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.55;.65;.92;1" dur="4.4s" repeatCount="indefinite"/></text>`;
+  lensShell(key, '♪ Sharp right, flat left', `<svg viewBox="-20 0 ${N * W + 40} ${H + 50}" role="img" aria-label="A sharp moves D one key right to D sharp; a flat moves it one key left to D flat">${g}</svg>`);
 }
 function tick() {
   if (playing < 0) return; const k = CH[ci].clips[playing], t = audio.currentTime; const ln = k.l.find(x => t >= x.t0 && t < x.t1);
