@@ -171,13 +171,13 @@ import sys as _sy; _sy.path.insert(0, '/tmp/claude-0/pk')
 import importlib as _il, pagemap as PM; _il.reload(PM)
 def page(inner, n, right='PART II · TIME'):
     inner = PM.resolve(order_blocks(inner))
-    return f'''<section class="pg"><div class="top"><span>THE PIANO BUTLER HANDBOOK</span><span>{right}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'''
+    return f'''<section class="pg"><div class="top"><span>THE PIANO BUTLER HANDBOOK</span><span>{right}{'<i class="tbig"></i>' if 'TIME' in right else '<i class="pbig"></i>' if right == 'PART I · PITCH' else ''}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'''
 MINCSS = """
 .gm4.q3,.gm4.q4{align-items:start}
 .howto{border-left:3px solid #e4572e;background:#fdf6f2;padding:8px 14px;margin:12px 0;font-size:14px} .howto .bh{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e4572e} .howto b{font-size:15px} .howto ol{margin:4px 0 0;padding-left:20px} .howto li{margin:2px 0}
 .gt2{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch;margin:8px 0} .gt2>div{margin:0!important} .gt2 .t10{grid-template-columns:1fr;gap:6px;justify-items:center;text-align:center} .gt2 .t10 .big{font-size:15px} .gt2 .gm4{gap:6px} .gt2 .q4{grid-template-columns:repeat(2,1fr)!important;row-gap:10px} .gt2 .gq{font-size:17px} .gt2 .game .ans{font-size:11.5px}
 .gq{font-family:PF,serif;font-size:20px;font-weight:700;color:#26296b;margin:0;letter-spacing:.04em;line-height:1.2} .gq small{font-family:AH,Arial;font-size:12.5px;font-weight:700;color:#5a5d8f;display:block;letter-spacing:0}
-.ia2{grid-template-columns:1fr!important;gap:6px!important} .ia2 ol{display:grid!important;grid-template-columns:repeat(3,1fr);gap:12px!important} .ia2 .vx .vs svg{max-height:96px!important;min-height:66px} .ia2>figure,.ia2>div:first-child{justify-self:center}
+.ia2{grid-template-columns:1fr!important;gap:6px!important} .ia2 ol{display:grid!important;grid-template-columns:repeat(3,1fr);gap:12px!important} .ia2 .vx .vs svg{max-height:96px!important;min-height:66px} .pg:has(.tbig) .ia2 .vx .vs svg{max-height:140px!important} .ia2>figure,.ia2>div:first-child{justify-self:center}
 .hero .vx,.hero figure{border:0!important;box-shadow:none!important;background:transparent!important}
 .hs .verse text{font-family:AH,Arial,sans-serif;font-weight:700} .hs .verse{fill:#e4572e}
 .hl{font-family:CV,cursive;font-size:20px;font-weight:700;color:#e4572e}
