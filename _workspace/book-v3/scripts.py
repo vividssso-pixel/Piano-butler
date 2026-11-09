@@ -8,12 +8,14 @@ NEW = {
  ('The secret', [
   ('B', 'Clara, music is written on a staff: five lines and four spaces, counted from the bottom.', c(27, 'lead')), ('P', 'Higher on the staff means higher on the piano?', c(27, 'lead')),
   ('B', 'Always. But five lines alone do not tell us the notes. For that we need a clef: the key to the code.', c(27, 'hero')),
-  ('B', 'Look closely. The treble clef curls round line two. That line is G.', c(27, 'hero')), ('piano', 'G4', c(27, 'hero', seq=['G'])),
-  ('B', 'The bass clef has two dots, and they hug line four. That line is F.', c(27, 'hero')), ('piano', 'F3', c(27, 'hero', seq=['F'])),
-  ('P', 'The treble clef curls round G. The bass clef’s dots hug F.', c(27, 'secret'))]),
+  ('B', 'Look closely, and let me introduce two friends who live here.', c(27, 'hero')),
+  ('Q', 'Good day, Clara. I am the Queen of the treble staff. See how my clef curls round line two? That line is my G.', c(27, 'hero')), ('piano', 'G4', c(27, 'hero', seq=['G'])),
+  ('K', 'And I am the King of the bass staff. My clef’s two dots hug line four. That line is my F, and the low notes are my kingdom.', c(27, 'hero')), ('piano', 'F3', c(27, 'hero', seq=['F'])),
+  ('P', 'A Queen for the high notes and a King for the low ones! The treble clef curls round G. The bass clef’s dots hug F.', c(27, 'secret'))]),
  ('The grand staff', [
   ('B', 'Piano music joins two staves with a brace. The treble staff is on top, usually for the right hand. The bass staff is below, usually for the left.', c(27, 'two')),
-  ('B', 'And Middle C sits between them, on a short line of its own. It can be written in either staff: the same key.', c(27, 'two')), ('piano', 'C4', c(27, 'two'))]),
+  ('B', 'And Middle C sits between them, on a short line of its own. It can be written in either staff: the same key.', c(27, 'two')), ('piano', 'C4', c(27, 'two')),
+  ('Q', 'Middle C is the border between our two kingdoms.', c(27, 'two')), ('K', 'And we share it. Either of us may write it.', c(27, 'two'))]),
  ('Example: which staff?', [
   ('B', 'Here is a key on the piano. Which staff would it be written on?', c(28, 'ex1', show=['Middle C'])),
   ('P', 'First I find Middle C. The question mark is to its left.', c(28, 'ex1', show=['Middle C'], lab=['Middle C'])),
@@ -41,7 +43,8 @@ NEW = {
   ('P', 'Treble G: the second key of the three black keys just above Middle C. Bass F: the first key of the three just below.', c(30, 'ex2', show=['Middle C'])),
   ('B', 'Now count each from Middle C. Up to G, down to F. Pause and count.', c(30, 'ex2', show=['Middle C'])), ('pause', 4, c(30, 'ex2', show=['Middle C'])),
   ('P', 'C D E F G: five. C B A G F: five as well!', c(30, 'ex2', reveal=True)), ('piano', 'C4 D4 E4 F4 G4 | C4 B3 A3 G3 F3', c(30, 'ex2', reveal=True)),
-  ('B', 'Mirror images, the same distance either side of Middle C.', c(30, 'ex2', reveal=True))]),
+  ('B', 'Mirror images, the same distance either side of Middle C.', c(30, 'ex2', reveal=True)),
+  ('Q', 'My G and the King’s F: five steps up, five steps down.', c(30, 'ex2', reveal=True)), ('K', 'Two guards at the castle gate, with Middle C between us.', c(30, 'ex2', reveal=True))]),
  ('Example: from the key to the page', [
   ('B', 'I play the third white key up from Middle C.', c(30, 'ex3', show=['Middle C'])), ('piano', 'C4 D4 E4', c(30, 'ex3', seq=['Middle C', '', '?'], show=['Middle C'])),
   ('P', 'C one, D two, E three. It is E.', c(30, 'ex3', lab=['?'], show=['Middle C'])),
@@ -61,13 +64,13 @@ NEW = {
   ('B', 'Step or skip. A step goes to the very next line or space: one letter on. A skip goes line to line, or space to space: two letters on.', c(32, 'rule')), ('piano', 'G4 A4 | G4 B4', c(32, 'rule'))]),
  ('Words to remember', [
   ('B', 'Lines and spaces are counted from the bottom. Treble lines first. Line one, E. Line two, G. Line three, B. Line four, D. Line five, F.', c(32, 'ht', lens='tl')),
-  ('P', 'Every Good Boy Deserves Fun!', c(32, 'ht', lens='tl')),
+  ('Q', 'In my staff we say: Every Good Boy Deserves Fun.', c(32, 'ht', lens='tl')),
   ('B', 'The four treble spaces, from the bottom: F, A, C, E.', c(32, 'ht', lens='ts')),
-  ('P', 'They spell face!', c(32, 'ht', lens='ts')),
+  ('Q', 'And my spaces spell face.', c(32, 'ht', lens='ts')),
   ('B', 'Now the bass staff. Bass lines, from the bottom: G, B, D, F, A.', c(32, 'ht', lens='bl')),
-  ('P', 'Great Big Dragons Fly Away!', c(32, 'ht', lens='bl')),
+  ('K', 'In my kingdom: Great Big Dragons Fly Away!', c(32, 'ht', lens='bl')),
   ('B', 'Last, the bass spaces: A, C, E, G.', c(32, 'ht', lens='bs')),
-  ('P', 'All Cows Eat Grass!', c(32, 'ht', lens='bs'))]),
+  ('K', 'My spaces: All Cows Eat Grass.', c(32, 'ht', lens='bs')), ('P', 'I will never forget the dragons.', c(32, 'ht'))]),
  ('Example: read from the clef note', [
   ('B', 'A treble note you are not sure of, on line four. Start from the clef note.', c(33, 'ex1')),
   ('P', 'G is line two. Skip up to line three: B. Skip again to line four.', c(33, 'ex1')), ('pause', 3, c(33, 'ex1')),
@@ -122,6 +125,7 @@ NEW = {
  ('Example: Middle C, two ways', [
   ('B', 'Here is the tricky one. Middle C in the treble staff, and Middle C in the bass staff. They look like two different notes. Are they different keys? Pause and think.', c(37, 'ex3', show=['Middle C', 'A', 'B', 'C', 'D', 'E'])), ('pause', 3, c(37, 'ex3', show=['Middle C', 'A', 'B', 'C', 'D', 'E'])),
   ('P', 'No. It is the same key, just written from the other side.', c(37, 'ex3', reveal=True)), ('piano', 'C4 | C4', c(37, 'ex3', reveal=True)),
+  ('Q', 'In my staff, Middle C hangs on the first ledger line below.', c(37, 'ex3', reveal=True)), ('K', 'In mine it sits on the first ledger line above. One key, and we both may write it.', c(37, 'ex3', reveal=True)),
   ('B', 'And watch out for the other first ledger lines. Above the treble staff the first ledger line is A. Below the bass staff it is E. Only Middle C belongs to both staves.', c(38, 'xlate'))]),
  ('Try it', [
   ('B', 'When notes go even higher, music often writes them lower, with an ottava sign and a dotted line above them: play those notes one octave higher, until the dotted line stops.', c(38, 'xlate2')),
@@ -310,29 +314,31 @@ NEW['T2'] = ('Notes and rests', [
   ('B', 'A note has a head, on a line or in a space. Every note except the semibreve has a stem. Below the middle line the stem goes up, on the right of the head; on or above the middle line it goes down, on the left.', c(53, 'two')),
   ('P', 'Does a stem going down make the note shorter?', c(53, 'two')),
   ('B', 'Never. The stem only keeps the page tidy. Flags change the length: each flag halves the note. And quavers side by side are joined by a beam instead of flags.', c(53, 'two')),
-  ('B', 'Now the two rests that look alike. The semibreve rest hangs below the fourth line from the bottom, heavy, like a coat on a hook. The minim rest sits on the middle line, like a hat.', c(53, 'two'))]),
+  ('P', 'So a note on the middle line has its stem going down?', c(53, 'two')), ('B', 'Exactly: on or above the middle line, down on the left; below it, up on the right.', c(53, 'two'))]),
  ('The semibreve rest’s special power', [
   ('B', 'Most rests last a fixed number of beats. The semibreve rest can also mean a whole bar of silence, in any time signature, and then it sits in the middle of the bar. In four-four it lasts four beats, in three-four three, in two-four two. Listen to three-four: the middle bar is silent, and the beat goes on.', c(53, 'box')),
   ('count', {'beats': 'X x x X x x X x x', 'notes': 'C4 C4 C4 R*3 C4*2 C4', 'say': '1 2 3 1 2 3 1 2 3'}, c(53, 'box'))]),
  ('All the notes and their rests', [
-  ('B', 'Here is the whole family with their rests: semibreve, minim, crotchet, quaver, and the semiquaver, a quarter of a beat, which you will meet later. Some books call them whole, half, quarter, eighth and sixteenth notes.', c(54, 'ht')),
+  ('B', 'Every note has a twin rest, the same length with no sound: semibreve, minim, crotchet, quaver, and the semiquaver, a quarter of a beat, which you will meet later.', c(54, 'svg')),
+  ('B', 'Two rests look alike. The semibreve rest hangs from the fourth line, heavy, like a coat on a hook. The minim rest sits on the middle line, like a hat.', c(54, 'svg')),
+  ('B', 'Some books call the notes whole, half, quarter, eighth and sixteenth notes. Here is why.', c(54, 'pzbox')),
   ('B', 'Think of each beat as a pizza. A bar of four-four is four pizzas. The semibreve fills all four; a minim, two; a crotchet, one; a quaver, half a pizza. A rest is the same share, left empty.', c(54, 'pzbox')),
   ('P', 'So two quavers make one full pizza.', c(54, 'pzbox')),
   ('B', 'Listen: two quavers, then a crotchet. Same-sized pizza.', c(54, 'pzbox')),
   ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4 C4/2 C4/2 C4', 'say': '1 & 2 & 3 & 4 &'}, c(54, 'pzbox'))]),
- ('Try it', [
-  ('B', 'Clap once and hold for two: a minim. Then rest for three, four. Then four crotchets, then a semibreve: clap, and hold all four beats. Say the counts out loud.', c(54, 'try10')),
-  ('count', {'beats': 'X x M x X x M x X x M x', 'notes': 'C4*2 R*2 C4 C4 C4 C4 C4*4', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(54, 'try10'))]),
  ('Example: each sound and each silence', [
-  ('B', 'Two bars of four-four. Name each shape, say how many beats it lasts, and add them up, rests included. Pause and try.', c(55, 'ex1')),
-  ('pause', 4, c(55, 'ex1')),
-  ('P', 'Minim, two. Crotchet, one. Crotchet rest, one. Four beats!', c(55, 'ex1', reveal=True)),
-  ('B', 'And the second bar has the same shapes in a different order. Count it with me: the rests are counted too.', c(55, 'ex1', reveal=True)),
-  ('count', {'beats': 'X x M x X x M x', 'notes': 'C4*2 C4 R C4 R C4*2', 'say': '1 2 3 4 1 2 3 4'}, c(55, 'ex1', reveal=True))]),
+  ('B', 'Two bars of four-four. Name each shape, say how many beats it lasts, and add them up, rests included. Pause and try.', c(54, 'ex1')),
+  ('pause', 4, c(54, 'ex1')),
+  ('P', 'Minim, two. Crotchet, one. Crotchet rest, one. Four beats!', c(54, 'ex1', reveal=True)),
+  ('B', 'And the second bar has the same shapes in a different order. Count it with me: the rests are counted too.', c(54, 'ex1', reveal=True)),
+  ('count', {'beats': 'X x M x X x M x', 'notes': 'C4*2 C4 R C4 R C4*2', 'say': '1 2 3 4 1 2 3 4'}, c(54, 'ex1', reveal=True))]),
  ('Game: pizza match', [
   ('B', 'A quick game. Match each note, A to D, with its pizzas, one to four. One pizza is one beat. Pause and match.', c(55, 'game')),
   ('pause', 5, c(55, 'game')),
   ('P', 'A, the semibreve, is four pizzas: number three. B, the minim, two: number one. C, the crotchet: number four. D, the quaver, half a pizza: number two.', c(55, 'game', reveal=True))]),
+ ('Try it', [
+  ('B', 'Clap once and hold for two: a minim. Then rest for three, four. Then four crotchets, then a semibreve: clap, and hold all four beats. Say the counts out loud.', c(55, 'try10')),
+  ('count', {'beats': 'X x M x X x M x X x M x', 'notes': 'C4*2 R*2 C4 C4 C4 C4 C4*4', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(55, 'try10'))]),
  ('Example: fill the bar', [
   ('B', 'A bar of four-four is a train with four seats. How many seats does the minim take? And the crotchet? How many are left, and which rest fills them? Pause and think.', c(55, 'ex2')),
   ('pause', 4, c(55, 'ex2')),

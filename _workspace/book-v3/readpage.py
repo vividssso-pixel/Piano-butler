@@ -61,7 +61,7 @@ def _spoken(nm):   # how a label is said aloud: 'F♯' -> 'F sharp', '3rd' -> 't
     return out + _ALIAS.get(nm, [])
 def _hits(ln):   # her 8 Nov: every key, note or sign the voice names is marked the moment it is said, anywhere on the page
     c = ln.get('cue') or {}; page = REG.get(str(c.get('p', ''))) or {}; text = ln.get('text') or ''
-    if not page or not text or ln.get('who') not in ('B', 'P') or str(c.get('r', '')).startswith('ex'): return []
+    if not page or not text or ln.get('who') not in ('B', 'P', 'Q', 'K') or str(c.get('r', '')).startswith('ex'): return []
     order = [c.get('r')] + [k for k in page if k != c.get('r') and not k.startswith('ex') and k in page]
     used = [False] * len(text); out = []
     for rk in order:
@@ -459,7 +459,7 @@ function tick() {
   if (!ln) { requestAnimationFrame(tick); return; }
   drawLens(follow ? ln.lens : null, t);
   const hit = ln.hits ? ln.hits.filter(h => h[0] <= t).pop() : null; let txt = ln.text || ''; if (hit) txt = txt.slice(0, hit[2]) + '<mark>' + txt.slice(hit[2], hit[3]) + '</mark>' + txt.slice(hit[3]);
-  sub.innerHTML = ln.text ? `<b>${ln.who === 'B' ? 'Butler' : ln.who === 'P' ? 'Clara' : ''}</b>${txt}` : (ln.who === 'piano' ? '<b>♪</b>listen' : '');
+  sub.innerHTML = ln.text ? `<b>${({B: 'Butler', P: 'Clara', Q: 'Queen', K: 'King'})[ln.who] || ''}</b>${txt}` : (ln.who === 'piano' ? '<b>♪</b>listen' : '');
   const c = ln.cue;
   if (c && follow) {
     const pidx = CH[ci].pages.indexOf(c.p); if (pidx >= 0 && pidx !== pi) { pi = pidx; showPage(); }

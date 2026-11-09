@@ -5,7 +5,7 @@ import numpy as np, soundfile as sf, os, json, subprocess, sys, re
 from kokoro_onnx import Kokoro
 SR = 24000
 K = Kokoro('/tmp/claude-0/tts/kokoro-v1.0.onnx', '/tmp/claude-0/tts/voices-v1.0.bin')
-VOICE = {'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06)}
+VOICE = {'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_emma', 0.94), 'K': ('bm_lewis', 0.9)}   # her 9 Nov: the Queen (treble) and the King (bass) visit now and then
 NOTES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 def freq(n):
     m = re.match(r'([A-G])([#b]?)(\d)', n); k = NOTES[m.group(1)] + {'#': 1, 'b': -1, '': 0}[m.group(2)]
