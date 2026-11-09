@@ -120,6 +120,11 @@ for c in CH:
                 ln['lens'] = {'k': lk, 'at': [round(tm(a), 2) for a in at], 'full': prev == lk}
                 ln.pop('hits', None)
             prev = lk
+for c in CH:   # her 9 Nov: fold the grand staff at Middle C and the two notes meet, like a decalcomania
+    for k in c.get('clips', []):
+        for ln in k['l']:
+            m = (ln.get('cue') or {}).get('mirror')
+            if m: ln['lens'] = {'k': 'mirror', 'm': m, 'at': [], 'full': True}; ln.pop('hits', None)
 # her 9 Nov: "apply it everywhere you can". Every piano phrase in Pitch gets a lens: the notes on the staff and their keys
 # below, lit one by one as they sound. Not in Examples before the answer (it would give it away), not in Time (rhythm, not pitch).
 sys.path.insert(0, '/tmp/claude-0/tts'); import importlib; _S = importlib.import_module('scripts')
@@ -222,6 +227,8 @@ select{font:inherit;font-size:15px;color:var(--ink);background:var(--panel);bord
 .prac{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px} .prac .ph{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)} .prac a{display:block;font-weight:700;font-size:14.5px;color:var(--ink);text-decoration:none;border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--bg)} .prac a.dr{border-color:var(--accent)} .prac a:hover{border-color:var(--accent)}
 #lens:not(:empty){position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,245,240,.82);z-index:3;pointer-events:none}   /* her 9 Nov: one place to look - the lens in the middle, the page faded behind */
 .lens{position:relative;width:90%;background:#fff;border:4px solid var(--accent);border-radius:22px;box-shadow:0 10px 30px rgba(20,22,60,.28);padding:6px 10px 2px;animation:lz .35s ease;z-index:3;pointer-events:none} .lens .lh{display:flex;align-items:center;gap:6px;font:700 clamp(10px,1.6vw,14px) var(--body);letter-spacing:.12em;text-transform:uppercase;color:#e4572e} .lens svg{display:block;width:100%;height:auto}
+#lens .fold{opacity:.55;animation:fold 1.8s ease-in-out .5s forwards} #lens .meet{animation:meet .5s ease 2.3s forwards}
+@keyframes fold{from{transform:scaleY(1)}to{transform:scaleY(-1)}} @keyframes meet{to{opacity:1}}
 @keyframes lz{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
 .follow{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--soft);margin-top:8px}
 .nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
@@ -303,6 +310,7 @@ function drawLens(L, t) {
   if (!L) { if (lensEl.dataset.k) { lensEl.innerHTML = ''; lensEl.dataset.k = ''; lensEl.dataset.t = ''; } return; }
   if (L.k === 'auto') return drawAuto(L, t);
   if (L.k === 'rhy') return drawRhy(L, t);
+  if (L.k === 'mirror') return drawMirror(L);
   const [name, subt, clef, items] = LENSD[L.k]; const n = items.length;
   const cnt = L.at.length ? L.at.filter(v => v <= t).length : n; const shown = L.full ? n : cnt, cur = cnt - 1;
   const key = L.k + shown + ':' + cur; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
@@ -454,12 +462,34 @@ function drawRhy(L, t) {
   const head = hasN ? '♪ The beat and the notes' : '♪ The beat';
   lensShell('rhy' + B[0][0], head, `<svg viewBox="0 0 600 ${VH}" role="img" aria-label="${head}">${g}</svg>`);
 }
+
+function drawMirror(L) {   // the grand staff folds at Middle C: the top note lands on its mirror note below
+  const key = 'mirror' + L.m; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const P = { GF: [32, 24, 'Treble G', 'Bass F', '4 steps up', '4 steps down'], CC: [42, 14, 'High C', 'Low C', 'two ledger lines above', 'two ledger lines below'] }[L.m];
+  const [dt, db, lt, lb, st, sb] = P, ACC = '#e4572e', INK = '#26296b', F = 'font-family="Atkinson Hyperlegible,sans-serif"';
+  const H = 8, hi = Math.max(40, dt + 2), lo = Math.min(16, db - 2), Y = d => 24 + (hi - d) * H, MC = Y(28), X0 = 70, X1 = 540, NX = 330;
+  const staff = (ds, col, w) => ds.map(d => `<line x1="${X0}" x2="${X1}" y1="${Y(d)}" y2="${Y(d)}" stroke="${col}" stroke-width="${w}"/>`).join('');
+  const leds = (d, col) => { let o = ''; if (d > 38) for (let k = 40; k <= d; k += 2) o += `<line x1="${NX - 22}" x2="${NX + 22}" y1="${Y(k)}" y2="${Y(k)}" stroke="${col}" stroke-width="2.2"/>`; if (d < 18) for (let k = 16; k >= d; k -= 2) o += `<line x1="${NX - 22}" x2="${NX + 22}" y1="${Y(k)}" y2="${Y(k)}" stroke="${col}" stroke-width="2.2"/>`; return o; };
+  const head = (d, fill, col) => `<ellipse cx="${NX}" cy="${Y(d)}" rx="12" ry="9" transform="rotate(-20 ${NX} ${Y(d)})" fill="${fill}" stroke="${col}" stroke-width="3"/>`;
+  let g = staff([30, 32, 34, 36, 38], INK, 2) + staff([18, 20, 22, 24, 26], INK, 2);
+  g += `<path d="${GCLEF}" transform="translate(${X0 + 8} ${Y(32)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/><path d="${FCLEF}" transform="translate(${X0 + 8} ${Y(24)}) scale(${H * 2 / 250} ${-H * 2 / 250})" fill="${INK}"/>`;
+  g += `<line x1="${X0 - 30}" x2="${X1 + 20}" y1="${MC}" y2="${MC}" stroke="${ACC}" stroke-width="2" stroke-dasharray="6 5"/><text x="${X1 + 22}" y="${MC + 4}" font-size="13" font-weight="700" fill="${ACC}" ${F}>fold at Middle C</text>`;
+  g += `<line x1="${NX - 60}" x2="${NX - 36}" y1="${MC}" y2="${MC}" stroke="${INK}" stroke-width="2.2"/><ellipse cx="${NX - 48}" cy="${MC}" rx="11" ry="8" transform="rotate(-20 ${NX - 48} ${MC})" fill="#fff" stroke="${INK}" stroke-width="2.6"/>`;
+  g += leds(dt, INK) + head(dt, '#fff', INK) + leds(db, INK) + head(db, '#fff', INK);
+  g += `<text x="${NX + 26}" y="${Y(dt) + 5}" font-size="15" font-weight="700" fill="${INK}" ${F}>${lt}</text><text x="${NX + 26}" y="${Y(db) + 5}" font-size="15" font-weight="700" fill="${INK}" ${F}>${lb}</text>`;
+  g += `<text x="${NX - 74}" y="${(Y(dt) + MC) / 2 + 4}" text-anchor="end" font-size="12" fill="#5a5d8f" ${F}>${st}</text><text x="${NX - 74}" y="${(Y(db) + MC) / 2 + 4}" text-anchor="end" font-size="12" fill="#5a5d8f" ${F}>${sb}</text>`;
+  // the folding copy of the top half
+  g += `<g class="fold" style="transform-box:view-box;transform-origin:0 ${MC}px">${staff([30, 32, 34, 36, 38], ACC, 1.6)}${leds(dt, ACC)}${head(dt, ACC, ACC)}</g>`;
+  g += `<g class="meet" style="opacity:0">${head(db, ACC, ACC)}<text x="${NX}" y="${Y(lo) + 6}" text-anchor="middle" font-size="15" font-weight="700" fill="${ACC}" ${F}>they meet: mirror notes</text></g>`;
+  const VH = Y(lo) + 16;
+  lensShell(key, '♪ Fold the grand staff', `<svg viewBox="0 0 ${X1 + 160} ${VH}" role="img" aria-label="${lt} and ${lb} are mirror notes either side of Middle C">${g}</svg>`);
+}
 function tick() {
   if (playing < 0) return; const k = CH[ci].clips[playing], t = audio.currentTime; const ln = k.l.find(x => t >= x.t0 && t < x.t1);
   if (!ln) { requestAnimationFrame(tick); return; }
   drawLens(follow ? ln.lens : null, t);
   const hit = ln.hits ? ln.hits.filter(h => h[0] <= t).pop() : null; let txt = ln.text || ''; if (hit) txt = txt.slice(0, hit[2]) + '<mark>' + txt.slice(hit[2], hit[3]) + '</mark>' + txt.slice(hit[3]);
-  sub.innerHTML = ln.text ? `<b>${({B: 'Butler', P: 'Clara', Q: 'Queen', K: 'King'})[ln.who] || ''}</b>${txt}` : (ln.who === 'piano' ? '<b>♪</b>listen' : '');
+  sub.innerHTML = ln.text ? `<b>${({B: 'Butler', P: 'Clara', Q: '♕ Queen', K: '♔ King'})[ln.who] || ''}</b>${txt}` : (ln.who === 'piano' ? '<b>♪</b>listen' : '');
   const c = ln.cue;
   if (c && follow) {
     const pidx = CH[ci].pages.indexOf(c.p); if (pidx >= 0 && pidx !== pi) { pi = pidx; showPage(); }

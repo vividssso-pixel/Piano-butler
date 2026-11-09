@@ -5,7 +5,7 @@ import numpy as np, soundfile as sf, os, json, subprocess, sys, re
 from kokoro_onnx import Kokoro
 SR = 24000
 K = Kokoro('/tmp/claude-0/tts/kokoro-v1.0.onnx', '/tmp/claude-0/tts/voices-v1.0.bin')
-VOICE = {'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_emma', 0.94), 'K': ('bm_lewis', 0.9)}   # her 9 Nov: the Queen (treble) and the King (bass) visit now and then
+VOICE = {'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_emma', 0.9), 'K': ('bm_lewis', 0.9)}   # her 9 Nov: the Queen (treble) and the King (bass) visit now and then
 NOTES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 def freq(n):
     m = re.match(r'([A-G])([#b]?)(\d)', n); k = NOTES[m.group(1)] + {'#': 1, 'b': -1, '': 0}[m.group(2)]
@@ -43,7 +43,13 @@ def piano(spec):
     return np.concatenate(parts + [np.zeros(int(SR * .3))])
 def say(who, text):
     text = re.sub(r'\b([B-G])s\b', r"\1's", text)   # her 8 Nov: 'Cs' was read letter by letter, 'C-S'; say it 'Cees'
-    v, sp = VOICE[who]; a, sr = K.create(text, voice=v, speed=sp, lang='en-gb'); return np.asarray(a, dtype=np.float32)
+    v, sp = VOICE[who]; a, sr = K.create(text, voice=v, speed=sp, lang='en-gb'); a = np.asarray(a, dtype=np.float32)
+    if who == 'Q': a = lower(a, 0.87)   # her 9 Nov: the Queen must not sound like Clara - a deeper, slower, regal voice
+    return a
+def lower(a, r):   # pitch down by ratio r, same length (ffmpeg asetrate + atempo)
+    import tempfile; d = tempfile.mkdtemp(); sf.write(d + '/i.wav', a, SR)
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', d + '/i.wav', '-af', f'asetrate={SR}*{r},aresample={SR},atempo={1 / r:.4f}', d + '/o.wav'], check=True)
+    return sf.read(d + '/o.wav', dtype='float32')[0]
 _WORD = {}
 NUMW = {'1': 'One', '2': 'Two', '3': 'Three', '4': 'Four', '5': 'Five', '6': 'Six', '&': 'and'}
 def word(w):
