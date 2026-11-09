@@ -18,7 +18,9 @@ def qitems(items, cols=None):   # her 6 Nov: a row of numbered items for a text 
     cols = cols or len(items)
     return f'<div class="gm4 q{len(items)}" style="grid-template-columns:repeat({cols},1fr)">' + ''.join(f'<div><b>{i + 1}</b><p class="gq">{t}</p></div>' for i, t in enumerate(items)) + '</div>'
 def try10(fig, big, text): return f'<div class="try10"><div class="bh">Try it · 10 seconds</div><div class="t10">{fig}<div><p class="big">{big}</p><p>{text}</p></div></div></div>'
-def qtagT(fig): return f'<div style="display:flex;align-items:center;justify-content:center;gap:14px"><div style="flex:0 1 auto;min-width:0">{fig}</div><span style="flex:none;width:34px;height:34px;border-radius:50%;background:#e4572e;color:#fff;font:700 22px AH,Arial;display:flex;align-items:center;justify-content:center">?</span></div>'
+def qtagT(fig, mw=None):
+    if mw is None: return f'<div style="display:flex;align-items:center;justify-content:center;gap:14px"><div style="flex:0 1 auto;min-width:0">{fig}</div><span style="flex:none;width:34px;height:34px;border-radius:50%;background:#e4572e;color:#fff;font:700 22px AH,Arial;display:flex;align-items:center;justify-content:center">?</span></div>'
+    return f'<div style="display:flex;align-items:center;justify-content:center;gap:14px;width:100%"><div style="flex:1 1 auto;min-width:0;max-width:{mw}px">{fig}</div><span style="flex:none;width:34px;height:34px;border-radius:50%;background:#e4572e;color:#fff;font:700 22px AH,Arial;display:flex;align-items:center;justify-content:center">?</span></div>'
 def inact(title, fig, steps, result): return '<div class="inact2"><div class="bh">Example</div><b class="it">' + title + '</b><div class="ia2">' + fig + '<ol>' + ''.join(f'<li><span class="in">{i + 1}</span><span>{t}</span></li>' for i, t in enumerate(steps)) + '</ol></div><div class="ires">' + result + '</div></div>'
 def youknow(title, fig, line, tryit='', wide=False):   # her 4 Nov: one tune everyone knows, on the staff, the point in red: the 'aha' (replaces In real music); wide: the music takes the full width
     return '<div class="yk"><div class="bh">You know this</div><b class="it">' + title + '</b><div class="ykg"' + (' style="grid-template-columns:1fr"' if wide else '') + '>' + fig + '<p>' + line + '</p></div>' + (f'<p class="tryit"><b>Try it.</b> {tryit}</p>' if tryit else '') + '</div>'
@@ -314,6 +316,18 @@ def hero_groups():   # six quavers: 3/4 groups them 2+2+2, 6/8 groups them 3+3
             x += w + 6
         o += f'<text x="{x + 10}" y="{y + 30}" font-family="AH,Arial" font-size="17" font-weight="700" fill="{_NV}">{len(gs)} beats</text>'
     return f'<svg viewBox="0 0 520 170" style="width:100%;max-width:560px">{o}</svg>'
+def fig_irreg():   # irregular time: 5/4 as 3 + 2, 7/8 as 2 + 2 + 3
+    o = ''
+    for r, (ts, gs) in enumerate((('5/4', (3, 2)), ('7/8', (2, 2, 3)))):
+        y = 10 + r * 64; x = 70
+        t1, t2 = ts.split('/'); o += f'<text x="34" y="{y + 20}" text-anchor="middle" font-family="PF,serif" font-size="22" font-weight="700" fill="{_NV}">{t1}</text><text x="34" y="{y + 41}" text-anchor="middle" font-family="PF,serif" font-size="22" font-weight="700" fill="{_NV}">{t2}</text>'
+        for g in gs:
+            w = g * 40
+            o += f'<rect x="{x}" y="{y}" width="{w - 8}" height="40" rx="12" fill="none" stroke="{_NV}" stroke-width="2"/>'
+            o += ''.join(f'<circle cx="{x + 16 + i * 40}" cy="{y + 20}" r="{10 if i == 0 else 6.5}" fill="{_RD if i == 0 else _NV}"/>' for i in range(g))
+            x += w + 4
+        o += f'<text x="{x + 8}" y="{y + 26}" font-family="AH,Arial" font-size="15" font-weight="700" fill="{_NV}">{" + ".join(map(str, gs))}</text>'
+    return f'<svg viewBox="0 0 440 136" style="width:100%;max-width:440px;display:block;margin:4px auto">{o}</svg>'
 def hero_sync():   # steady beat dots; a red note lands on the "&" and is held over the next beat
     o = ''
     for i in range(8):
@@ -322,7 +336,7 @@ def hero_sync():   # steady beat dots; a red note lands on the "&" and is held o
     o += f'<rect x="{40 + 64 - 12}" y="96" width="{2 * 64 + 4}" height="26" rx="13" fill="{_RD}"/><text x="{40 + 64 + 64}" y="146" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="{_RD}">starts on “&”, held over beat 2</text>'
     o += f'<rect x="{40 - 12}" y="96" width="24" height="26" rx="12" fill="{_NV}"/><rect x="{40 + 4 * 64 - 12}" y="96" width="{2 * 64 - 8}" height="26" rx="13" fill="{_NV}"/><rect x="{40 + 6 * 64 - 12}" y="96" width="{2 * 64 - 8}" height="26" rx="13" fill="{_NV}"/>'
     return f'<svg viewBox="0 0 580 156" style="width:100%;max-width:580px">{o}</svg>'
-_T2 = {}; exec(open('/tmp/claude-0/pk/t2figs.py').read(), _T2); fig_parts, fig_stems, fig_twins, fig_wholebar, fig_tempo, fig_strongweak = _T2['fig_parts'], _T2['fig_stems'], _T2['fig_twins'], _T2['fig_wholebar'], _T2['fig_tempo'], _T2['fig_strongweak']; fig_ddot = _T2['fig_ddot']; fig_feel = _T2['fig_feel']
+_T2 = {}; exec(open('/tmp/claude-0/pk/t2figs.py').read(), _T2); fig_parts, fig_stems, fig_twins, fig_wholebar, fig_tempo, fig_strongweak = _T2['fig_parts'], _T2['fig_stems'], _T2['fig_twins'], _T2['fig_wholebar'], _T2['fig_tempo'], _T2['fig_strongweak']; fig_ddot = _T2['fig_ddot']; fig_feel = _T2['fig_feel']; fig_tschange = _T2['fig_tschange']; fig_34 = _T2['fig_34']; fig_simplecompound = _T2['fig_simplecompound']; fig_beams = _T2['fig_beams']; fig_rubato = _T2['fig_rubato']
 P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Put your hand on your heart: that steady beat is a <b>pulse</b>, and almost every piece has one. Its speed is the <b>tempo</b>. Beats travel in groups called <b>bars</b>, and beat 1 is the strongest.')}
 {hero(hero_pulse(), 'Beat 1 of every bar is the strongest')}
 <div class="xlate">{h3('Tempo')}{f'<p>Tempo is measured in beats per minute. A <b>metronome mark</b> at the top of the music shows it: <span class="mm">{gin("n", "c")} = 60</span> means 60 crotchet beats a minute, one beat a second. <span class="mm">{gin("n", "c")} = 120</span> is twice as fast. Speed words such as <i>Andante</i> and <i>Allegro</i> are on p. {{{{E3}}}}.</p>'}{fig_tempo()}</div>
@@ -398,88 +412,61 @@ simple = [[ts(2, 4), '2 crotchets', 'Level 0'], [ts(3, 4), '3 crotchets', 'Level
 TRAIN = '<div class="pzbox"><b class="it">Think of a train</b><p class="sm" style="margin:2px 0 6px">In 3/4 every carriage (bar) has exactly <b>3 seats</b>; each seat is one crotchet beat. Notes book seats: a minim takes 2, a crotchet 1. A rest books a seat and leaves it <b>empty</b> (shaded). Every seat in every carriage must be booked.</p>' + train([[('n', 2, 'm'), ('n', 1, 'c')], [('n', 1, 'c'), ('r', 1, 'c'), ('n', 1, 'c')], [('n', 3, 'dm')]], '3/4') + '<p class="sm" style="margin:6px 0 0;text-align:center">minim + crotchet · crotchet, crotchet rest, crotchet · dotted minim: 3 seats each</p></div>'
 P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers, like a train ticket: the <b>top number</b> says how many seats (counts) each bar has; the <b>bottom number</b> says which note fills one seat.')}
 {hero(train([[('n', 1, 'c'), ('n', 1, 'c'), ('n', 1, 'c'), ('n', 1, 'c')]], '4/4').replace('max-width:', 'min-width:min(100%,520px);max-width:', 1), 'Top: how many seats · bottom: which note sits in one')}
-{h3('The bottom number') + tbl(['Bottom', 'Note', 'One count is a', 'First met'], bottom, ['18%', '16%', '36%', '30%'])}
-{h3('Simple time: each beat divides in two')}
-{tbl(['Time signature', 'Each bar holds', 'First met'], simple, ['26%', '50%', '24%'])}
+<div class="xlate">{h3('The bottom number') + tbl(['Bottom', 'Note', 'One count is a', 'First met'], bottom, ['18%', '16%', '36%', '30%'])}</div>
+{inact('What does 3/4 mean?', fig_34(), ['<b>The top number:</b> how many counts in each bar?', '<b>The bottom number:</b> 4 stands for a crotchet. Which note gets one count?', '<b>Check a bar:</b> does it add up?'], '3/4: <b>three crotchet beats</b> in every bar (two quavers + crotchet + crotchet = 3).')}
 <!--SPLIT-->
+<div class="xlate">{h3('Simple time: each beat divides in two')}{tbl(['Time signature', 'Each bar holds', 'First met'], simple, ['26%', '50%', '24%'])}</div>
 {TRAIN}
-{h3('Changing time signature')}
-<p>A new time signature can appear in the middle of a piece, right after a bar line; it holds until the next one. A time signature is written only once, not on every line.</p>
-{watch(['Reading the bottom number as a count: it names the note that gets one beat.', 'Reading 6/8 as six beats: at most speeds it moves in two.', 'Mixing up 3/4 and 6/8: both hold six quavers, grouped differently (p. {{T5}}).'])}
-{inact('What does 3/4 mean?', qtagT(vx('ia_ts', 74)), ['<b>The top number:</b> how many counts in each bar?', '<b>The bottom number:</b> 4 stands for a crotchet. Which note gets one count?', '<b>Check a bar:</b> does it add up?'], '3/4: <b>three crotchet beats</b> in every bar (two quavers + crotchet + crotchet = 3).')}
-{youknow('Minuet (from the Notebook for Anna Magdalena Bach)', ykfig('yk_min3', ('n1','n6'), 70), 'Every bar holds <b class="co">three crotchet beats</b>: 1 2 3, 1 2 3, the step of the dance. That is 3/4.', 'Count 1 2 3 aloud while someone plays it.')}
-{game('Which ticket?', qitems(['3 crotchets', '4 crotchets', '3 quavers', '2 minims'], 4), 'Each bar holds these notes. Write its time signature.', '1 3/4 · 2 4/4 · 3 3/8 · 4 2/2 (or 4/4).')}
-{try10(ts(4, 4, 44), 'Open a piece you are playing.', 'Find the time signature, then count the seats in bar 1: do the notes add up to the top number? Try bar 2 as well.')}
-{inact('How do you count this bar of 3/4?', train([[('n', 2, 'm'), ('n', 1, 'c')]], '3/4'), ['<b>How many seats</b> does 3/4 have?', '<b>The minim</b>: which seats does it book?', '<b>The crotchet</b>: which seat is left for it?'], 'Count <b>1 2 3</b>: the minim holds through 1 and 2, the crotchet takes 3.')}
-{inact('Where does the rest go?', train([[('n', 1, 'c'), ('n', 1, 'c')]], '3/4'), ['<b>How many seats</b> in 3/4?', '<b>The two crotchets</b> fill which seats?', '<b>Which seat is empty,</b> and what goes there?'], 'Seat 3 is empty: a <b>crotchet rest</b>. Count it: 1 2 (3).')}
+<!--SPLIT-->
+{inact('Which ticket?', train([[('n', 1, 'q'), ('n', 1, 'q'), ('n', 1, 'q')]], '?/?'), ['<b>Count the seats:</b> how many in the carriage? That is the top number.', '<b>Which note</b> sits in one seat?', '<b>Its number:</b> a quaver is 8. Write the ticket.'], 'Three seats, a quaver in each: <b>3/8</b>.')}
+{inact('Where does the rest go?', train([[('n', 1, 'c'), ('n', 1, 'c'), ('n', 1, 'c')]], '4/4'), ['<b>How many seats</b> in 4/4?', '<b>The three crotchets</b> fill which seats?', '<b>Which seat is empty,</b> and what goes there?'], 'Seat 4 is empty: a <b>crotchet rest</b>. Count it: 1 2 3 (4).')}
+<div class="xlate">{h3('Changing time signature')}{fig_tschange()}<p class="sm">A new time signature can appear right after a bar line; it holds until the next one. It is written only once, not on every line.</p></div>
+{youknow('Minuet (from the Notebook for Anna Magdalena Bach)', ykfig('yk_min3', ('n1','n6'), 84), 'Every bar holds <b class="co">three crotchet beats</b>: 1 2 3, 1 2 3, the step of the dance. That is 3/4.', 'Count 1 2 3 aloud while someone plays it.')}
+{watch(['Reading the bottom number as a count: it names the note that gets one beat.', 'Mixing up 3/4 and 6/8: both hold six quavers, grouped differently (p. {{T5}}).'])}
 {foot('Pulse and the bar p. {{T1}} · Compound time p. {{T5}}', 'Workbook Level 0 · Time signatures · Online: Library › Time signatures')}''', 39)
 
 compound = [[ts(6, 8), '2 dotted crotchets', 'Level 1'], [ts(9, 8), '3 dotted crotchets', 'Level 3'], [ts(12, 8), '4 dotted crotchets', 'Level 3'], [ts(6, 4), '2 dotted minims', 'Level 4']]
 irreg = [[ts(5, 4), '5 crotchets: 3 + 2 or 2 + 3', 'Level 5'], [ts(7, 4), '7 crotchets: 4 + 3 or 3 + 4', lv('')], [ts(5, 8), '5 quavers: 3 + 2 or 2 + 3', lv('')], [ts(7, 8), '7 quavers: 2 + 2 + 3 or 3 + 2 + 2', lv('')]]
 P40 = page(f'''{head('Part II · Time · 5', 'Compound and irregular time', 'Compound time is a skipping rope: each dotted beat splits into <b>three</b>. Irregular time keeps you guessing, with <b>five or seven</b> counts in uneven groups. (9/4, 12/4 and /16 signatures are rare.)')}
 {hero(hero_groups(), 'Same six quavers, new groups')}
-{box('Simple or compound?', '<p>In <b>simple time</b> each beat divides into <b>two</b>. In <b>compound time</b> each beat is a dotted note and divides into <b>three</b>.</p><p><b>Quick test:</b> a top number of 6, 9 or 12 means compound. Divide it by 3 to find the beats: 6/8 has 2, 9/8 has 3, 12/8 has 4.</p>')}
-{h3('Compound time')}
-{tbl(['Time signature', 'Each bar holds', 'First met'], compound, ['26%', '50%', '24%'])}
-{h3('Counting 6/8')}
-{vx('t68', 58, 'Slowly, count all six quavers. At speed, feel two beats, on 1 and 4: “1 & a, 2 & a”.')}
-{thinkt('Like a skipping rope: two big swings, each with three little steps inside.')}
+<div class="xlate">{box('Simple or compound?', '<p>In <b>simple time</b> each beat divides into <b>two</b>. In <b>compound time</b> each beat is a dotted note and divides into <b>three</b>.</p>' + fig_simplecompound() + '<p><b>Quick test:</b> a top number of 6, 9 or 12 means compound. Divide it by 3 to find the beats: 6/8 has 2, 9/8 has 3, 12/8 has 4.</p>')}{h3('Compound time')}{tbl(['Time signature', 'Each bar holds', 'First met'], compound, ['26%', '50%', '24%'])}</div>
+<div class="xlate">{h3('Counting 6/8')}{vx('t68', 100, 'Slowly, count all six quavers. At speed, feel two beats, on 1 and 4: “1 & a, 2 & a”.')}{howto('Feel compound time', ['<b>Say “pine-ap-ple”</b> on every beat and step only on “pine”.', '<b>Clap the three syllables</b> while you step.'])}</div>
+{inact('How many beats in 9/8?', '<div style="display:flex;align-items:center;gap:14px;justify-content:center">' + ts(9, 8, 52) + '<svg viewBox="0 0 300 50" style="width:300px">' + ''.join(f'<rect x="{g * 100 + 2}" y="6" width="92" height="38" rx="12" fill="none" stroke="#26296b" stroke-width="2"/>' + ''.join(f'<circle cx="{g * 100 + 20 + k * 28}" cy="25" r="{9 if k == 0 else 6}" fill="{'#e4572e' if k == 0 else '#26296b'}"/>' for k in range(3)) for g in range(3)) + '</svg></div>', ['<b>The top number, 9:</b> does it divide by 3?', '<b>How many groups of three</b> fit in 9?', '<b>What is each beat</b>, in quavers?'], '9 ÷ 3 = <b>three beats</b>, each a dotted crotchet: “1 2 3, 4 5 6, 7 8 9”.')}
 <!--SPLIT-->
-{extra('Irregular time', '<p>Five or seven counts, grouped unevenly. Met from Level 5.</p>' + tbl(['Time signature', 'Each bar holds', 'First met'], irreg, ['26%', '50%', '24%']))}
-{two(box('Uneven groups in 4/4', '<p>Many dances keep 4/4 but group the eight quavers 3 + 3 + 2: “1 2 3, 1 2 3, 1 2”.</p>'), vx('t332', 54), '1fr 1fr')}
-{inact('How many beats in a bar of 6/8?', qtagT(vx('ia_68', 74)), ['<b>Slowly, count all six quavers.</b>', '<b>Which two counts</b> feel strong? (the red notes)', '<b>Faster, count only the strong ones.</b> How many?'], '6/8 has <b>two beats</b> in a bar (1 and 4), each split into three quavers.')}
-{youknow('Row, Row, Row Your Boat', ykfig('yk_row', ('n1','n2'), 70), 'Two big beats in every bar, each a <b class="co">dotted crotchet</b>: “Row, row”. Each big beat is worth three quavers: “row your” is long-short, a crotchet and a quaver, filling one big beat. That is 6/8.', 'Sway twice per bar while you sing it.')}
-{game('Two beats or three?', qitems(['6/8', '3/4', '9/8', '2/4'], 4), 'How many beats in a bar, and does each beat split in two or in three?', '1 two, in threes · 2 three, in twos · 3 three, in threes · 4 two, in twos.')}
-{try10(ts(6, 8, 44), 'Sway left, sway right.', 'Say “1 2 3, 4 5 6” and sway once on 1 and once on 4. That is 6/8: six quavers, two big beats.')}
-{inact('Is this still 4/4?', qtagT(vx('t332', 74)), ['<b>Count eight quavers</b> in the bar.', '<b>Group them 3 + 3 + 2:</b> where do the accents fall?', '<b>Keep your foot on the beat.</b> How many foot taps?'], 'Accents on 1, 4 and 7, but four foot taps: the bar is still <b>4/4</b>, only the accents are uneven.')}
-{inact('How many beats in 9/8?', '<div style="display:flex;align-items:center;gap:14px;justify-content:center">' + ts(9, 8, 52) + '<svg viewBox="0 0 300 50" style="width:220px">' + ''.join(f'<rect x="{g * 100 + 2}" y="6" width="92" height="38" rx="12" fill="none" stroke="#26296b" stroke-width="2"/>' + ''.join(f'<circle cx="{g * 100 + 20 + k * 28}" cy="25" r="{9 if k == 0 else 6}" fill="{'#e4572e' if k == 0 else '#26296b'}"/>' for k in range(3)) for g in range(3)) + '</svg></div>', ['<b>The top number, 9:</b> does it divide by 3?', '<b>How many groups of three</b> fit in 9?', '<b>What is each beat</b>, in quavers?'], '9 ÷ 3 = <b>three beats</b>, each a dotted crotchet: “1 2 3, 4 5 6, 7 8 9”.')}
-{howto('Feel compound time', ['<b>Say “pine-ap-ple”</b> on every beat and step only on “pine”.', '<b>Clap the three syllables</b> while you step.'])}
-{watch(['Counting 6/8 as six slow beats at speed: feel two big ones.', 'Mixing up 3/4 and 6/8: the same six quavers, grouped differently.'])}
+<div class="xlate">{h3('Uneven groups in 4/4')}<p>Many dances keep 4/4 but group the eight quavers unevenly.</p>{inact('Is this still 4/4?', qtagT(vx('t332', 120), 560), ['<b>Count eight quavers</b> in the bar.', '<b>Group them 3 + 3 + 2:</b> where do the accents fall?', '<b>Keep your foot on the beat.</b> How many foot taps?'], 'Accents on 1, 4 and 7, but four foot taps: the bar is still <b>4/4</b>, only the accents are uneven.')}</div>
+<!--SPLIT-->
+<div class="xlate">{extra('Irregular time', '<p>Five or seven counts, grouped unevenly. Met from Level 5.</p>' + fig_irreg() + tbl(['Time signature', 'Each bar holds', 'First met'], irreg, ['26%', '50%', '24%']))}</div>
+{youknow('Row, Row, Row Your Boat', ykfig('yk_row', ('n1','n2'), 112), 'Two big beats in every bar, each a <b class="co">dotted crotchet</b>: “Row, row”. Each big beat is worth three quavers: “row your” is long-short, a crotchet and a quaver, filling one big beat. That is 6/8.', 'Sway twice per bar while you sing it.')}
+{watch(['Reading 6/8 as six crotchet beats: the 8 means quavers.', 'Beaming 6/8 quavers in twos: in compound time they go in threes.'])}
 {foot('Time signatures p. {{T4}} · Rhythm: groups and upbeats p. {{T6}}', 'Workbook Levels 1–4 · Compound time · Online: Rhythm clock')}''', 40)
 
 P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Say your own name: long and short sounds, that’s <b>rhythm</b>. The pulse marches steadily on; the rhythm dances around it. How the notes are grouped on the page shows where the beats fall.')}
 {hero('<div class="vs hs">' + PP['hero_beam'].replace('<svg ', '<svg style="max-height:150px;width:auto;max-width:100%" ', 1) + '</div>', 'One beam, one beat')}
-{h3('Grouping with beams')}
-<p>Beams join the notes of <b>one beat</b>, so the beats stay visible. In 4/4 a beam may cover beats 1–2 or 3–4, but never cross the middle of the bar (except in a deliberate grouping such as 3 + 3 + 2). In compound time, quavers are beamed in threes.</p>
-<p class="sm">✗ A beam across beats 2 and 3 would hide the middle of the bar.</p>
-{h3('The upbeat (anacrusis)')}
-{two('<p>A piece can begin <b>before</b> the first full bar, with one or more notes called an upbeat or anacrusis. The last bar is then short by the same amount, so the two together make one full bar. Count the missing beats in silence before you start.</p>', vx('anac', 78, 'Count “1 2” silently, then play on 3.'))}
-{inact('Does the upbeat balance the last bar?', qtagT(vx('ia_anac', 74)), ['<b>The upbeat:</b> how many beats before the first full bar?', '<b>The last bar:</b> how many beats?', '<b>Add them:</b> do they make a whole bar of 3/4?'], '1 + 2 = 3: the upbeat and the last bar <b>make one full bar</b> together.')}
-{thinkt('An upbeat is the breath before you speak: “and-ONE”. You lift on the upbeat so the strong beat can land.')}
+<div class="xlate">{h3('Grouping with beams')}<p>Beams join the notes of <b>one beat</b>, so the beats stay visible. In 4/4 a beam may cover beats 1–2 or 3–4, but never cross the middle of the bar (except in a deliberate grouping such as 3 + 3 + 2). In compound time, quavers are beamed in threes.</p>{fig_beams()}</div>
+{inact('Why are six quavers beamed in twos in 3/4?', qtagT(vx('t34q', 96), 560), ['<b>How many beats</b> does 3/4 have, and what kind?', '<b>How many quavers</b> fit in one beat?', '<b>So how many</b> go under each beam?'], 'Three crotchet beats, two quavers each: <b>2 + 2 + 2</b>. Beamed 3 + 3 they would look like 6/8.')}
 <!--SPLIT-->
-{h3('Triplets')}
-{two(vx('trip', 80, 'Triplet: three exactly equal notes in the time of two. First met: Level 2.'), extra('Duplet', vx('dup', 70, 'Two notes in the time of three, in compound time: the triplet turned inside out.')))}
-<div class="pzg">{''.join(f'<div>{pizza(n, n, 18)}{vx(k, 54)}<span>{t}</span></div>' for n, k, t in ((2, 'pz_q', '<b>Two quavers</b>: one beat cut in 2'), (3, 'pz_t', 'A <b class="co">triplet</b>: one beat cut in 3'), (4, 'pz_s', '<b>Four semiquavers</b>: one beat cut in 4')))}</div>
-{h3('Counting smaller values')}
-{vx('small', 100, 'Crotchet, two quavers, four semiquavers and a triplet (“trip-o-let”): one beat each.')}
-
-{youknow('Happy Birthday', ykfig('yk_bday', ('n1','n2'), 70), '“Hap-py” comes <b class="co">before</b> the first strong beat: an upbeat. The strong beat lands on “birth”.', 'Sing it and clap only on “birth”, “day” and “you”: you feel where bar 1 starts.')}
-{game('May the beam join them?', qitems(['beats 1 and 2', 'beats 2 and 3', 'beats 3 and 4'], 3), 'In 4/4, quavers are beamed so the middle of the bar stays visible. Which pairs may share one beam?', '1 yes · 2 no, that hides the middle of the bar · 3 yes.')}
-{try10(gcell('n', 'q', 60), 'Clap “1 & 2 & 3 & 4 &”.', 'Now clap only the numbers, then only the &s, while your foot keeps the beat. The beat never moves; your claps do.')}
-{inact('Where is the triplet, and how do you count it?', qtagT(vx('ia_trip2', 72)), ['<b>Count the bar:</b> four crotchet beats.', '<b>Find the little 3.</b> Which beat do the three quavers share?', '<b>Say it</b> with “trip-o-let” on that beat.'], 'Beat 2: “1, <b>trip-o-let</b>, 3, 4”. Three notes squeeze into one beat; the beat never moves.')}
-{inact('Why are six quavers beamed in twos in 3/4?', qtagT(vx('t34q', 60)), ['<b>How many beats</b> does 3/4 have, and what kind?', '<b>How many quavers</b> fit in one beat?', '<b>So how many</b> go under each beam?'], 'Three crotchet beats, two quavers each: <b>2 + 2 + 2</b>. Beamed 3 + 3 they would look like 6/8.')}
-{howto('Practise triplets', ['<b>Say “trip-o-let”</b> on every beat, evenly.', '<b>Clap the three syllables</b> while your foot keeps the beat.', '<b>Switch</b> between two quavers (“1 &”) and a triplet (“trip-o-let”) every bar.'])}
+<div class="xlate">{h3('The upbeat (anacrusis)')}<p>A piece can begin <b>before</b> the first full bar, with one or more notes called an upbeat or anacrusis. The last bar is then short by the same amount, so the two together make one full bar. Count the missing beats in silence before you start.</p>{vx('anac', 110, 'Count “1 2” silently, then play on 3. The upbeat (1 beat) and the last bar (2 beats) make one full bar.')}{youknow('Happy Birthday', ykfig('yk_bday', ('n1','n2'), 90), '“Hap-py” comes <b class="co">before</b> the first strong beat: an upbeat. The strong beat lands on “birth”.', 'Sing it and clap only on “birth”, “day” and “you”: you feel where bar 1 starts.')}{thinkt('An upbeat is the breath before you speak: “and-ONE”. You lift on the upbeat so the strong beat can land.')}</div>
+<div class="xlate">{h3('Triplets')}{vx('trip', 100, 'Triplet: three exactly equal notes in the time of two. First met: Level 2.')}<div class="pzg">{''.join(f'<div>{pizza(n, n, 30)}{vx(k, 80)}<span>{t}</span></div>' for n, k, t in ((2, 'pz_q', '<b>Two quavers</b>: one beat cut in 2'), (3, 'pz_t', 'A <b class="co">triplet</b>: one beat cut in 3'), (4, 'pz_s', '<b>Four semiquavers</b>: one beat cut in 4')))}</div></div>
+<!--SPLIT-->
+{inact('Where is the triplet, and how do you count it?', qtagT(vx('ia_trip2', 72), 560), ['<b>Count the bar:</b> four crotchet beats.', '<b>Find the little 3.</b> Which beat do the three quavers share?', '<b>Say it:</b> “2 &amp; a” on that beat.'], 'Beat 2: “1, <b>2 &amp; a</b>, 3, 4” (some say “trip-o-let”). Three notes squeeze into one beat; the beat never moves.')}
+{inact('Count a bar of mixed values', qtagT(vx('small', 110), 560), ['<b>Find the beats:</b> four crotchet beats, one per number.', '<b>Beat by beat:</b> how many notes share each beat?', '<b>Say it:</b> “&amp;” for 2 notes, “e &amp; a” for 4, “&amp; a” for a triplet.'], '“1, 2 &amp;, 3 e &amp; a, 4 &amp; a”: crotchet, two quavers, four semiquavers, a triplet. <b>One beat each.</b>')}
+<div class="xlate">{extra('Duplet', vx('dup', 80, 'Two notes in the time of three, in compound time: the triplet turned inside out.'))}</div>
 {foot('Notes and rests p. {{T2}} · Rhythm: off the beat p. {{T7}}', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 41)
 
 terms = [['syncopation', 'the stress falls off the beat, often on a note held across it', 'Level 4'], ['hemiola', 'two bars of three felt as three bars of two', 'Level 4'], ['swing', 'pairs of quavers played long–short, like the first and last notes of a triplet', 'Level ½'], ['polyrhythm', 'two rhythms at once, such as three notes in one hand against two in the other', 'Level 7'], ['rubato', 'time stretched and given back, for expression; the pulse returns', lv('')]]
 P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Now the fun part: rhythm that teases the beat. It only works if the beat underneath stays rock-steady.')}
 {hero(hero_sync(), 'A note between the beats')}
-{two(h3('Syncopation') + vx('sync', 70, 'The crotchet starts on “&” and is held through beat 2.') + '<p class="sm">Level 4. Feel beat 2 even though nothing is played on it.</p>',
-     h3('Hemiola') + vx('hemi', 70, 'Two bars of 3/4 felt as three minims.') + '<p class="sm">Level 4. Common at the ends of phrases in Baroque dances.</p>')}
+<div class="xlate">{h3('Swing <span class="lvl2">Level ½</span>')}<p>Common from the first pieces: jazz, blues and many easy modern pieces are marked <i>swing</i>. Pairs of quavers are written evenly but played <b>long–short</b>, like the first and last notes of a triplet.</p>{two(vx('swingw', 84, 'Written'), vx('swingp', 84, 'Played'))}{inact('Which notes swing?', qtagT(vx('ia_swing', 100), 560), ['<b>Find the quaver pairs.</b> On which beats?', '<b>Play each pair long–short:</b> “doo-ba”.', '<b>What about the crotchets?</b>'], 'Only the <b>pairs</b> (beats 2 and 3) swing; the crotchets and the beat underneath stay even.')}</div>
 <!--SPLIT-->
-{h3('Swing <span class="lvl2">Level ½</span>')}
-<p>Common from the first pieces: jazz, blues and many easy modern pieces are marked <i>swing</i>. Pairs of quavers are written evenly but played <b>long–short</b>, like the first and last notes of a triplet.</p>
-{two(vx('swingw', 66, 'Written'), vx('swingp', 66, 'Played'))}
-{extra('Polyrhythm and rubato', two('<p><b>Polyrhythm</b> (Level 7): two rhythms at once.</p>' + vx('poly', 72, 'Three against two: a triplet above, two crotchets below, starting together.'),
-     '<p><b>Rubato</b>: Time is stretched and then given back, for expression: the music leans into a phrase and catches up after it. The pulse always returns. Marked <i>rubato</i>, or simply part of the style in much music from the 1800s.</p>'))}
-{watch(['Rushing the short notes after a long one: keep counting inside the long note.', 'Playing a triplet unevenly: three equal notes, not two quick and one long.', 'Letting syncopation drag the pulse: tap the beat with your foot.'])}
-{inact('Where does the long note start?', qtagT(vx('ia_sync', 74)), ['<b>Tap the beats:</b> 1, 2.', '<b>Find the red crotchet.</b> Does it start on a beat, or on the “&”?', '<b>Hold it:</b> through which beat?'], 'It starts on the “&” and holds through beat 2: the long note starts <b>off the beat</b>. That is syncopation.')}
-{youknow('The Entertainer (Scott Joplin)', ykfig('yk_ent', ('n4','n6'), 70), 'The high <b class="co">C</b> keeps landing just after the beat, not on it: syncopation, the bounce of ragtime.', 'Tap the beat with your foot and hum the tune: hear the C slip between the taps.')}
-{inact('Which notes swing?', '<div><p class="mmk">Swing</p>' + vx('ia_swing', 72) + '</div>', ['<b>Find the quaver pairs.</b> On which beats?', '<b>Play each pair long–short:</b> “doo-ba”.', '<b>What about the crotchets?</b>'], 'Only the <b>pairs</b> (beats 2 and 3) swing; the crotchets and the beat underneath stay even.')}
-{thinkt('Syncopation is a skip in your walk: a step that lands between the beats. Swing is walking with a spring in your step, long-short, long-short. Rubato is borrowing time like pocket money: whatever you spend, you pay back.')}
-{game('On the beat or off it?', qitems(['starts on 1', 'starts on &', 'starts on 2', 'starts on the & of 3'], 4), 'A note that starts on a number is on the beat; on an “&” it is off the beat. Which are off?', '2 and 4 are off the beat; 1 and 3 are on it.')}
-{try10(hero_sync().replace('max-width:580px', 'max-width:300px'), 'Foot on the beat, hands on the &.', 'Tap a steady beat with your foot. Clap only between the taps. If the foot starts to follow the hands, slow down.')}
-{inact('Two bars of 3, or one big bar?', qtagT(vx('hemi', 66)), ['<b>Count as written:</b> “1 2 3, 1 2 3”.', '<b>Look at the notes:</b> how many beats does each minim last?', '<b>Feel each minim</b> as one big beat. How many big beats?'], 'Three minims of two beats: the six beats are felt as <b>three big ones</b>. That is a hemiola.')}
+<div class="xlate">{h3('Syncopation <span class="lvl2">Level 4</span>')}<p>A note starts on the “&amp;”, between the beats, and is held through the next beat. Feel that beat even though nothing is played on it.</p></div>
+{inact('Where does the long note start?', qtagT(vx('ia_sync', 140), 560), ['<b>Tap the beats:</b> 1, 2.', '<b>Find the red crotchet.</b> Does it start on a beat, or on the “&”?', '<b>Hold it:</b> through which beat?'], 'It starts on the “&” and holds through beat 2: the long note starts <b>off the beat</b>. That is syncopation.')}
+<div class="xlate">{youknow('The Entertainer (Scott Joplin)', ykfig('yk_ent', ('n4','n6'), 112), 'The high <b class="co">C</b> keeps landing just after the beat, not on it: syncopation, the bounce of ragtime.', 'Tap the beat with your foot and hum the tune: hear the C slip between the taps.')}{thinkt('Syncopation is a skip in your walk: a step that lands between the beats.')}</div>
+<!--SPLIT-->
+<div class="xlate">{h3('Hemiola <span class="lvl2">Level 4</span>')}<p>Two bars of 3/4 felt as three bars of two: three minims across the bar line. Common at the ends of phrases in Baroque dances.</p>{inact('Two bars of 3, or one big bar?', qtagT(vx('hemi', 110), 560), ['<b>Count as written:</b> “1 2 3, 1 2 3”.', '<b>Look at the notes:</b> how many beats does each minim last?', '<b>Feel each minim</b> as one big beat. How many big beats?'], 'Three minims of two beats: the six beats are felt as <b>three big ones</b>. That is a hemiola.')}</div>
+<div class="xlate">{extra('Polyrhythm and rubato', two('<p><b>Polyrhythm</b> (Level 7): two rhythms at once.</p>' + vx('poly', 72, 'Three against two: a triplet above, two crotchets below, starting together.'),
+     '<p><b>Rubato</b>: Time is stretched and then given back, for expression: the music leans into a phrase and catches up after it. The pulse always returns. Marked <i>rubato</i>, or simply part of the style in much music from the 1800s.</p>') + fig_rubato())}</div>
+{howto('Feel off-beat rhythm', ['<b>Tap a steady beat</b> with your foot.', '<b>Clap only between the taps</b>, on the “&amp;”.', '<b>If the foot starts to follow the hands,</b> slow down.'])}
+{watch(['Rushing the short notes after a long one: keep counting inside the long note.', 'Swinging the crotchets: only the quaver pairs swing.'])}
 {foot('Rhythm: groups and upbeats p. {{T6}} · Words for how to play: Expression (later)', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 42)
 
 css = f'''

@@ -320,6 +320,8 @@ function drawLens(L, t) {
   if (L.k === 'lines') return drawLinesAnim();
   if (L.k === 'stepskip') return drawStepSkip();
   if (L.k === 'sharpflat') return drawSharpFlat();
+  if (L.k === 'ladder') return drawLadder();
+  if (L.k === 'majmin') return drawMajMin();
   if (L.k === 'glasses') return drawGlasses();
   const [name, subt, clef, items] = LENSD[L.k]; const n = items.length;
   const cnt = L.at.length ? L.at.filter(v => v <= t).length : n; const shown = L.full ? n : cnt, cur = cnt - 1;
@@ -450,11 +452,16 @@ function drawRhy(L, t) {
     });
     NT.forEach((n, i) => { if (!n[4] || !NT[i + 1]) return; const x1 = X(n[1]) + 6 + SPc * .6, x2 = X(NT[i + 1][1]) + 6 + SPc * .6, on = i === cn || i + 1 === cn, col = on ? ACC : i < cn ? INK : '#9a9cc0';   // a tie: one sound across both notes
       g += `<path d="M${x1 + 4} ${LY + 7} Q${(x1 + x2) / 2} ${LY + 17} ${x2 - 4} ${LY + 7}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round"/>`; });
-    // quavers: beam two in the same beat, otherwise a flag
-    const q = stems.filter(s => s[2] <= 0.75); const used = new Set();
-    q.forEach((s, j) => { const nx = q[j + 1]; if (used.has(s[0])) return;
-      if (nx && nx[0] === s[0] + 1 && Math.floor(nx[4] + 1e-6) === Math.floor(s[4] + 1e-6)) { used.add(s[0]); used.add(nx[0]); g += `<rect x="${s[1] - 1}" y="${LY - SPc * 3.4}" width="${nx[1] - s[1] + 2}" height="${SPc * .5}" fill="${s[3] === ACC || nx[3] === ACC ? ACC : s[3]}"/>`; }
-      else { used.add(s[0]); g += gl('E240', s[1] - 1, LY - SPc * 3.4, s[3]); } });
+    // short notes: beam all of one beat together (two beams for semiquavers, a 3 over a triplet), a lone one gets a flag
+    const q = stems.filter(s => s[2] <= 0.75); const groups = [];
+    q.forEach(s => { const g0 = groups[groups.length - 1], L0 = g0 && g0[g0.length - 1];
+      if (L0 && s[0] === L0[0] + 1 && Math.floor(s[4] + 1e-6) === Math.floor(L0[4] + 1e-6)) g0.push(s); else groups.push([s]); });
+    groups.forEach(G => { const hot = G.some(s => s[3] === ACC), col = hot ? ACC : G[0][3];
+      if (G.length === 1) { const s0 = G[0]; g += gl(s0[2] <= 0.26 ? 'E242' : 'E240', s0[1] - 1, LY - SPc * 3.4, s0[3]); return; }
+      const x1 = G[0][1] - 1, w = G[G.length - 1][1] - G[0][1] + 2;
+      g += `<rect x="${x1}" y="${LY - SPc * 3.4}" width="${w}" height="${SPc * .5}" fill="${col}"/>`;
+      if (G.every(s => s[2] <= 0.26)) g += `<rect x="${x1}" y="${LY - SPc * 3.4 + SPc * .8}" width="${w}" height="${SPc * .5}" fill="${col}"/>`;
+      if (G.length === 3 && G.every(s => Math.abs(s[2] - 1 / 3) < .02)) g += `<text x="${x1 + w / 2}" y="${LY - SPc * 3.4 - 6}" text-anchor="middle" font-size="14" font-style="italic" font-weight="700" fill="${col}" ${F}>3</text>`; });
   }
   // the beat: one box per beat, beat one strongest
   g += `<text x="${X0 - 18}" y="${BY + 5}" text-anchor="end" font-size="12" fill="#5a5d8f" ${F}>beat</text>`;
@@ -557,6 +564,35 @@ function drawSharpFlat() {   // a sharp slides one key right, a flat one key lef
   g += `<text x="${2 * W}" y="26" text-anchor="middle" font-size="20" font-weight="700" fill="${ACC}" ${F}>♯ one key right: D♯<animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;.1;.42;.5;1" dur="4.4s" repeatCount="indefinite"/></text>`;
   g += `<text x="${W}" y="26" text-anchor="middle" font-size="20" font-weight="700" fill="${BL}" opacity="0" ${F}>♭ one key left: D♭<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.55;.65;.92;1" dur="4.4s" repeatCount="indefinite"/></text>`;
   lensShell(key, '♪ Sharp right, flat left', `<svg viewBox="-20 0 ${N * W + 40} ${H + 50}" role="img" aria-label="A sharp moves D one key right to D sharp; a flat moves it one key left to D flat">${g}</svg>`);
+}
+function drawLadder() {   // interval numbers climb from C: 1 (unison) to 8 (octave), one key at a time
+  const key = 'ladder'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const INK = '#26296b', ACC = '#e4572e', F = 'font-family="Atkinson Hyperlegible,sans-serif"', W = 62, H = 170, BH = 104, N = 8, D = 0.55;
+  const L = 'CDEFGABC', NM = ['unison', '2nd', '3rd', '4th', '5th', '6th', '7th', 'octave'];
+  let g = '';
+  for (let i = 0; i < N; i++) g += `<rect x="${i * W}" y="60" width="${W}" height="${H}" fill="${i === 0 ? '#fde3d8' : '#fff'}" stroke="${INK}" stroke-width="1.6"/><text x="${i * W + W / 2}" y="${60 + H - 12}" text-anchor="middle" font-size="17" font-weight="700" fill="${INK}" ${F}>${L[i]}</text>`;
+  [0, 1, 3, 4, 5].forEach(i => g += `<rect x="${(i + 1) * W - W * .3}" y="60" width="${W * .6}" height="${BH}" rx="3" fill="${INK}"/>`);
+  for (let i = 0; i < N; i++) { const t = (i * D).toFixed(2);
+    g += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="${t}s" dur=".2s" fill="freeze"/><rect x="${i * W + 2}" y="${60 + BH + 4}" width="${W - 4}" height="${H - BH - 32}" fill="${ACC}" opacity=".22"/><circle cx="${i * W + W / 2}" cy="${60 + BH + 26}" r="15" fill="${ACC}"/><text x="${i * W + W / 2}" y="${60 + BH + 32}" text-anchor="middle" font-size="17" font-weight="700" fill="#fff" ${F}>${i + 1}</text><text x="${i * W + W / 2}" y="${i % 2 ? 22 : 44}" text-anchor="middle" font-size="15" font-weight="700" fill="${ACC}" ${F}>${NM[i]}</text></g>`; }
+  lensShell(key, '♪ Count the notes from C', `<svg viewBox="-10 0 ${N * W + 20} ${H + 70}" role="img" aria-label="Interval numbers from C: unison, 2nd, 3rd up to octave">${g}</svg>`);
+}
+function drawMajMin() {   // C to E has 3 keys between; slide E down to E flat and only 2 are left
+  const key = 'majmin'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const INK = '#26296b', ACC = '#e4572e', BL = '#5b6fd6', F = 'font-family="Atkinson Hyperlegible,sans-serif"', W = 70, H = 190, BH = 118, N = 5, T = 6;
+  const L = 'CDEFG'; let g = '';
+  for (let i = 0; i < N; i++) g += `<rect x="${i * W}" y="50" width="${W}" height="${H}" fill="#fff" stroke="${INK}" stroke-width="1.6"/><text x="${i * W + W / 2}" y="${50 + H - 12}" text-anchor="middle" font-size="18" font-weight="700" fill="${INK}" ${F}>${L[i]}</text>`;
+  g += `<rect x="1" y="51" width="${W - 2}" height="${H - 2}" fill="${ACC}" opacity=".3"/>`;
+  [0, 1, 3].forEach(i => g += `<rect x="${(i + 1) * W - W * .3}" y="50" width="${W * .6}" height="${BH}" rx="3" fill="${INK}"/>`);
+  const kt = (a) => `keyTimes="0;.08;.12;.5;.58;.95;1" dur="${T}s" repeatCount="indefinite"`;
+  // in-between keys: C# (1), D (2), D# (3: gone once E becomes E flat)
+  [[W - 0 , 50 + 70, 1, 1], [1.5 * W, 50 + H - 46, 2, 1], [2 * W, 50 + 70, 3, 0]].forEach(([x, y, n, stays], j) => {
+    const on = (j * .1 + .1).toFixed(2), on2 = (j * .1 + .12).toFixed(2);
+    g += `<g opacity="0"><animate attributeName="opacity" values="0;0;1;1;${stays ? 1 : 0};${stays ? 1 : 0};0" keyTimes="0;${on};${on2};.5;.58;.95;1" dur="${T}s" repeatCount="indefinite"/><circle cx="${x}" cy="${y}" r="14" fill="#fff" stroke="${ACC}" stroke-width="2.5"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-size="16" font-weight="700" fill="${ACC}" ${F}>${n}</text></g>`; });
+  // the top note: E (white) slides left onto E flat (the black key)
+  g += `<rect y="${50 + H - 80}" width="${W - 8}" height="30" rx="8" fill="${ACC}" opacity=".85"><animate attributeName="x" values="${2 * W + 4};${2 * W + 4};${2 * W + 4};${2 * W + 4};${2 * W - W * .3 + 4 - 0};${2 * W - W * .3 + 4};${2 * W + 4}" ${kt()}/><animate attributeName="y" values="${50 + H - 80};${50 + H - 80};${50 + H - 80};${50 + H - 80};${50 + 30};${50 + 30};${50 + H - 80}" ${kt()}/><animate attributeName="width" values="${W - 8};${W - 8};${W - 8};${W - 8};${W * .6 - 8};${W * .6 - 8};${W - 8}" ${kt()}/></rect>`;
+  g += `<text x="${N * W / 2}" y="30" text-anchor="middle" font-size="20" font-weight="700" fill="${ACC}" ${F}>C to E: 3 between, a major 3rd<animate attributeName="opacity" values="0;0;1;1;0;0;0" keyTimes="0;.3;.34;.5;.54;.95;1" dur="${T}s" repeatCount="indefinite"/></text>`;
+  g += `<text x="${N * W / 2}" y="30" text-anchor="middle" font-size="20" font-weight="700" fill="${BL}" opacity="0" ${F}>C to E♭: 2 between, a minor 3rd<animate attributeName="opacity" values="0;0;0;0;1;1;0" keyTimes="0;.3;.5;.56;.62;.95;1" dur="${T}s" repeatCount="indefinite"/></text>`;
+  lensShell(key, '♪ One key fewer between', `<svg viewBox="-20 0 ${N * W + 40} ${H + 60}" role="img" aria-label="C to E has three keys between; E slides down to E flat and only two are left">${g}</svg>`);
 }
 function tick() {
   if (playing < 0) return; const k = CH[ci].clips[playing], t = audio.currentTime; const ln = k.l.find(x => t >= x.t0 && t < x.t1);

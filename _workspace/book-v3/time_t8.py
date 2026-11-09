@@ -11,6 +11,7 @@ def road(blocks, order=None, q=False, W=74, H=52):
     """blocks: list of dicts {l: letter, start_rep, end_rep, ending: '1.'|'2.', above: text, segno, coda, fine}.
     order: list of block indices in playing order (drawn as a numbered path under the blocks); q: show '?' instead of the order."""
     n = len(blocks); x0 = 16; top = 46; Wt = x0 * 2 + n * W
+    if order and q: Wt = max(Wt, x0 + 96 + len(order) * 34 + 6)
     o = f'<svg viewBox="0 0 {Wt} {top + H + (64 if order else 14)}" style="width:100%;max-width:{Wt}px;height:auto;display:block;margin:0 auto">'
     for i, b in enumerate(blocks):
         x = x0 + i * W
@@ -34,7 +35,7 @@ def road(blocks, order=None, q=False, W=74, H=52):
             o += f'<text x="{Wt / 2}" y="{y + 6}" text-anchor="middle" font-family="AH,Arial" font-size="17" font-weight="700" fill="{_RR}">You play: {pts}</text>'
     return o + '</svg>'
 _SIGNS = [[road([{'l': 'A', 'start_rep': 1, 'end_rep': 1}], W=60, H=40), '<b>repeat signs</b>', 'play the bars between them twice (with only the end sign: go back to the start)'],
-          [road([{'l': 'B', 'ending': '1.'}, {'l': 'C', 'ending': '2.'}], W=60, H=40), '<b>1st and 2nd time bars</b>', 'first time play the 1. bar; after the repeat skip it and play the 2. bar'],
+          [road([{'l': 'B', 'ending': '1.', 'end_rep': 1}, {'l': 'C', 'ending': '2.'}], W=60, H=40), '<b>1st and 2nd time bars</b>', 'first time play the 1. bar; after the repeat skip it and play the 2. bar'],
           ['<b class="co">D.C.</b>', '<b>da capo</b>', '“from the head”: go back to the very beginning'],
           [road([{'l': '', 'segno': 1}], W=40, H=20), '<b>D.S.</b> (dal segno)', '“from the sign”: go back to the segno'],
           ['<b class="co">Fine</b>', '<b>fine</b>', '“the end”: after a D.C. or D.S., stop here'],
@@ -50,6 +51,5 @@ P43 = page(f'''{head('Part II · Time · 8', 'Repeats and road signs', 'Music of
 <!--SPLIT-->
 {inact('D.S. al Coda', road([{'l': 'A'}, {'l': 'B', 'segno': 1}, {'l': 'C', 'above': 'To Coda'}, {'l': 'D', 'above': 'D.S. al Coda'}, {'l': 'E', 'coda': 1}], order=[0, 1, 2, 3, 1, 2, 4], q=True, W=96), ['<b>Play through</b> to D. (Ignore “To Coda” the first time.)', '<b>D.S.</b> sends you back to the sign: which bar has it?', '<b>Play on to “To Coda”,</b> then jump. Where?'], 'A B C D, back to the sign, B C, jump to the coda: <b>A B C D B C E</b>.')}
 {game('How many bars do you play?', qitems(['|: A B :|', 'A |: B C :| D', 'A B (Fine) C D.C.'], 3), 'Each letter is one bar. Follow the signs and count every bar you play.', '1 four (A B A B) · 2 six (A B C B C D) · 3 five (A B C A B).')}
-{watch(['Taking the repeat again after a D.C.: on the way back, skip the repeats (unless the music says otherwise).', 'Missing “To Coda” the first time through: it only works after the D.S. or D.C.'])}
-{try10(road([{'l': 'A', 'start_rep': 1}, {'l': 'B', 'end_rep': 1}], W=56, H=40), 'Clap it, then play it.', 'Clap A (four beats), clap B (four beats), back to A, B again. Say the letters as you go.')}
+{watch(['Taking the repeat again after a D.C.: on the way back, skip the repeats (unless the music says otherwise).', 'Jumping at “To Coda” the first time through: it only works after the D.S. or D.C.'])}
 {foot('Pulse and the bar p. {{T1}} · Time signatures p. {{T4}}', 'Online: Library › Signs')}''', 68)

@@ -180,7 +180,7 @@ NEW = {
   ('P', 'C sharp is between them: a tone.', c(42, 'ex1', reveal=True))]),
  ('Intervals: count the notes', [
   ('B', 'Now bigger distances. The distance between two notes is an interval, and to give it a number, count the notes, both ends included. C to E: C, D, E. Three notes: a third.', c(43, 'xlate')), ('piano', 'C4 D4 E4 | [C4 E4]', c(43, 'xlate', seq=['#7', '#8', '#9', '#9'])),
-  ('B', 'Sharps and flats never change the number. From C, the numbers go: unison, second, third, fourth, fifth, sixth, seventh, octave.', c(43, 'xlate')), ('piano', 'C4 D4 E4 F4 G4 A4 B4 C5', c(43, 'xlate', seq=['unison', '2nd', '3rd', '4th', '5th', '6th', '7th', '8ve'])),
+  ('B', 'Sharps and flats never change the number. From C, the numbers go: unison, second, third, fourth, fifth, sixth, seventh, octave.', c(43, 'xlate', anim='ladder')), ('piano', 'C4 D4 E4 F4 G4 A4 B4 C5', c(43, 'xlate', seq=['unison', '2nd', '3rd', '4th', '5th', '6th', '7th', '8ve'])),
   ('P', 'So C to G is C, D, E, F, G: a fifth.', c(43, 'xlate'))]),
  ('Example: count an interval', [
   ('B', 'F up to A. How many notes? Pause and count.', c(43, 'ex2', show=['F', 'A', 'C', 'G'])), ('pause', 3, c(43, 'ex2', show=['F', 'A', 'C', 'G'])),
@@ -199,7 +199,7 @@ NEW = {
   ('B', 'Clara, two thirds can sound different. Listen.', c(45, 'lead')), ('piano', '[C4 E4] | [C4 Eb4]', c(45, 'lead')), ('P', 'The first is bright. The second is darker.', c(45, 'lead')),
   ('B', 'Both are thirds: three notes each. To tell them apart, count the keys in between, black and white, but not the two you play.', c(45, 'secret')),
   ('B', 'C to E has three keys between: C sharp, D, D sharp. A major third.', c(45, 'hero')), ('piano', 'C#4 D4 D#4 | [C4 E4]', c(45, 'hero', seq=idx(7, 10) + ['#2'])),
-  ('B', 'C to E flat has only two between, one fewer. A minor third.', c(45, 'hero')), ('piano', 'C#4 D4 | [C4 Eb4]', c(45, 'hero', seq=idx(18, 20) + ['#11'])),
+  ('B', 'C to E flat has only two between, one fewer. A minor third.', c(45, 'hero', anim='majmin')), ('piano', 'C#4 D4 | [C4 Eb4]', c(45, 'hero', seq=idx(18, 20) + ['#11'])),
   ('B', 'So the rule: count the notes for the number, and count the keys in between for the size.', c(45, 'rule')),
   ('B', 'Thirds and sixths come in two sizes, major and minor. Fourths, fifths and octaves have one main size, called perfect. They are never major or minor.', c(45, 'two'))]),
  ('A perfect fourth', [
@@ -485,3 +485,171 @@ NEW['PO'] = ('Welcome', [
   ('B', 'All of it, in this one picture: eight chapters, and a page of tips at the end. Shall we begin with the keyboard?', c(21, 'map')),
   ('P', 'Yes, please!', c(21, 'map'))])])
 CH['PO'] = NEW['PO']
+
+# ---- Time 4–8 (her 9 Nov: "응 순서대로 해줘": the same pass, with audio) ----
+NEW['T4'] = ('Time signatures', [
+ ('The secret', [
+  ('P', 'What are the two numbers at the start of the music?', c(59, 'lead')),
+  ('B', 'The time signature, Clara. Read it like a train ticket. The top number says how many seats each carriage, each bar, has. The bottom number says which note sits in one seat.', c(59, 'hero')),
+  ('B', 'Four-four: four seats, and a crotchet in each. Count the seats with me.', c(59, 'hero')),
+  ('count', {'beats': 'X x M x X x M x', 'notes': 'C4 C4 C4 C4 C4 C4 C4 C4', 'say': '1 2 3 4 1 2 3 4'}, c(59, 'hero')),
+  ('B', 'That is the secret: the top number is how many beats, and the bottom number is which note gets one beat.', c(59, 'secret'))]),
+ ('Think of a train', [
+  ('B', 'In three-four every carriage has three seats. A minim books two, a crotchet one. A rest books a seat and leaves it empty. A dotted minim fills all three.', c(59, 'pzbox')),
+  ('count', {'beats': 'X x x X x x X x x', 'notes': 'C4*2 C4 C4 R C4 C4*3', 'say': '1 2 3 1 2 3 1 2 3'}, c(59, 'pzbox')),
+  ('B', 'The bottom number is a code: two means a minim, four a crotchet, eight a quaver, sixteen a semiquaver.', c(59, 'xlate'))]),
+ ('Example: what does three-four mean?', [
+  ('B', 'Three-four. How many counts in each bar, and which note gets one count? Pause and think.', c(60, 'ex1')),
+  ('pause', 3, c(60, 'ex1')),
+  ('P', 'Three counts, and the four means a crotchet.', c(60, 'ex1', reveal=True)),
+  ('B', 'Check the first bar: two quavers make one, then a crotchet, a crotchet. Three. Count it.', c(60, 'ex1', reveal=True)),
+  ('count', {'beats': 'X/2 R/2 x x X x x', 'notes': 'C4/2 C4/2 C4 C4 C4*2 C4', 'say': '1 & 2 3 1 2 3'}, c(60, 'ex1', reveal=True))]),
+ ('Simple time', [
+  ('B', 'In simple time every beat splits into two. Two-four, three-four and four-four count crotchets. Four-four is also written as a C, common time, and two-two as a C with a line through it, cut common time: two minim beats.', c(60, 'xlate'))]),
+ ('Example: which ticket?', [
+  ('B', 'This carriage has three seats, and a quaver sits in each. Write the ticket. Pause and try.', c(60, 'ex2')),
+  ('pause', 4, c(60, 'ex2')),
+  ('P', 'Three on top. A quaver is eight, so eight underneath: three-eight!', c(60, 'ex2', reveal=True))]),
+ ('Example: where does the rest go?', [
+  ('B', 'Four-four, and three crotchets. Which seat is empty, and what goes there?', c(61, 'ex3')),
+  ('pause', 3, c(61, 'ex3')),
+  ('P', 'Seat four. A crotchet rest!', c(61, 'ex3', reveal=True)),
+  ('count', {'beats': 'X x M x', 'notes': 'C4 C4 C4 R', 'say': '1 2 3 4'}, c(61, 'ex3', reveal=True))]),
+ ('Changing time signature', [
+  ('B', 'A new time signature can arrive right after a bar line. Here three-four becomes two-four, and two beats a bar holds until the next one.', c(61, 'xlate')),
+  ('count', {'beats': 'X x x X x x X x X x X x', 'notes': 'C4 C4 C4 C4*2 C4 C4 C4 C4*2 C4 C4', 'say': '1 2 3 1 2 3 1 2 1 2 1 2'}, c(61, 'xlate'))]),
+ ('You know this', [
+  ('B', 'The Minuet from the Notebook for Anna Magdalena Bach: one two three, one two three, the step of the dance. That is three-four.', c(61, 'yk')),
+  ('count', {'beats': 'X x x X x x', 'notes': 'D5 G4/2 A4/2 B4/2 C5/2 D5 G4 G4', 'say': '1 2 3 1 2 3'}, c(61, 'yk')),
+  ('Q', 'And remember, Clara: the bottom number is not a count. It names the note that gets one beat.', c(61, 'watch')),
+  ('B', 'Until next time, Clara.', c(61, 'watch')), ('P', 'Goodbye!', c(61, 'watch'))])])
+CH['T4'] = NEW['T4']
+
+NEW['T5'] = ('Compound and irregular time', [
+ ('The secret', [
+  ('P', 'Some pieces feel like skipping. Why?', c(62, 'lead')),
+  ('B', 'That is compound time, Clara. Take six quavers. Three-four groups them in twos: three beats. Six-eight groups them in threes: two big beats.', c(62, 'hero')),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 & 2 & 3 &'}, c(62, 'hero')),
+  ('count', {'beats': 'X/2 R/2 R/2 M/2 R/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 2 3 4 5 6'}, c(62, 'hero')),
+  ('B', 'The same six notes, new groups. The secret: in compound time each beat is a dotted note, and it splits in three.', c(62, 'secret'))]),
+ ('Simple or compound?', [
+  ('B', 'In simple time one beat splits in two. In compound time one dotted beat splits in three. Quick test: a top number of six, nine or twelve means compound. Divide it by three to find the beats.', c(62, 'xlate'))]),
+ ('Counting six-eight', [
+  ('B', 'Slowly, count all six quavers. At speed, feel only two beats, on one and four.', c(63, 'xlate')),
+  ('count', {'beats': 'X x x M x x', 'notes': 'C4 C4 C4 C4 C4 C4', 'say': '1 2 3 4 5 6'}, c(63, 'xlate')),
+  ('count', {'beats': 'X R R M R R X R R M R R', 'notes': 'C4 C4 C4 C4 C4 C4 C4*3 C4*3', 'say': '1 2 3 4 5 6 1 - - 4 - -'}, c(63, 'xlate')),
+  ('B', 'Try it: say pine-ap-ple on every beat, and step only on pine.', c(63, 'xlate'))]),
+ ('Example: how many beats in nine-eight?', [
+  ('B', 'Nine-eight. Does nine divide by three? How many groups of three?', c(63, 'ex1')),
+  ('pause', 3, c(63, 'ex1')),
+  ('P', 'Three groups: three beats, each a dotted crotchet!', c(63, 'ex1', reveal=True)),
+  ('count', {'beats': 'X x x M x x M x x', 'notes': 'C4 C4 C4 C4 C4 C4 C4 C4 C4', 'say': '1 2 3 4 5 6 7 8 9'}, c(63, 'ex1', reveal=True))]),
+ ('Example: is this still four-four?', [
+  ('B', 'Many dances keep four-four but group the eight quavers three, three, two. Where do the accents fall? And how many times does your foot tap?', c(63, 'xlate2')),
+  ('count', {'beats': 'X/2 R/2 R/2 M/2 R/2 R/2 M/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 2 3 1 2 3 1 2'}, c(63, 'xlate2')),
+  ('P', 'Accents on one, four and seven, but my foot still taps four times.', c(63, 'xlate2', reveal=True)),
+  ('B', 'So it is still four-four. Only the accents are uneven.', c(63, 'xlate2', reveal=True))]),
+ ('Irregular time', [
+  ('B', 'Going further: irregular time has five or seven counts, in uneven groups. Five-four is three plus two; seven-eight can be two, two, three.', c(64, 'xlate')),
+  ('count', {'beats': 'X x x M x X x x M x', 'notes': 'C4 C4 C4 C4 C4 C4 C4 C4 C4 C4', 'say': '1 2 3 1 2 1 2 3 1 2'}, c(64, 'xlate')),
+  ('K', 'Five in a bar? In my day we kept to twos and threes. But I must admit, it does make one dance.', c(64, 'xlate'))]),
+ ('You know this', [
+  ('B', 'Row, Row, Row Your Boat: two big beats in every bar, each a dotted crotchet. Sway twice per bar while you sing.', c(64, 'yk')),
+  ('count', {'beats': 'X R R M R R X R R M R R', 'notes': 'C4*3 C4*3 C4*2 D4 E4*3', 'say': '1 - - 2 - - 1 - - 2 - -'}, c(64, 'yk')),
+  ('B', 'And watch the bottom number: six-eight counts quavers, not crotchets. Until next time, Clara.', c(64, 'watch')), ('P', 'Goodbye!', c(64, 'watch'))])])
+CH['T5'] = NEW['T5']
+
+NEW['T6'] = ('Rhythm: groups and upbeats', [
+ ('The secret', [
+  ('P', 'Why are some quavers joined together?', c(65, 'lead')),
+  ('B', 'Those lines are beams, Clara. One beam, one beat: they join the notes that share a beat, so you can see where each beat starts.', c(65, 'hero')),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C5/2 C5/2 C5/2 C5/2 C5/2 C5/2 C5/2 C5/2', 'say': '1 & 2 & 3 & 4 &'}, c(65, 'hero')),
+  ('B', 'That is half the secret. The other half: an upbeat borrows from the last bar.', c(65, 'secret'))]),
+ ('Grouping with beams', [
+  ('B', 'In four-four a beam may cover beats one and two, or three and four, but never cross the middle of the bar. On the left the beams show the beats. On the right, one beam hides the middle.', c(65, 'xlate')),
+  ('P', 'So the middle of the bar must always show.', c(65, 'xlate'))]),
+ ('Example: six quavers in three-four', [
+  ('B', 'Six quavers in three-four. Why are they beamed in twos? Pause and think.', c(65, 'ex1')),
+  ('pause', 3, c(65, 'ex1')),
+  ('P', 'Three crotchet beats, two quavers each!', c(65, 'ex1', reveal=True)),
+  ('B', 'Beamed in threes, they would look like six-eight.', c(65, 'ex1', reveal=True)),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 & 2 & 3 &'}, c(65, 'ex1', reveal=True))]),
+ ('The upbeat', [
+  ('B', 'A piece can begin before the first full bar. These notes are the upbeat, or anacrusis. Count one two silently, then play on three. The last bar is short by the same amount: one plus two makes a full bar.', c(66, 'xlate')),
+  ('count', {'beats': 'X x x X x x X x x', 'notes': 'R R C4 C4 C4 C4 C4*2 R', 'say': '1 2 3 1 2 3 1 2 -'}, c(66, 'xlate')),
+  ('B', 'Happy Birthday starts with an upbeat. Hap-py comes before the strong beat, and the strong beat lands on birth.', c(66, 'xlate')),
+  ('count', {'beats': 'R x X x x', 'notes': 'C4*0.75 C4/4 D4 C4 F4', 'say': '- 3 1 2 3'}, c(66, 'xlate'))]),
+ ('Triplets', [
+  ('B', 'A triplet is three equal notes in the time of two, marked with a little three. One beat cut in two is two quavers; cut in three, a triplet; cut in four, four semiquavers.', c(66, 'xlate2')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4/2 C4/2 C4/3 C4/3 C4/3 C4/4 C4/4 C4/4 C4/4 C4', 'say': '1 2 3 4'}, c(66, 'xlate2'))]),
+ ('Example: where is the triplet?', [
+  ('B', 'Find the little three. Which beat do the three quavers share?', c(67, 'ex2')),
+  ('pause', 3, c(67, 'ex2')),
+  ('P', 'Beat two!', c(67, 'ex2', reveal=True)),
+  ('B', 'Say it: one, two and a, three, four. The beat never moves.', c(67, 'ex2', reveal=True)),
+  ('count', {'beats': 'X x M x', 'notes': 'C4 C4/3 C4/3 C4/3 C4 C4', 'say': '1 2 3 4'}, c(67, 'ex2', reveal=True))]),
+ ('Example: a bar of mixed values', [
+  ('B', 'Now a bar with everything: a crotchet, two quavers, four semiquavers and a triplet. One beat each. Count it with me.', c(67, 'ex3')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4 C4/2 C4/2 C4/4 C4/4 C4/4 C4/4 C4/3 C4/3 C4/3', 'say': '1 2 3 4'}, c(67, 'ex3', reveal=True)),
+  ('B', 'Going further: a duplet is the triplet turned inside out, two notes in the time of three, in compound time. Until next time, Clara.', c(67, 'xlate')), ('P', 'Goodbye!', c(67, 'xlate'))])])
+CH['T6'] = NEW['T6']
+
+NEW['T7'] = ('Rhythm: off the beat', [
+ ('The secret', [
+  ('P', 'Some music seems to bounce between the beats.', c(68, 'lead')),
+  ('B', 'That is rhythm teasing the beat, Clara. Here a note starts on the and, between the beats, and is held over beat two.', c(68, 'hero')),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4 C4/2 C4 C4 C4/2 C4', 'say': '1 & 2 & 3 & 4 &'}, c(68, 'hero')),
+  ('B', 'It only works if the beat underneath stays rock-steady. That is the secret.', c(68, 'secret'))]),
+ ('Swing', [
+  ('B', 'First, swing. Jazz and blues pieces are often marked swing. Pairs of quavers are written evenly but played long, short, like the first and last notes of a triplet.', c(68, 'xlate')),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2', 'say': '1 & 2 &'}, c(68, 'xlate')),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2', 'notes': 'C4*0.667 C4/3 C4*0.667 C4/3', 'say': '1 & 2 &'}, c(68, 'xlate')),
+  ('B', 'Which notes swing here? Pause and look.', c(68, 'xlate')), ('pause', 3, c(68, 'xlate')),
+  ('P', 'Only the quaver pairs, on beats two and three. The crotchets stay even.', c(68, 'xlate', reveal=True))]),
+ ('Syncopation', [
+  ('B', 'Syncopation: a note starts on the and, and is held through the next beat. Tap the beats: one, two. Where does the red crotchet start?', c(69, 'xlate')),
+  ('pause', 3, c(69, 'ex2')),
+  ('P', 'On the and, and it holds through beat two!', c(69, 'ex2', reveal=True)),
+  ('count', {'beats': 'X/2 R/2 x/2 R/2 X/2 R/2 x/2 R/2', 'notes': 'C4/2 C4 C4/2 C4 C4', 'say': '1 & 2 & 1 & 2 &'}, c(69, 'ex2', reveal=True)),
+  ('B', 'The Entertainer, by Scott Joplin: the high C keeps landing just after the beat. That is the bounce of ragtime.', c(69, 'xlate2')),
+  ('B', 'To feel it, tap a steady beat with your foot, and clap only between the taps. If your foot starts to follow your hands, slow down.', c(69, 'howto'))]),
+ ('Hemiola', [
+  ('B', 'Hemiola: two bars of three-four felt as three big beats. Count as written, one two three, one two three. Now feel each minim as one big beat. How many?', c(70, 'xlate')),
+  ('count', {'beats': 'X x x X x x', 'notes': 'C4*2 C4*2 C4*2', 'say': '1 2 3 1 2 3'}, c(70, 'xlate')),
+  ('P', 'Three big ones!', c(70, 'xlate', reveal=True))]),
+ ('Polyrhythm and rubato', [
+  ('B', 'Going further: polyrhythm is two rhythms at once, three against two. And rubato stretches the time, then gives it back. Whatever you borrow, you pay back.', c(70, 'xlate2')),
+  ('B', 'Keep counting inside long notes, and only the quaver pairs swing. Until next time, Clara.', c(70, 'watch')), ('P', 'Goodbye!', c(70, 'watch'))])])
+CH['T7'] = NEW['T7']
+
+NEW['T8'] = ('Repeats and road signs', [
+ ('The secret', [
+  ('P', 'Why does the music sometimes go backwards?', c(71, 'lead')),
+  ('B', 'To save writing the same bars twice, Clara. Two dots facing back mean: go back and play it again. Here you play A, B, then A, B again, then C.', c(71, 'hero')),
+  ('B', 'Read the signs like a map. Jump back at the sign, stop at Fine, or jump to the Coda.', c(71, 'secret'))]),
+ ('The signs', [
+  ('B', 'Repeat signs: play the bars between them twice. First and second time bars: the first time, play bar one; after the repeat, skip it and play bar two. D.C., da capo, from the head: back to the very beginning. D.S., dal segno: back to the sign. Fine: the end. And Coda, the tail: at To Coda, jump to the coda sign.', c(71, 'ht')),
+  ('B', 'The rule: follow the map in order. After a jump, stop at the first Fine you meet, or jump at To Coda.', c(71, 'rule'))]),
+ ('Example: one repeat sign', [
+  ('B', 'B ends with a repeat sign, and there is no start sign. In what order do you play? Pause and try.', c(72, 'ex1')),
+  ('pause', 4, c(72, 'ex1')),
+  ('P', 'Back to the very start: A, B, A, B, C.', c(72, 'ex1', reveal=True))]),
+ ('Example: first and second time', [
+  ('B', 'First time: A, then the bar marked one. The repeat sends you back to A. Second time, which bar do you skip?', c(72, 'ex2')),
+  ('pause', 4, c(72, 'ex2')),
+  ('P', 'Skip B: A, B, A, C.', c(72, 'ex2', reveal=True))]),
+ ('Game: how many bars?', [
+  ('B', 'A quick game: each letter is one bar. Follow the signs and count every bar you play. Pause and count.', c(72, 'game')),
+  ('pause', 6, c(72, 'game')),
+  ('P', 'Four, six and five!', c(72, 'game', reveal=True))]),
+ ('Example: D.C. al Fine', [
+  ('B', 'Play straight through to D. D.C. sends you back to the head. Where do you stop?', c(73, 'ex3')),
+  ('pause', 4, c(73, 'ex3')),
+  ('P', 'At Fine: A, B, C, D, A, B.', c(73, 'ex3', reveal=True))]),
+ ('Example: D.S. al Coda', [
+  ('B', 'Play through to D, ignoring To Coda the first time. D.S. sends you back to the sign. Then play on to To Coda, and jump. Pause and try.', c(73, 'ex4')),
+  ('pause', 5, c(73, 'ex4')),
+  ('P', 'A, B, C, D, then B, C, and jump to E!', c(73, 'ex4', reveal=True)),
+  ('Q', 'Splendid. And on the way back after a D.C., Clara, one does not take the repeats again, unless the music says so.', c(73, 'watch')),
+  ('B', 'Until next time, Clara.', c(73, 'watch')), ('P', 'Goodbye!', c(73, 'watch'))])])
+CH['T8'] = NEW['T8']
