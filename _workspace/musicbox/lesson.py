@@ -457,7 +457,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
             FM = SONG.get('gig', {}).get('rfing', {'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5})   # her 22:37: finger numbers on top, the count between letters and words
             fg = lambda t: '' if t in ('-', '', 'r') or t.startswith('<') else '.'.join(str(FM.get(x, '')) for x in t.split('.'))
             if rh and 'big' in cls:
-                r = '<tr class="mbfr"><th></th>' + row(lambda b, i: f'<td class="mbfn{c(b, i)}">{half(fg(tok(b.get("r", ""), i)))}</td>') + '</tr>'
+                r = '<tr class="mbfr"><th></th>' + row(lambda b, i: f'<td class="mbfn{c(b, i)}">{half(tok(b["f"], i).replace("-", "") if b.get("f") else fg(tok(b.get("r", ""), i)))}</td>') + '</tr>'   # b['f']: this bar's own fingers, one per box (her 11 Nov 00:00: the hand moves where the tune needs it)
                 r += '<tr class="rh"><th>R.H.</th>' + row(lambda b, i: cell(tok(b.get('r', ''), i), 'rl', c(b, i))) + '</tr>' + ('<tr class="cnt"><th></th>' + row(lambda b, i: f'<td class="cn mbcm{c(b, i)}">' + (half(f'{i + 1}.&') if '.' in tok(b.get('r', ''), i) else str(i + 1)) + '</td>') + '</tr>')
             else:
                 r = '' if ('sm' in cls or (li and ('big' not in cls or 'mid' in cls))) else cnt
