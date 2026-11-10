@@ -23,7 +23,7 @@ S = [
  dict(t='Ode to Joy', id='ode', job='Beethoven’s most famous tune, and now it is yours. Play it after dinner.', lh=LH2,
       how='A big tune made of small steps. Look for the line that comes back.',
       g=[[B('E E F G', 'C', 'Joy- ful, joy- ful,'), B('G F E D', 'G', 'we a- dore thee,'), B('C C D E', 'C', 'God of glo- ry,'), B('E D D -', 'G', 'Lord of love; -')],
-         [B('E E F G', 'C', 'hearts un- fold like'), B('G F E D', 'G', 'flowers be- fore thee,'), B('C C D E', 'C', 'o- pening to the'), B('D C C -', 'C', 'sun a- bove. -')]]),
+         [B('E E F G', 'C', 'hearts un- fold like'), B('G F E D', 'G', 'flowers be- fore thee,'), B('C C D E', 'C', 'o- pening to the'), B('D C C -', 'C', 'sun a- bove -')]]),
  dict(t='Jingle Bells', id='jingle', job='December’s favourite. Play it, and the whole room sings.', lh=LH3,
       how='New for the left hand: F, with finger 2. It comes twice, in the same place each time.',
       g=[[B('E E E -', 'C', 'Jin- gle bells -'), B('E E E -', 'C', 'jin- gle bells -'), B('E G C D', 'C', 'jin- gle all the'), B('E - - -', 'C', 'way - - -')],
@@ -43,7 +43,7 @@ S = [
       how='New: an empty box with a dot is a rest. Count it, but stay quiet.',
       g=[[B('r C E F', 'C', '- Oh when the'), B('G - - -', 'C', 'saints - - -'), B('r C E F', 'C', '- go march- ing'), B('G - - -', 'C', 'in - - -')],
          [B('r C E F', 'C', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - E -', 'C', 'march- - ing -'), B('D - - -', 'G', 'in - - -')],
-         [B('r E E D', 'C', '- Oh Lord, I'), B('C - - C', 'C', 'want - - to'), B('E - G G', 'C', 'be - in that'), B('G F - -', 'F', 'num- ber - -')],
+         [B('r E E D', 'G', '- Oh Lord, I'), B('C - - C', 'C', 'want - - to'), B('E - G G', 'C', 'be - in that'), B('G F - -', 'F', 'num- ber - -')],
          [B('r C E F', 'C', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - D -', 'G', 'march- - ing -'), B('C - - -', 'C', 'in - - -')]]),
  dict(t='Are You Sleeping?', id='frere', job='A round: when you can play it, someone else starts it two bars after you.', lh=('C with 5. The thumb waits on G.', {'c': 5, 'g': 1}),
       rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5, 'A': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5, 'a': 5}, 'Finger 5 reaches to A again, then back to G.'),
@@ -53,12 +53,29 @@ S = [
  dict(t='Camptown Races', id='camptown', job='A racing song: fast, bright and full of "doo-dah". Now every chord gets two keys.', lh=('C chord: C and G (5, 1). G chord: D and G (4, 1).', {'c': 5, 'd': 4, 'g': 1}),
       rf=({'C': 1, 'D': 1, 'E': 2, 'G': 4, 'A': 5}, {'d': 1, 'e': 2, 'g': 4, 'a': 5}, 'Thumb on D, 2 on E, 4 on G, 5 on A. At the end the thumb slides to C.'),
       how='The L.H. boxes now hold two keys: play the bottom and top together, once a bar.',
-      g=[[B('G G E G', 'C+G', 'Camp- town la- dies'), B('A G E -', 'C+G', 'sing this song -'), B('E D - -', 'C+G', 'doo- dah - -'), B('E D - -', 'C+G', 'doo- dah - -')],
+      g=[[B('G G E G', 'C+G', 'Camp- town la- dies'), B('A G E -', 'C+G', 'sing this song -'), B('E D - -', 'D+G', 'doo- dah - -'), B('E D - -', 'D+G', 'doo- dah - -')],
          [B('G G E G', 'C+G', 'Camp- town race- track'), B('A G E -', 'C+G', 'five miles long -'), B('D D E D', 'D+G', 'oh, doo- dah'), B('C - - -', 'C+G', 'day! - - -')]]),
  dict(t='Old MacDonald Had a Farm', id='oldmac', job='Everyone knows it, so everyone joins in. Make the animal noises too.', lh=('C with 5, F with 2, G with the thumb. The thumb also plays A, one key up.', {'c': 5, 'f': 2, 'g': 1, 'a': 1}),
       how='When the left hand has the tune (L.H.), it plays no chord in that bar: one job at a time.',
       g=[[B('C C C <G', 'C', 'Old Mac- Don- ald'), B('<A <A <G -', '', 'had a farm -'), B('E E D D', 'G', 'E I E I'), B('C - - <G', 'C', 'O - - and')],
          [B('C C C <G', 'C', 'on his farm he'), B('<A <A <G -', '', 'had a cow -'), B('E E D D', 'G', 'E I E I'), B('C - - -', 'C', 'O - - -')]]),
+ dict(t='Happy Birthday', id='birthday', meter='3/4', job='The song for every birthday, in three: ONE two three. Both thumbs share middle C.', lh=('Thumb on middle C, with the right thumb. 2 on B, 3 on A, 4 on G.', {'g': 4, 'a': 3, 'b': 2}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5}, 'Thumb on middle C too: the two thumbs take turns.'),
+      how='New: a song in three. The tune walks from hand to hand; L.H. means the left hand plays it.',
+      g=[[B('r r <G.G', '', '- - Hap.py'), B('<A <G C', '', 'birth- day to'), B('<B - <G.G', '', 'you, - hap.py')],
+         [B('<A <G D', '', 'birth- day to'), B('C - <G.G', '', 'you, - hap.py'), B('G E C', '', 'birth- day dear')],
+         [B('<B <A F.F', '', 'Sam- my, hap.py'), B('E C D', '', 'birth- day to'), B('C - -', '', 'you! - -')]]),   # three bars a line
+ dict(t='Yankee Doodle', id='yankee', job='A marching song from 1700s America. March on the spot while you sing it.', lh=('Thumb on middle C again. 2 on B, 3 on A, 4 on G.', {'g': 4, 'a': 3, 'b': 2}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5}, 'Thumb on middle C: both thumbs share it.'),
+      how='Both thumbs on middle C. Count 1 2 3 4 and keep marching: the hands take turns.',
+      g=[[B('C C D E', '', 'Yan- kee Doo- dle'), B('C E D <G', '', 'went to town a-'), B('C C D E', '', 'rid- ing on a'), B('C - <B -', '', 'po- - ny -')],
+         [B('C C D E', '', 'stuck a fea- ther'), B('F E D C', '', 'in his cap and'), B('<B <G <A <B', '', 'called it ma- ca-'), B('C - C -', '', 'ro- - ni -')]]),
+ dict(t='Ode to Joy, the Whole Song', id='odefull', job='You know the start. Now the whole tune, as Beethoven wrote it.', lh=('C: C and G (5, 1). G: D and G (4, 1).', {'c': 5, 'd': 4, 'g': 1}),
+      how='Two keys a chord. In line 3 the tune dips to low G: your left thumb is there.',
+      g=[[B('E E F G', 'C+G', 'Joy- ful, joy- ful,'), B('G F E D', 'D+G', 'we a- dore thee,'), B('C C D E', 'C+G', 'God of glo- ry,'), B('E D D -', 'D+G', 'Lord of love; -')],
+         [B('E E F G', 'C+G', 'hearts un- fold like'), B('G F E D', 'D+G', 'flowers be- fore thee,'), B('C C D E', 'C+G', 'o- pening to the'), B('D C C -', 'C+G', 'sun a- bove -')],
+         [B('D D E C', 'D+G', 'Melt the clouds of'), B('D E.F E C', 'C+G', 'sin and. sad- ness,'), B('D E.F E D', 'D+G', 'drive the. dark of'), B('C D <G -', 'D+G', 'doubt a- way; -')],
+         [B('E E F G', 'C+G', 'Giv- er of im-'), B('G F E D', 'D+G', 'mor- tal glad- ness,'), B('C C D E', 'C+G', 'fill us with the'), B('D C C -', 'C+G', 'light of day! -')]]),
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
@@ -75,6 +92,7 @@ for i, s in enumerate(S, 1):
     d = copy.deepcopy(base)
     d.update({'title': s['t'], 'label': f'Song {i}', 'lesson': i, 'id': s['id']})
     if s.get('rf'): d['gig']['rfing'], d['gig']['rmap'], d['gig']['r_cap'] = s['rf']
+    if s.get('meter'): d['meter'], d['beats'] = s['meter'], int(s['meter'][0])
     d['gig'].update({'job': s['job'], 'tool_cap': s['lh'][0], 'fmap': s['lh'][1], 'song_how': s['how'], 'song_grid': s['g']})
     json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
 

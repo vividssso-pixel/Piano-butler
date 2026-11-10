@@ -15,6 +15,6 @@ for i in range(1, 40):
     n = int(subprocess.run(['pdfinfo', f'lesson-mb{i}.pdf'], capture_output=True, text=True).stdout.split('Pages:')[1].split()[0])
     lab = f'Song {i}' + (' · and a left-hand page' if G.get('ways') else '')
     cards.append([lab, d['title'], G['job'], f, th, '', n])
-book = ['mbS', 'mb', 'Songs', 'The Piano Butler', 'Songbook', 'Music Box', 'Both hands in beat boxes: letters, counts and chord names, one song a page', 'Whole books (later)/' + WHOLE]
+book = ['mbS', 'mb', 'Songs', 'The Piano Butler', 'Songbook', 'Music Box', 'Both hands in beat boxes, one song a page', 'Whole books (later)/' + WHOLE]
 json.dump({'book': book, 'cards': cards}, open(O + '4 Music Box/shelf.json', 'w'), ensure_ascii=False, indent=1)
 print(len(cards), 'songs')

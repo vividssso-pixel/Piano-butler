@@ -113,8 +113,22 @@ if os.path.exists(O + '4 Music Box/shelf.json'):
     import json as _json; _MB = _json.load(open(O + '4 Music Box/shelf.json'))
     cards['mb'] = {'Songs': [tuple(c) for c in _MB['cards']]}; BOOKS.append(tuple(_MB['book']))
 TS = lambda t: (' style="font-size:10cqw;line-height:11.5cqw;white-space:normal"' if len(t) > 15 else ' style="font-size:10cqw;line-height:12.5cqw"') if len(t) > 10 else ''   # her 5 Nov: long titles (Scales and keys) stay inside the frame
+def cover_mb(b):   # her 11 Nov 00:09: not a Handbook, not a Workbook -- white paper and the book's own beat boxes on the front
+    k, kind, part, series, kick, title, blurb, whole = b; n = len(cards[kind][part])
+    cell = lambda i, x, top: f'<text x="{24 + i * 40}" y="{top}" text-anchor="middle"'
+    L = ''.join(f'{cell(i, 0, 14)} font-size="9" fill="#6d6f9c">{i + 1}</text>{cell(i, 0, 42)} font-size="22" font-weight="800" fill="#26296b">{c}</text>' for i, c in enumerate('EDCD'))
+    grid = ''.join(f'<line x1="{4 + i * 40}" y1="2" x2="{4 + i * 40}" y2="86" stroke="#26296b" stroke-opacity=".18"/>' for i in range(1, 4))
+    svg = (f'<svg viewBox="0 0 168 88" width="100%"><rect x="4" y="2" width="160" height="84" fill="#fff" stroke="none"/>{grid}'
+           '<line x1="4" y1="20" x2="164" y2="20" stroke="#26296b" stroke-opacity=".18"/><line x1="4" y1="54" x2="164" y2="54" stroke="#26296b" stroke-opacity=".18"/>'
+           f'{L}<rect x="12" y="61" width="24" height="20" rx="4" fill="none" stroke="#26296b" stroke-width="1.6"/><text x="24" y="76" text-anchor="middle" font-size="13" font-weight="800" fill="#26296b">C</text>'
+           + ''.join(f'<line x1="{12 + i * 40}" y1="71" x2="{36 + i * 40}" y2="71" stroke="#26296b" stroke-opacity=".35" stroke-width="2"/>' for i in range(1, 4))
+           + '<line x1="4" y1="2" x2="4" y2="86" stroke="#26296b" stroke-width="3"/><line x1="164" y1="2" x2="164" y2="86" stroke="#26296b" stroke-width="3"/></svg>')
+    bow = '<svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="#26296b" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="#26296b" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="#e4572e"/></svg>'
+    return f"""<button type="button" class="book" data-book="{k}" aria-expanded="false"><span class="cv mbx"><span class="fr"><span class="se">{E(series)}</span><span class="ki" style="color:#e4572e">{E(kick)}</span><span class="ti">{E(title)}</span><span class="mbg">{svg}</span><span class="bl">{E(blurb)}</span><span class="bw">{bow}</span></span></span>
+<span class="cap"><b>{E(kick)} · {E(title)}</b><span>{n} songs · tap to open</span></span></button>"""
 def cover(b):
     k, kind, part, series, kick, title, blurb, whole = b
+    if kind == 'mb': return cover_mb(b)
     n = len(cards[kind][part]); acc = '#e4572e' if kind in ('wb', 'mb') else '#f4a9bb'; ink = '#26296b' if kind in ('wb', 'mb') else '#fffdf7'
     return f"""<button type="button" class="book" data-book="{k}" aria-expanded="false"><span class="cv {'wb mb' if kind == 'mb' else kind}"><span class="fr"><span class="se">{E(series)}</span><span class="ki" style="color:{acc}">{E(kick)}</span><span class="ti"{TS(title)}>{E(title)}</span><span class="dv"></span><span class="bl">{E(blurb)}</span><span class="bw"><svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="{acc}"/></svg></span></span></span>
 <span class="cap"><b>{E(kick if kind != 'wb' else 'Workbook')} · {E(title)}</b><span>{n} {("section" if n == 1 else "sections") if kind == "hb" else "songs" if kind == "mb" else "parts"} · tap to open</span></span></button>"""
@@ -122,6 +136,27 @@ def panel(b):
     k, kind, part, series, kick, title, blurb, whole = b
     return f"""<section class="panel" id="p-{k}" hidden><div class="ph"><h2>{E(series)} · {E(kick + ' · ' if kind == 'hb' else '')}{E(title)}</h2><a class="whole" href="{E(whole)}" target="_blank">The whole draft as one PDF</a></div>
 <div class="grid">{''.join(card(c) for c in cards[kind][part])}</div></section>"""
+def layout(cov, pan, count):   # her 11 Nov 00:10: three books first (Handbook, Workbook, Songbook), each its own look; tap one and its parts open inside it
+    bow = lambda ink, acc: f'<svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="{acc}"/></svg>'
+    TOP = [('hb', 'The reference', 'Handbook', 'Pitch, time, expression, scales, chords, harmony, shape and playing', '#f4a9bb', '#fffdf7', 'parts'),
+           ('wb', 'Practice pages', 'Workbook', 'Learn and Use pages, reviews and answers for every part', '#e4572e', '#26296b', 'parts'),
+           ('mb', 'Songbook', 'Music Box', 'Both hands in beat boxes, one song a page', '#e4572e', '#26296b', 'songs')]
+    top, inner = '', ''
+    for kind, ki, ti, bl, acc, ink, unit in TOP:
+        if not cov.get(kind): continue
+        cap = f'<span class="cap"><b>{E(ki if kind == "mb" else "The " + ti)}{" · " + E(ti) if kind == "mb" else ""}</b><span>{count[kind]} {unit} · tap to open</span></span>'
+        if kind == 'mb':
+            c = cov['mb'][0]; c = c.replace('class="book" data-book="mbS"', 'class="book top" data-series="mb"', 1); top += c[:c.index('<span class="cap">')] + cap + '</button>'
+            inner += f'<section class="series" id="s-mb" hidden>' + ''.join(x.replace(' hidden>', '>', 1) for x in pan['mb']) + '</section>'
+            continue
+        top += (f'<button type="button" class="book top" data-series="{kind}" aria-expanded="false"><span class="cv {kind}"><span class="fr"><span class="se">The Piano Butler</span>'
+                f'<span class="ki" style="color:{acc}">{E(ki)}</span><span class="ti">{E(ti)}</span><span class="dv"></span><span class="bl">{E(bl)}</span><span class="bw">{bow(ink, acc)}</span></span></span>{cap}</button>')
+        inner += (f'<section class="series" id="s-{kind}" hidden><div class="ph"><h2>The {E(ti)}</h2><span class="whole">{count[kind]} {unit} · tap one to see its chapters</span></div>'
+                  f'<div class="shelf">{"".join(cov[kind])}</div>{"".join(pan[kind])}</section>')
+    return f'<div class="shelf top">{top}</div>\n{inner}'
+_K = lambda b: b[1]
+LAYOUT = layout({k: [cover(b) for b in BOOKS if b[1] == k] for k in ('hb', 'wb', 'mb')}, {k: [panel(b) for b in BOOKS if b[1] == k] for k in ('hb', 'wb', 'mb')},
+                {'hb': sum(b[1] == 'hb' for b in BOOKS), 'wb': sum(b[1] == 'wb' for b in BOOKS), 'mb': len(cards.get('mb', {}).get('Songs', []))})
 page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>The books</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 <style>:root{{--cream:#faf6ec;--navy:#26296b;--dk:#1c1e4f;--navy-soft:#4a4d86;--muted:#6d6f9c;--line:#e8e1d0;--coral:#e4572e}}
@@ -143,18 +178,25 @@ h1{{font-size:clamp(38px,6vw,60px);font-weight:900;line-height:1.02}} .lead{{fon
 .txt{{padding:12px 2px 0;display:flex;flex-direction:column;flex:1}} .topic{{font-size:12.5px;font-weight:700;color:var(--coral)}} h3{{font-size:19px;font-weight:800;margin:2px 0 6px;line-height:1.2}} .card p{{font-size:14px;color:var(--navy-soft);margin:0 0 8px}}
 .foot{{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}} .meta{{font-size:12.5px;color:var(--muted);font-weight:600}} .btn{{text-decoration:none;background:var(--coral);color:#fff;font-weight:700;font-size:14px;border-radius:999px;padding:7px 15px}}
 .more{{margin-top:40px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}} .more b{{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:4px}} .more a{{text-decoration:none;font-weight:700;font-size:14px;border:1.5px solid var(--navy);border-radius:999px;padding:7px 14px;background:#fffefa;color:var(--navy)}}
+.cv.mbx{{background:#fffefa;box-shadow:inset 6px 0 0 rgba(38,41,107,.12),0 8px 18px rgba(28,30,79,.18)}} .cv.mbx .fr{{color:#26296b;border-color:#26296b;outline-color:rgba(38,41,107,.35)}} .cv.mbx{{overflow:hidden}} .cv.mbx .ki{{margin-top:12%}} .mbg{{display:block;margin:7% 0 5%;font-family:Inter,sans-serif}} .cv.mbx .bl{{min-height:0;font-size:5.2cqw}}
+@media(min-width:701px){{.shelf.top{{grid-template-columns:repeat(3,minmax(0,1fr));max-width:860px;gap:40px}}}} .series{{margin-top:40px}} .series>.ph{{margin-bottom:0}} .series .shelf{{margin-top:22px}}
 @media(max-width:700px){{.shelf{{grid-template-columns:repeat(2,minmax(0,1fr))}}}}
-</style></head><body><div class="wrap"><h1>The books</h1><p class="lead">Drafts. Tap a book to see its chapters; every chapter opens as its own PDF.</p>
-<div class="shelf">{''.join(cover(b) for b in BOOKS)}</div>
-{''.join(panel(b) for b in BOOKS)}
+</style></head><body><div class="wrap"><h1>The books</h1><p class="lead">Drafts. Tap a book to open it, then a part to see its chapters; every chapter opens as its own PDF.</p>
+{LAYOUT}
 <div class="more"><b>Where do I start?</b><a href="Where do I start - the Handbook check.pdf" target="_blank">The Handbook check (printable)</a></div>
 <div class="more"><b>New books</b><a href="Whole books (later)/accompaniment-book-levels-1-3.pdf" target="_blank">The Butler’s Accompaniment Book, Levels 1–3</a></div>
 <div class="more"><b>Activities and games</b><a href="3 Activities and games/rhythm-activities-games.pdf" target="_blank">Rhythm activities and games</a><a href="3 Activities and games/pitch-games.pdf" target="_blank">Pitch games</a></div>
 </div><script>
-document.querySelectorAll('.book').forEach(b => b.addEventListener('click', () => {{
-  const k = b.dataset.book, on = b.getAttribute('aria-expanded') === 'true';
-  document.querySelectorAll('.book').forEach(x => x.setAttribute('aria-expanded', 'false'));
-  document.querySelectorAll('.panel').forEach(p => p.hidden = true);
+document.querySelectorAll('.book.top').forEach(b => b.addEventListener('click', () => {{   // the three books: open one, close the others
+  const k = b.dataset.series, on = b.getAttribute('aria-expanded') === 'true';
+  document.querySelectorAll('.book.top').forEach(x => x.setAttribute('aria-expanded', 'false'));
+  document.querySelectorAll('.series').forEach(s => s.hidden = true);
+  if (!on) {{ b.setAttribute('aria-expanded', 'true'); const s = document.getElementById('s-' + k); s.hidden = false; s.scrollIntoView({{behavior: 'smooth', block: 'start'}}); }}
+}}));
+document.querySelectorAll('.series .book').forEach(b => b.addEventListener('click', () => {{   // a part inside the open book
+  const S = b.closest('.series'), k = b.dataset.book, on = b.getAttribute('aria-expanded') === 'true';
+  S.querySelectorAll('.book').forEach(x => x.setAttribute('aria-expanded', 'false'));
+  S.querySelectorAll('.panel').forEach(p => p.hidden = true);
   if (!on) {{ b.setAttribute('aria-expanded', 'true'); const p = document.getElementById('p-' + k); p.hidden = false; p.scrollIntoView({{behavior: 'smooth', block: 'start'}}); }}
 }}));
 </script></body></html>"""
