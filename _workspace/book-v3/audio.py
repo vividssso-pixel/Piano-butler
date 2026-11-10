@@ -31,13 +31,21 @@ def click(level):   # her Time chapters: a woodblock-like tick; X strong (beat 1
     t = np.arange(int(SR * .09)) / SR; f = {'X': 1900, 'M': 1500, 'x': 1250}[level]
     w = (np.sin(2 * np.pi * f * t) + .4 * np.sin(2 * np.pi * f * 2.7 * t)) * np.exp(-t * 60)
     return w * {'X': .55, 'M': .38, 'x': .26}[level]
+DYNG = {'pp': .22, 'p': .38, 'mp': .55, 'mf': .72, 'f': .95, 'ff': 1.25}
 def piano(spec):
     parts = []
     for tok in re.findall(r'\[[^\]]+\]|\S+', spec):
-        if tok.startswith('['): parts.append(tone([freq(x) for x in tok[1:-1].split()], 1.1))
+        if tok.startswith('['):
+            xs = tok[1:-1].split(); g = DYNG.get(xs[0], None)
+            if g: xs = xs[1:]
+            parts.append((g or 1.0) * tone([freq(x) for x in xs], 1.1))
         elif tok == '|': parts.append(np.zeros(int(SR * .25)))
-        else:   # 'F#4/2' = half a slot (a quaver), 'F#4*2' = two slots (a minim)
+        else:   # 'F#4/2' = half a slot (a quaver), 'F#4*2' = two slots (a minim); 'pp:C4' a dynamic, 'C4!' staccato
+            g = 1.0
+            if ':' in tok: dn, tok = tok.split(':', 1); g = DYNG.get(dn, 1.0)
+            st = tok.endswith('!'); tok = tok.rstrip('!')
             nm, mul = _dur(tok); L = int(SR * .62 * mul)
+            if nm not in ('X', 'M', 'x', 'R'): parts.append(g * np.pad(tone([freq(nm)], .1 if st else .5 * min(mul, 1.6)), (0, L))[:L]); continue
             if nm in ('X', 'M', 'x'): parts.append(np.pad(click(nm), (0, L))[:L])
             elif nm == 'R': parts.append(np.zeros(L))
             else: parts.append(np.pad(tone([freq(nm)], .5 * min(mul, 1.6)), (0, L))[:L])
