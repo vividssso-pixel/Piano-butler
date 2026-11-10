@@ -57,18 +57,37 @@ def piano(spec):
         else:   # 'F#4/2' = half a slot (a quaver), 'F#4*2' = two slots (a minim); 'pp:C4' a dynamic, 'C4!' staccato
             g = 1.0
             if ':' in tok: dn, tok = tok.split(':', 1); g = DYNG.get(dn, 1.0)
-            st = tok.endswith('!'); tok = tok.rstrip('!')
+            st = tok.endswith('!'); lg = tok.endswith('_'); tok = tok.rstrip('!_')   # 'C4_' legato: held right into the next note
             nm, mul = _dur(tok); L = int(SR * .62 * mul)
-            if nm not in ('X', 'M', 'x', 'R'): parts.append(g * np.pad(tone([freq(nm)], .1 if st else .5 * min(mul, 1.6)), (0, L))[:L]); continue
+            if nm not in ('X', 'M', 'x', 'R'): parts.append(g * np.pad(tone([freq(nm)], .1 if st else (.62 * mul * 1.12 if lg else .5 * min(mul, 1.6))), (0, L))[:L]); continue
             if nm in ('X', 'M', 'x'): parts.append(np.pad({'X': .55, 'M': .38, 'x': .28}[nm] * tone([freq('C5')], .12), (0, L))[:L])   # her 10 Nov: no heartbeat; a beat on its own is a light piano tap
             elif nm == 'R': parts.append(np.zeros(L))
             else: parts.append(np.pad(tone([freq(nm)], .5 * min(mul, 1.6)), (0, L))[:L])
     return np.concatenate(parts + [np.zeros(int(SR * .3))])
-def say(who, text):
-    text = re.sub(r'\b([B-G])s\b', r"\1's", text)   # her 8 Nov: 'Cs' was read letter by letter, 'C-S'; say it 'Cees'
+IT_WORDS = ['pianissimo', 'fortissimo', 'mezzo-piano', 'mezzo-forte', 'mezzo piano', 'mezzo forte', 'mezzo', 'forte-piano', 'sforzando', 'crescendo', 'diminuendo', 'decrescendo',
+            'legato', 'staccatissimo', 'staccato', 'tenuto', 'marcato', 'dolce', 'cantabile', 'leggiero', 'maestoso', 'espressivo', 'grazioso', 'con moto',
+            'largo', 'lento', 'adagio', 'andante', 'moderato', 'allegretto', 'allegro', 'vivace', 'presto', 'ritardando', 'rallentando', 'accelerando', 'a tempo',
+            'fermata', 'una corda', 'tre corde', 'sostenuto', 'acciaccatura', 'appoggiatura', 'rubato', 'da capo', 'dal segno', 'segno', 'subito', 'poco a poco', 'molto', 'più mosso', 'meno mosso']
+_ITRX = re.compile(r'⟨([^⟩]+)⟩|\b(' + '|'.join(sorted((re.escape(w) for w in IT_WORDS), key=len, reverse=True)) + r')\b', re.I)
+def _say1(who, text, it=False):
+    if it:   # her 10 Nov: Italian words in an Italian voice (Nicola for the men, Sara for Clara and the Queen)
+        v = 'im_nicola' if who in ('B', 'K') else 'if_sara'
+        a, sr = K.create(text, voice=v, speed=0.95, lang='it'); a = np.asarray(a, dtype=np.float32)
+        j = np.where(np.abs(a) > 0.01)[0]; return a[max(0, j[0] - 120):j[-1] + 600] if len(j) else a
     v, sp = VOICE[who]; a, sr = K.create(text, voice=v, speed=sp, lang='en-gb'); a = np.asarray(a, dtype=np.float32)
     if who in SHIFT: a = lower(a, SHIFT[who])   # her 9 Nov: the Queen clearly high, the King clearly low
     return a
+def say(who, text):
+    text = re.sub(r'\b([B-G])s\b', r"\1's", text)   # her 8 Nov: 'Cs' was read letter by letter, 'C-S'; say it 'Cees'
+    if who == 'C' or not _ITRX.search(text): return _say1(who, text.replace('⟨', '').replace('⟩', ''))
+    out = []; pos = 0
+    for m in _ITRX.finditer(text):
+        pre = text[pos:m.start()].strip(' ,')
+        if re.search(r'[A-Za-z]', pre): a = _say1(who, pre); j = np.where(np.abs(a) > 0.01)[0]; out.append(a[:j[-1] + 1200] if len(j) else a)
+        out.append(_say1(who, m.group(1) or m.group(2), True)); pos = m.end()
+    post = text[pos:].strip()
+    if re.search(r'[A-Za-z]', post): out.append(_say1(who, post))
+    return np.concatenate([np.concatenate([x, np.zeros(int(SR * .06))]) for x in out])
 def lower(a, r):   # pitch down by ratio r, same length (ffmpeg asetrate + atempo)
     import tempfile; d = tempfile.mkdtemp(); sf.write(d + '/i.wav', a, SR)
     subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', d + '/i.wav', '-af', f'asetrate={SR}*{r},aresample={SR},atempo={1 / r:.4f}', d + '/o.wav'], check=True)
