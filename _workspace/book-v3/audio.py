@@ -11,12 +11,23 @@ NOTES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 def freq(n):
     m = re.match(r'([A-G])([#b]?)(\d)', n); k = NOTES[m.group(1)] + {'#': 1, 'b': -1, '': 0}[m.group(2)]
     return 440 * 2 ** (((int(m.group(3)) + 1) * 12 + k - 69) / 12)
+_FS = None; _PC = {}
+def _pnote(m, dur):   # her 10 Nov: a real piano (FluidSynth, FluidR3 grand), not the synth bell; cached per key and length
+    global _FS
+    k = (m, round(dur, 2))
+    if k not in _PC:
+        if _FS is None:
+            import fluidsynth
+            _FS = fluidsynth.Synth(samplerate=float(SR)); sid = _FS.sfload('/usr/share/sounds/sf2/FluidR3_GM.sf2'); _FS.program_select(0, sid, 0, 0)
+        _FS.get_samples(int(SR * .05))
+        _FS.noteon(0, m, 96); x = _FS.get_samples(int(SR * dur)); _FS.noteoff(0, m); y = _FS.get_samples(int(SR * .35))
+        _PC[k] = np.concatenate([x, y]).astype(np.float32).reshape(-1, 2).mean(1) / 4500.0
+    return _PC[k]
 def tone(fs, dur=0.55):
-    t = np.arange(int(SR * (dur + 0.35))) / SR; out = np.zeros_like(t)
-    for f in fs:
-        for h, a in ((1, 1), (2, .45), (3, .22), (4, .12), (5, .06)):
-            out += a * np.sin(2 * np.pi * f * h * t) * np.exp(-t * (2.2 + h * 1.1))
-    out *= np.minimum(1, t / 0.005); return 0.22 * out / max(1, len(fs) ** .5)
+    ms = [int(round(69 + 12 * np.log2(f / 440))) for f in fs]
+    xs = [_pnote(m, dur) for m in ms]; L = max(len(x) for x in xs); out = np.zeros(L)
+    for x in xs: out[:len(x)] += x
+    return out / max(1, len(fs) ** .5)
 def _dur(tok):   # 'F#4/2' half a slot, 'F#4*2' two slots, 'X@96' one beat at 96 a minute
     m = re.match(r'(.+?)(?:([/*@])(\d+(?:\.\d+)?))?$', tok.rstrip('~')); n = m.group(1); op, v = m.group(2), m.group(3)
     return n, (1 / float(v) if op == '/' else float(v) if op == '*' else (60 / float(v)) / .62 if op == '@' else 1)
@@ -27,10 +38,13 @@ def untie(spec):   # Time 3: 'C4*2~ C4' is one sound of 3 slots (a tie); the len
         if tok.endswith('~'): carry += mul; continue
         out.append(f'{n}*{carry + mul:g}' if carry else tok); carry = 0
     return ' '.join(out)
-def click(level):   # her Time chapters: a woodblock-like tick; X strong (beat 1), M medium, x weak
-    t = np.arange(int(SR * .09)) / SR; f = {'X': 1900, 'M': 1500, 'x': 1250}[level]
-    w = (np.sin(2 * np.pi * f * t) + .4 * np.sin(2 * np.pi * f * 2.7 * t)) * np.exp(-t * 60)
-    return w * {'X': .55, 'M': .38, 'x': .26}[level]
+def click(level):   # her 10 Nov: the beat as a soft heartbeat (lub-dub), not a tick; X strong (beat 1), M medium, x weak
+    def thump(f, dur, decay):
+        t = np.arange(int(SR * dur)) / SR
+        return (np.sin(2 * np.pi * f * t * (1 - .25 * t / dur)) + .5 * np.sin(2 * np.pi * 2 * f * t) + .25 * np.sin(2 * np.pi * 3 * f * t)) * np.exp(-t * decay) * np.minimum(1, t / .004)
+    lub = thump(88, .16, 28); dub = .45 * thump(108, .12, 34)
+    w = np.zeros(int(SR * .32)); w[:len(lub)] += lub; i = int(SR * .13); w[i:i + len(dub)] += dub
+    return w * {'X': .95, 'M': .7, 'x': .55}[level]
 DYNG = {'pp': .22, 'p': .38, 'mp': .55, 'mf': .72, 'f': .95, 'ff': 1.25}
 def piano(spec):
     parts = []
@@ -61,18 +75,24 @@ def lower(a, r):   # pitch down by ratio r, same length (ffmpeg asetrate + atemp
     return sf.read(d + '/o.wav', dtype='float32')[0]
 _WORD = {}
 NUMW = {'1': 'One', '2': 'Two', '3': 'Three', '4': 'Four', '5': 'Five', '6': 'Six', '&': 'and'}
-def word(w):
-    if w not in _WORD:
-        a = say('B', NUMW.get(w, w) + '.'); k = np.where(np.abs(a) > 0.02)[0]
-        _WORD[w] = a[max(0, k[0] - 200):k[-1] + 400] if len(k) else a
-    return _WORD[w]
+_CNT = {}
+_CW = {'1': 'one', '2': 'two', '3': 'three', '4': 'four', '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine', '&': 'and', 'e': 'ee', 'a': 'uh'}
+def word(w):   # her 10 Nov: the Butler's stiff "One. Two." replaced: Clara counts along, light and quick, each word said as if more follow ("one,")
+    if w not in _CNT:
+        t = _CW.get(w, w)
+        a = say('P', t + ',') if w not in ('e', 'a') else say('P', t)
+        k = np.where(np.abs(a) > 0.03)[0]; a = a[max(0, k[0] - 120):k[-1] + 200] if len(k) else a
+        a = a[:int(SR * (.3 if w in ('&', 'e', 'a') else .42))]
+        f = np.minimum(1, np.arange(len(a)) / 120.0) * np.minimum(1, (len(a) - np.arange(len(a))) / 500.0)
+        _CNT[w] = a * f * (.75 if w in ('&', 'e', 'a') else .9)
+    return _CNT[w]
 def count(spec):   # {'beats': click tokens, 'notes': piano tokens (optional), 'say': '1 2 3 …' one word per beat, '-' for silence}
     toks = spec['beats'].split(); times = []; t = 0.0
     for tok in toks: times.append(t); t += .62 * _dur(tok)[1]
     tracks = [piano(spec['beats']) * .8]
     if spec.get('notes'): tracks.append(piano(untie(spec['notes'])))
     v = np.zeros(int(SR * (t + 1)))
-    for w, t0 in zip(spec.get('say', '').split(), times):
+    for w, t0 in ([] if True else zip(spec.get('say', '').split(), times)):
         if w == '-': continue
         a = word(w) * .9; i = int(SR * t0); v[i:i + len(a)] += a[:len(v) - i]
     tracks.append(v)
