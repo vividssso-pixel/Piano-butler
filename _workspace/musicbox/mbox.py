@@ -44,8 +44,27 @@ S = [
          [B('r C E F', 'C', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - E -', 'C', 'march- - ing -'), B('D - - -', 'G', 'in - - -')],
          [B('r E E D', 'C', '- Oh Lord, I'), B('C - - C', 'C', 'want - - to'), B('E - G G', 'C', 'be - in that'), B('F - F -', 'F', 'num- - ber -')],
          [B('r C E F', 'C', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - D -', 'G', 'march- - ing -'), B('C - - -', 'C', 'in - - -')]]),
+ dict(t='Are You Sleeping?', id='frere', job='A round: when you can play it, someone else starts it two bars after you.', lh=('C with 5. The thumb waits on G.', {'c': 5, 'g': 1}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5, 'A': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5, 'a': 5}, 'Finger 5 reaches to A again, then back to G.'),
+      how='New: a tune note for the left hand. Where the right hand says L.H., your left thumb plays G.',
+      g=[[B('C D E C', 'C', 'Are you sleep- ing'), B('C D E C', 'C', 'are you sleep- ing')], [B('E F G -', 'C', 'Bro- ther John -'), B('E F G -', 'C', 'Bro- ther John -')],
+         [B('G.A G.F E C', 'C', 'Morn.ing bells.are ring- ing'), B('G.A G.F E C', 'C', 'morn.ing bells.are ring- ing')], [B('C <G C -', 'C', 'ding dang dong -'), B('C <G C -', 'C', 'ding dang dong -')]]),   # two bars a line: room for the split boxes
+ dict(t='Camptown Races', id='camptown', job='A racing song: fast, bright and full of "doo-dah". Now every chord gets two keys.', lh=('C with G, G with D: fingers 5 and 1.', {'c': 5, 'g': 1}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'G': 4, 'A': 5}, {'c': 1, 'd': 2, 'e': 3, 'g': 4, 'a': 5}, 'No F in this song: 4 on G, 5 on A.'),
+      how='The L.H. boxes now hold two keys: play the bottom and top together, once a bar.',
+      g=[[B('G G E G', 'C+G', 'Camp- town la- dies'), B('A G E -', 'C+G', 'sing this song -'), B('E D - -', 'C+G', 'doo- dah - -'), B('E D - -', 'C+G', 'doo- dah - -')],
+         [B('G G E G', 'C+G', 'Camp- town race- track'), B('A G E -', 'C+G', 'five miles long -'), B('D D E D', 'G+D', 'oh, doo- dah'), B('C - - -', 'C+G', 'day! - - -')]]),
 ]
+def mary4(i):
+    d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
+    d['gig'].update({'job': 'You know this one. Now the left hand plays it four new ways.',
+        'song_how': 'The L.H. boxes show which key. The ways below show four new rhythms for it.',
+        'ways': [('Way 1|twice', 'C - C -'), ('Way 2|play, lift', 'C r C r'), ('Way 3|march', 'C C C C'), ('Way 4|long short short', 'C - C C')],   # her 23:25: not the basic one; each way one step on from the last
+        'ways_how': 'One way at a time, the whole song. On G bars, the same rhythm on G.',
+        'ticks': ['Way 1', 'Way 2', 'Way 3', 'Way 4']})
+    json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
 for i, s in enumerate(S, 1):
+    if s == 'mary4': mary4(i); continue
     if not s:
         d = json.load(open('let1.json')); d.update({'label': f'Song {i}', 'lesson': i, 'id': 'mary'}); d['gig']['job'] = 'A song for a little brother, sister or cousin. New: G, with the left thumb.'; json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False); continue
     d = copy.deepcopy(base)
@@ -53,3 +72,34 @@ for i, s in enumerate(S, 1):
     if s.get('rf'): d['gig']['rfing'], d['gig']['rmap'], d['gig']['r_cap'] = s['rf']
     d['gig'].update({'job': s['job'], 'tool_cap': s['lh'][0], 'fmap': s['lh'][1], 'song_how': s['how'], 'song_grid': s['g']})
     json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
+
+# Left hand, four ways, step by step (her 23:13, 23:25, 23:29, 23:33 easy to hard, 23:35 big beats first, quavers later): the root alone, new rhythms; a page of their own straight
+# after the song, not the song drawn again. Mary: halves, crotchets, long-short-short, a rest. Lightly Row: split beats and
+# beats 2 and 4. Ode to Joy: the '&' -- off-beats and a push. Then: root and fifth.
+WAYS = {
+ 'mary': ('You know the song. Now the left hand plays it four new ways: the same keys, a new rhythm each time.',
+          [('Way 1|twice', 'C - C -'), ('Way 2|play, lift', 'C r C r'), ('Way 3|march', 'C C C C'), ('Way 4|long short short', 'C - C C')],
+          'Bar by bar, play the key from the song (C or G) in the rhythm of the way. A dot means lift and wait.'),
+ 'lightly': ('Lightly Row again. The left hand learns to wait, and to come in late.',
+          [('Way 1|wait for it', 'C - - C'), ('Way 2|on 2 and 4', 'r C r C'), ('Way 3|short long short', 'C C - C'), ('Way 4|rest, go', 'r C C C')],
+          'Still one box, one beat. A dot means lift and wait. On beats 2 and 4, the left hand is the drummer.'),
+ 'london': ('Two keys together now: the bottom and the top of the cake. On C: C and G, fingers 5 and 1. On G: the whole hand slides down to G and D.',
+          [('Way 1|together', 'C+G - - -'), ('Way 2|twice', 'C+G - C+G -'), ('Way 3|bottom, top', 'C - G -'), ('Way 4|oom-pah', 'C G C G')],
+          'The shape never changes: 5 on the bottom, 1 on the top. Only the hand moves, C to G and back.'),
+ 'saints': ('Two keys on every chord now, with F joining in. Bottom and top, the same shape three times.',
+          [('Way 1|together', 'C+G - - -'), ('Way 2|twice', 'C+G - C+G -'), ('Way 3|bottom, top', 'C - G -'), ('Way 4|oom-pah', 'C G C G')],
+          'C and G, F and C, G and D: fingers 5 and 1 each time. Lift the hand and land the shape.'),
+ 'ode': ('Ode to Joy again. Rests in new places: the left hand starts to talk back to the tune.',
+          [('Way 1|hold, lift, go', 'C - r C'), ('Way 2|play, lift, two', 'C r C C'), ('Way 3|late start', 'r r C -'), ('Way 4|the answer', 'r C - C')],
+          'Big beats only. Count out loud; the dot is a lift. On G bars, the same rhythm on G.'),
+ 'frere': ('Now a beat can split in two for the left hand too: two quick keys in one box.',
+          [('Way 1|march, run-ning', 'C C C C.C'), ('Way 2|walk, run-ning', 'C C.C C C.C'), ('Way 3|run-ning, walk', 'C.C C C.C C'), ('Way 4|running', 'C.C C.C C.C C.C')],
+          'Say "run-ning" for a split box. On G bars, the same rhythm on G; in the last two bars, keep your thumb free for the tune.'),
+}
+for i in range(1, 20):
+    try: d = json.load(open(f'mb{i}.json'))
+    except FileNotFoundError: break
+    if d.get('id') in WAYS and 'Ways' not in d['title']:
+        j, w, h = WAYS[d['id']]; d['gig'].update({'ways': w, 'ways_job': j, 'ways_how': h, 'ways_title': d['title'].split(',')[0].replace(' Go Marching In', '') + (', Two Keys' if d['id'] == 'london' else ', Three Shapes' if d['id'] == 'saints' else ', Four Ways')})
+        if d['id'] == 'saints': d['gig']['ways_roots'] = ['C', 'F', 'G']
+        json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
