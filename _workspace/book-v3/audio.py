@@ -77,7 +77,18 @@ def _say1(who, text, it=False):
     v, sp = VOICE[who]; a, sr = K.create(text, voice=v, speed=sp, lang='en-gb'); a = np.asarray(a, dtype=np.float32)
     if who in SHIFT: a = lower(a, SHIFT[who])   # her 9 Nov: the Queen clearly high, the King clearly low
     return a
+_AFOL = {'on','to','and','is','again','sharp','flat','up','down','in','above','below','under','over','or','with','then','four','five','three','one','two','natural','sits','hangs','sneezes'}
+def _fixA(t):   # her 11 Nov: the note A was swallowed as the article 'a'; say the letter as 'Eigh' (phonemes eɪ; 'Ay' came out as 'eye')
+    def r(m):
+        pre = t[:m.start()].rstrip(); rest = t[m.end():]; nxt = re.match(r'\s+([a-z]+)', rest)
+        initial = (pre == '' or pre[-1] in '.!?:“"(')
+        if initial and re.match(r'\s+(sharp|flat):', rest): return 'A'
+        if initial and nxt and nxt.group(1) not in _AFOL: return 'A'
+        if initial and re.match(r'\s+([H-Z]|[A-G]\s+with|[A-Z][a-z])', rest): return 'A'
+        return 'Eigh'
+    return re.sub(r'(?<![\w’\'-])A(?![\w’\'-])', r, t)
 def say(who, text):
+    text = _fixA(text)
     text = re.sub(r'\b([B-G])s\b', r"\1's", text)   # her 8 Nov: 'Cs' was read letter by letter, 'C-S'; say it 'Cees'
     if who == 'C' or not _ITRX.search(text): return _say1(who, text.replace('⟨', '').replace('⟩', ''))
     out = []; kinds = []; pos = 0
@@ -150,12 +161,16 @@ def _swoosh():   # a soft page turn
     k = 60; x = np.convolve(x, np.ones(k) / k, mode='same')   # take the hiss off
     env = np.sin(np.pi * np.minimum(1, t / .42)) ** 2
     return (x * env * .5).astype(np.float32)
-def _sfx(kind):   # her 10 Nov: the cheap effects are gone; only one simple signature: a soft rolled piano chord at the start of a chapter
+def _sfx(kind):   # her 10 Nov: a curious opening: a soft whole-tone run that floats up, then an augmented chord left ringing (no key, a question mark)
     if kind == 'intro':
-        w = np.zeros(int(SR * 2.4))
-        for k, n in enumerate(('C3', 'G3', 'E4', 'C5')):
-            x = .5 * tone([freq(n)], 1.8); i = int(SR * .11 * k); w[i:i + len(x)] += x[:len(w) - i]
-        return w * .9
+        w = np.zeros(int(SR * 3.4))
+        run = ('C4', 'D4', 'E4', 'F#4', 'G#4', 'A#4', 'C5', 'D5')
+        for k, n in enumerate(run):
+            x = (.22 + .03 * k) * tone([freq(n)], .5); i = int(SR * .13 * k); w[i:i + len(x)] += x[:len(w) - i]
+        t0 = .13 * len(run) + .1
+        for k, n in enumerate(('C3', 'G#3', 'E4', 'C5', 'E5')):
+            x = .42 * tone([freq(n)], 2.0); i = int(SR * (t0 + .07 * k)); w[i:i + len(x)] += x[:len(w) - i]
+        return w * .85
     return np.zeros(1)
 def _think(sec):   # quiet music-box loop under a pause
     n = max(1, int(round(sec / (.62 * 2))))

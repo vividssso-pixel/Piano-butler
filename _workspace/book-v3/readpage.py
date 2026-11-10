@@ -125,6 +125,13 @@ for c in CH:   # her 9 Nov: animations that make an idea click (black-key groups
         for ln in k['l']:
             a_ = (ln.get('cue') or {}).get('anim')
             if a_: ln['lens'] = {'k': a_, 'at': [], 'full': True}; ln.pop('hits', None)
+            pat = {'blacknames': r'[A-G] sharp', 'sharpflat': r'A (sharp|flat):'}.get(a_)
+            if pat and _re.search(pat, ln.get('text') or ''):   # her 11 Nov: each pair of names lights as it is said
+                text = ln['text']; sg = _segs(OUT + '/' + k['f'], ln['t0'], ln['t1'])
+                s0, s1 = (sg[0][0], sg[-1][1]) if sg else (ln['t0'], ln['t1'] - 0.55)
+                wt = [1 + (4 if ch == ',' else 7 if ch in '.:!?' else 0) for ch in text]; cum = [0]
+                for w_ in wt: cum.append(cum[-1] + w_)
+                ln['lens']['at'] = [round(s0 - ln['t0'] + (s1 - s0) * cum[m.start()] / cum[-1] - 0.1, 2) for m in _re.finditer(pat, text)][:5]
 for c in CH:   # her 9 Nov: fold the grand staff at Middle C and the two notes meet, like a decalcomania
     for k in c.get('clips', []):
         for ln in k['l']:
@@ -328,7 +335,8 @@ function drawLens(L, t) {
   if (L.k === 'groups') return drawGroups(L);
   if (L.k === 'lines') return drawLinesAnim();
   if (L.k === 'stepskip') return drawStepSkip();
-  if (L.k === 'sharpflat') return drawSharpFlat();
+  if (L.k === 'sharpflat') return drawSharpFlat(L);
+  if (L.k === 'blacknames') return drawBlackNames(L);
   if (L.k === 'ladder') return drawLadder();
   if (L.k === 'majmin') return drawMajMin();
   if (L.k === 'glasses') return drawGlasses();
@@ -562,17 +570,32 @@ function drawStepSkip() {   // a note steps to the next line/space, then skips l
   lensShell(key, '♪ Step or skip', `<svg viewBox="0 0 640 ${Y(0) + 24}" role="img" aria-label="A step goes to the next line or space; a skip goes line to line">${g}</svg>`);
 }
 
-function drawSharpFlat() {   // a sharp slides one key right, a flat one key left
+function drawSharpFlat(Lz) {   // her 11 Nov: no looping back and forth. Once, in time with the words: the sharp slides right and stays, then the flat slides left and stays
   const key = 'sharpflat'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
   const INK = '#26296b', ACC = '#e4572e', BL = '#5b6fd6', F = 'font-family="Atkinson Hyperlegible,sans-serif"', W = 70, H = 190, BH = 118, N = 5;
   let g = ''; const L = 'CDEFG';
   for (let i = 0; i < N; i++) g += `<rect x="${i * W}" y="40" width="${W}" height="${H}" fill="${i === 1 ? '#eef0fb' : '#fff'}" stroke="${INK}" stroke-width="1.6"/><text x="${i * W + W / 2}" y="${40 + H - 12}" text-anchor="middle" font-size="18" font-weight="700" fill="${INK}" ${F}>${L[i]}</text>`;
   [0, 1, 3].forEach(i => g += `<rect x="${(i + 1) * W - W * .3}" y="40" width="${W * .6}" height="${BH}" rx="3" fill="${INK}"/>`);
-  const dy = 40 + H - 50, by = 40 + BH - 26;
-  g += `<circle cx="${1.5 * W}" cy="${dy}" r="14" fill="${ACC}"><animate attributeName="cx" values="${1.5 * W};${2 * W};${2 * W};${1.5 * W};${1.5 * W};${W};${W};${1.5 * W}" keyTimes="0;.12;.4;.5;.55;.67;.95;1" dur="4.4s" repeatCount="indefinite"/><animate attributeName="cy" values="${dy};${by};${by};${dy};${dy};${by};${by};${dy}" keyTimes="0;.12;.4;.5;.55;.67;.95;1" dur="4.4s" repeatCount="indefinite"/></circle>`;
-  g += `<text x="${2 * W}" y="26" text-anchor="middle" font-size="20" font-weight="700" fill="${ACC}" ${F}>♯ one key right: D♯<animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0;.1;.42;.5;1" dur="4.4s" repeatCount="indefinite"/></text>`;
-  g += `<text x="${W}" y="26" text-anchor="middle" font-size="20" font-weight="700" fill="${BL}" opacity="0" ${F}>♭ one key left: D♭<animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;.55;.65;.92;1" dur="4.4s" repeatCount="indefinite"/></text>`;
-  lensShell(key, '♪ Sharp right, flat left', `<svg viewBox="-20 0 ${N * W + 40} ${H + 50}" role="img" aria-label="A sharp moves D one key right to D sharp; a flat moves it one key left to D flat">${g}</svg>`);
+  const dy = 40 + H - 50, by = 40 + BH - 26, T1 = (Lz && Lz.at && Lz.at.length === 2) ? Lz.at[0] : 6.6, T2 = (Lz && Lz.at && Lz.at.length === 2) ? Lz.at[1] : 9.9;
+  g += `<circle cx="${1.5 * W}" cy="${dy}" r="14" fill="${INK}" opacity=".35"/>`;   // D stays marked
+  g += `<circle cx="${1.5 * W}" cy="${dy}" r="14" fill="${ACC}" opacity="0"><set attributeName="opacity" to="1" begin="${T1}s" fill="freeze"/><animate attributeName="cx" from="${1.5 * W}" to="${2 * W}" begin="${T1}s" dur=".7s" fill="freeze"/><animate attributeName="cy" from="${dy}" to="${by}" begin="${T1}s" dur=".7s" fill="freeze"/></circle>`;
+  g += `<text x="${2 * W + 8}" y="26" text-anchor="middle" font-size="20" font-weight="700" fill="${ACC}" opacity="0" ${F}>♯ one key right: D♯<animate attributeName="opacity" from="0" to="1" begin="${T1 + .5}s" dur=".4s" fill="freeze"/></text>`;
+  g += `<circle cx="${1.5 * W}" cy="${dy}" r="14" fill="${BL}" opacity="0"><set attributeName="opacity" to="1" begin="${T2}s" fill="freeze"/><animate attributeName="cx" from="${1.5 * W}" to="${W}" begin="${T2}s" dur=".7s" fill="freeze"/><animate attributeName="cy" from="${dy}" to="${by}" begin="${T2}s" dur=".7s" fill="freeze"/></circle>`;
+  g += `<text x="${W - 8}" y="${40 + H + 34}" text-anchor="middle" font-size="20" font-weight="700" fill="${BL}" opacity="0" ${F}>♭ one key left: D♭<animate attributeName="opacity" from="0" to="1" begin="${T2 + .5}s" dur=".4s" fill="freeze"/></text>`;
+  lensShell(key, '♪ Sharp right, flat left', `<svg viewBox="-30 0 ${N * W + 60} ${H + 84}" role="img" aria-label="A sharp moves D one key right to D sharp; a flat moves it one key left to D flat">${g}</svg>`);
+}
+function drawBlackNames(Lz) {   // her 11 Nov: every black key has two names; they appear one by one as the Butler says them, and stay
+  const key = 'blacknames'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const INK = '#26296b', ACC = '#e4572e', BL = '#5b6fd6', F = 'font-family="Atkinson Hyperlegible,sans-serif"', W = 64, H = 200, BH = 124, N = 7, Y0 = 70;
+  const L = 'CDEFGAB', BK = [[0, 'C♯', 'D♭'], [1, 'D♯', 'E♭'], [3, 'F♯', 'G♭'], [4, 'G♯', 'A♭'], [5, 'A♯', 'B♭']];
+  const AT = (Lz && Lz.at && Lz.at.length === 5) ? Lz.at : [3.0, 6.0, 8.6, 11.2, 13.8];
+  let g = '';
+  for (let i = 0; i < N; i++) g += `<rect x="${i * W}" y="${Y0}" width="${W}" height="${H}" fill="#fff" stroke="${INK}" stroke-width="1.6"/><text x="${i * W + W / 2}" y="${Y0 + H - 12}" text-anchor="middle" font-size="18" font-weight="700" fill="${INK}" ${F}>${L[i]}</text>`;
+  BK.forEach(([i, sh, fl], n) => { const x = (i + 1) * W, t = AT[n];
+    g += `<rect x="${x - W * .3}" y="${Y0}" width="${W * .6}" height="${BH}" rx="3" fill="${INK}"><animate attributeName="fill" from="${INK}" to="${ACC}" begin="${t}s" dur=".3s" fill="freeze"/><animate attributeName="fill" from="${ACC}" to="#4a4e9c" begin="${t + 1.6}s" dur=".4s" fill="freeze"/></rect>`;
+    g += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="${t}s" dur=".3s" fill="freeze"/><text x="${x}" y="${Y0 - 36}" text-anchor="middle" font-size="19" font-weight="700" fill="${ACC}" ${F}>${sh}</text><text x="${x}" y="${Y0 - 12}" text-anchor="middle" font-size="19" font-weight="700" fill="${BL}" ${F}>${fl}</text></g>`; });
+  g += `<text x="${N * W / 2}" y="${Y0 + H + 30}" text-anchor="middle" font-size="17" fill="${INK}" opacity="0" ${F}>one key, two names: ♯ from the left neighbour, ♭ from the right<animate attributeName="opacity" from="0" to="1" begin="${AT[4] + 1.5}s" dur=".5s" fill="freeze"/></text>`;
+  lensShell(key, '♪ Every black key has two names', `<svg viewBox="-20 0 ${N * W + 40} ${Y0 + H + 44}" role="img" aria-label="The five black keys and their two names: C sharp or D flat, D sharp or E flat, F sharp or G flat, G sharp or A flat, A sharp or B flat">${g}</svg>`);
 }
 function drawLadder() {   // interval numbers climb from C: 1 (unison) to 8 (octave), one key at a time
   const key = 'ladder'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
