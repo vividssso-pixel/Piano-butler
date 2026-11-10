@@ -80,14 +80,15 @@ def _say1(who, text, it=False):
 def say(who, text):
     text = re.sub(r'\b([B-G])s\b', r"\1's", text)   # her 8 Nov: 'Cs' was read letter by letter, 'C-S'; say it 'Cees'
     if who == 'C' or not _ITRX.search(text): return _say1(who, text.replace('⟨', '').replace('⟩', ''))
-    out = []; pos = 0
+    out = []; kinds = []; pos = 0
     for m in _ITRX.finditer(text):
         pre = text[pos:m.start()].strip(' ,')
-        if re.search(r'[A-Za-z]', pre): a = _say1(who, pre); j = np.where(np.abs(a) > 0.01)[0]; out.append(a[:j[-1] + 1200] if len(j) else a)
-        out.append(_say1(who, m.group(1) or m.group(2), True)); pos = m.end()
+        if re.search(r'[A-Za-z]', pre): a = _say1(who, pre); j = np.where(np.abs(a) > 0.01)[0]; out.append(a[:j[-1] + 1200] if len(j) else a); kinds.append(False)
+        out.append(_say1(who, m.group(1) or m.group(2), True)); kinds.append(True); pos = m.end()
     post = text[pos:].strip()
-    if re.search(r'[A-Za-z]', post): out.append(_say1(who, post))
-    return np.concatenate([np.concatenate([x, np.zeros(int(SR * .06))]) for x in out])
+    if re.search(r'[A-Za-z]', post): out.append(_say1(who, post)); kinds.append(False)
+    gaps = [(.42 if k + 1 < len(kinds) and kinds[k + 1] else .5 if kinds[k] else .08) for k in range(len(out))]   # her 10 Nov: a breath before and after each Italian word, as the other voice says it
+    return np.concatenate([np.concatenate([x, np.zeros(int(SR * g))]) for x, g in zip(out, gaps)])
 def lower(a, r):   # pitch down by ratio r, same length (ffmpeg asetrate + atempo)
     import tempfile; d = tempfile.mkdtemp(); sf.write(d + '/i.wav', a, SR)
     subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', d + '/i.wav', '-af', f'asetrate={SR}*{r},aresample={SR},atempo={1 / r:.4f}', d + '/o.wav'], check=True)
@@ -149,12 +150,12 @@ def _swoosh():   # a soft page turn
     k = 60; x = np.convolve(x, np.ones(k) / k, mode='same')   # take the hiss off
     env = np.sin(np.pi * np.minimum(1, t / .42)) ** 2
     return (x * env * .5).astype(np.float32)
-def _sfx(kind):   # her 10 Nov: an audio storybook: a theme, page turns, a chime for a right answer, a soft "oops", thinking music in the pauses
-    if kind == 'intro': return np.concatenate([piano('mp:G4/2 mp:C5/2 mf:E5/2 mf:G5 [mf C4 E4 G4 C5]') * .8, np.zeros(int(SR * .3))])
-    if kind == 'outro': return np.concatenate([np.zeros(int(SR * .4)), piano('mp:E5/2 mp:D5/2 mp:C5 [p C4 G4 C5]') * .8])
-    if kind == 'turn': return np.concatenate([_swoosh(), np.zeros(int(SR * .15))])
-    if kind == 'right': return np.concatenate([piano('p:G5/2 mp:C6') * .7, np.zeros(int(SR * .1))])
-    if kind == 'oops': return np.concatenate([piano('p:E4/2 pp:Eb4') * .8, np.zeros(int(SR * .1))])
+def _sfx(kind):   # her 10 Nov: the cheap effects are gone; only one simple signature: a soft rolled piano chord at the start of a chapter
+    if kind == 'intro':
+        w = np.zeros(int(SR * 2.4))
+        for k, n in enumerate(('C3', 'G3', 'E4', 'C5')):
+            x = .5 * tone([freq(n)], 1.8); i = int(SR * .11 * k); w[i:i + len(x)] += x[:len(w) - i]
+        return w * .9
     return np.zeros(1)
 def _think(sec):   # quiet music-box loop under a pause
     n = max(1, int(round(sec / (.62 * 2))))
@@ -162,21 +163,18 @@ def _think(sec):   # quiet music-box loop under a pause
     L = int(SR * sec); return np.pad(w, (0, max(0, L - len(w))))[:L]
 def render(lines, timed=None, first=False, last=False):
     out = []; t = 0.0; right_done = False
-    pre = _sfx('intro') if first else _sfx('turn')
+    pre = _sfx('intro') if first else np.zeros(int(SR * .2))
     out.append(pre); t += len(pre) / SR
     for li, ln in enumerate(lines):
         kind, val = ln[0], ln[1]; cue = ln[2] if len(ln) > 2 else None
         tail = []
         if kind in VOICE:
-            seg = [say(kind, val), np.zeros(int(SR * .35))]
-            if cue and cue.get('oops'): tail = [_sfx('oops')]
-            elif kind == 'P' and cue and cue.get('reveal') and not right_done: tail = [_sfx('right')]; right_done = True
+            seg = [say(kind, val), np.zeros(int(SR * .55))]   # her 10 Nov: a relaxed back-and-forth, a little more air between lines
         elif kind == 'piano': seg = [piano(val)]
-        elif kind == 'pause': seg = [_think(val)]
+        elif kind == 'pause': seg = [np.zeros(int(SR * val))]
         elif kind == 'count': cw, ctimes = count(val); seg = [cw]
         else: seg = []
         seg = seg + tail
-        if last and li == len(lines) - 1: seg = seg + [_sfx('outro')]
         dur = sum(len(x) for x in seg) / SR
         if timed is not None:
             item = {'t0': round(t, 2), 't1': round(t + dur, 2), 'who': kind}
