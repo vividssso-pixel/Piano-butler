@@ -4,6 +4,7 @@
 import json, copy
 base = json.load(open('let1.json'))
 B = lambda r, l, w='': {'r': r, 'l': l, 'w': w}
+F = lambda b, f: dict(b, f=f)   # a bar with its own fingers
 LH2 = ('C with finger 5, G with the thumb.', {'c': 5, 'g': 1})
 LH3 = ('C with 5, F with 2, G with the thumb.', {'c': 5, 'f': 2, 'g': 1})
 S = [
@@ -31,9 +32,9 @@ S = [
          [B('F F F F', 'F', 'oh what fun it'), B('F E E E.E', 'C', 'is to ride in.a'), B('G G F D', 'G', 'one- horse o- pen'), B('C - - -', 'C', 'sleigh! - - -')]]),
  dict(t='Twinkle, Twinkle, Little Star', id='twinkle', job='The first song most people ever learn. Play it at bedtime, under the stars.', lh=LH3, rf=({'C': 1, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5}, {'c': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5}, '4 on G, 5 on A. Later the thumb slides up to D, then back to C.'),
       how='The right hand meets a new key, A. Find it before you start.',
-      g=[[B('C C G G', 'C', 'Twin- kle twin- kle'), B('A A G -', 'F', 'lit- tle star -'), B('F F E E', 'G', 'how I won- der'), B('D D C -', 'C', 'what you are -')],
-         [B('G G F F', 'C', 'Up a- bove the'), B('E E D -', 'G', 'world so high -'), B('G G F F', 'C', 'like a dia- mond'), B('E E D -', 'G', 'in the sky -')],
-         [B('C C G G', 'C', 'Twin- kle twin- kle'), B('A A G -', 'F', 'lit- tle star -'), B('F F E E', 'G', 'how I won- der'), B('D D C -', 'C', 'what you are -')]]),
+      g=[[F(B('C C G G', 'C', 'Twin- kle twin- kle'), '1 1 4 4'), F(B('A A G -', 'F', 'lit- tle star -'), '5 5 4 -'), F(B('F F E E', 'G', 'how I won- der'), '4 4 3 3'), F(B('D D C -', 'C', 'what you are -'), '2 2 1 -')],
+         [F(B('G G F F', 'C', 'Up a- bove the'), '5 5 4 4'), F(B('E E D -', 'G', 'world so high -'), '3 3 2 -'), F(B('G G F F', 'C', 'like a dia- mond'), '5 5 4 4'), F(B('E E D -', 'G', 'in the sky -'), '3 3 2 -')],
+         [F(B('C C G G', 'C', 'Twin- kle twin- kle'), '1 1 4 4'), F(B('A A G -', 'F', 'lit- tle star -'), '5 5 4 -'), F(B('F F E E', 'G', 'how I won- der'), '4 4 3 3'), F(B('D D C -', 'C', 'what you are -'), '2 2 1 -')]]),
  dict(t='London Bridge', id='london', job='A game song: two people make the bridge, everyone else runs under. You are the music.', lh=LH2, rf=({'C': 1, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5}, {'d': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5}, 'Thumb on D. At the very end it slides down to C.'),
       how='A comes back. The song starts on G, the top of the hand.',
       g=[[B('G A G F', 'C', 'Lon- don bridge is'), B('E F G -', 'C', 'fall- ing down -'), B('D E F -', 'G', 'fall- ing down -'), B('E F G -', 'C', 'fall- ing down -')],
@@ -42,15 +43,15 @@ S = [
       how='New: an empty box with a dot is a rest. Count it, but stay quiet.',
       g=[[B('r C E F', 'C', '- Oh when the'), B('G - - -', 'C', 'saints - - -'), B('r C E F', 'C', '- go march- ing'), B('G - - -', 'C', 'in - - -')],
          [B('r C E F', 'C', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - E -', 'C', 'march- - ing -'), B('D - - -', 'G', 'in - - -')],
-         [B('r E E D', 'C', '- Oh Lord, I'), B('C - - C', 'C', 'want - - to'), B('E - G G', 'C', 'be - in that'), B('F - F -', 'F', 'num- - ber -')],
+         [B('r E E D', 'C', '- Oh Lord, I'), B('C - - C', 'C', 'want - - to'), B('E - G G', 'C', 'be - in that'), B('G F - -', 'F', 'num- ber - -')],
          [B('r C E F', 'C', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - D -', 'G', 'march- - ing -'), B('C - - -', 'C', 'in - - -')]]),
  dict(t='Are You Sleeping?', id='frere', job='A round: when you can play it, someone else starts it two bars after you.', lh=('C with 5. The thumb waits on G.', {'c': 5, 'g': 1}),
       rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5, 'A': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5, 'a': 5}, 'Finger 5 reaches to A again, then back to G.'),
       how='New: a tune note for the left hand. Where the right hand says L.H., your left thumb plays G.',
       g=[[B('C D E C', 'C', 'Are you sleep- ing'), B('C D E C', 'C', 'are you sleep- ing')], [B('E F G -', 'C', 'Bro- ther John -'), B('E F G -', 'C', 'Bro- ther John -')],
-         [B('G.A G.F E C', 'C', 'Morn.ing bells.are ring- ing'), B('G.A G.F E C', 'C', 'morn.ing bells.are ring- ing')], [B('C <G C -', 'C', 'ding dang dong -'), B('C <G C -', 'C', 'ding dang dong -')]]),   # two bars a line: room for the split boxes
+         [F(B('G.A G.F E C', 'C', 'Morn.ing bells.are ring- ing'), '4.5 4.3 2 1'), F(B('G.A G.F E C', 'C', 'morn.ing bells.are ring- ing'), '4.5 4.3 2 1')], [B('C <G C -', 'C', 'ding dang dong -'), B('C <G C -', 'C', 'ding dang dong -')]]),   # two bars a line: room for the split boxes
  dict(t='Camptown Races', id='camptown', job='A racing song: fast, bright and full of "doo-dah". Now every chord gets two keys.', lh=('C chord: C and G (5, 1). G chord: D and G (4, 1).', {'c': 5, 'd': 4, 'g': 1}),
-      rf=({'C': 1, 'D': 2, 'E': 3, 'G': 4, 'A': 5}, {'c': 1, 'd': 2, 'e': 3, 'g': 4, 'a': 5}, 'No F in this song: 4 on G, 5 on A.'),
+      rf=({'C': 1, 'D': 1, 'E': 2, 'G': 4, 'A': 5}, {'d': 1, 'e': 2, 'g': 4, 'a': 5}, 'Thumb on D, 2 on E, 4 on G, 5 on A. At the end the thumb slides to C.'),
       how='The L.H. boxes now hold two keys: play the bottom and top together, once a bar.',
       g=[[B('G G E G', 'C+G', 'Camp- town la- dies'), B('A G E -', 'C+G', 'sing this song -'), B('E D - -', 'C+G', 'doo- dah - -'), B('E D - -', 'C+G', 'doo- dah - -')],
          [B('G G E G', 'C+G', 'Camp- town race- track'), B('A G E -', 'C+G', 'five miles long -'), B('D D E D', 'D+G', 'oh, doo- dah'), B('C - - -', 'C+G', 'day! - - -')]]),
