@@ -108,12 +108,16 @@ BOOKS = [('hbP', 'hb', 'Pitch', 'The Piano Butler Handbook', 'Part I', 'Pitch', 
          ('wbF', 'wb', 'Shape', 'The Piano Butler Workbook', 'Workbook', 'Shape and style', 'Learn and Use pages for every Shape and style chapter, review and answers', 'Whole books (later)/workbook-shape.pdf'),
          ('hbL', 'hb', 'Play', 'The Piano Butler Handbook', 'Part VIII', 'Playing and listening', 'Fingering, practising, sight-reading, listening and performing', 'Whole books (later)/handbook-part8-playing.pdf'),
          ('wbL', 'wb', 'Play', 'The Piano Butler Workbook', 'Workbook', 'Playing and listening', 'Learn and Use pages for every Playing and listening chapter, review and answers', 'Whole books (later)/workbook-play.pdf')]
+# the Music Box songbook (her 10 Nov 23:55), when its shelf.json is there: made by _workspace/musicbox/mbshelf.py
+if os.path.exists(O + '4 Music Box/shelf.json'):
+    import json as _json; _MB = _json.load(open(O + '4 Music Box/shelf.json'))
+    cards['mb'] = {'Songs': [tuple(c) for c in _MB['cards']]}; BOOKS.append(tuple(_MB['book']))
 TS = lambda t: (' style="font-size:10cqw;line-height:11.5cqw;white-space:normal"' if len(t) > 15 else ' style="font-size:10cqw;line-height:12.5cqw"') if len(t) > 10 else ''   # her 5 Nov: long titles (Scales and keys) stay inside the frame
 def cover(b):
     k, kind, part, series, kick, title, blurb, whole = b
-    n = len(cards[kind][part]); acc = '#e4572e' if kind == 'wb' else '#f4a9bb'; ink = '#26296b' if kind == 'wb' else '#fffdf7'
-    return f"""<button type="button" class="book" data-book="{k}" aria-expanded="false"><span class="cv {kind}"><span class="fr"><span class="se">{E(series)}</span><span class="ki" style="color:{acc}">{E(kick)}</span><span class="ti"{TS(title)}>{E(title)}</span><span class="dv"></span><span class="bl">{E(blurb)}</span><span class="bw"><svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="{acc}"/></svg></span></span></span>
-<span class="cap"><b>{E(kick if kind == 'hb' else 'Workbook')} · {E(title)}</b><span>{n} {("section" if n == 1 else "sections") if kind == "hb" else "parts"} · tap to open</span></span></button>"""
+    n = len(cards[kind][part]); acc = '#e4572e' if kind in ('wb', 'mb') else '#f4a9bb'; ink = '#26296b' if kind in ('wb', 'mb') else '#fffdf7'
+    return f"""<button type="button" class="book" data-book="{k}" aria-expanded="false"><span class="cv {'wb mb' if kind == 'mb' else kind}"><span class="fr"><span class="se">{E(series)}</span><span class="ki" style="color:{acc}">{E(kick)}</span><span class="ti"{TS(title)}>{E(title)}</span><span class="dv"></span><span class="bl">{E(blurb)}</span><span class="bw"><svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="{acc}"/></svg></span></span></span>
+<span class="cap"><b>{E(kick if kind != 'wb' else 'Workbook')} · {E(title)}</b><span>{n} {("section" if n == 1 else "sections") if kind == "hb" else "songs" if kind == "mb" else "parts"} · tap to open</span></span></button>"""
 def panel(b):
     k, kind, part, series, kick, title, blurb, whole = b
     return f"""<section class="panel" id="p-{k}" hidden><div class="ph"><h2>{E(series)} · {E(kick + ' · ' if kind == 'hb' else '')}{E(title)}</h2><a class="whole" href="{E(whole)}" target="_blank">The whole draft as one PDF</a></div>
