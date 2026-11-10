@@ -85,6 +85,11 @@ S = [
       how='New: the left hand rocks in the song. The box names the chord; then its other key, on beat 3.',
       g=[[Rock(B('E G G -', 'C', 'Go- in\u2019 home -')), Rock(B('E D C -', 'C', 'go- in\u2019 home -')), Rock(B('D E G E', 'G', 'I\u2019m a go- in\u2019')), dict(B('D - - -', 'G', 'home - - -'), lp='G - D -')],
          [Rock(B('E G G -', 'C', 'Qui- et- like -')), Rock(B('E D C -', 'C', 'some still day -')), Rock(B('D E D C', 'G', 'I\u2019m jes\u2019 go- in\u2019')), dict(B('C - - -', 'C', 'home - - -'), lp='C - - -')]]),
+ dict(t='This Old Man', id='oldman', job='A counting song: verse 1 is \u201cthumb\u201d, then shoe, knee, door\u2026 Sing as many verses as you can.', lh=('C: C then G (5, 1). F: F then C (2, 5). G: G then D (1, 4).', {'c': 5, 'd': 4, 'f': 2, 'g': 1}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5, 'A': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5, 'a': 5}, 'Thumb on middle C. Finger 5 reaches to A, then back to G.'),
+      how='New: oom-pah in the song. The box names the chord; then its keys in turn, one a beat.',
+      g=[[O(B('G E G -', 'C', 'This old man, -')), O(B('G E G -', 'C', 'he played one, -'))], [O(B('A G F E', 'F', 'he played knick- knack')), O(B('D E F -', 'G', 'on my thumb, -'))],
+         [O(B('E.F G C C.C', 'C', 'with.a knick knack pad.dy')), O(B('C D.E F G', 'C', 'whack, give.a dog a'))], [O(B('G D D F', 'G', 'bone, this old man')), dict(B('E.E D C -', 'C', 'came.roll ing home -'), lp='C - - -')]]),   # two bars a line: room for the split boxes
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
