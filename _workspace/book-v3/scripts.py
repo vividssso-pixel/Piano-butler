@@ -669,3 +669,146 @@ NEW['T8'] = ('Repeats and road signs', [
   ('Q', 'Splendid. And on the way back after a D.C., Clara, one does not take the repeats again, unless the music says so.', c(73, 'watch')),
   ('B', 'Until next time, Clara.', c(73, 'watch')), ('P', 'Goodbye!', c(73, 'watch'))])])
 CH['T8'] = NEW['T8']
+
+# ---- Part III Expression 1–5 (her 10 Nov: "응": the same pass, with audio) ----
+NEW['E1'] = ('Loud and soft', [
+ ('The secret', [
+  ('P', 'Can music whisper?', c(76, 'lead')),
+  ('B', 'It can whisper, chat or shout, Clara. Small Italian words tell you which: the dynamics. Six steps, from very soft to very loud.', c(76, 'hero')),
+  ('B', 'Pianissimo, very soft. Piano, soft. Mezzo-piano, half soft. Mezzo-forte, half loud. Forte, loud. Fortissimo, very loud.', c(76, 'hero')),
+  ('piano', 'pp:C4 p:C4 mp:C4 mf:C4 f:C4 ff:C4', c(76, 'hero')),
+  ('B', 'P is soft, f is loud, and m, mezzo, means half. And a sign lasts until the next one arrives.', c(76, 'xlate'))]),
+ ('Example: mp or mf?', [
+  ('B', 'Which is louder: mp or mf? Pause and think.', c(76, 'ex1')), ('pause', 3, c(76, 'ex1')),
+  ('P', 'Mezzo-forte, half loud. It is louder than half soft.', c(76, 'ex1', reveal=True)),
+  ('piano', 'mp:E4 mp:E4 | mf:E4 mf:E4', c(76, 'ex1', reveal=True))]),
+ ('Growing and fading', [
+  ('B', 'Music can also change little by little. Crescendo: getting louder. Diminuendo: getting softer. Written as a word, or as a hairpin that opens or closes.', c(76, 'xlate2')),
+  ('piano', 'p:C4 p:D4 mp:E4 mp:F4 mf:G4 mf:A4 f:B4 f:C5 ff:C5*2', c(76, 'xlate2')),
+  ('B', 'Sforzando: one note made suddenly strong. Forte-piano: loud, then soft at once. See them as shapes: up, down, a spike, and a drop.', c(77, 'xlate'))]),
+ ('Example: sfz or fp?', [
+  ('B', 'Two tunes. One has a sudden strong note, the other is loud then soft at once. Which is which? Pause and look.', c(77, 'ex2')), ('pause', 4, c(77, 'ex2')),
+  ('P', 'A is sforzando: one strong note. B is forte-piano: loud, then soft.', c(77, 'ex2', reveal=True)),
+  ('piano', 'p:C5 p:G4 p:E4 p:G4 ff:C5*2 | f:C5 pp:C5 pp:G4*2', c(77, 'ex2', reveal=True))]),
+ ('Example: the hairpins', [
+  ('B', 'Follow the hairpins. Where does it start, and what happens?', c(77, 'ex3')), ('pause', 3, c(77, 'ex3')),
+  ('P', 'It starts piano, grows into forte, then fades.', c(77, 'ex3', reveal=True)),
+  ('piano', 'p:C4 mp:C4 mf:G4 f:G4 | f:A4 mf:A4 p:G4*2', c(77, 'ex3', reveal=True))]),
+ ('Example: the loudest note', [
+  ('B', 'Now find the loudest note. Start mezzo-piano and follow the hairpin.', c(78, 'ex4')), ('pause', 4, c(78, 'ex4')),
+  ('P', 'The first A in bar two, at forte. Then it fades all the way to piano.', c(78, 'ex4', reveal=True))]),
+ ('Try it', [
+  ('B', 'Try it: play Middle C six ways, from pianissimo to fortissimo. Use the weight of your arm, not by hitting harder. Then come back down.', c(78, 'try10')),
+  ('piano', 'pp:C4 p:C4 mp:C4 mf:C4 f:C4 ff:C4 | f:C4 mf:C4 mp:C4 p:C4 pp:C4', c(78, 'try10')),
+  ('B', 'Haydn wrote a famous joke. The tune tiptoes along softly, comes again even softer, and then the whole orchestra crashes in with one fortissimo chord. The Surprise Symphony.', c(78, 'yk')),
+  ('piano', 'p:C4/2 p:C4/2 p:E4/2 p:E4/2 p:G4/2 p:G4/2 p:E4 | pp:C4/2 pp:C4/2 pp:E4/2 pp:E4/2 [ff G3 B3 D4 G4]', c(78, 'yk')),
+  ('P', 'I jumped!', c(78, 'yk')),
+  ('B', 'And remember: louder is not faster. Until next time, Clara.', c(78, 'watch')), ('P', 'Goodbye!', c(78, 'watch'))])])
+CH['E1'] = NEW['E1']
+
+NEW['E2'] = ('Touch: smooth, short, strong', [
+ ('The secret', [
+  ('P', 'Can the same notes sound different?', c(79, 'lead')),
+  ('B', 'Completely different, Clara. Small marks tell your fingers how to touch the keys. A curve: join them, legato.', c(79, 'hero')),
+  ('piano', 'E4 D4 C4 D4', c(79, 'hero')),
+  ('B', 'Dots: short and detached, staccato.', c(79, 'hero')), ('piano', 'E4! D4! C4! D4!', c(79, 'hero')),
+  ('B', 'Lines: hold the full length, leaning a little, tenuto. And arrows: a stronger start, the accent.', c(79, 'hero')),
+  ('piano', 'mf:E4 mf:D4 mf:C4 mf:D4 | f:E4 p:D4 f:C4 p:D4', c(79, 'hero')),
+  ('B', 'The secret in four words: curve, join. Dot, short. Line, hold. Arrow, strong.', c(79, 'secret'))]),
+ ('Example: line, dot or arrow?', [
+  ('B', 'Read the marks. How long are the first two Cs, the Gs, and the E with the arrow? Pause and think.', c(80, 'ex1')), ('pause', 4, c(80, 'ex1')),
+  ('P', 'The Cs held their full length, the Gs short, the E strong.', c(80, 'ex1', reveal=True)),
+  ('piano', 'C5 G4! G4! C5 | f:E5*2 C5*2', c(80, 'ex1', reveal=True))]),
+ ('Slurs and phrases', [
+  ('B', 'A curve over different notes is a slur: join them, then lift at its end, like a breath. A long slur over a whole line is a phrase: one musical sentence.', c(80, 'xlate')),
+  ('B', 'Ode to Joy has two long phrases. Lift your hand only at the end of each, like a singer taking a breath.', c(80, 'xlate')),
+  ('piano', 'E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4*1.5 D4/2 D4*2', c(80, 'xlate'))]),
+ ('Example: which notes are short?', [
+  ('B', 'Bar one has a curve. Bar two has dots, and one other mark. Which notes are short?', c(80, 'ex2')), ('pause', 4, c(80, 'ex2')),
+  ('P', 'The two dotted Gs. The third G has an accent: strong, but full length.', c(80, 'ex2', reveal=True)),
+  ('piano', 'C4 D4 E4 F4 | G4! G4! f:G4 R', c(80, 'ex2', reveal=True))]),
+ ('Two-note slurs', [
+  ('B', 'A slur over just two notes is a little sigh: drop into the first, then lift off the second, lighter and shorter. Drop, lift.', c(81, 'xlate')),
+  ('piano', 'f:E4 p:D4! | f:G4 p:F4! | f:E4 p:D4!', c(81, 'xlate')),
+  ('B', 'And some words describe the mood: dolce, sweetly. Cantabile, singing. Leggiero, lightly. Maestoso, majestically.', c(81, 'xlate2')),
+  ('B', 'Legato is walking: one foot leaves the ground as the other lands. Staccato is hopping on hot sand. Until next time, Clara.', c(81, 'think')), ('P', 'Goodbye!', c(81, 'think'))])])
+CH['E2'] = NEW['E2']
+
+NEW['E3'] = ('Speed words', [
+ ('The secret', [
+  ('P', 'How do I know how fast to play?', c(82, 'lead')),
+  ('B', 'A word at the top of the music tells you, Clara, usually in Italian. Largo is very slow. Adagio, slow. Andante, a walking pace. Moderato, moderate. Allegro, fast and lively. Presto, very fast.', c(82, 'hero')),
+  ('count', {'beats': 'X@60 x@60 x@60 x@60', 'say': '1 2 3 4'}, c(82, 'hero')),
+  ('count', {'beats': 'X@92 x@92 x@92 x@92', 'say': '1 2 3 4'}, c(82, 'hero')),
+  ('count', {'beats': 'X@138 x@138 x@138 x@138', 'say': '1 2 3 4'}, c(82, 'hero')),
+  ('B', 'Adagio, Andante, Allegro. The numbers in the table are only a rough guide.', c(82, 'xlate'))]),
+ ('The metronome mark', [
+  ('B', 'Often there is a number too. Crotchet equals seventy-six means seventy-six beats in one minute. Set a metronome to seventy-six: each click is one beat.', c(83, 'xlate'))]),
+ ('Example: crotchet equals sixty', [
+  ('B', 'How fast is crotchet equals sixty? Pause and think.', c(83, 'ex1')), ('pause', 3, c(83, 'ex1')),
+  ('P', 'Sixty beats in a minute, and a minute has sixty seconds. One beat every second!', c(83, 'ex1', reveal=True)),
+  ('count', {'beats': 'X@60 x@60 x@60 x@60', 'say': '1 2 3 4'}, c(83, 'ex1', reveal=True))]),
+ ('Changing speed', [
+  ('B', 'Words inside the music change the speed. Ritardando: gradually slower, the beats further apart. Accelerando: gradually faster. A tempo: back to the speed before. And the fermata, the pause: hold longer than written.', c(83, 'xlate2')),
+  ('count', {'beats': 'X@100 x@96 x@90 x@82 X@72 x@62 x@52', 'say': '1 2 3 4 1 2 3'}, c(83, 'xlate2'))]),
+ ('Example: rall. and a tempo', [
+  ('B', 'Where does it slow down, and where does it come back?', c(84, 'ex2')), ('pause', 3, c(84, 'ex2')),
+  ('P', 'Bar one slows into the two Gs. At a tempo the first speed comes straight back.', c(84, 'ex2', reveal=True))]),
+ ('Example: the fermata', [
+  ('B', 'How long do you hold the minim with the fermata?', c(84, 'ex3')), ('pause', 3, c(84, 'ex3')),
+  ('P', 'Longer than two beats, until it feels finished. Then go on.', c(84, 'ex3', reveal=True)),
+  ('B', 'Players often slow down into the end of Twinkle, Twinkle, then wait on the last note. A rit. is a car braking gently at the lights; a tempo is driving off again. Until next time, Clara.', c(84, 'yk')),
+  ('P', 'Goodbye!', c(84, 'yk'))])])
+CH['E3'] = NEW['E3']
+
+NEW['E4'] = ('The pedals', [
+ ('The secret', [
+  ('P', 'What are the pedals for?', c(85, 'lead')),
+  ('B', 'Most pianos have three, Clara. The left one, the soft pedal, makes the sound gentler. The right one, the sustain pedal, keeps the notes ringing after your fingers let go.', c(85, 'hero')),
+  ('B', 'Inside the piano, each string has a felt damper resting on it. Let go of a key and the damper stops the string. The sustain pedal lifts every damper at once, so the strings ring on.', c(85, 'xlate')),
+  ('piano', '[C4 E4 G4]', c(85, 'xlate')),
+  ('B', 'The soft pedal is written u.c., una corda, and let up at t.c. The sustain pedal is written Ped.', c(85, 'xlate2'))]),
+ ('Example: which pedal?', [
+  ('B', 'Which pedal is Ped.? Which is u.c.? And what does t.c. ask? Pause and think.', c(86, 'ex1')), ('pause', 4, c(86, 'ex1')),
+  ('P', 'Ped. is the right pedal, u.c. the left, and t.c. means let the left pedal up.', c(86, 'ex1', reveal=True))]),
+ ('Writing the sustain pedal', [
+  ('B', 'Down at Ped., up at the star. Or a bracket: the notch is a quick change, up and down again. Heel on the floor, press with the ball of your foot. Play first, then pedal.', c(86, 'xlate'))]),
+ ('Example: down and up', [
+  ('B', 'Where does the pedal go down, where does it change, and where does it come up?', c(86, 'ex2')), ('pause', 4, c(86, 'ex2')),
+  ('P', 'Down on the first C, changed at the F, and up at the end.', c(86, 'ex2', reveal=True)),
+  ('piano', 'C4 E4 G4 C5 | F4 A4 C5 F5', c(86, 'ex2', reveal=True))]),
+ ('Changing the pedal', [
+  ('B', 'At every new chord, change the pedal just after you play it: up, and straight down again. Each chord rings clean, and they still join.', c(87, 'xlate')),
+  ('piano', '[C4 E4 G4] [F4 A4 C5] [G4 B4 D5] [C4 E4 G4]', c(87, 'xlate')),
+  ('B', 'Try it: play C, E and G together, press the right pedal and take your hands off. The chord keeps sounding. Lift the pedal: silence.', c(87, 'try10')),
+  ('B', 'The sustain pedal holds a door open: every note that walks in stays in the room until you let the door shut. Until next time, Clara.', c(87, 'think')), ('P', 'Goodbye!', c(87, 'think'))])])
+CH['E4'] = NEW['E4']
+
+NEW['E5'] = ('Ornaments', [
+ ('The secret', [
+  ('P', 'What is that little tr above the note?', c(88, 'lead')),
+  ('B', 'A trill, Clara. An ornament: a small sign that stands for a quick burst of notes around the main note.', c(88, 'hero')),
+  ('piano', 'D5/4 E5/4 D5/4 E5/4 D5/4 E5/4 D5/4 E5/4 C5*2', c(88, 'hero')),
+  ('B', 'Ornaments borrow the notes next door, one letter up or down. On D, the note above is E and the note below is C.', c(88, 'xlate')),
+  ('piano', 'D4 E4 D4 C4 D4', c(88, 'xlate', seq=['main', 'above', 'main', 'below', 'main']))]),
+ ('Written and played', [
+  ('B', 'A trill goes back and forth with the note above. An upper mordent is one quick flick: note, above, note.', c(88, 'xlate2')),
+  ('piano', 'D5/4 E5/4 D5*1.5 C5*2', c(88, 'xlate2')),
+  ('B', 'A lower mordent uses the note below. And a turn goes above, note, below, note.', c(89, 'xlate')),
+  ('piano', 'D5/4 C5/4 D5*1.5 | E5/4 D5/4 C5/4 D5/4 D5 C5*2', c(89, 'xlate'))]),
+ ('Example: a lower mordent on G', [
+  ('B', 'A lower mordent on G. Which next-door note does it borrow? Pause and think.', c(89, 'ex1')), ('pause', 3, c(89, 'ex1')),
+  ('P', 'The note below G: F. G, F, G!', c(89, 'ex1', reveal=True)),
+  ('piano', 'G4/4 F4/4 G4*1.5', c(89, 'ex1', reveal=True))]),
+ ('Example: the trill', [
+  ('B', 'Which note has the trill, and what is its next-door note above?', c(89, 'ex2')), ('pause', 3, c(89, 'ex2')),
+  ('P', 'The E, and the note above is F. E, F, E, F, quickly, for two beats.', c(89, 'ex2', reveal=True)),
+  ('B', 'Going further: in music from the time of Bach and Handel, a trill usually starts on the note above. Your teacher will tell you.', c(89, 'xlate2'))]),
+ ('Tiny notes', [
+  ('B', 'A tiny note before the main note borrows a moment from it. With a slash, it is crushed in as fast as you can: an acciaccatura. Without a slash, it leans, taking about half the time: an appoggiatura.', c(90, 'xlate')),
+  ('pause', 3, c(90, 'xlate')),
+  ('piano', 'D5/8 C5*2 | D5 C5', c(90, 'xlate')),
+  ('B', 'Here the Minuet in G starts with a mordent on the first D: one quick flick, and the beat does not move.', c(90, 'yk')),
+  ('piano', 'D5/4 E5/4 D5/2 G4/2 A4/2 B4/2 C5/2 | D5 G4 G4', c(90, 'yk')),
+  ('B', 'Learn the plain notes in time first, then add the sparkle. Until next time, Clara.', c(90, 'think')), ('P', 'Goodbye!', c(90, 'think'))])])
+CH['E5'] = NEW['E5']
