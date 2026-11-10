@@ -838,6 +838,11 @@ LESSON = {   # her 11 Nov: not everyone has a teacher, so the Butler is the teac
  'E3': 'Your little task for next time: find the speed word at the top of a piece. What does it say?',
  'E4': 'Your little task for next time: lift the lid, press the right pedal, and watch the dampers lift.',
  'E5': 'Your little task for next time: play a trill slowly, then fast. Can you count the notes?',
+ 'S1': 'Your little task for next time: build the G major scale on your own, and say the secret knock as you play it.',
+ 'S2': 'Your little task for next time: play C major, then C minor, and tell someone at home which one sounds like rain.',
+ 'S3': 'Your little task for next time: find the key signature in a piece, and name every sharp or flat in it, in order.',
+ 'S4': 'Your little task for next time: be a detective. Pick a piece, and find its key from the signature, the clue notes and the last note.',
+ 'S5': 'Your little task for next time: say the circle out loud, right and then left, without looking.',
 }
 for _k, _q in LESSON.items():
     if _k not in CH: continue

@@ -969,3 +969,250 @@ NEW['E5'] = ('Ornaments', [
   ('piano', 'D5/4 E5/4 D5/2 G4/2 A4/2 B4/2 C5/2 | D5 G4 G4', c(90, 'yk')),
   ('B', 'Learn the plain notes in time first, then add the sparkle. Cake first, sprinkles after. Until next time, Clara.', c(90, 'think')),
   ('P', 'Bye, Butler!', c(90, 'think'))])])
+
+# ---- Part IV, Scales and keys (her 11 Nov: "다음 거 진행해줘"): audio for S1-S5 in the same storybook style ----
+CM = 'C4 D4 E4 F4 G4 A4 B4 C5'
+NEW['S1'] = ('Major scales', [
+ ('The secret', [
+  ('B', 'Welcome to Part Four, Clara: scales and keys. Notes, it turns out, live in families.', c(93, 'h:Major scales')),
+  ('P', 'Like my family? We are very noisy.', c(93, 'lead')),
+  ('B', 'Some scales are noisy too. A scale climbs from a home note, the key note, up to the next note with the same name, using every letter once. Like a staircase from the ground floor to the first floor.', c(93, 'lead')),
+  ('B', 'Here is the most famous staircase of all: C major.', c(93, 'hero')),
+  ('piano', CM, c(93, 'hero', seq=['#0', '#2', '#4', '#6', '#8', '#10', '#12', '#14'])),
+  ('P', 'Do re mi fa so la ti do! I know that one.', c(93, 'hero')),
+  ('B', 'Everybody does. Now look at the steps between the notes. Most of them are big steps, tones. But two of them are tiny, semitones. Like a staircase where two of the steps are only half as high.', c(93, 'hero')),
+  ('P', 'I’d trip on those!', c(93, 'hero')),
+  ('B', 'Everyone does at first. Here is the secret, and it works on any note at all: tone, tone, semitone, tone, tone, tone, semitone.', c(93, 'secret')),
+  ('P', 'Tone, tone, semitone, tone, tone, tone, semitone. It sounds like a secret knock on a door.', c(93, 'secret')),
+  ('B', 'It is exactly that. Knock it right, and the door to any major key opens. A tone has one key between. A semitone has no key between: the very next key, best friends.', c(93, 'rule'))]),
+ ('Example: where are the short steps?', [
+  ('B', 'Play C up to C on the white keys, numbering the notes one to eight. Then look between each pair for a black key. Which pairs have nothing between them? Pause and look.', c(93, 'ex1')),
+  ('pause', 4, c(93, 'ex1')),
+  ('P', 'Three to four, E and F. And seven to eight, B and C. Our old best friends!', c(93, 'ex1', reveal=True)),
+  ('piano', CM, c(93, 'ex1', reveal=True, seq=['#8', '#9', '#10', '#11', '#12', '#13', '#14', '#15'])),
+  ('B', 'Exactly. Three-four and seven-eight: the two short steps of every major scale.', c(93, 'ex1', reveal=True))]),
+ ('Example: build G major', [
+  ('B', 'Now let’s build a new staircase, starting on G. Write the letters G to G: G, A, B, C, D, E, F, G.', c(94, 'ex2')),
+  ('B', 'Check the top. Six to seven must be a tone, seven to eight a semitone. But E to F has nothing between: too short. So one key has to move. Which way, and what is it called now?', c(94, 'ex2')),
+  ('pause', 4, c(94, 'ex2')),
+  ('P', 'Move F one key right... so it’s G flat!', c(94, 'ex2', oops=True)),
+  ('B', 'Right key, wrong name. Every letter appears once in a scale, and we already have a G. So it must be called F something.', c(94, 'ex2')),
+  ('P', 'F sharp! G major is G, A, B, C, D, E, F sharp, G, with one sharp.', c(94, 'ex2', reveal=True)),
+  ('piano', 'G4 A4 B4 C5 D5 E5 F#5 G5', c(94, 'ex2', reveal=True)),
+  ('B', 'Hear how F sharp leans up into G, like someone hurrying up the last stair to get home.', c(94, 'ex2', reveal=True))]),
+ ('Example: build D major', [
+  ('B', 'D to D now. Check every step against the secret knock. Two steps are too short this time. Which ones?', c(94, 'ex3')),
+  ('pause', 4, c(94, 'ex3')),
+  ('P', 'E to F, and B to C. Move F and C one key right: F sharp and C sharp!', c(94, 'ex3', reveal=True)),
+  ('piano', 'D4 E4 F#4 G4 A4 B4 C#5 D5', c(94, 'ex3', reveal=True)),
+  ('B', 'D major: two sharps. You’re building staircases like a carpenter.', c(94, 'ex3', reveal=True))]),
+ ('Example: build F major', [
+  ('B', 'Now F to F. Check three to four: it must be a semitone. But A to B has a key between. Too big!', c(94, 'ex4')),
+  ('P', 'So this time I move B one key left, to make the step smaller?', c(94, 'ex4')),
+  ('B', 'And what is it called now?', c(94, 'ex4')),
+  ('pause', 3, c(94, 'ex4')),
+  ('P', 'B flat! F major: F, G, A, B flat, C, D, E, F. One flat.', c(94, 'ex4', reveal=True)),
+  ('piano', 'F4 G4 A4 Bb4 C5 D5 E5 F5', c(94, 'ex4', reveal=True))]),
+ ('Example: build A major', [
+  ('B', 'One more, a big one: A to A. Two steps are too short, and the top step is too big. Fix all three by moving a key one to the right.', c(95, 'ex5')),
+  ('pause', 5, c(95, 'ex5')),
+  ('P', 'C sharp, F sharp and G sharp! The key of A major has three sharps.', c(95, 'ex5', reveal=True)),
+  ('piano', 'A4 B4 C#5 D5 E5 F#5 G#5 A5', c(95, 'ex5', reveal=True)),
+  ('B', 'Three sharps, and still the very same knock: tone, tone, semitone, tone, tone, tone, semitone.', c(95, 'ex5', reveal=True))]),
+ ('Game and try it', [
+  ('B', 'Game time: spot the wrong note. Each of these three scales has one note that breaks the knock. Which one, and what should it be? Pause and look.', c(95, 'game')),
+  ('pause', 6, c(95, 'game')),
+  ('P', 'One: F should be F sharp. Two: C should be C sharp. Three: B should be B flat.', c(95, 'game', reveal=True)),
+  ('B', 'Three out of three. Now one finger, C to C, and say the knock as you go.', c(95, 'try10')),
+  ('piano', CM, c(95, 'try10', seq=['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7'])),
+  ('B', 'And something you know: Joy to the World. The first line is the C major scale, from the top all the way down.', c(95, 'yk')),
+  ('piano', 'C5*2 B4*1.5 A4/2 G4*3 F4 E4*2 D4*2 C4*3', c(95, 'yk', seq=['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7'])),
+  ('P', 'Joy to the world! It walks all the way downstairs.', c(95, 'yk')),
+  ('Q', 'And mind the traps, Clara: every letter only once, and never forget the short step at the very top.', c(95, 'watch')),
+  ('B', 'A major scale is a secret knock: learn the rhythm of the steps, and every door opens. Until next time, Clara.', c(95, 'watch')),
+  ('P', 'Bye, Butler! Bye, Your Majesty!', c(95, 'watch'))])])
+
+NEW['S2'] = ('Minor scales', [
+ ('The secret', [
+  ('P', 'Butler, my friend says minor music sounds sad. Is that true?', c(96, 'h:Minor scales')),
+  ('B', 'Often a bit darker, yes. Same house, but with the curtains drawn. Here is how to find a minor scale: start from the major scale on the same key note, and move three notes, the third, the sixth and the seventh, one key down.', c(96, 'lead')),
+  ('B', 'Listen. First C major, sunny.', c(96, 'hero')),
+  ('piano', CM, c(96, 'hero', seq=['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7'])),
+  ('B', 'Then C minor: three, six and seven one key lower.', c(96, 'hero')),
+  ('piano', 'C4 D4 Eb4 F4 G4 Ab4 Bb4 C5', c(96, 'hero', seq=['#16', '#17', '#18', '#19', '#20', '#21', '#22', '#23'])),
+  ('P', 'Ooh. Same home, but it’s raining now.', c(96, 'hero')),
+  ('B', 'Beautifully put. That is the secret: minor is the major on the same note, with three, six and seven one key lower. We call that the natural minor.', c(96, 'secret'))]),
+ ('Three kinds of minor', [
+  ('B', 'Now, the minor scale has three outfits. The natural minor, as you just heard. The harmonic minor: the natural minor, with the seventh raised again. And the melodic minor: going up, six and seven raised; coming down, back to the natural minor.', c(96, 'rule')),
+  ('P', 'Three outfits? Minor scales are very fashionable.', c(96, 'rule')),
+  ('B', 'Very. Let’s hear them all on A. First natural: all white keys, from A to A.', c(96, 'vx')),
+  ('piano', 'A3 B3 C4 D4 E4 F4 G4 A4', c(96, 'vx')),
+  ('B', 'Harmonic: the seventh raised again, G sharp. Hear it lean towards home, like a dog pulling on the lead when it sees its house.', c(97, 'vx')),
+  ('piano', 'A3 B3 C4 D4 E4 F4 G#4 A4', c(97, 'vx')),
+  ('B', 'And melodic: going up, F sharp and G sharp; coming down, back to G and F. It puts its party shoes on to climb the stairs, and takes them off to come down.', c(97, 'vx2')),
+  ('piano', 'A3 B3 C4 D4 E4 F#4 G#4 A4 | G4 F4 E4 D4 C4 B3 A3', c(97, 'vx2'))]),
+ ('Example: build C natural minor', [
+  ('B', 'Build C natural minor. Start from C major: C, D, E, F, G, A, B, C. The question marks are three, six and seven. Move each one key left, and name the keys you land on.', c(97, 'ex1')),
+  ('pause', 5, c(97, 'ex1')),
+  ('P', 'E flat, A flat and B flat. C natural minor: C, D, E flat, F, G, A flat, B flat, C.', c(97, 'ex1', reveal=True)),
+  ('piano', 'C4 D4 Eb4 F4 G4 Ab4 Bb4 C5', c(97, 'ex1', reveal=True))]),
+ ('Example: build A harmonic minor', [
+  ('B', 'Now A harmonic minor. Start from A natural minor, all white keys. Take note seven, and raise it one key. What is it?', c(97, 'ex2')),
+  ('pause', 3, c(97, 'ex2')),
+  ('P', 'G sharp! A, B, C, D, E, F, G sharp, A.', c(97, 'ex2', reveal=True)),
+  ('piano', 'A3 B3 C4 D4 E4 F4 G#4 A4', c(97, 'ex2', reveal=True)),
+  ('B', 'Try it yourself: play C major, then play it again with E, A and B one key lower. Same home, new colour: bright, then dark.', c(97, 'try10'))]),
+ ('Example: build D natural minor', [
+  ('B', 'Last one. This is D major, with F sharp and C sharp. The question marks are notes three, six and seven. Move each one key left. What are they now?', c(98, 'ex3')),
+  ('pause', 5, c(98, 'ex3')),
+  ('P', 'F sharp goes down to F. B goes down to B flat. And C sharp goes down to C.', c(98, 'ex3', reveal=True)),
+  ('piano', 'D4 E4 F4 G4 A4 Bb4 C5 D5', c(98, 'ex3', reveal=True)),
+  ('B', 'D natural minor: D, E, F, G, A, B flat, C, D. One flat.', c(98, 'ex3', reveal=True))]),
+ ('Game and Greensleeves', [
+  ('B', 'Game: which minor? Nothing raised. The seventh raised. Sixth and seventh raised going up, lowered coming down. Name each one.', c(98, 'game')),
+  ('pause', 4, c(98, 'game')),
+  ('P', 'Natural, harmonic, and melodic. The one with the party shoes.', c(98, 'game', reveal=True)),
+  ('B', 'And here is a very old tune: Greensleeves. A minor, with a G sharp, the raised seventh, leaning hard up to A.', c(98, 'yk')),
+  ('piano', 'A4 C5*2 D5 E5*1.5 F5/2 E5 D5*2 B4 G4*1.5 A4/2 B4 C5*2 A4 A4*1.5 G#4/2 A4 B4*2 G#4 E4*2', c(98, 'yk')),
+  ('P', 'It sounds like a knight riding through a misty forest.', c(98, 'yk')),
+  ('K', 'It was a favourite at my great-great-great-grandfather’s court. Mind you, he played the lute rather badly.', c(98, 'yk')),
+  ('B', 'Two traps to step around: only three, six and seven move, nothing else. And the melodic minor takes its party shoes off on the way down. Until next time, Clara.', c(98, 'watch')),
+  ('P', 'Bye, Butler! Bye, Your Majesty!', c(98, 'watch'))])])
+
+NEW['S3'] = ('Keys and key signatures', [
+ ('The secret', [
+  ('P', 'Butler, in my new piece every single F has a sharp. Did the composer have a stuck keyboard?', c(99, 'h:Keys and key signatures')),
+  ('B', 'Ha! Even worse: imagine writing F sharp fifty times. So composers write it once at the start of each line instead. That is the key signature.', c(99, 'lead')),
+  ('B', 'Look: one sharp, on the F line, right next to the clef. From then on, every F in the piece plays F sharp, high or low.', c(99, 'hero', seq=['#0', '#1', '#2'])),
+  ('piano', 'G4 A4 B4 C5 D5 E5 F#5 G5', c(99, 'hero')),
+  ('P', 'So it’s like a rule for the whole piece.', c(99, 'secret')),
+  ('B', 'Exactly. That is the secret: the key signature says, once, at the start, which notes are always sharp or flat. Think of a dress code on a party invitation: written once at the top, it applies to every guest, all night.', c(99, 'secret'))]),
+ ('The order of sharps and flats', [
+  ('B', 'And the sharps always arrive in the same order, like children lining up for lunch: F, C, G, D, A, E, B.', c(99, 'two')),
+  ('P', 'How do I remember that?', c(99, 'two')),
+  ('B', 'With a little story: Father Charles Goes Down And Ends Battle.', c(99, 'two')),
+  ('K', 'Father Charles was my cousin. He ended a great many battles. Mostly by falling asleep in them.', c(99, 'two')),
+  ('B', 'And the flats are the sharps backwards: B, E, A, D, G, C, F. Battle Ends And Down Goes Charles’ Father.', c(99, 'sm')),
+  ('P', 'Poor Charles’ father.', c(99, 'sm'))]),
+ ('One signature, two keys', [
+  ('B', 'Here is a surprise. Every key signature also belongs to a minor key, its relative minor. They are like two cousins who share one wardrobe: exactly the same notes. To find the relative minor, go down a minor third: two keys between, then land.', c(99, 'two2')),
+  ('P', 'So C major and the key of A minor share a wardrobe?', c(99, 'two2')),
+  ('B', 'They do. All white keys, both of them.', c(99, 'two2'))]),
+ ('Example: which notes are sharp?', [
+  ('B', 'Look at this key signature. Count the sharps, then name them in order. The first sharp is always F. Which keys turn black for the whole piece?', c(100, 'ex1')),
+  ('pause', 4, c(100, 'ex1')),
+  ('P', 'Two sharps: F sharp and C sharp. Every F and every C, high or low!', c(100, 'ex1', reveal=True))]),
+ ('Example: the relative minor', [
+  ('B', 'Find the relative minor of C major. Start on C, the key note. Count two keys between, going down: B is one, B flat is two. Then the next key is the answer.', c(100, 'ex2')),
+  ('pause', 3, c(100, 'ex2')),
+  ('P', 'The note A! The relative minor of C major is the key of A minor.', c(100, 'ex2', reveal=True)),
+  ('B', 'And F major? Start on F. Two keys between, going down: E, then E flat. And land.', c(100, 'ex3')),
+  ('pause', 3, c(100, 'ex3')),
+  ('P', 'D! D minor, which shares F major’s one flat, B flat.', c(100, 'ex3', reveal=True))]),
+ ('Example: which notes are flat?', [
+  ('B', 'Now a flat signature. Count the flats, and name them in order. The first flat is always B.', c(101, 'ex4')),
+  ('pause', 4, c(101, 'ex4')),
+  ('P', 'Three flats: B flat, E flat, A flat. Every B, E and A in the piece.', c(101, 'ex4', reveal=True)),
+  ('B', 'Game: what comes next? Sharps F, C, G... Flats B, E... The first flat? The second sharp?', c(101, 'gt2')),
+  ('pause', 5, c(101, 'gt2')),
+  ('P', 'D, then A flat. The first flat is B flat, and the second sharp is C sharp.', c(101, 'gt2', reveal=True))]),
+ ('You know this', [
+  ('B', 'The Minuet in G again. One sharp in the key signature: every F is F sharp, like the one just before the top G. One sharp, and the piece ends on G: G major.', c(101, 'yk')),
+  ('piano', 'D5 G4/2 A4/2 B4/2 C5/2 D5 G4 G4 | E5 C5/2 D5/2 E5/2 F#5/2 G5 G4 G4', c(101, 'yk')),
+  ('P', 'I heard the F sharp, right before the top!', c(101, 'yk')),
+  ('B', 'A dress code, written once. Only an accidental, a word to one guest, overrules it, and only until the bar line. And remember to glance at the key signature at the start of every line. Until next time, Clara.', c(101, 'think')),
+  ('P', 'Bye, Butler!', c(101, 'think'))])])
+
+NEW['S4'] = ('Finding the key', [
+ ('The secret', [
+  ('P', 'Butler, if one key signature belongs to two keys, how do I know which one my piece is in?', c(102, 'h:Finding the key')),
+  ('B', 'Ah. Now we become detectives, Clara. The key signature narrows it down to two suspects: a major key and its relative minor. Two quick rules find the major. A minor third down finds the minor. Then the music itself tells you which suspect did it.', c(102, 'lead')),
+  ('P', 'Ooh, a mystery! Where’s my magnifying glass?', c(102, 'lead')),
+  ('B', 'Here is the secret. For sharps: find the last sharp, then go the very next key up. For flats: the second-last flat is the key.', c(102, 'secret')),
+  ('B', 'Look: three sharps. The last one is G sharp. The very next key up is A. Three sharps: A major.', c(102, 'hero')),
+  ('piano', 'G#4 A4', c(102, 'hero', seq=['#5', '#6'])),
+  ('P', 'The last sharp is like a doorman, and the key lives one step up.', c(102, 'hero')),
+  ('B', 'A very good doorman. And flats: B flat, E flat, A flat. The second-last is E flat, so E flat major. One flat alone has no second-last, so just remember it: F major.', c(102, 'fk')),
+  ('B', 'And to find the minor suspect: from A, two keys between, G sharp and G, then land on F sharp. Three sharps is A major or F sharp minor.', c(102, 'fk2'))]),
+ ('Clue notes', [
+  ('B', 'So how do we catch the culprit? Minor keys leave fingerprints. A minor key usually raises its seventh note. That raised note is the clue. The key of A minor leaves G sharps all over the place. E minor leaves D sharps. D minor, C sharps.', c(102, 'ht')),
+  ('P', 'So if I find G sharps everywhere and no sharps in the signature, it’s probably A minor.', c(102, 'ht')),
+  ('B', 'Elementary, my dear Clara.', c(102, 'ht'))]),
+ ('Example: name the major key', [
+  ('B', 'Sharps. Find the last sharp, the one furthest right. Name it, then go the very next key up.', c(103, 'ex1')),
+  ('pause', 4, c(103, 'ex1')),
+  ('P', 'The last sharp is C sharp. The next key up is D: D major!', c(103, 'ex1', reveal=True)),
+  ('B', 'Now flats. Which flat names the key?', c(103, 'ex2')),
+  ('pause', 3, c(103, 'ex2')),
+  ('P', 'The last one, E flat. So E flat major!', c(103, 'ex2', oops=True)),
+  ('B', 'Careful, detective. For flats it’s the second-last, not the last.', c(103, 'ex2')),
+  ('P', 'B flat, E flat: the second-last is B flat. B flat major.', c(103, 'ex2', reveal=True)),
+  ('B', 'Case closed.', c(103, 'ex2', reveal=True))]),
+ ('Example: major or minor?', [
+  ('B', 'One sharp: G major, or E minor a minor third below. Now look for a sharp that is not in the signature. Whose raised seventh is it? And look at the last note.', c(103, 'ex3')),
+  ('pause', 5, c(103, 'ex3')),
+  ('P', 'D sharps all over the place, and it ends on E. E minor, not G major!', c(103, 'ex3', reveal=True)),
+  ('B', 'Game: name the major key. Two sharps, four sharps, one flat, three flats.', c(103, 'game')),
+  ('pause', 5, c(103, 'game')),
+  ('P', 'D, E, F, and E flat.', c(103, 'game', reveal=True))]),
+ ('Example: a minor key from its clue', [
+  ('B', 'Two flats: B flat major, or its relative minor. Count two keys between going down from B flat: A, then A flat, and land. Which minor key is it, and what is its seventh?', c(104, 'ex4')),
+  ('pause', 5, c(104, 'ex4')),
+  ('P', 'G minor! Its seventh is F, and if the piece is full of F sharps, it’s minor.', c(104, 'ex4', reveal=True)),
+  ('B', 'Try it: three sharps. Say F, C, G, and stop. The last one is G sharp. The next key up is A. Three sharps is A major. Now try two sharps, and four.', c(104, 'try10'))]),
+ ('The detective’s method', [
+  ('B', 'So, the detective’s method for any new piece. One: the key signature gives you the major key, and its relative minor a minor third below. Two: look for clue notes, the minor key’s raised seventh. Three: look at the last bass note. Pieces nearly always end at home, on the key note.', c(104, 'howto')),
+  ('B', 'And you know this one: Für Elise. No key signature, a G sharp as the clue, and the music keeps coming home to A.', c(104, 'yk')),
+  ('piano', 'E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4 | C4/2 E4/2 A4/2 B4 | E4/2 G#4/2 B4/2 C5 | E4/2 E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4*2', c(104, 'yk')),
+  ('P', 'It keeps landing on A. The key of A minor!', c(104, 'yk')),
+  ('B', 'Well detected. The D sharp at the start is just a passing visitor; the G sharp a moment later is the real clue, and home is A.', c(104, 'yk')),
+  ('B', 'Detective work: the key signature narrows it to two suspects; the clue note and the last note name the culprit. Until next time, Clara.', c(104, 'think')),
+  ('P', 'Bye, Butler! Case closed.', c(104, 'think'))])])
+
+NEW['S5'] = ('The circle of fifths', [
+ ('The secret', [
+  ('P', 'Butler, what is that giant clock on the page? Is it time for lunch?', c(105, 'h:The circle of fifths')),
+  ('B', 'It’s always nearly time for lunch with you. But no: that is the circle of fifths, all the keys on one clock face. C major sits at twelve o’clock, with no sharps or flats.', c(105, 'lead')),
+  ('B', 'Here is the secret. Go right round the clock, and each key has one more sharp. Go left, and each key has one more flat.', c(105, 'secret')),
+  ('B', 'Right from C: G, one sharp. D, two. A, three. E, four. And so on.', c(105, 'hero', seq=['C', 'G', 'D', 'A', 'E'])),
+  ('piano', 'C4 G4 D5 A5 E6', c(105, 'hero', seq=['C', 'G', 'D', 'A', 'E'])),
+  ('P', 'Every key is one sharp more, like climbing the stairs of a lighthouse!', c(105, 'hero')),
+  ('B', 'And at the bottom of the clock the two sides meet, where F sharp and G flat share one spot: the same key, two names.', c(105, 'hero', seq=['F♯', 'G♭'])),
+  ('P', 'Enharmonic! I remember that grand word.', c(105, 'hero'))]),
+ ('How to read the clock', [
+  ('B', 'The outer ring shows the major keys. The inner ring shows their relative minors, cuddled up just inside. And outside the circle: how many sharps or flats.', c(105, 'two')),
+  ('B', 'And neighbours on the clock are close friends: they share all but one note. That is why music moves between them so easily, like popping next door for a cup of tea.', c(105, 'two')),
+  ('B', 'Now, why is it called the circle of fifths? Each step right is a fifth up. Count the notes: C, D, E, F, G. And G is the next key round.', c(105, 'rule')),
+  ('piano', 'C4 D4 E4 F4 G4', c(105, 'rule'))]),
+ ('Example: sharps and flats round the circle', [
+  ('B', 'How many sharps in A major? Start at C at the top, no sharps. Go right one step at a time, and count the steps to A.', c(106, 'ex1')),
+  ('pause', 4, c(106, 'ex1')),
+  ('P', 'G, D, A. Three steps right: three sharps, F sharp, C sharp, G sharp.', c(106, 'ex1', reveal=True)),
+  ('B', 'And how many flats in E flat major? Start at C again.', c(106, 'ex2')),
+  ('pause', 4, c(106, 'ex2')),
+  ('P', 'Right: G, D, A...', c(106, 'ex2', oops=True)),
+  ('B', 'Whoa, wrong way round, Clara! Right adds sharps. For flats, we go left.', c(106, 'ex2')),
+  ('P', 'Oops. Left: F, B flat, E flat. Three steps left: three flats, B flat, E flat, A flat.', c(106, 'ex2', reveal=True))]),
+ ('Example: why do G and D sound so close?', [
+  ('B', 'G major and D major are next-door neighbours on the clock. Compare their notes. Which letters are the same, and which one changes?', c(106, 'ex3')),
+  ('piano', 'G4 A4 B4 C5 D5 E5 F#5 G5 | D4 E4 F#4 G4 A4 B4 C#5 D5', c(106, 'ex3')),
+  ('pause', 4, c(106, 'ex3')),
+  ('P', 'Six notes are the same. Only C becomes C sharp!', c(106, 'ex3', reveal=True)),
+  ('B', 'One step round the circle changes just one note. Like moving to the house next door: same street, same shops, just a different number on the gate.', c(106, 'ex3', reveal=True))]),
+ ('Example: the minor inside D', [
+  ('B', 'Find the minor inside D. Start on D, on the outer ring. Count two keys between, going down: C sharp is one, C is two. The next key is the answer. It sits on the inner ring, just inside D.', c(107, 'ex4')),
+  ('pause', 4, c(107, 'ex4')),
+  ('P', 'B! B minor, D major’s relative minor. Both have two sharps.', c(107, 'ex4', reveal=True)),
+  ('B', 'Game: neighbours on the clock. Right of D? Left of C? Opposite C? And inside G?', c(107, 'game')),
+  ('pause', 6, c(107, 'game')),
+  ('P', 'Right of D is A. Left of C is F. Opposite C is F sharp, or G flat. And inside G is E minor.', c(107, 'game', reveal=True))]),
+ ('Try it', [
+  ('B', 'Walk the circle with one finger: C, G, D, A, going up a fifth each time.', c(107, 'try10')),
+  ('piano', 'C4 G4 D5 A5', c(107, 'try10')),
+  ('P', 'I just walked three steps round the clock!', c(107, 'try10')),
+  ('B', 'And to learn the circle by heart: right, out loud: C, G, D, A, E, B, F sharp. Left: C, F, B flat, E flat, A flat, D flat, G flat. And check yourself: the number of steps from C is the number of sharps or flats.', c(107, 'howto')),
+  ('Q', 'The King and I recite it every morning at breakfast.', c(107, 'howto')),
+  ('K', 'Mostly to stop the toast going cold. Never go the wrong way round, Clara.', c(107, 'watch')),
+  ('B', 'The circle of fifths is a map of every key, with the neighbours side by side. Until next time, Clara.', c(107, 'watch')),
+  ('P', 'Bye, Butler! Bye, Your Majesties!', c(107, 'watch'))])])
+for _k in ('S1', 'S2', 'S3', 'S4', 'S5'): CH[_k] = NEW[_k]

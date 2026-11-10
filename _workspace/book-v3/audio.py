@@ -5,7 +5,7 @@ import numpy as np, soundfile as sf, os, json, subprocess, sys, re
 from kokoro_onnx import Kokoro
 SR = 24000
 K = Kokoro('/tmp/claude-0/tts/kokoro-v1.0.onnx', '/tmp/claude-0/tts/voices-v1.0.bin')
-VOICE = {'C': ('bf_emma', 1.0), 'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_lily', 0.86), 'K': ('bm_lewis', 0.88)}
+VOICE = {'C': ('af_heart', 1.0), 'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_lily', 0.86), 'K': ('bm_lewis', 0.88)}
 SHIFT = {'K': 0.92}   # her 9 Nov: the King below the Butler; the Queen is Lily, slow and calm, unshifted (a pitched-up voice sounded like a child)   # her 9 Nov: the Queen (treble) and the King (bass) visit now and then
 NOTES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 def freq(n):
@@ -83,6 +83,8 @@ def _fixA(t):   # her 11 Nov: the note A was swallowed as the article 'a'; say t
         pre = t[:m.start()].rstrip(); rest = t[m.end():]; nxt = re.match(r'\s+([a-z]+)', rest)
         initial = (pre == '' or pre[-1] in '.!?:“"(')
         if initial and re.match(r'\s+(sharp|flat):', rest): return 'A'
+        if initial and re.match(r'\s+(major|minor)\s+(and|third|sixth|second|seventh|3rd|6th|7th|2nd|scale|scales|key|keys|chord|chords)\b', rest): return 'A'
+        if initial and re.match(r'\s+(major|minor)\b', rest): return 'Eigh'
         if initial and nxt and nxt.group(1) not in _AFOL: return 'A'
         if initial and re.match(r'\s+([H-Z]|[A-G]\s+with|[A-Z][a-z])', rest): return 'A'
         return 'Eigh'
@@ -135,7 +137,14 @@ def _phrase(words):   # her 10 Nov: say the whole count as one flowing phrase ("
         c = int(len(e) * k / n); lo, hi = max(cuts[-1] + 5, c - 18), min(len(e) - 5, c + 18)
         cuts.append(lo + int(np.argmin(e[lo:hi])) if hi > lo else c)
     cuts.append(len(e))
-    return [a[cuts[i] * fr:cuts[i + 1] * fr] for i in range(n)]
+    out = []
+    for i in range(n):   # her 11 Nov: the count was landing late. Trim each word to its real start, so it lands right on the beat
+        w = a[cuts[i] * fr:cuts[i + 1] * fr]; j = np.where(np.abs(w) > 0.02)[0]
+        out.append(w[max(0, j[0] - 90):] if len(j) else w)
+    return out
+def _clear(a):   # her 11 Nov: the count got lost under the piano. Take the low end off the voice and lift its presence, so it sits above the piano instead of inside it
+    lo = np.convolve(a, np.ones(9) / 9, mode='same'); lo2 = np.convolve(a, np.ones(60) / 60, mode='same')
+    return (a - lo2) + 0.6 * (a - lo)
 def count(spec):   # {'beats': beat tokens (timing only, no sound), 'notes': piano tokens (optional), 'say': '1 2 3 …' one word per beat, '-' for silence}
     toks = spec['beats'].split(); times = []; t = 0.0
     for tok in toks: times.append(t); t += .62 * _dur(tok)[1]
@@ -151,7 +160,7 @@ def count(spec):   # {'beats': beat tokens (timing only, no sound), 'notes': pia
             fit = SR * max(slots[i], .3) * .9
             if len(a) > fit: a = _stretch(a, len(a) / fit)
             f = np.minimum(1, np.arange(len(a)) / 60.0) * np.minimum(1, (len(a) - np.arange(len(a))) / 200.0)
-            a = a * f * .42; k = int(SR * times[i]); v[k:k + len(a)] += a[:len(v) - k]
+            a = _clear(a) * f * .36; k = max(0, int(SR * times[i]) - 220); v[k:k + len(a)] += a[:len(v) - k]
     tracks.append(v)
     L = max(len(x) for x in tracks); out = np.zeros(L)
     for x in tracks: out[:len(x)] += x
