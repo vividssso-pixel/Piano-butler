@@ -39,6 +39,14 @@ for c in CH:
         c['clips'].append({'t': m['title'], 'f': f'audio/{c["k"]}/{m["file"]}', 's': m['sec'], 'p': at, 'l': m.get('lines', [])})
 RG = json.load(open('/tmp/claude-0/pk/regions.json')) if os.path.exists('/tmp/claude-0/pk/regions.json') else {}
 REG = {}
+# her 11 Nov (p. 72): an example covers its labels until the voice says them, but the question itself must stay in view:
+# the bar letters and road signs of a map, tempo and time signatures, rall. / a tempo, the start mark, the note glyphs.
+_GIVEN_ALL = {('72', 'ex1'), ('72', 'ex2'), ('73', 'ex3'), ('73', 'ex4')}
+_GIVEN_TXT = {'You play:', 'start', 'Fine', 'D.C. al Fine', 'D.S. al Coda', 'To Coda', 'rall.', 'a tempo', '= 96', '𝅘𝅥', '𝅗𝅥', '𝅘𝅥𝅮', '𝅘𝅥𝅭', '𝅝'}
+def _given(pg, key, L):
+    if (pg, key) in _GIVEN_ALL or L[0] in _GIVEN_TXT: return True
+    if pg == '63' and key == 'ex1' and L[0] in ('9', '8'): return True   # the 9/8 being asked about
+    return 50 <= int(pg) <= 73 and len(L) > 2 and L[2] == 'rgb(255, 255, 255)' and L[0].isdigit()   # time-signature digits
 for c in CH:
     for k in c.get('clips', []):
         for ln in k['l']:
@@ -47,7 +55,7 @@ for c in CH:
                 seen = {}; REG[pg] = {}
                 for b in RG[pg]:
                     seen[b['key']] = seen.get(b['key'], 0) + 1; key = b['key'] + (str(seen[b['key']]) if seen[b['key']] > 1 else '')
-                    REG[pg][key] = {'b': b['box'], 'l': b['labs'], 'r': b.get('res')}
+                    REG[pg][key] = {'b': b['box'], 'l': [[L[0], L[1], int(_given(pg, key, L))] for L in b['labs']], 'r': b.get('res')}
 # her 8 Nov: as each term is spoken, mark its key on the page there and then. Kokoro gives no word timings, so a term's
 # moment is estimated from where it sits in the line (speech runs evenly enough over a short sentence).
 import re as _re
@@ -668,7 +676,7 @@ function tick() {
       let marks = []; if (c.lab && hr === c.r) marks = c.lab; if (hit) marks = [hit[1]]; if (c.seq && ln.notes) { const i = ln.notes.filter(v => v <= t).length - 1; if (i >= 0) marks = [c.seq[Math.min(i, c.seq.length - 1)]]; }
       const exm = /^ex/.test(c.r) && !c.reveal; const vis = new Set([...(c.show || []), ...marks, '?']);
       const key = c.p + hr + marks.join(',') + (exm ? 'x' + [...vis].join('') : ''); if (ov.dataset.k !== key) { ov.dataset.k = key;
-        const covers = exm ? reg.l.filter(L => !vis.has(L[0])).map(L => `<div class="cov" style="left:${L[1][0] * 100 - .3}%;top:${L[1][1] * 100 - .2}%;width:${L[1][2] * 100 + .6}%;height:${L[1][3] * 100 + .4}%"></div>`).join('') + (reg.r ? `<div class="cov res" style="left:${reg.r[0] * 100}%;top:${reg.r[1] * 100}%;width:${reg.r[2] * 100}%;height:${reg.r[3] * 100}%">Answer coming…</div>` : '') : '';
+        const covers = exm ? reg.l.filter(L => !L[2] && !vis.has(L[0])).map(L => `<div class="cov" style="left:${L[1][0] * 100 - .3}%;top:${L[1][1] * 100 - .2}%;width:${L[1][2] * 100 + .6}%;height:${L[1][3] * 100 + .4}%"></div>`).join('') + (reg.r ? `<div class="cov res" style="left:${reg.r[0] * 100}%;top:${reg.r[1] * 100}%;width:${reg.r[2] * 100}%;height:${reg.r[3] * 100}%">Answer coming…</div>` : '') : '';
         ov.innerHTML = covers + `<div class="hl${/^ex/.test(c.r) ? ' fog' : ''}" style="left:${x * 100 - .6}%;top:${y * 100 - .4}%;width:${w * 100 + 1.2}%;height:${h * 100 + .8}%"></div>` +
           marks.map(m => findLab(reg, m)).filter(Boolean).map(L => `<div class="mk" style="left:${(L[1][0] + L[1][2] / 2) * 100}%;top:${(L[1][1] + L[1][3] / 2) * 100}%;width:${Math.max(3.2, L[1][2] * 100 + 2.4)}%"></div>`).join(''); }
     }

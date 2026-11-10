@@ -4,7 +4,7 @@ N_ = N
 import sys as _sy2, re as _re2; _sy2.path.insert(0, '/tmp/claude-0/pk'); import importlib as _il2, pagemap as PM; _il2.reload(PM)
 WMINCSS = """
 /* her 5 Nov: the Workbook keeps the Handbook's minimum sizes: nothing under 14px except tiny labels */
-.ht{font-size:15px!important} .ht td{font-size:15px!important} .ansT td{font-size:14px!important} .fc .add,.add{font-size:14.5px!important} .mu2{font-size:14px!important} .pzl{font-size:14px!important}
+.ht{font-size:15px!important} .ht td{font-size:15px!important} .ansT td{font-size:14px!important} .ansS td{font-size:13px!important;padding-top:4px!important;padding-bottom:4px!important;line-height:1.38!important} .fc .add,.add{font-size:14.5px!important} .mu2{font-size:14px!important} .pzl{font-size:14px!important}
 .add:has(.wl ~ .wl) .wl{width:50px!important} .rem2{font-size:15px!important} .how{font-size:15px!important;margin:2px 0 6px!important} .row{font-size:15px!important} .sent p{font-size:15px!important}
 """
 import base64 as _b64h, os as _osh
@@ -181,19 +181,34 @@ B7 = tp('Use', 'Off the beat', 'Off the beat', 'Hemiola: two bars of 3/4 felt as
 {ex(4, 'Swing it', 2, 'Play a C major scale in swing quavers (“doo-ba, doo-ba”), then straight. Tick a circle each day.', ticks())}
 {ex(5, 'Listen for it', 1, 'Listen to each one and tick it when you hear what is listed.', ''.join(f'<div class="row"><b>{t}</b><span style="color:#6d6f9c">{h}</span>{ticks(1)}</div>' for t, h in (('Joplin, The Entertainer', 'syncopation'), ('Miller, In the Mood', 'swing'), ('Bernstein, America', 'hemiola'))))}''', 14, 48)
 
+# ---------- 8 Repeats and road signs (her 11 Nov: "응 추가해줘", the audit found no pages for it) ----------
+def rmap(cells): return '<div class="rmap">' + ''.join(f'<span class="rb{" sg" if c[:1] in "|:" else ""}">{c}</span>' for c in cells) + '</div>'
+def rrow(lab, cells, ans=LINE): return f'<div class="rrow"><span class="rl">{lab}</span>{rmap(cells)}<span class="rans">{ans}</span></div>'
+A8 = tp('Learn', 'Repeats and road signs', 'Repeats and road signs', 'Follow the signs in order. After D.C. or D.S., stop at the first Fine, or jump at To Coda.', f"""
+{ex(1, 'What does it mean?', 1, 'Write what each sign tells you to do.', tbl(['Sign', 'What it tells you'], [['<b>:‖ (repeat sign)</b>', LINE], ['<b>1. and 2. (time bars)</b>', LINE], ['<b>D.C.</b>', LINE], ['<b>D.S.</b>', LINE], ['<b>Fine</b>', LINE], ['<b>To Coda</b>', LINE]], ['34%', '66%']))}
+{ex(2, 'Write the order', 2, 'Each letter is one bar. Write the letters in the order you play them.', rrow('1', ['A', 'B :‖', 'C']) + rrow('2', ['‖: A', '1. B :‖', '2. C']) + rrow('3', ['A', 'B Fine', 'C', 'D.C. al Fine']))}
+{ex(3, 'True or false?', 1, 'Circle T or F.', tfrows(('With no start sign, a repeat goes back to the very beginning.', 'After a D.C., you play the repeats again.', 'D.S. sends you back to the sign.', 'Fine means the end.')))}
+{ex(4, 'Say it in Italian', 1, 'Write the letter of the English meaning next to each Italian word.', tbl(['da capo', 'dal segno', 'Fine', 'Coda'], [[BOX] * 4], ['25%'] * 4, 'bld nocap') + '<p class="how" style="margin-top:8px"><b>A</b> the end &nbsp;·&nbsp; <b>B</b> from the sign &nbsp;·&nbsp; <b>C</b> the tail &nbsp;·&nbsp; <b>D</b> from the head</p>')}""", 15, 50)
+B8 = tp('Use', 'Repeats and road signs', 'Repeats and road signs', 'Read the map once before you play: find every sign, then follow them in order.', f"""
+{ex(1, 'How many bars?', 2, 'Each letter is one bar. Follow the signs and count every bar you play.', rrow('1', ['‖: A', 'B', 'C :‖', 'D'], BOX) + rrow('2', ['A', '𝄋 B', 'C Fine', 'D', 'D.S. al Fine'], BOX) + rrow('3', ['𝄋 A', 'B To Coda', 'C', 'D.S. al Coda', '⊕ E'], BOX))}
+{ex(2, 'Write the order', 3, 'Write the letters of map 3 above in the order you play them.', '<div class="al" style="height:30px;margin:8px 0"></div>')}
+{ex(3, 'Make a map', 2, 'Write your own map of five bars with one repeat sign and a 1st and 2nd time bar. Then write the order you play it.', '<div class="al" style="height:30px;margin:8px 0"></div><div class="al" style="height:30px;margin:8px 0"></div>')}
+{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a repeat sign', 'a 1st and 2nd time bar', 'D.C. or D.S.', 'Fine or Coda']))}
+{ex(5, 'Play it', 1, 'Play a piece with repeats from start to finish, following every road sign without stopping. Tick a circle each day.', ticks())}""", 16, 50)
+
 # ---------- Review, progress, answers ----------
 rsum = ''.join('<div class="sum">' + ' <span class="pl">+</span> '.join(gin('n', k, 32) for k in ks) + ' <span class="pl">=</span> ' + BOX + '</div>' for ks in (['dm', 'q', 'q'], ['dc', 'q', 'm']))
-R = wpage(f'''<div class="kick">Time · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 17: one mark for each answer.</p>
+R = wpage(f'''<div class="kick">Time · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 19: one mark for each answer.</p>
 {ex(1, 'Name the notes', 1, 'Write the name of each note.', '<div class="nm4">' + ''.join(f'<div>{gcell("n", k, 40)}{LINE}</div>' for k in ('m', 'q', 'dc', 'sb')) + '</div>')}
 {ex(2, 'How many beats?', 1, 'Crotchet = 1 beat.', f'<div class="sums">{rsum}</div>')}
 {ex(3, 'Time signatures', 2, 'Write a time signature for each bar, then circle the compound ones.', grid([cell(k, 'time signature ' + BOX, 56) for k in ('wt3', 'wt5', 'wt6')], 3))}
 {ex(4, 'Count it', 2, 'Write a count in every box.', wx('wrev', 74))}
 {ex(5, 'True or false?', 2, 'Circle T or F.', ''.join(f'<div class="row">{t}<span class="tf">T &nbsp; F</span></div>' for t in ('A tie joins two notes of different pitches.', '6/8 has two beats in a bar.', 'In 4/4, a beam may cross the middle of the bar.')))}
-<div class="score">Score <span class="ab"></span> / 18</div>''', 15, None)
-concepts = ['pulse, tempo and strong beats', 'bar lines and repeat signs', 'note and rest values', 'dots and ties', 'simple time signatures', 'compound time (6/8)', 'irregular time (5/4, 7/8)', 'grouping with beams', 'triplets and semiquavers', 'upbeats', 'syncopation', 'swing', 'hemiola']
+<div class="score">Score <span class="ab"></span> / 18</div>''', 17, None)
+concepts = ['pulse, tempo and strong beats', 'bar lines and repeat signs', 'note and rest values', 'dots and ties', 'simple time signatures', 'compound time (6/8)', 'irregular time (5/4, 7/8)', 'grouping with beams', 'triplets and semiquavers', 'upbeats', 'syncopation', 'swing', 'hemiola', 'repeat signs and 1st/2nd time bars', 'D.C., D.S., Fine and Coda']
 PR = wpage(f'''<div class="kick">Time · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
-{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (34, 34, 36, 38, 40, 42, 42, 44, 44, 44, 46, 46, 46))], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
-<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 16, None)
+{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (34, 34, 36, 38, 40, 42, 42, 44, 44, 44, 46, 46, 46, 48, 48))], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
+<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 18, None)
 ans = [('p. 1', 'Slow to fast: 4, 1, 3, 2 (60 slowest, 120 fastest). Strong beats on 1; in 4/4 medium on 3. Signs: bar line, double bar line, final bar line, repeat signs. Count: 1 2 3 · 1–2 3 · 1–2–3. How fast does it feel: any answer; slower to faster is usual.'),
        ('p. 2', 'Bar lines: 2/4 after notes 2, 3, 5, 7 and 8, final bar line after note 11; 3/4 after notes 2, 5 and 6, final bar line after note 8. Mistake: bar 3 has 4 beats.'),
        ('p. 3', 'Draw it: minim, quaver, crotchet, semibreve. Table: crotchet 1, crotchet rest; minim 2, minim rest; quaver ½, quaver rest; semiquaver ¼, semiquaver rest. Why a whole note: minim = half note, 2 beats; crotchet = quarter note, 1 beat; quaver = eighth note, ½ beat; semiquaver = sixteenth note, ¼ beat.'),
@@ -208,10 +223,12 @@ ans = [('p. 1', 'Slow to fast: 4, 1, 3, 2 (60 slowest, 120 fastest). Strong beat
        ('p. 12', 'Upbeat: 3 · 1 2 3 · 1–2; the last bar needs 2 beats.'),
        ('p. 13', 'Off the beat: bar 1 notes 3 and 4; bar 2 note 2; bar 3 notes 2 and 3. Syncopation: 1 & & 1 2. Swing is played as B. True or false: T, F, F.'),
        ('p. 14', 'Hemiola: 1–2 3 · 1 2–3; felt as three minims.'),
-       ('p. 15', 'minim, quaver, dotted crotchet, semibreve · 4, 4 · 6/8 (3/4 also fits), 5/4, 9/8 (compound: 6/8 and 9/8) · 1–2 & 3 · 1–2–3 · F, T, F.')]
+       ('p.\u200915', 'Signs: go back and play again (to the start sign, or the beginning); first time play bar 1., after the repeat skip it and play 2.; D.C. back to the beginning; D.S. back to the sign; Fine the end; To Coda jump to the coda. Order: A B A B C · A B A C · A B C A B. True or false: T, F, T, T. Italian: D, B, A, C.'),
+       ('p.\u200916', 'How many bars: 7 (A B C A B C D), 6 (A B C D B C), 6 (A B C A B E). Map 3 in order: A B C A B E.'),
+       ('p.\u200917', 'minim, quaver, dotted crotchet, semibreve · 4, 4 · 6/8 (3/4 also fits), 5/4, 9/8 (compound: 6/8 and 9/8) · 1–2 & 3 · 1–2–3 · F, T, F.')]
 AN = wpage(f'''<div class="kick">Time · Answers</div><h1>Answers</h1>
-{tbl(['Page', 'Answers'], [[p, a] for p, a in ans], ['12%', '88%'], 'ansT')}
-<p class="sm">Pages with “make your own”, “in your music” and clapping have no single answer: check them at the piano with your teacher, or with the online lessons.</p>''', 17, None)
+{tbl(['Page', 'Answers'], [[p, a] for p, a in ans], ['12%', '88%'], 'ansT ansS')}
+<p class="sm">Pages with “make your own”, “in your music” and clapping have no single answer: check them at the piano with your teacher, or with the online lessons.</p>''', 19, None)
 
 css += f'''
 .so{{color:#d9d4c6}} .el{{color:{GOLD if False else '#c9a24f'};font-size:13px;letter-spacing:1px}}
@@ -224,8 +241,9 @@ css += f'''
 .prog th{{white-space:nowrap}} .prog td{{padding:9px 8px;font-size:15px}} .cb2{{display:inline-block;width:20px;height:20px;border:1.6px solid {N_}}}
 .note2{{margin-top:20px}} .note2 b{{font-size:15px}} .lines .al{{height:34px}}
 .fills>.fc{{display:flex;flex-direction:column}} .fills>.fc>.add{{margin-top:auto;justify-content:center;text-align:center;gap:6px}} .wl{{display:inline-block;width:64px;height:26px;border-bottom:1.6px solid #26296b}} .fills>.fc>figure.vx{{border:0;background:none;box-shadow:none;height:auto;flex:0 0 auto;padding:4px 0}} .fills>.fc>.add{{margin-top:6px !important}} .fills{{row-gap:18px}} .mm4+.mm4{{margin-top:0}} .ex2 .mm4 .ab{{height:24px}} .ex2>.tk,.ex2>.tk2{{justify-content:flex-end;margin-top:8px}} .pzr{{display:flex;flex-direction:column;gap:2px;margin-top:4px}} .pzrow{{display:grid;grid-template-columns:1.1fr 1.6fr 1fr 1fr;align-items:center;gap:12px;padding:1px 0;border-bottom:.6px solid #e2ddd0}} .pzs{{display:flex;gap:8px}} .pzs svg{{margin:0 !important}} .pz{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}} .pz>div{{display:flex;flex-direction:column;align-items:center;gap:6px}} .pzn{{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px}} .pzl{{display:flex;align-items:flex-end;gap:6px;font-size:13px;color:#6d6f9c;min-height:26px}} .fills{{align-items:stretch}} .fills>.fc>.add{{margin-top:auto !important}} .mm4 .drw{{width:96px;height:72px;border:1.4px dashed #b9bbd3;border-radius:6px}} .mm4.mm3{{grid-template-columns:repeat(3,1fr)}} .row .tk{{margin:0 0 0 auto}} .row b{{min-width:230px}} .feel{{display:flex;align-items:center;gap:6px;font-weight:700}} .ansT td{{font-size:13px;line-height:1.4;padding:4px 8px;vertical-align:top}} .ansT td:first-child{{font-weight:700;color:{C}}}
+.rrow{{display:grid;grid-template-columns:28px 1fr 190px;align-items:center;gap:12px;margin:9px 0}} .rl{{font-weight:700;color:{C}}} .rmap{{display:flex;gap:6px;flex-wrap:wrap}} .rb{{border:1.6px solid #26296b;border-radius:6px;padding:7px 10px;font-weight:700;font-size:15px;min-width:44px;text-align:center}} .rans{{display:flex;align-items:center}} .rans .al{{width:100%}}
 '''
-pages = [A1, B1, A2, B2, A3, B3, A4, B4, A5, B5, A6, B6, A7, B7, R, PR, AN]
+pages = [A1, B1, A2, B2, A3, B3, A4, B4, A5, B5, A6, B6, A7, B7, A8, B8, R, PR, AN]
 import sys as _s; _s.path.insert(0, '/tmp/claude-0/pk'); import importlib, firstdone; importlib.reload(firstdone)
 FIRST = {'Which time signature?': [('fill', '3/4')], 'Finish with a rest': [('fill', 'minim rest')], 'Tie or dot?': [('fill', 'dotted minim')], 'Simple or compound?': [('both', [('ring', 'simple'), ('fill', '3')])], '3/4 or 6/8?': [('fill', '3/4')], 'Beats in compound time': [('fill', '2')], 'Good grouping?': [('ring', '✓')], 'Slow to fast': [('fill', '4')]}
 open('/mnt/user-data/outputs/house-rooms/workbook-time2.html', 'w').write(_LG(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>', FIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1)))
