@@ -464,15 +464,16 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
                 if rh: r += '<tr class="rh"><th>R.H.</th>' + row(lambda b, i: cell(tok(b.get('r', ''), i), 'rl', c(b, i))) + '</tr>'
             if rh and words: r += '<tr class="wd"><th></th>' + row(lambda b, i: f'<td class="w{c(b, i)}">{half(tok(b.get("w", ""), i)) if tok(b.get("w", ""), i) != "-" else ""}</td>') + '</tr>'
             if 'sm' in cls: r += '<tr class="lh"><th></th>' + ''.join(f'<td class="ll b0 span" colspan="{meter}"><span class="ch2">{b["l"]}</span><i class="hold"></i></td>' for b in bars) + '</tr>'   # a small card: the chord holds the whole bar
-            else: r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{c(b, i)}">' + ((f'<span class="ch2 two">{b["l"].split("+")[1]}<br>{b["l"].split("+")[0]}</span>' if '+' in b['l'] else f'<span class="ch2">{b["l"]}</span>') if i == 0 and b.get('l') else f'<b class="hk2">{tok(b.get("r", ""), i)[1:]}</b>' if tok(b.get('r', ''), i).startswith('<') else '<i class="hold"></i>' if b.get('l') else '') + '</td>') + '</tr>'
+            else: r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{c(b, i)}">' + ((f'<span class="ch2 two">{b["l"].split("+")[1]}<br>{b["l"].split("+")[0]}</span>' if '+' in b['l'] else f'<span class="ch2">{b["l"]}</span>') if i == 0 and b.get('l') else f'<b class="hk2">{tok(b.get("r", ""), i)[1:]}</b>' if tok(b.get('r', ''), i).startswith('<') else '<i class="hold"></i>' if (b.get('l') or (i and tok(b.get('r', ''), i) == '-' and any(tok(b.get('r', ''), j).startswith('<') for j in range(i)))) else '') + '</td>') + '</tr>'
             out += f'<table class="bgt {cls}">{r}</table>'
         return out
     half = lambda t: ('<span class="hbx">' + ''.join(f'<span>{x}</span>' for x in t.split('.')) + '</span>') if '.' in t else t
     FIFTH = {'C': 'G', 'F': 'C', 'G': 'D'}
+    SHAPE = {'C': 'CG', 'F': 'CF', 'G': 'DG'} if SONG['gig'].get('near', True) else {r: r + FIFTH[r] for r in FIFTH}   # her 23:51: shapes that stay put first (C-G, C-F, D-G); the jumping root position later
     def WAYS(ways, how, roots=('C', 'G')):   # her 10 Nov 23:13: the root alone, in new rhythms, before the fifth joins -- one song, several left hands
         cards = ''
         for t, pat in ways:
-            toks = sum((pat.translate(str.maketrans('CG', r + FIFTH[r])).split() for r in roots), [])   # the same way on each chord: C, (F,) G
+            toks = sum((pat.translate(str.maketrans('CG', ''.join(SHAPE[r]))).split() for r in roots), [])   # the same way on each chord: C, (F,) G; C = the bottom key, G = the top
             nb = len(toks) // len(roots)
             cn = ''.join(f'<td class="cn{" b0" if i % nb == 0 else ""}">' + (half(f'{i % nb + 1}.&') if '.' in x else str(i % nb + 1)) + '</td>' for i, x in enumerate(toks))
             ll = ''.join(f'<td class="ll{" b0" if i % nb == 0 else ""}">' + ('<i class="hold"></i>' if x == '-' else '<i class="rst"></i>' if x == 'r' else ('<span class="hbx">' + ''.join(f'<span>{"<i class=" + chr(34) + "rst" + chr(34) + "></i>" if y == "r" else "<b class=" + chr(34) + "hk" + chr(34) + ">" + y + "</b>"}</span>' for y in x.split('.')) + '</span>') if '.' in x else f'<span class="ch2 two">{x.split("+")[1]}<br>{x.split("+")[0]}</span>' if '+' in x else f'<span class="ch2">{x}</span>') + '</td>' for i, x in enumerate(toks))
