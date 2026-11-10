@@ -5,6 +5,8 @@ import json, copy
 base = json.load(open('let1.json'))
 B = lambda r, l, w='': {'r': r, 'l': l, 'w': w}
 F = lambda b, f: dict(b, f=f)   # a bar with its own fingers
+OOM = {'C': 'C G C G', 'G': 'G D G D', 'F': 'F C F C'}
+O = lambda b: dict(b, lp=OOM[b['l']])   # oom-pah: the root, then the other key, the hand never moves
 LH2 = ('C with finger 5, G with the thumb.', {'c': 5, 'g': 1})
 LH3 = ('C with 5, F with 2, G with the thumb.', {'c': 5, 'f': 2, 'g': 1})
 S = [
@@ -76,6 +78,12 @@ S = [
          [B('E E F G', 'C+G', 'hearts un- fold like'), B('G F E D', 'D+G', 'flowers be- fore thee,'), B('C C D E', 'C+G', 'o- pening to the'), B('D C C -', 'C+G', 'sun a- bove -')],
          [B('D D E C', 'D+G', 'Melt the clouds of'), B('D E.F E C', 'C+G', 'sin and. sad- ness,'), B('D E.F E D', 'D+G', 'drive the. dark of'), B('C D <G -', 'D+G', 'doubt a- way; -')],
          [B('E E F G', 'C+G', 'Giv- er of im-'), B('G F E D', 'D+G', 'mor- tal glad- ness,'), B('C C D E', 'C+G', 'fill us with the'), B('D C C -', 'C+G', 'light of day! -')]]),
+ dict(t='Lightly Row, the Whole Song', id='lightlyfull', job='The boat song, all four lines. The left hand rows too: oom-pah, oom-pah.', lh=('C: C then G (5, 1). G: G then D (1, 4). The hand stays.', {'c': 5, 'd': 4, 'g': 1}),
+      how='New: oom-pah in the song. The box names the chord; play its keys in turn, one a beat.',
+      g=[[O(B('G E E -', 'C', 'Light- ly row -')), O(B('F D D -', 'G', 'light- ly row -')), O(B('C D E F', 'C', 'o\u2019er the glass- y')), O(B('G G G -', 'C', 'waves we go -'))],
+         [O(B('G E E -', 'C', 'Smooth- ly glide -')), O(B('F D D -', 'G', 'smooth- ly glide -')), O(B('C E G G', 'C', 'on the si- lent')), dict(B('C - - -', 'C', 'tide - - -'), lp='C - - -')],
+         [O(B('D D D D', 'G', 'Let the winds and')), O(B('D E F -', 'G', 'wa- ters be -')), O(B('E E E E', 'C', 'min- gled with our')), O(B('E F G -', 'C', 'me- lo- dy -'))],
+         [O(B('G E E -', 'C', 'Sing and float -')), O(B('F D D -', 'G', 'sing and float -')), O(B('C E G G', 'C', 'in our lit- tle')), dict(B('C - - -', 'C', 'boat - - -'), lp='C - - -')]]),
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
