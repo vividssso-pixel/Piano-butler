@@ -469,10 +469,11 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
         return out
     half = lambda t: ('<span class="hbx">' + ''.join(f'<span>{x}</span>' for x in t.split('.')) + '</span>') if '.' in t else t
     FIFTH = {'C': 'G', 'F': 'C', 'G': 'D'}
+    SHAPE = {'C': 'CG', 'F': 'CF', 'G': 'DG'} if SONG['gig'].get('near', True) else {r: r + FIFTH[r] for r in FIFTH}   # her 23:51: shapes that stay put first (C-G, C-F, D-G); the jumping root position later
     def WAYS(ways, how, roots=('C', 'G')):   # her 10 Nov 23:13: the root alone, in new rhythms, before the fifth joins -- one song, several left hands
         cards = ''
         for t, pat in ways:
-            toks = sum((pat.translate(str.maketrans('CG', r + FIFTH[r])).split() for r in roots), [])   # the same way on each chord: C, (F,) G
+            toks = sum((pat.translate(str.maketrans('CG', ''.join(SHAPE[r]))).split() for r in roots), [])   # the same way on each chord: C, (F,) G; C = the bottom key, G = the top
             nb = len(toks) // len(roots)
             cn = ''.join(f'<td class="cn{" b0" if i % nb == 0 else ""}">' + (half(f'{i % nb + 1}.&') if '.' in x else str(i % nb + 1)) + '</td>' for i, x in enumerate(toks))
             ll = ''.join(f'<td class="ll{" b0" if i % nb == 0 else ""}">' + ('<i class="hold"></i>' if x == '-' else '<i class="rst"></i>' if x == 'r' else ('<span class="hbx">' + ''.join(f'<span>{"<i class=" + chr(34) + "rst" + chr(34) + "></i>" if y == "r" else "<b class=" + chr(34) + "hk" + chr(34) + ">" + y + "</b>"}</span>' for y in x.split('.')) + '</span>') if '.' in x else f'<span class="ch2 two">{x.split("+")[1]}<br>{x.split("+")[0]}</span>' if '+' in x else f'<span class="ch2">{x}</span>') + '</td>' for i, x in enumerate(toks))
