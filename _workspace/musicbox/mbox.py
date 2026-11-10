@@ -84,6 +84,13 @@ S = [
          [O(B('G E E -', 'C', 'Smooth- ly glide -')), O(B('F D D -', 'G', 'smooth- ly glide -')), O(B('C E G G', 'C', 'on the si- lent')), dict(B('C - - -', 'C', 'tide - - -'), lp='C - - -')],
          [O(B('D D D D', 'G', 'Let the winds and')), O(B('D E F -', 'G', 'wa- ters be -')), O(B('E E E E', 'C', 'min- gled with our')), O(B('E F G -', 'C', 'me- lo- dy -'))],
          [O(B('G E E -', 'C', 'Sing and float -')), O(B('F D D -', 'G', 'sing and float -')), O(B('C E G G', 'C', 'in our lit- tle')), dict(B('C - - -', 'C', 'boat - - -'), lp='C - - -')]]),
+ dict(t='Au Clair de la Lune, the Whole Song', id='auclairfull', job='All four lines. In line 3 the tune walks down below middle C, and the left hand takes it.', lh=('Thumb on middle C, with the right thumb. 2 on B, 3 on A, 4 on G.', {'g': 4, 'a': 3, 'b': 2}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5}, 'Thumb on middle C: the two thumbs share it.'),
+      how='Lines 1, 2 and 4 are the tune you know. In line 3, L.H. means the left hand plays it.',
+      g=[[B('C C C D', '', 'Au clair de la'), B('E - D -', '', 'lu- - ne, -'), B('C E D D', '', 'mon a- mi Pier-'), B('C - - -', '', 'rot, - - -')],
+         [B('C C C D', '', 'prê- te- moi ta'), B('E - D -', '', 'plu- - me -'), B('C E D D', '', 'pour é- crire un'), B('C - - -', '', 'mot - - -')],
+         [B('D D D D', '', 'Ma chan- delle est'), B('<A - <A -', '', 'mor- - te, -'), B('D C <B <A', '', 'je n\u2019ai plus de'), B('<G - - -', '', 'feu - - -')],
+         [B('C C C D', '', 'Ou- vre- moi ta'), B('E - D -', '', 'por- - te -'), B('C E D D', '', 'pour l\u2019a- mour de'), B('C - - -', '', 'Dieu - - -')]]),
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
