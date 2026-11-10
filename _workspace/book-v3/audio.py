@@ -145,6 +145,11 @@ def _phrase(words):   # her 10 Nov: say the whole count as one flowing phrase ("
 def _clear(a):   # her 11 Nov: the count got lost under the piano. Take the low end off the voice and lift its presence, so it sits above the piano instead of inside it
     lo = np.convolve(a, np.ones(9) / 9, mode='same'); lo2 = np.convolve(a, np.ones(60) / 60, mode='same')
     return (a - lo2) + 0.6 * (a - lo)
+COUNT_VOL = .27; COUNT_BLOCK = False
+def _block(strong):   # a soft woodblock tick: a short resonant knock, beat one a little higher and louder
+    n = int(SR * .09); t = np.arange(n) / SR; f0 = 1250 if strong else 980
+    x = np.sin(2 * np.pi * f0 * t) * np.exp(-t * 55) + .35 * np.sin(2 * np.pi * f0 * 2.7 * t) * np.exp(-t * 90)
+    x[:24] *= np.linspace(0, 1, 24); return x * (.32 if strong else .22)
 def count(spec):   # {'beats': beat tokens (timing only, no sound), 'notes': piano tokens (optional), 'say': '1 2 3 …' one word per beat, '-' for silence}
     toks = spec['beats'].split(); times = []; t = 0.0
     for tok in toks: times.append(t); t += .62 * _dur(tok)[1]
@@ -166,9 +171,13 @@ def count(spec):   # {'beats': beat tokens (timing only, no sound), 'notes': pia
             fit = SR * max(slots[i], .3) * .9
             if len(a) > fit: a = _stretch(a, len(a) / fit)
             f = np.minimum(1, np.arange(len(a)) / 60.0) * np.minimum(1, (len(a) - np.arange(len(a))) / 200.0)
-            a = _clear(a) * f * .36
+            a = _clear(a) * f * COUNT_VOL   # her 11 Nov: a little quieter again
             env = np.convolve(np.abs(a), np.ones(240) / 240, mode='same'); pc = int(np.argmax(env >= .35 * env.max()))   # her 11 Nov (again): the ear hears a word where its vowel starts, not its first consonant
             k = int(SR * times[i]) - pc + int(SR * .012); a = a[max(0, -k):]; k = max(0, k); v[k:k + len(a)] += a[:len(v) - k]
+    if COUNT_BLOCK:   # option: a woodblock tick on every beat under the numbers
+        for i, tok in enumerate(toks):
+            if tok[0] in 'XMx':
+                b = _block(tok[0] == 'X'); k = int(SR * times[i]); v[k:k + len(b)] += b[:len(v) - k]
     tracks.append(v)
     L = max(len(x) for x in tracks); out = np.zeros(L)
     for x in tracks: out[:len(x)] += x

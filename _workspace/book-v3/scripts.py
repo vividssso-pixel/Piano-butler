@@ -851,6 +851,21 @@ LESSON = {   # her 11 Nov: not everyone has a teacher, so the Butler is the teac
  'H6': 'Your little task for next time: play the shimmer, C, sus four, C, sus two, C, slowly.',
  'H7': 'Your little task for next time: build C nine with both hands, leaving out the fifth.',
  'H8': 'Your little task for next time: play C, C slash B, A minor, and let the bass walk down.',
+ 'M1': 'Your little task for next time: play C, F, F minor, C, and listen for the sigh.',
+ 'M2': 'Your little task for next time: find the last two chords of a piece, and say which punctuation they are.',
+ 'M3': 'Your little task for next time: play Twinkle with one, four and five chords in the left hand.',
+ 'M4': 'Your little task for next time: play the pop four in C, and hum a tune of your own over it.',
+ 'F1': 'Your little task for next time: sing a question phrase and an answer phrase of your own.',
+ 'F2': 'Your little task for next time: take a three-note idea, and walk it up as a sequence.',
+ 'F3': 'Your little task for next time: play a piece with the tune loud and the chords soft.',
+ 'F4': 'Your little task for next time: find a new sharp or flat that keeps coming back in a piece.',
+ 'F5': 'Your little task for next time: give each phrase of a piece a letter, and name its form.',
+ 'F6': 'Your little task for next time: listen to one piece from each period, and say what you notice.',
+ 'L1': 'Your little task for next time: write the fingering into one tricky bar, and keep it.',
+ 'L2': 'Your little task for next time: climb the metronome ladder on your hardest bar.',
+ 'L3': 'Your little task for next time: scan an easy new piece for thirty seconds, then play it without stopping.',
+ 'L4': 'Your little task for next time: ask someone to play major and minor chords, and say bright or dark.',
+ 'L5': 'Your little task for next time: give a one-minute concert for someone at home, and bow at the end.',
 }
 for _k, _q in LESSON.items():
     if _k not in CH: continue

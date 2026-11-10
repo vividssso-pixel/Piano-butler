@@ -464,7 +464,7 @@ NEW['P8'] = ('Major, minor and perfect', [
 
 NEW['T1'] = ('Pulse, tempo and the bar', [
  ('The secret', [
-  ('B', 'Welcome to Part Two, Clara: time. Put your hand on your heart.', c(50, 'lead')),
+  ('B', 'Clara, put your hand on your heart.', c(50, 'lead')),
   ('P', 'It’s beating. Steady, steady. Oh good, I’m alive.', c(50, 'lead')),
   ('B', 'Very reassuring. That steady beat is a pulse, and almost every piece of music has one too. Its speed is the tempo. And beats travel in little groups called bars, like carriages on a train. Beat one, the engine, is the strongest.', c(50, 'hero')),
   ('count', {'beats': 'X x x x X x x x X x x x', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(50, 'hero', seq=['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7', '#8', '#9', '#10', '#11'])),
@@ -975,7 +975,7 @@ NEW['E5'] = ('Ornaments', [
 CM = 'C4 D4 E4 F4 G4 A4 B4 C5'
 NEW['S1'] = ('Major scales', [
  ('The secret', [
-  ('B', 'Welcome to Part Four, Clara: scales and keys. Notes, it turns out, live in families.', c(93, 'h:Major scales')),
+  ('B', 'Clara, notes, it turns out, live in families.', c(93, 'h:Major scales')),
   ('P', 'Like my family? We are very noisy.', c(93, 'lead')),
   ('B', 'Some scales are noisy too. A scale climbs from a home note, the key note, up to the next note with the same name, using every letter once. Like a staircase from the ground floor to the first floor.', c(93, 'lead')),
   ('B', 'Here is the most famous staircase of all: C major.', c(93, 'hero')),
@@ -1221,7 +1221,7 @@ for _k in ('S1', 'S2', 'S3', 'S4', 'S5'): CH[_k] = NEW[_k]
 # ---- Part V, Chords (her 11 Nov: decisions 1, 2, 3 in order; 1 = chords audio) ----
 NEW['H1'] = ('Chords and triads', [
  ('The secret', [
-  ('B', 'Welcome to Part Five, Clara: chords. Press three or more notes at once, and you have a chord.', c(110, 'h:Chords and triads')),
+  ('B', 'Clara, press three or more notes at once, and you have a chord.', c(110, 'h:Chords and triads')),
   ('P', 'Like pressing lots of keys with my elbow?', c(110, 'lead')),
   ('B', 'That is a chord too, technically. A rather alarming one. But the favourite chord of all is much tidier: the triad, three notes stacked like the layers of a cake.', c(110, 'lead')),
   ('B', 'Here is the cake rule: play one, skip one, play one. Pick a note, the root: the big layer at the bottom. It holds the chord up and gives it its name.', c(110, 'secret')),
@@ -1636,3 +1636,540 @@ NEW['HO'] = ('Opening map', [
   ('B', 'Exactly. Eight chapters: triads, the four kinds, chords in a key, inversions, sevenths, colour chords, the tall tower, and slash chords. Shall we bake our first cake?', c(109, 'map')),
   ('P', 'Cake! Yes!', c(109, 'map'))])])
 for _k in ('TO', 'EO', 'SO', 'HO'): CH[_k] = NEW[_k]
+
+# ---- Part VI, Harmony in music (her 11 Nov: "다음으로 넘어가자") ----
+NEW['M1'] = ('Chords from outside the key', [
+ ('The secret', [
+  ('B', 'Clara, today some visitors arrive.', c(136, 'h:Chords from outside the key')),
+  ('P', 'Visitors? In the music?', c(136, 'lead')),
+  ('B', 'In C major, home is the white keys. So a black key in a chord is a guest. And guests never stay long: each one moves to the very next key, and shows you where the music goes next.', c(136, 'lead')),
+  ('B', 'Here is the secret: sharp guests push up, flat guests sigh down. Follow them one key, and you find the next chord.', c(136, 'secret')),
+  ('B', 'Listen. C sharp pushes up to D. F sharp pushes up to G. G sharp pushes up to A.', c(136, 'two')),
+  ('piano', 'C#4 D4*2 | F#4 G4*2 | G#4 A4*2', c(136, 'two')),
+  ('B', 'And A flat sighs down to G. E flat sighs down to D.', c(136, 'two')),
+  ('piano', 'Ab4 G4*2 | Eb4 D4*2', c(136, 'two')),
+  ('P', 'Like a guest who stands up when they arrive, and one who flops onto the sofa.', c(136, 'two'))]),
+ ('Sharp guests', [
+  ('B', 'Exactly. A chord with C sharp, A C sharp E, leads to D minor. With F sharp, D F sharp A, leads to G. With G sharp, E G sharp B, leads to A minor.', c(136, 'gp3')),
+  ('piano', '[A3 C#4 E4] [D4 F4 A4] | [D4 F#4 A4] [D4 G4 B4] | [E4 G#4 B4] [E4 A4 C5]', c(136, 'gp3')),
+  ('B', 'Try it in a song: C, D, G, C. The F sharp pushes up into G, then G leads home to C.', c(136, 'two2')),
+  ('piano', '[C4 E4 G4] [D4 F#4 A4] [D4 G4 B4] [C4 E4 G4]', c(136, 'two2'))]),
+ ('Flat guests and the twin', [
+  ('B', 'Flat guests come from a twin. C major and C minor are twins: the same home note, C, in different clothes. A flat guest is one piece of the twin’s outfit, borrowed for a moment.', c(136, 'two3')),
+  ('B', 'Listen to C, F, F minor, C. The A flat sighs down to G.', c(136, 'two3')),
+  ('piano', '[C4 E4 G4] [C4 F4 A4] [C4 F4 Ab4] [C4 E4 G4]', c(136, 'two3')),
+  ('P', 'Ooh, that F minor sounds like the end of a sad film where everything turns out fine.', c(136, 'two3')),
+  ('B', 'That is precisely what film composers use it for. Here are the twins side by side: C major at home, and C minor in darker clothes.', c(137, 'twins'))]),
+ ('Example: where do the guests go?', [
+  ('B', 'B, D sharp, F sharp, in C major. Find the black keys: there are two guests. Both are sharps, so where do they land? And which chord in C major holds both landing notes?', c(137, 'ex1')),
+  ('pause', 5, c(137, 'ex1')),
+  ('P', 'D sharp goes up to E, F sharp up to G. Both live in E minor!', c(137, 'ex1', reveal=True)),
+  ('piano', '[B3 D#4 F#4] [B3 E4 G4]', c(137, 'ex1', reveal=True)),
+  ('B', 'Game: where does each guest go? Find the guest, follow it one key, and name the next chord.', c(138, 'game')),
+  ('pause', 6, c(138, 'game')),
+  ('P', 'C sharp up to D: D minor. The A flat goes down to G, and the E flat down to D: G. F sharp up to G: G.', c(138, 'game', reveal=True))]),
+ ('Try it', [
+  ('B', 'Play C, F, F minor, C slowly, and hear the A flat sigh. Then C, D, G, C, and hear the F sharp push. One sighs, one pushes.', c(138, 'try10')),
+  ('piano', '[C4 E4 G4] [C4 F4 A4] [C4 F4 Ab4] [C4 E4 G4] | [C4 E4 G4] [D4 F#4 A4] [D4 G4 B4] [C4 E4 G4]', c(138, 'try10')),
+  ('P', 'Sigh, then push. Like getting out of bed on a Monday.', c(138, 'try10')),
+  ('B', 'A surprise guest at dinner: one new face changes the whole conversation, and then everyone goes home. And one trap: in G major, F sharp is at home, not a guest. A guest is a note from outside the key you are in. Until next time, Clara.', c(138, 'think')),
+  ('P', 'Bye, Butler!', c(138, 'think'))])])
+
+NEW['M2'] = ('Cadences', [
+ ('The secret', [
+  ('B', 'Clara, can you read this sentence without stopping: I went to the park then I fed the ducks then I went home.', c(139, 'h:Cadences')),
+  ('P', 'I need to breathe! Where are the full stops?', c(139, 'lead')),
+  ('B', 'Exactly. A phrase is a musical sentence, and it needs punctuation too. The last two chords of a phrase are its cadence. They tell you: finished, taking a breath, or surprise!', c(139, 'lead')),
+  ('B', 'There are four. Perfect: five to one. A full stop. Home, the end.', c(139, 'pc4')),
+  ('piano', '[G3 B3 D4] [C4 E4 G4]', c(139, 'pc4')),
+  ('B', 'Plagal: four to one. A soft, gentle end, like the Amen at the end of a hymn.', c(139, 'pc4')),
+  ('piano', '[F3 A3 C4] [E3 G3 C4]', c(139, 'pc4')),
+  ('P', 'A-a-men!', c(139, 'pc4')),
+  ('B', 'Imperfect: anything to five. A comma: to be continued...', c(139, 'pc4')),
+  ('piano', '[C4 E4 G4] [B3 D4 G4]', c(139, 'pc4')),
+  ('B', 'And interrupted: five to six. Surprise! Not home.', c(139, 'pc4')),
+  ('piano', '[G3 B3 D4] [A3 C4 E4]', c(139, 'pc4')),
+  ('P', 'Huh?! That one tricked me. I was already putting my coat on.', c(139, 'pc4')),
+  ('B', 'That is the secret: music has full stops and commas too. Just listen to the last two chords of a phrase.', c(139, 'secret'))]),
+ ('Why G7 pulls home', [
+  ('B', 'Add the seventh to five, and the full stop gets even stronger. In G seven, two notes lean towards C. The B rises to C, and the F falls to E. Two tiny steps, and you are home.', c(140, 'two')),
+  ('piano', '[G3 B3 D4 F4] [C4 E4 G4]', c(140, 'two')),
+  ('P', 'It works like the guests! B pushes up, F sighs down.', c(140, 'two'))]),
+ ('Examples: how does it end?', [
+  ('B', 'How does this phrase end? C, A minor, F, G. Find the last two chords and turn them into numerals.', c(140, 'ex1')),
+  ('piano', '[C4 E4 G4] [A3 C4 E4] [F3 A3 C4] [G3 B3 D4]', c(140, 'ex1')),
+  ('pause', 4, c(140, 'ex1')),
+  ('P', 'F then G: four to five. It lands on five: a comma. Imperfect!', c(140, 'ex1', reveal=True)),
+  ('B', 'And how does Twinkle end? Its last two chords in C are G, then C.', c(140, 'ex2')),
+  ('piano', 'F4 F4 E4 E4 | [G3 B3 D4] D4 [G3 B3 D4] D4 | [C4 E4 G4 C5]', c(140, 'ex2')),
+  ('pause', 3, c(140, 'ex2')),
+  ('P', 'Five to one: perfect! The full stop. That’s why it sounds finished.', c(140, 'ex2', reveal=True))]),
+ ('Surprise!', [
+  ('B', 'G seven, then A minor. G seven leans towards home: you expect C. But the next chord is A minor. Which numeral, and which card?', c(141, 'ex3')),
+  ('pause', 4, c(141, 'ex3')),
+  ('P', 'Five to six: interrupted! The music turned the corner just before home.', c(141, 'ex3', reveal=True)),
+  ('piano', '[G3 B3 D4 F4] [A3 C4 E4]', c(141, 'ex3', reveal=True)),
+  ('B', 'Game: punctuate the phrases. Four pairs of chords. Full stop, comma, Amen, or surprise?', c(141, 'game')),
+  ('pause', 6, c(141, 'game')),
+  ('P', 'Amen, surprise, comma, and full stop.', c(141, 'game', reveal=True)),
+  ('B', 'Two traps: not every ending on one is perfect; F to C is plagal. And imperfect ends on five, while perfect starts on five. Until next time, Clara.', c(141, 'watch')),
+  ('P', 'Bye, Butler. Full stop.', c(141, 'watch'))])])
+for _k in ('M1', 'M2'): CH[_k] = NEW[_k]
+
+NEW['M3'] = ('Chords under a melody', [
+ ('The secret', [
+  ('B', 'Clara, the melody is the singer, and the chords are the band. Today you choose the band.', c(142, 'h:Chords under a melody')),
+  ('P', 'Can I have drums?', c(142, 'lead')),
+  ('B', 'Not today. But here is how to choose a chord for each bar: look at the melody’s main notes, the long ones and the ones on beats one and three, then pick the cake that holds them.', c(142, 'lead')),
+  ('B', 'That is the secret. And every note of C major lives in one, four or five. C and G live in two of them, so there, let your ear choose.', c(142, 'secret'))]),
+ ('Twinkle with its chords', [
+  ('B', 'Twinkle, Twinkle, with its band. C C G G sit in one, C. A A in four, F, then G back in one. F F in four, E E in one. D D in five, G, and the last C in one.', c(142, 'vx')),
+  ('piano', '[C3 C4] C4 [C3 G4] G4 | [F3 A4] A4 [C3 G4] | [F3 F4] F4 [C3 E4] E4 | [G3 D4] D4 [C3 C4]', c(142, 'vx')),
+  ('P', 'Now it sounds like a proper song, not just a tune!', c(142, 'vx')),
+  ('B', 'And the left hand can play the chord three ways. Block: all three at once.', c(142, 'vx2')),
+  ('piano', '[C3 E3 G3] [C3 E3 G3] [C3 E3 G3] [C3 E3 G3]', c(142, 'vx2')),
+  ('B', 'Broken: one at a time, up and down.', c(142, 'vx2')),
+  ('piano', 'C3/2 E3/2 G3/2 E3/2 C3/2 E3/2 G3/2 E3/2', c(142, 'vx2')),
+  ('B', 'And Alberti: low, high, middle, high. Named after Domenico Alberti, who loved it very much.', c(142, 'vx2')),
+  ('piano', 'C3/2 G3/2 E3/2 G3/2 C3/2 G3/2 E3/2 G3/2', c(142, 'vx2')),
+  ('P', 'Alberti sounds like a little machine humming.', c(142, 'vx2'))]),
+ ('Example: choose the chord', [
+  ('B', 'Choose the chord for E D C D, then E E E. In bar one, which notes fall on beats one and three? Which cake holds them? And bar two?', c(143, 'ex1')),
+  ('pause', 5, c(143, 'ex1')),
+  ('P', 'E and C: they both live in one, C. And E E E is in C too!', c(143, 'ex1', reveal=True)),
+  ('piano', '[C3 E4] D4 [C3 C4] D4 | [C3 E4] E4 [C3 E4]', c(143, 'ex1', reveal=True)),
+  ('B', 'That’s the start of Mary Had a Little Lamb. Game: pick the cake for three bars. F A F A, D B G B, G E C E.', c(143, 'gt2')),
+  ('pause', 5, c(143, 'gt2')),
+  ('P', 'Four, five, and one.', c(143, 'gt2', reveal=True))]),
+ ('You know this', [
+  ('B', 'Mozart’s Sonata in C, the famous easy one. The left hand is an Alberti bass: C G E G is just the C chord broken into low, high, middle, high. Listen to the left hand alone first.', c(143, 'yk')),
+  ('piano', 'C4/2 G4/2 E4/2 G4/2 C4/2 G4/2 E4/2 G4/2 | D4/2 G4/2 F4/2 G4/2 C4/2 G4/2 E4/2 G4/2', c(143, 'yk')),
+  ('B', 'And now the tune on top.', c(143, 'yk')),
+  ('piano', 'C5*2 E5 G5 | B4*1.5 C5/4 D5/4 C5*2 | A5*2 G5 C6 | G5 F5/2 E5/4 F5/4 E5*2', c(143, 'yk')),
+  ('P', 'That’s the tune from the music box at my grandma’s!', c(143, 'yk')),
+  ('B', 'Very possibly. Picking a chord is like picking a coat for the weather: when the tune changes, change the chord. And keep the left hand softer: the melody is the star, the chords are the stage. Until next time, Clara.', c(143, 'think')),
+  ('P', 'Bye, Butler!', c(143, 'think'))])])
+
+NEW['M4'] = ('Progressions everywhere', [
+ ('The secret', [
+  ('B', 'Clara, a progression is a trip from chord to chord. And here’s a funny thing: a handful of trips turn up in song after song after song.', c(144, 'h:Progressions everywhere')),
+  ('P', 'Like everyone in town taking the same bus route?', c(144, 'lead')),
+  ('B', 'Exactly. Learn them by their numbers, and you can play them in any key. The secret: most songs take the same few trips: home, away, a pull, and home again.', c(144, 'secret')),
+  ('B', 'The pop four: one, five, six, four. In C: C, G, A minor, F. Countless pop songs and ballads.', c(144, 'tripc')),
+  ('piano', '[C4 E4 G4] [B3 D4 G4] [A3 C4 E4] [A3 C4 F4] | [C4 E4 G4] [B3 D4 G4] [A3 C4 E4] [A3 C4 F4]', c(144, 'tripc')),
+  ('P', 'I know that! It’s in every song on the radio!', c(144, 'tripc')),
+  ('B', 'Very nearly. The fifties: one, six, four, five. Old rock and roll and doo-wop.', c(144, 'tripc2')),
+  ('piano', '[C4 E4 G4] [A3 C4 E4] [A3 C4 F4] [B3 D4 G4] | [C4 E4 G4] [A3 C4 E4] [A3 C4 F4] [B3 D4 G4]', c(144, 'tripc2')),
+  ('B', 'The jazz three-step: two, five, one. D minor seven, G seven, C major seven.', c(144, 'tripc3')),
+  ('piano', '[D4 F4 A4 C5] [D4 F4 G4 B4] [C4 E4 G4 B4]', c(144, 'tripc3')),
+  ('B', 'And the canon: Pachelbel’s famous trip, and all its many children.', c(144, 'tripc4')),
+  ('piano', '[C3 E4 G4] [G2 D4 G4] [A2 C4 E4] [E2 B3 E4] [F2 A3 C4] [C3 G3 C4] [F2 A3 C4] [G2 B3 D4]', c(144, 'tripc4'))]),
+ ('Same trip, any key', [
+  ('B', 'Change key, and the numbers stay the same. The pop four in G is G, D, E minor, C. In F: F, C, D minor, B flat.', c(144, 'ht')),
+  ('piano', '[G3 B3 D4] [F#3 A3 D4] [G3 B3 E4] [G3 C4 E4]', c(144, 'ht')),
+  ('B', 'And the most famous trip of all: the twelve-bar blues. Twelve bars, one chord each, and only one, four and five. Make every chord a seventh, and it gets bluesy.', c(144, 'two')),
+  ('piano', '[C3 E3 G3 Bb3] [C3 E3 G3 Bb3] [C3 E3 G3 Bb3] [C3 E3 G3 Bb3] | [F3 A3 C4 Eb4] [F3 A3 C4 Eb4] [C3 E3 G3 Bb3] [C3 E3 G3 Bb3] | [G3 B3 D4 F4] [F3 A3 C4 Eb4] [C3 E3 G3 Bb3] [G3 B3 D4 F4]', c(144, 'two')),
+  ('P', 'I feel like I should be wearing sunglasses and a cool hat.', c(144, 'two')),
+  ('K', 'I played the blues once. The Queen asked me to stop.', c(144, 'two'))]),
+ ('Example: the pop four in A', [
+  ('B', 'Play the pop four in A major. Write the A major scale, three sharps, and number the notes. Find notes one, five, six and four, and build each cake. Which one is minor?', c(145, 'ex1')),
+  ('pause', 6, c(145, 'ex1')),
+  ('P', 'In A: A, E, F sharp minor, D. The six is minor!', c(145, 'ex1', reveal=True)),
+  ('piano', '[A3 C#4 E4] [G#3 B3 E4] [F#3 A3 C#4] [F#3 A3 D4]', c(145, 'ex1', reveal=True)),
+  ('B', 'Same trip, new key. Game: name the trip. C, A minor, F, G. D minor, G, C. And C, G, A minor, F.', c(145, 'game')),
+  ('pause', 6, c(145, 'game')),
+  ('P', 'The fifties, the jazz three-step, and the pop four!', c(145, 'game', reveal=True)),
+  ('B', 'Try it: C, G, A minor, F, four beats each, round four times, and hum any tune you like over it. Watch out: the pop four and the fifties use the same four chords, in a different order. Listen to which comes second. Until next time, Clara.', c(145, 'watch')),
+  ('P', 'Bye, Butler! I’m going to write a hit song.', c(145, 'watch'))])])
+for _k in ('M3', 'M4'): CH[_k] = NEW[_k]
+
+# ---- Part VII, Shape and style ----
+ODE1 = 'E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4*1.5 D4/2 D4*2'
+ODE2 = 'E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 D4*1.5 C4/2 C4*2'
+NEW['F1'] = ('Motifs and phrases', [
+ ('The secret', [
+  ('B', 'Clara, a tune is built like a story.', c(148, 'h:Motifs and phrases')),
+  ('P', 'With a dragon in it?', c(148, 'lead')),
+  ('B', 'Sometimes. A tiny idea, the motif, is like a word. It grows into a phrase, a musical sentence. And two phrases make a question and its answer.', c(148, 'lead')),
+  ('B', 'That is the secret: a motif is a word, a phrase a sentence. A question ends away from home; an answer comes home.', c(148, 'secret'))]),
+ ('A motif', [
+  ('B', 'Here is the most famous motif ever written. Four notes: short, short, short, long.', c(148, 'two')),
+  ('piano', 'G4/2 G4/2 G4/2 Eb4*3 | F4/2 F4/2 F4/2 D4*4 | G4/2 G4/2 G4/2 Eb4/2 Ab4/2 Ab4/2 Ab4/2 G4/2 Eb5/2 Eb5/2 Eb5/2 C5*3', c(148, 'two')),
+  ('P', 'Beethoven! Da-da-da-dum. Again and again!', c(148, 'two')),
+  ('B', 'He builds a whole movement out of those four notes, like building a castle out of one kind of brick. A motif is short, two to six notes, and easy to recognise: its rhythm and shape keep coming back.', c(148, 'two'))]),
+ ('Question and answer', [
+  ('B', 'Now phrases. Ode to Joy begins with two four-bar phrases. Listen to the first. It ends on D, away from home. A question.', c(148, 'vx')),
+  ('piano', ODE1, c(148, 'vx')),
+  ('P', 'It sounds like it’s asking: and then?', c(148, 'vx')),
+  ('B', 'And the second phrase comes home to C. The answer.', c(148, 'vx')),
+  ('piano', ODE2, c(148, 'vx')),
+  ('B', 'The rule: most phrases are four bars long. A question ends away from the key note; the answer comes home to it.', c(148, 'rule'))]),
+ ('Examples', [
+  ('B', 'Question or answer? The key is C major. What is the last note of this phrase, and is it home?', c(149, 'ex1')),
+  ('pause', 4, c(149, 'ex1')),
+  ('P', 'It ends on D, not C. A question!', c(149, 'ex1', reveal=True)),
+  ('B', 'Now find the motif. Look at bar one: what shape and rhythm? Then bars two and three.', c(149, 'ex2')),
+  ('pause', 4, c(149, 'ex2')),
+  ('P', 'Step, step, long: three notes. It comes three times, each a step higher!', c(149, 'ex2', reveal=True)),
+  ('piano', 'C4 D4 E4*2 | D4 E4 F4*2 | E4 F4 G4*2', c(149, 'ex2', reveal=True)),
+  ('B', 'Game: each phrase is four bars long. How many phrases in a tune of eight bars? Twelve? Sixteen?', c(149, 'gt2')),
+  ('pause', 4, c(149, 'gt2')),
+  ('P', 'Two, three, four. Easy peasy.', c(149, 'gt2', reveal=True)),
+  ('B', 'Try singing a question, and stop on the D: it hangs in the air like a ball thrown up. Then sing the answer and land on C. One trap: don’t play every note the same; each phrase has one high point to grow towards. Until next time, Clara.', c(149, 'watch')),
+  ('P', 'Bye, Butler? That was a question.', c(149, 'watch')),
+  ('B', 'And here is the answer: bye, Clara.', c(149, 'watch'))])])
+
+NEW['F2'] = ('Repetition and sequence', [
+ ('The secret', [
+  ('B', 'Clara, composers are very thrifty. They make one idea go a long way.', c(150, 'h:Repetition and sequence')),
+  ('P', 'Like my mum making soup out of leftovers?', c(150, 'lead')),
+  ('B', 'Exactly like that. They say the idea again, say it again higher or lower, let another hand copy it, or say something completely new. That is the secret.', c(150, 'secret')),
+  ('B', 'Four ways. Repetition: the same notes again. Sequence: the same shape, starting higher or lower. Imitation: another hand copies it. And contrast: something new.', c(150, 'ht')),
+  ('B', 'A rising sequence: C D E, D E F, E F G. Like climbing stairs with the same three steps each time.', c(150, 'two')),
+  ('piano', 'C4 D4 E4*2 D4 E4 F4*2 E4 F4 G4*2 F4 G4 A4*2', c(150, 'two')),
+  ('B', 'And a falling one: each time one note lower.', c(150, 'two')),
+  ('piano', 'A4 G4 F4*2 G4 F4 E4*2 F4 E4 D4*2 E4 D4 C4*2', c(150, 'two'))]),
+ ('Examples', [
+  ('B', 'Repetition or sequence? Bar one: which notes? Bar two: the same notes, or the same shape on new notes?', c(150, 'ex1')),
+  ('pause', 4, c(150, 'ex1')),
+  ('P', 'Same shape, a step higher each bar: a sequence!', c(150, 'ex1', reveal=True)),
+  ('B', 'Which hand copies? The right hand plays C D E F G E C. The left hand waits, then?', c(151, 'ex2')),
+  ('piano', 'C5 D5 E5 F5 G5 E5 C5*2 | C3 D3 E3 F3 G3 E3 C3*2', c(151, 'ex2')),
+  ('pause', 3, c(151, 'ex2')),
+  ('P', 'The left hand copies it, two octaves down. Like an echo in a cave!', c(151, 'ex2', reveal=True)),
+  ('B', 'Imitation. And where is the contrast here? Bars one and two, then bar three?', c(151, 'ex3')),
+  ('pause', 4, c(151, 'ex3')),
+  ('P', 'Bars one and two repeat, and bar three brings something new: long notes on G.', c(151, 'ex3', reveal=True)),
+  ('B', 'Game: name each one. Same notes. One step up. Left hand copies. New rhythm.', c(151, 'gt2')),
+  ('pause', 5, c(151, 'gt2')),
+  ('P', 'Repetition, sequence, imitation, contrast.', c(151, 'gt2', reveal=True))]),
+ ('You know this', [
+  ('B', 'Frère Jacques does nearly everything. Every bar is said twice: repetition. And sung as a round, each voice comes in two bars after the last: imitation.', c(151, 'yk')),
+  ('piano', 'C4 D4 E4 C4 C4 D4 E4 C4 E4 F4 G4*2 E4 F4 G4*2 | G4/2 A4/2 G4/2 F4/2 E4 C4 G4/2 A4/2 G4/2 F4/2 E4 C4 C4 G3 C4*2 C4 G3 C4*2', c(151, 'yk')),
+  ('P', 'Are you sleeping, Brother John? Ding dang dong!', c(151, 'yk')),
+  ('B', 'Try it as a round with a friend. And one trap: a sequence always moves to new notes; the same notes again is just repetition. Until next time, Clara.', c(151, 'watch')),
+  ('P', 'Bye, Butler! Bye, Butler!', c(151, 'watch')),
+  ('B', 'Ha. Repetition.', c(151, 'watch'))])])
+
+NEW['F3'] = ('Texture', [
+ ('The secret', [
+  ('B', 'Clara, run your fingers over your jumper. Feel the threads?', c(152, 'h:Texture')),
+  ('P', 'It’s woolly and a bit scratchy.', c(152, 'lead')),
+  ('B', 'Music has threads too. Texture is how many lines sound at once, and how they fit together: one line alone, a tune with chords, or several tunes woven together like threads in cloth.', c(152, 'lead')),
+  ('B', 'That is the secret: count the lines. One line alone is monophony.', c(152, 'hero')),
+  ('piano', 'C4 D4 E4 F4 G4*2 E4 C4*2', c(152, 'hero')),
+  ('B', 'A tune with chords is melody and accompaniment.', c(152, 'hero')),
+  ('piano', '[C3 E3 G3 C4] D4 [C3 E3 G3 E4] F4 [C3 E3 G3 G4] [C3 E3 G3 E4] [C3 E3 G3 C4]', c(152, 'hero')),
+  ('B', 'And two tunes at once, each going its own way, is polyphony.', c(152, 'hero')),
+  ('piano', '[C4 E5] [D4 D5] [E4 C5] [F4 B4] [G4 C5] [G4 D5] [C4 C5]', c(152, 'hero')),
+  ('P', 'Polyphony sounds like two people chatting at the same time, and somehow it works.', c(152, 'hero'))]),
+ ('The words', [
+  ('B', 'The grand words: monophonic, one line alone. Homophonic, a tune with chords underneath. Polyphonic, two or more tunes at once. And for the accompaniment: block chords struck together, or an Alberti bass rocking low, high, middle, high.', c(152, 'ht')),
+  ('B', 'Game: name the texture. A tune alone. A tune and chords. Two tunes at once.', c(152, 'game')),
+  ('pause', 4, c(152, 'game')),
+  ('P', 'Monophonic, homophonic, polyphonic. They all rhyme!', c(152, 'game', reveal=True))]),
+ ('Examples', [
+  ('B', 'Name the texture. The right hand plays a tune, and the left hand plays chords. So which word?', c(153, 'ex1')),
+  ('pause', 3, c(153, 'ex1')),
+  ('P', 'Homophonic: melody and accompaniment.', c(153, 'ex1', reveal=True)),
+  ('B', 'And which hand has the tune here? The right hand repeats two-note chords. The left hand moves step by step.', c(153, 'ex2')),
+  ('pause', 4, c(153, 'ex2')),
+  ('P', 'The left hand! So it sings out, and the right hand stays soft.', c(153, 'ex2', reveal=True)),
+  ('B', 'Exactly. The tune isn’t always on top, like the hero isn’t always the tallest person in the film.', c(153, 'ex2', reveal=True))]),
+ ('You know this', [
+  ('B', 'Mozart’s Sonata in C again: the right hand sings, the left hand rocks C G E G, an Alberti bass. The sound of the Classical style.', c(153, 'yk')),
+  ('piano', 'C5*2 E5 G5 | B4*1.5 C5/4 D5/4 C5*2 | C4/2 G4/2 E4/2 G4/2 C4/2 G4/2 E4/2 G4/2 D4/2 G4/2 F4/2 G4/2 C4/2 G4/2 E4/2 G4/2', c(153, 'yk')),
+  ('B', 'Two traps: never let the accompaniment cover the tune. And when there are two tunes, practise each hand alone and sing it, so neither gets lost. Until next time, Clara.', c(153, 'watch')),
+  ('P', 'Bye, Butler!', c(153, 'watch'))])])
+for _k in ('F1', 'F2', 'F3'): CH[_k] = NEW[_k]
+
+TW = 'C4 C4 G4 G4 A4 A4 G4*2 F4 F4 E4 E4 D4 D4 C4*2'
+NEW['F4'] = ('Changing key', [
+ ('The secret', [
+  ('B', 'Clara, music can go on holiday. It travels to a new key, and then it comes home again. That is a modulation.', c(154, 'h:Changing key')),
+  ('P', 'Does it send a postcard?', c(154, 'lead')),
+  ('B', 'In a way. The signpost is a new sharp, flat or natural that keeps coming back, and a cadence that lands in the new key.', c(154, 'lead')),
+  ('B', 'That is the secret. Here, C major is home. Then F sharp appears: a visit to G major. Then F natural again: home.', c(154, 'hero')),
+  ('piano', 'C4 E4 G4 E4 | F#4 A4 D5 F#5 G5*2 | F4 D4 B3 D4 C4*2', c(154, 'hero')),
+  ('P', 'Off on holiday, and back home for tea.', c(154, 'hero'))]),
+ ('The nearest keys', [
+  ('B', 'A piece in C major usually visits the keys next door on the circle of fifths, where only one note changes. To G major, F sharp appears. To F major, B flat appears. And to the relative minor, A minor, G sharp appears.', c(154, 'ht')),
+  ('B', 'Listen: bar one in C major; F sharp twice in bar two, then the phrase lands on G. Now we’re in G major.', c(154, 'vx')),
+  ('piano', 'C5 B4 A4 G4 | A4 F#4 G4 F#4 | E4 F#4 G4*2', c(154, 'vx')),
+  ('B', 'Where does the key change here? Find the accidental, and where the phrase lands.', c(154, 'ex1')),
+  ('pause', 4, c(154, 'ex1')),
+  ('P', 'B flat in bar two and again in bar three, landing on F. F major!', c(154, 'ex1', reveal=True))]),
+ ('Examples', [
+  ('B', 'In G major, a C sharp keeps appearing. G major has one sharp, F sharp. C sharp is one more. Which key has both?', c(155, 'ex2')),
+  ('pause', 4, c(155, 'ex2')),
+  ('P', 'D major, the key a fifth up!', c(155, 'ex2', reveal=True)),
+  ('B', 'And here: one F sharp in a bar of C major, then F natural everywhere after. A new key, or just passing?', c(155, 'ex3')),
+  ('pause', 4, c(155, 'ex3')),
+  ('P', 'A new key!', c(155, 'ex3', oops=True)),
+  ('B', 'Not this time. One visitor doesn’t make a move. The F sharp never comes back, and there’s no cadence in G. Just a decoration, passing through.', c(155, 'ex3')),
+  ('P', 'Oh. Like a cat walking through the garden, not moving in.', c(155, 'ex3', reveal=True)),
+  ('B', 'Game: where to next? C major plus F sharp. C major plus B flat. G major plus C sharp. F major plus E flat.', c(155, 'gt2')),
+  ('pause', 6, c(155, 'gt2')),
+  ('P', 'G major, F major, D major, and B flat major.', c(155, 'gt2', reveal=True)),
+  ('B', 'A modulation is a holiday: new scenery for a while, but the piece usually comes home at the end. So watch for the old note returning. Until next time, Clara.', c(155, 'think')),
+  ('P', 'Bye, Butler! Send me a postcard.', c(155, 'think'))])])
+
+NEW['F5'] = ('Form', [
+ ('The secret', [
+  ('B', 'Clara, form is the map of a whole piece: which sections come, in what order, and which come back. Like a floor plan of a house.', c(156, 'h:Form')),
+  ('P', 'So I don’t get lost in the music!', c(156, 'lead')),
+  ('B', 'Exactly. We name the sections with letters: A for the first idea, B for the next new one, and so on. The secret: same music, same letter. New music, next letter.', c(156, 'secret')),
+  ('B', 'Binary: A B, two halves. Ternary: A B A, out, away and back. Rondo: A B A C A, where A keeps coming home between new ideas. And variations: one tune, dressed differently each time.', c(156, 'hero'))]),
+ ('The maps', [
+  ('B', 'Binary is the shape of the old dances, like the Minuet in G: two halves, each repeated. Many short Romantic pieces are ternary. And hymns and folk songs are strophic: the same music for every verse. Pop songs go verse, chorus, verse, chorus.', c(156, 'ht')),
+  ('B', 'And here is Mozart’s favourite trick: theme and variations, on the tune of Twinkle. First the plain theme.', c(156, 'lis')),
+  ('piano', TW, c(156, 'lis')),
+  ('B', 'Then the same tune, dressed up in quick notes.', c(156, 'lis')),
+  ('piano', 'C4/4 B3/4 C4/4 B3/4 C4/4 B3/4 C4/4 B3/4 G4/4 F#4/4 G4/4 F#4/4 G4/4 F#4/4 G4/4 F#4/4 A4/4 G#4/4 A4/4 G#4/4 A4/4 G#4/4 A4/4 G#4/4 G4/4 F#4/4 G4/4 F#4/4 G4/4 F#4/4 G4/4 F#4/4 | F4/4 E4/4 F4/4 E4/4 F4/4 E4/4 F4/4 E4/4 E4/4 D#4/4 E4/4 D#4/4 E4/4 D#4/4 E4/4 D#4/4 D4/4 C#4/4 D4/4 C#4/4 D4/4 C#4/4 D4/4 C#4/4 C4*2', c(156, 'lis')),
+  ('P', 'It’s Twinkle in a sparkly party dress!', c(156, 'lis'))]),
+ ('Examples', [
+  ('B', 'Which letter makes it ternary? A B alone is two sections. Ternary goes out, away, and...?', c(157, 'ex1')),
+  ('pause', 3, c(157, 'ex1')),
+  ('P', 'And back! Section A again.', c(157, 'ex1', reveal=True)),
+  ('B', 'Which form is A B A C A? Which one keeps coming back?', c(157, 'ex2')),
+  ('pause', 3, c(157, 'ex2')),
+  ('P', 'A comes back between two new ideas: a rondo!', c(157, 'ex2', reveal=True)),
+  ('B', 'Now map Twinkle itself. Bars one to four: A. Bars five to eight: new or the same? And the last four bars repeat bars one to four.', c(157, 'ex3')),
+  ('piano', TW + ' | G4 G4 F4 F4 E4 E4 D4*2 G4 G4 F4 F4 E4 E4 D4*2 | ' + TW, c(157, 'ex3')),
+  ('pause', 3, c(157, 'ex3')),
+  ('P', 'Bars five to eight are new: B. Then A again. A B A: ternary!', c(157, 'ex3', reveal=True)),
+  ('B', 'And what comes after A, A one, A two?', c(158, 'ex4')),
+  ('pause', 3, c(158, 'ex4')),
+  ('P', 'A three! The third variation.', c(158, 'ex4', reveal=True)),
+  ('B', 'Game: name each map. Two letters, A, B. Then A, B, A. Then A, B, A, C, A. And A, A one, A two, A three.', c(158, 'game')),
+  ('pause', 5, c(158, 'game')),
+  ('P', 'Binary, ternary, rondo, and theme and variations.', c(158, 'game', reveal=True))]),
+ ('You know this', [
+  ('B', 'A clever way to learn a piece: letter the sections in pencil, and learn A first. It comes back, so it pays twice.', c(158, 'howto')),
+  ('B', 'Für Elise is a rondo. The famous opening tune is section A, and it is heard three times, with two new sections in between. Raise your hand every time A returns.', c(158, 'yk')),
+  ('piano', 'E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4 | C4/2 E4/2 A4/2 B4 | E4/2 G#4/2 B4/2 C5 | E4/2 E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4*2', c(158, 'yk')),
+  ('P', 'Hand up! There it is!', c(158, 'yk')),
+  ('B', 'Two traps: don’t give every phrase a new letter, same music means same letter. And section A played twice is still section A. Until next time, Clara.', c(158, 'watch')),
+  ('P', 'Bye, Butler!', c(158, 'watch'))])])
+
+NEW['F6'] = ('Styles through time', [
+ ('The secret', [
+  ('B', 'Clara, music changes with its time, like clothes and buildings. Four big periods cover most piano music.', c(159, 'h:Styles through time')),
+  ('P', 'Like a fashion show through history!', c(159, 'lead')),
+  ('B', 'Exactly that. Here is the secret: listen for the texture, the ornaments and the pedal. They tell you the century.', c(159, 'secret')),
+  ('B', 'Baroque, from about sixteen hundred: Bach, Handel, Scarlatti. Harpsichord and organ, two tunes woven together, lots of ornaments, a steady beat.', c(159, 'hero')),
+  ('piano', 'D5 G4/2 A4/2 B4/2 C5/2 D5 G4 G4 E5 C5/2 D5/2 E5/2 F#5/2 G5 G4 G4', c(159, 'hero')),
+  ('B', 'Classical, from about seventeen fifty: Haydn, Mozart, Beethoven. The new piano, a clear tune over an Alberti bass, tidy four-bar phrases.', c(159, 'hero')),
+  ('piano', 'C5*2 E5 G5 | B4*1.5 C5/4 D5/4 C5*2', c(159, 'hero')),
+  ('B', 'Romantic, from about eighteen twenty: Chopin, Schumann, Liszt. Big feelings, rich chords in the pedal, time stretched with rubato.', c(159, 'hero')),
+  ('piano', '[pp Eb3 Bb3 G4] p:Bb4 mf:G5*2 p:F5/2 G5/2 F5*1.5 Eb5/2 | [pp Ab2 Eb3 C4] mp:Bb4*2 G5*1.5 C5/2 C6*2', c(159, 'hero')),
+  ('B', 'And Modern, from nineteen hundred to today: Debussy, Bartók, jazz and film. New scales, surprising rhythms.', c(159, 'hero')),
+  ('piano', 'C5/2 D5/2 E5/2 F#5/2 G#5/2 A#5/2 [C4 E4 G#4 C5] | [D4 F#4 A#4 D5]', c(159, 'hero')),
+  ('P', 'The last one is the whole-tone scale from the beginning of every chapter!', c(159, 'hero')),
+  ('B', 'Well spotted! Debussy loved it.', c(159, 'hero'))]),
+ ('Playing in style', [
+  ('B', 'And each period wants to be played its own way. Baroque: little or no pedal, steady time, a clear, often detached touch. Classical: light pedal, steady, neat and singing. Romantic: rich pedal, rubato, deep legato. Modern: whatever the music asks.', c(159, 'ht2')),
+  ('Q', 'One does not pedal Bach like Chopin, Clara. It is like wearing a ball gown to a picnic.', c(159, 'ht2'))]),
+ ('Examples: which period?', [
+  ('B', 'A tune over an Alberti bass, tidy four-bar phrases. Which period?', c(160, 'ex1')),
+  ('pause', 3, c(160, 'ex1')),
+  ('P', 'Classical: think Mozart.', c(160, 'ex1', reveal=True)),
+  ('B', 'Two equal tunes, many trills, written for harpsichord?', c(160, 'ex2')),
+  ('pause', 3, c(160, 'ex2')),
+  ('P', 'Baroque: think Bach.', c(160, 'ex2', reveal=True)),
+  ('B', 'Rubato, rich pedalled chords, huge leaps across the keyboard?', c(160, 'ex3')),
+  ('pause', 3, c(160, 'ex3')),
+  ('P', 'Romantic: think Chopin.', c(160, 'ex3', reveal=True)),
+  ('B', 'Game: who belongs where? Bach, Mozart, Chopin, Debussy.', c(160, 'game')),
+  ('pause', 4, c(160, 'game')),
+  ('P', 'Baroque, Classical, Romantic, Modern. In order, like a timeline!', c(160, 'game', reveal=True)),
+  ('B', 'Two traps: don’t pedal Bach like Chopin, and don’t use Romantic rubato in Mozart. Keep Classical time steady. Until next time, Clara.', c(160, 'watch')),
+  ('P', 'Bye, Butler!', c(160, 'watch'))])])
+for _k in ('F4', 'F5', 'F6'): CH[_k] = NEW[_k]
+
+# ---- Part VIII, Playing and listening ----
+NEW['L1'] = ('Fingering', [
+ ('The secret', [
+  ('B', 'Clara, we begin the last part with your fingers.', c(163, 'h:Fingering')),
+  ('P', 'I have ten. I counted.', c(163, 'lead')),
+  ('B', 'Excellent. Each finger has a number, the same in both hands: the thumb is one, the little finger five. And here is the secret: good fingering is planned, not guessed. Choose it once, write it in, and use it every time.', c(163, 'secret')),
+  ('B', 'Thumbs are one in both hands. So the right hand counts one to five going up, and the left hand counts five to one.', c(163, 'hero'))]),
+ ('Five-finger position', [
+  ('B', 'Thumb on C, one finger on each key up to G: five notes without moving the hand. Many first pieces stay right here, like a cat curled up in its basket.', c(163, 'two')),
+  ('piano', 'C4 D4 E4 F4 G4 F4 E4 D4 C4*2', c(163, 'two')),
+  ('B', 'And to go further, thumb under, finger over. Up the scale: one, two, three, then the thumb tucks under to F, then one, two, three, four, five.', c(163, 'two2')),
+  ('piano', 'C4 D4 E4 F4 G4 A4 B4 C5*2', c(163, 'two2')),
+  ('B', 'Coming down: five, four, three, two, one, then finger three crosses over the thumb.', c(163, 'two2')),
+  ('piano', 'C5 B4 A4 G4 F4 E4 D4 C4*2', c(163, 'two2')),
+  ('P', 'The thumb is like a little tunnel under a bridge!', c(163, 'two2')),
+  ('B', 'A smooth tunnel, please, no bumps. Two-minute drill: C D E F G with each hand, saying the finger numbers. Right one, two, three, four, five up; left five, four, three, two, one up. Then both together.', c(163, 'drill'))]),
+ ('Examples', [
+  ('B', 'Which finger plays the F in the C major scale? C, D, E are one, two, three. Then: finger four, or the thumb tucked under?', c(164, 'ex1')),
+  ('pause', 4, c(164, 'ex1')),
+  ('P', 'Finger four!', c(164, 'ex1', oops=True)),
+  ('B', 'Then you’d run out of fingers before the top C. Count: four, five, and three more notes to go.', c(164, 'ex1')),
+  ('P', 'Oh! The thumb passes under to F, and then two, three, four, five reach the top C.', c(164, 'ex1', reveal=True)),
+  ('B', 'And right hand, thumb on C: which finger plays G?', c(164, 'ex2')),
+  ('pause', 3, c(164, 'ex2')),
+  ('P', 'Five! C D E F G is one two three four five.', c(164, 'ex2', reveal=True)),
+  ('B', 'Game: name the finger. Thumb, index, middle, little.', c(164, 'gt2')),
+  ('pause', 4, c(164, 'gt2')),
+  ('P', 'One, two, three, five.', c(164, 'gt2', reveal=True)),
+  ('B', 'Two traps: don’t change fingering every time you play; choose one and keep it. And let the thumb glide under, don’t land on it like a sack of potatoes. Until next time, Clara.', c(164, 'watch')),
+  ('P', 'Bye, Butler! Five, four, three, two, one!', c(164, 'watch'))])])
+
+NEW['L2'] = ('Practising well', [
+ ('The secret', [
+  ('P', 'Butler, I practise every day. I play my piece from the top, again and again and again.', c(165, 'h:Practising well')),
+  ('B', 'Ah. That’s like learning to ride a bike by only riding the easy bit of the road. Practice is fixing the hard bits, slowly and correctly, then joining them back together.', c(165, 'lead')),
+  ('B', 'Here is the secret: slow, small, and correct. Then a little faster. Then join the pieces. Three correct times at one speed, then one step up the ladder.', c(165, 'secret')),
+  ('count', {'beats': 'X@60 x@60 x@60 x@60 X@72 x@72 x@72 x@72 X@88 x@88 x@88 x@88', 'notes': 'C4@60 E4@60 G4@60 E4@60 C4@72 E4@72 G4@72 E4@72 C4@88 E4@88 G4@88 E4@88', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(165, 'hero')),
+  ('P', 'Sixty, seventy-two, eighty-eight. Climbing the ladder.', c(165, 'hero'))]),
+ ('A fifteen-minute plan', [
+  ('B', 'A fifteen-minute plan. Two minutes: warm up with a scale. Five minutes: the hardest bars, slowly, hands separately. Five minutes: join the bars, hands together, still slow. And three minutes: play the whole section, and mark what slipped.', c(165, 'ht')),
+  ('B', 'Four tools. Small chunks: one or two bars, plus the first note of the next. Hands separately. Slow, then faster. And count aloud: it keeps the rhythm honest.', c(165, 'ht2')),
+  ('B', 'And a trick: for a run of even quavers, play it long, short, then short, long. When you go back to even notes, the run is suddenly easier.', c(165, 'xbox')),
+  ('piano', 'C4*0.75 D4/4 E4*0.75 F4/4 G4*0.75 A4/4 B4*0.75 C5/4 | C4/4 D4*0.75 E4/4 F4*0.75 G4/4 A4*0.75 B4/4 C5*0.75 | C4/2 D4/2 E4/2 F4/2 G4/2 A4/2 B4/2 C5*2', c(165, 'xbox')),
+  ('P', 'Bumpy, then bumpy the other way, then smooth!', c(165, 'xbox'))]),
+ ('Examples', [
+  ('B', 'Which bar first? You played it through once, and it slipped in the semiquavers of bar three. Where do you start?', c(166, 'ex1')),
+  ('pause', 3, c(166, 'ex1')),
+  ('P', 'Bar three, slowly. Then join bars two to four.', c(166, 'ex1', reveal=True)),
+  ('B', 'And when do you speed up? At sixty you played it right, right, wrong.', c(166, 'ex2')),
+  ('pause', 3, c(166, 'ex2')),
+  ('P', 'Now! Two right is nearly three.', c(166, 'ex2', oops=True)),
+  ('B', 'Nearly isn’t three, I’m afraid. After a mistake, start counting again: three correct in a row at sixty, then try sixty-six.', c(166, 'ex2')),
+  ('P', 'Fine. Patience, patience.', c(166, 'ex2', reveal=True)),
+  ('B', 'Game: good habit or not? From the top. Hardest first. Faster to fix. Slow and correct.', c(166, 'gt2')),
+  ('pause', 4, c(166, 'gt2')),
+  ('P', 'Hardest first, and slow and correct. The other two waste time.', c(166, 'gt2', reveal=True)),
+  ('B', 'Keep a practice log: the date, one thing that got better and one that didn’t. Start tomorrow with the one that didn’t. Practice is like building a wall: lay each brick straight, and the wall stands on its own. Until next time, Clara.', c(166, 'think')),
+  ('P', 'Bye, Butler!', c(166, 'think'))])])
+
+NEW['L3'] = ('Sight-reading', [
+ ('The secret', [
+  ('B', 'Clara, sight-reading is playing music you have never seen before.', c(167, 'h:Sight-reading')),
+  ('P', 'That sounds scary. Like reading a book in the dark.', c(167, 'lead')),
+  ('B', 'Not if you bring a torch. Here is the secret: look before you play, then never stop. The beat matters more than any note. A wrong note passes by; a stop is heard by everyone.', c(167, 'secret')),
+  ('B', 'Thirty seconds first. One sharp, so G major. Four-four time. It starts on G and steps up in a pattern.', c(167, 'hero')),
+  ('piano', 'G4 A4 B4 C5 | A4 B4 C5 D5 | B4 C5 D5 E5 | D5 C5 B4 A4 | G4*4', c(167, 'hero'))]),
+ ('The thirty-second scan', [
+  ('B', 'The scan has six checks. One: the key, sharps or flats at the start. Two: the time signature, count a bar before you start. Three: the clefs and the first note in each hand. Four: the trickiest rhythm, tap it. Five: patterns, steps, skips, repeats, sequences. And six: the marks, dynamics, slurs, speed words.', c(167, 'ht')),
+  ('P', 'Like a pilot checking the plane before take-off!', c(167, 'ht')),
+  ('B', 'Exactly like a pilot. And then we take off and don’t stop in mid-air.', c(167, 'ht'))]),
+ ('Examples', [
+  ('B', 'What do you check first? The key: how many sharps? The time? And the F in bar two: F or F sharp?', c(167, 'ex1')),
+  ('pause', 4, c(167, 'ex1')),
+  ('P', 'G major, three-four. The F in bar two is F sharp, from the key signature. Count one, two, three, and go!', c(167, 'ex1', reveal=True)),
+  ('B', 'A wrong note in bar two. Now what? Stop and fix it, or keep going?', c(167, 'ex2')),
+  ('pause', 3, c(167, 'ex2')),
+  ('P', 'Keep going and catch the next beat. A stop is heard much more than a wrong note.', c(167, 'ex2', reveal=True)),
+  ('B', 'Spot the pattern. Bar one has a shape. Bar two?', c(168, 'ex3')),
+  ('pause', 3, c(168, 'ex3')),
+  ('P', 'The same shape a step higher: a sequence! So I only really need to read bar one.', c(168, 'ex3', reveal=True)),
+  ('B', 'Read the shape, not every note. Game: put the checks in order. Rhythm, key, time, patterns.', c(168, 'gt2')),
+  ('pause', 4, c(168, 'gt2')),
+  ('P', 'Key, time, rhythm, patterns.', c(168, 'gt2', reveal=True))]),
+ ('Read ahead', [
+  ('B', 'And the big skill: read ahead. While you play one bar, let your eyes move to the next. Practise by covering each bar with a card as you play it.', c(168, 'howto')),
+  ('B', 'Sight-reading is like reading aloud: you look a few words ahead, and if you trip on one, the sentence goes on. Three traps: choose a speed you can keep, keep your eyes on the music, not your hands, and never skip the scan. Until next time, Clara.', c(168, 'think')),
+  ('P', 'Bye, Butler! One new piece a day.', c(168, 'think'))])])
+
+NEW['L4'] = ('Listening', [
+ ('The secret', [
+  ('B', 'Clara, your ear is a musical instrument too.', c(169, 'h:Listening')),
+  ('P', 'I can’t play my ear. I’ve tried wiggling it.', c(169, 'lead')),
+  ('B', 'Ha! Not like that. You train it in small steps: clap a rhythm back, sing a tune back, then hear whether music goes up or down, is major or minor, and whether it has finished.', c(169, 'lead')),
+  ('B', 'Here is the secret: sing it back first. If you can sing it, you can play it.', c(169, 'secret')),
+  ('B', 'Questions for your ear: high or low? Loud or soft? Two or three beats in a bar? Major or minor? Finished or not?', c(169, 'hero'))]),
+ ('Major or minor?', [
+  ('B', 'Major or minor? Only the middle note changes. Listen: C E G, then C E flat G. Bright, then darker.', c(169, 'two')),
+  ('piano', '[C4 E4 G4] [C4 Eb4 G4] | C4 E4 G4 | C4 Eb4 G4', c(169, 'two')),
+  ('P', 'The sun went behind a cloud.', c(169, 'two'))]),
+ ('Intervals by song', [
+  ('B', 'And a clever trick: learn the size of a leap from a song you know. A major second: Frère Jacques.', c(169, 'ht')),
+  ('piano', 'C4 D4 E4 C4', c(169, 'ht')),
+  ('B', 'A major third: Oh When the Saints.', c(169, 'ht')),
+  ('piano', 'C4 E4 F4 G4*4', c(169, 'ht')),
+  ('B', 'A perfect fourth: Amazing Grace.', c(169, 'ht')),
+  ('piano', 'G3 C4*2 E4/2 C4/2 E4*2 D4 C4*2 A3 G3*2', c(169, 'ht')),
+  ('B', 'A perfect fifth: Twinkle, from the second note to the third.', c(169, 'ht')),
+  ('piano', 'C4 C4 G4 G4 A4 A4 G4*2', c(169, 'ht')),
+  ('B', 'A major sixth: My Bonnie Lies Over the Ocean.', c(169, 'ht')),
+  ('piano', 'G3 E4 D4 C4 D4 C4 A3 G3 E3*2', c(169, 'ht')),
+  ('B', 'And an octave: the first big leap of Somewhere Over the Rainbow. Just the two notes.', c(169, 'ht')),
+  ('piano', 'C4*2 C5*2', c(169, 'ht')),
+  ('P', 'Now I’ll hear songs everywhere in my intervals!', c(169, 'ht')),
+  ('B', 'And to clap it back: someone claps two bars, you clap them straight back, keeping the beat. Then sing back a short tune, then find it on the keys.', c(169, 'howto'))]),
+ ('Examples', [
+  ('B', 'Finished or not? Listen to two short bars. Which one sounds finished?', c(170, 'ex1')),
+  ('piano', '[G3 B3 D4] [C4 E4 G4] | [C4 E4 G4] [B3 D4 G4]', c(170, 'ex1')),
+  ('pause', 3, c(170, 'ex1')),
+  ('P', 'The first! It comes home to C. The second stops on G: a comma.', c(170, 'ex1', reveal=True)),
+  ('B', 'Major or minor? Two chords. Which note changed?', c(170, 'ex2')),
+  ('piano', '[G3 Bb3 D4] [G3 B3 D4]', c(170, 'ex2')),
+  ('pause', 3, c(170, 'ex2')),
+  ('P', 'First minor, then major. Only the middle note moved: B flat up to B.', c(170, 'ex2', reveal=True)),
+  ('B', 'Game: which song? A fifth up, an octave up, a fourth up.', c(170, 'gt2')),
+  ('pause', 4, c(170, 'gt2')),
+  ('P', 'Twinkle, Somewhere Over the Rainbow, and Amazing Grace.', c(170, 'gt2', reveal=True)),
+  ('B', 'And one trap: don’t guess from the hands. Close your eyes and listen. Until next time, Clara.', c(170, 'watch')),
+  ('P', 'Bye, Butler! My ears are on.', c(170, 'watch'))])])
+
+NEW['L5'] = ('Performing', [
+ ('The secret', [
+  ('P', 'Butler, I have to play at the school concert. My tummy feels like it’s full of butterflies.', c(171, 'h:Performing')),
+  ('B', 'Ah, the butterflies. Nerves are normal, Clara: they mean you care. Playing for others is a skill you can practise, like scales. A routine before you start, and a plan for slips, make the butterflies much smaller.', c(171, 'lead')),
+  ('B', 'Here is the secret: breathe, feel a bar of the beat, then begin. And after a slip, catch the next beat.', c(171, 'secret')),
+  ('B', 'Four steps to the first note. Breathe out, slowly. Feel one bar of the beat in your head. Begin, calm. And at the end, bow, and smile.', c(171, 'hero')),
+  ('count', {'beats': 'X x x x', 'say': '1 2 3 4'}, c(171, 'hero')),
+  ('piano', 'C4 C4 G4 G4 A4 A4 G4*2', c(171, 'hero'))]),
+ ('Before, during, after', [
+  ('B', 'Before: warm up your hands, practise starting, not only the whole piece, and play it to a friend or your family first. At the piano: adjust the bench, feet flat, breathe out, feel one bar of the beat. If you slip: keep the beat going and catch the next beat, or the next phrase. Never go back. And after: hands in your lap for a moment, stand, bow, smile.', c(171, 'ht')),
+  ('B', 'The rule: the listener follows the beat and the mood. Keep both going, and a slip is forgotten in a second.', c(171, 'rule')),
+  ('Q', 'When I give a speech and forget a word, I simply carry on. Nobody notices, because I am the Queen.', c(171, 'rule')),
+  ('K', 'I notice.', c(171, 'rule')),
+  ('B', 'Two-minute drill: every day this week, play your piece once from the start without stopping, whatever happens, as if someone were listening.', c(171, 'drill'))]),
+ ('Examples', [
+  ('B', 'How do you start? You sit down, and your heart is racing. The bench, your breath, the beat?', c(172, 'ex1')),
+  ('pause', 4, c(172, 'ex1')),
+  ('P', 'Adjust the bench, breathe out, and feel one bar of the speed in my head. Then the first note.', c(172, 'ex1', reveal=True)),
+  ('B', 'You slip in bar five: a wrong note, and your hand freezes. What now?', c(172, 'ex2')),
+  ('pause', 4, c(172, 'ex2')),
+  ('P', 'Keep counting, and come back in on the next beat, or at the start of the next phrase. Never go back.', c(172, 'ex2', reveal=True)),
+  ('B', 'Game: help or not? Going back. Breathe first. Keep the beat. Rush to finish.', c(172, 'gt2')),
+  ('pause', 4, c(172, 'gt2')),
+  ('P', 'Breathe first, and keep the beat. Going back and rushing don’t help.', c(172, 'gt2', reveal=True)),
+  ('B', 'Try a one-minute concert today: choose eight bars, walk to the piano, sit, breathe, feel a bar, play, bow. Do it for someone.', c(172, 'gt2')),
+  ('B', 'And remember, Clara: the audience wants you to do well. They are on your side from the first note. And so am I. Until next time, Clara.', c(172, 'think')),
+  ('P', 'Thank you, Butler. For everything. Bye!', c(172, 'think'))])])
+for _k in ('L1', 'L2', 'L3', 'L4', 'L5'): CH[_k] = NEW[_k]
+
+NEW['MO'] = ('Opening map', [
+ ('Part Six: Harmony in music', [
+  ('B', 'Welcome to Part Six, Clara: harmony in music. Put the chords to work.', c(135, 'map')),
+  ('B', 'A melody is the singer; harmony is the band behind it. Here the chords start moving: guests from outside the key, endings, chords under a tune, and the trips every song takes. All of it is in these same four bars of Twinkle.', c(135, 'map')),
+  ('piano', '[C3 E3 G3 C4] C4 [C3 E3 G3 G4] G4 | [F2 A3 C4 A4] A4 [E2 G3 C4 G4] | [F2 Ab3 C4 F4] F4 [C3 G3 C4 E4] E4 | [G2 C4 D4] [G2 B3 F4 D4] [C3 E3 G3 C4]', c(135, 'map')),
+  ('P', 'There’s a sad chord hiding in the middle!', c(135, 'map')),
+  ('B', 'F minor, a guest note from the twin. Four chapters, and a page of tips. Shall we meet our first guest?', c(135, 'map')),
+  ('P', 'Yes, please!', c(135, 'map'))])])
+
+NEW['FO'] = ('Opening map', [
+ ('Part Seven: Shape and style', [
+  ('B', 'Welcome to Part Seven, Clara: shape and style. How music is built.', c(147, 'map')),
+  ('B', 'Step back from the notes and see the building: small ideas, repeated and moved, in sections that come and go, in the style of their time. Like looking at a house from across the street instead of staring at one brick.', c(147, 'map')),
+  ('P', 'So the letters on the map are like the rooms of a house?', c(147, 'map')),
+  ('B', 'Exactly. Listen to a little tune built that way: the first idea, the same idea again, something new, and then the first idea once more to come home.', c(147, 'map')),
+  ('piano', 'C4 E4 D4 F4 E4 D4 C4*2 | C4 E4 D4 F4 E4 D4 C4*2 | G4 G4 A4 A4 G4 F4 E4 D4*2 | C4 E4 D4 F4 E4 D4 C4*2', c(147, 'map')),
+  ('B', 'Six chapters: motifs and phrases, repetition and sequence, texture, changing key, form, and styles through time. Shall we begin with the smallest idea of all?', c(147, 'map')),
+  ('P', 'Let’s go!', c(147, 'map'))])])
+
+NEW['LO'] = ('Opening map', [
+ ('Part Eight: Playing and listening', [
+  ('B', 'Welcome to Part Eight, Clara: the last part. At the piano.', c(162, 'map')),
+  ('B', 'Everything before this page is knowledge. This part turns it into playing: the right fingers, practice that works, reading at sight, a trained ear, and the calm to perform.', c(162, 'map')),
+  ('P', 'The last part already? I don’t want the book to end.', c(162, 'map')),
+  ('B', 'A book ends, but the playing never does. Look at the two hands on the page: thumbs are one in both. Five chapters, and then you are ready for the concert hall.', c(162, 'map')),
+  ('piano', 'C4 D4 E4 F4 G4 F4 E4 D4 C4*2', c(162, 'map')),
+  ('P', 'Ready when you are, Butler!', c(162, 'map'))])])
+for _k in ('MO', 'FO', 'LO'): CH[_k] = NEW[_k]
