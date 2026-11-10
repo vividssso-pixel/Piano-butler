@@ -54,6 +54,10 @@ S = [
       how='The L.H. boxes now hold two keys: play the bottom and top together, once a bar.',
       g=[[B('G G E G', 'C+G', 'Camp- town la- dies'), B('A G E -', 'C+G', 'sing this song -'), B('E D - -', 'C+G', 'doo- dah - -'), B('E D - -', 'C+G', 'doo- dah - -')],
          [B('G G E G', 'C+G', 'Camp- town race- track'), B('A G E -', 'C+G', 'five miles long -'), B('D D E D', 'G+D', 'oh, doo- dah'), B('C - - -', 'C+G', 'day! - - -')]]),
+ dict(t='Old MacDonald Had a Farm', id='oldmac', job='Everyone knows it, so everyone joins in. Make the animal noises too.', lh=('C with 5, F with 2, G with the thumb. The thumb also plays A, one key up.', {'c': 5, 'f': 2, 'g': 1, 'a': 1}),
+      how='When the left hand has the tune (L.H.), it plays no chord in that bar: one job at a time.',
+      g=[[B('C C C <G', 'C', 'Old Mac- Don- ald'), B('<A <A <G -', '', 'had a farm -'), B('E E D D', 'G', 'E I E I'), B('C - - <G', 'C', 'O - - and')],
+         [B('C C C <G', 'C', 'on his farm he'), B('<A <A <G -', '', 'had a cow -'), B('E E D D', 'G', 'E I E I'), B('C - - -', 'C', 'O - - -')]]),
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
@@ -89,6 +93,9 @@ WAYS = {
  'saints': ('Two keys on every chord now, with F joining in. Bottom and top, the same shape three times.',
           [('Way 1|together', 'C+G - - -'), ('Way 2|twice', 'C+G - C+G -'), ('Way 3|bottom, top', 'C - G -'), ('Way 4|oom-pah', 'C G C G')],
           'C and G, F and C, G and D: fingers 5 and 1 each time. Lift the hand and land the shape.'),
+ 'oldmac': ('The split box again, and now the left hand finds the "&" between the beats.',
+          [('Way 1|tap, lift', 'C.r C.r C.r C.r'), ('Way 2|skip', 'C - C.C -'), ('Way 3|the push', 'C - r.C -'), ('Way 4|on the &', 'r.C r.C r.C r.C')],
+          'Count "1 & 2 & 3 & 4 &". The dot is a lift. Play the ways in the bars that have a chord box.'),
  'ode': ('Ode to Joy again. Rests in new places: the left hand starts to talk back to the tune.',
           [('Way 1|hold, lift, go', 'C - r C'), ('Way 2|play, lift, two', 'C r C C'), ('Way 3|late start', 'r r C -'), ('Way 4|the answer', 'r C - C')],
           'Big beats only. Count out loud; the dot is a lift. On G bars, the same rhythm on G.'),
