@@ -144,15 +144,39 @@ def count(spec):   # {'beats': beat tokens (timing only, no sound), 'notes': pia
     L = max(len(x) for x in tracks); out = np.zeros(L)
     for x in tracks: out[:len(x)] += x
     return out, times
-def render(lines, timed=None):
-    out = []; t = 0.0
-    for ln in lines:
+def _swoosh():   # a soft page turn
+    n = int(SR * .42); t = np.arange(n) / SR; x = np.random.RandomState(7).randn(n)
+    k = 60; x = np.convolve(x, np.ones(k) / k, mode='same')   # take the hiss off
+    env = np.sin(np.pi * np.minimum(1, t / .42)) ** 2
+    return (x * env * .5).astype(np.float32)
+def _sfx(kind):   # her 10 Nov: an audio storybook: a theme, page turns, a chime for a right answer, a soft "oops", thinking music in the pauses
+    if kind == 'intro': return np.concatenate([piano('mp:G4/2 mp:C5/2 mf:E5/2 mf:G5 [mf C4 E4 G4 C5]') * .8, np.zeros(int(SR * .3))])
+    if kind == 'outro': return np.concatenate([np.zeros(int(SR * .4)), piano('mp:E5/2 mp:D5/2 mp:C5 [p C4 G4 C5]') * .8])
+    if kind == 'turn': return np.concatenate([_swoosh(), np.zeros(int(SR * .15))])
+    if kind == 'right': return np.concatenate([piano('p:G5/2 mp:C6') * .7, np.zeros(int(SR * .1))])
+    if kind == 'oops': return np.concatenate([piano('p:E4/2 pp:Eb4') * .8, np.zeros(int(SR * .1))])
+    return np.zeros(1)
+def _think(sec):   # quiet music-box loop under a pause
+    n = max(1, int(round(sec / (.62 * 2))))
+    w = piano(' '.join(['pp:C5/2 pp:G5/2 pp:E5/2 pp:G5/2'] * n)) * .55
+    L = int(SR * sec); return np.pad(w, (0, max(0, L - len(w))))[:L]
+def render(lines, timed=None, first=False, last=False):
+    out = []; t = 0.0; right_done = False
+    pre = _sfx('intro') if first else _sfx('turn')
+    out.append(pre); t += len(pre) / SR
+    for li, ln in enumerate(lines):
         kind, val = ln[0], ln[1]; cue = ln[2] if len(ln) > 2 else None
-        if kind in VOICE: seg = [say(kind, val), np.zeros(int(SR * .35))]
+        tail = []
+        if kind in VOICE:
+            seg = [say(kind, val), np.zeros(int(SR * .35))]
+            if cue and cue.get('oops'): tail = [_sfx('oops')]
+            elif kind == 'P' and cue and cue.get('reveal') and not right_done: tail = [_sfx('right')]; right_done = True
         elif kind == 'piano': seg = [piano(val)]
-        elif kind == 'pause': seg = [np.zeros(int(SR * val))]
+        elif kind == 'pause': seg = [_think(val)]
         elif kind == 'count': cw, ctimes = count(val); seg = [cw]
         else: seg = []
+        seg = seg + tail
+        if last and li == len(lines) - 1: seg = seg + [_sfx('outro')]
         dur = sum(len(x) for x in seg) / SR
         if timed is not None:
             item = {'t0': round(t, 2), 't1': round(t + dur, 2), 'who': kind}
@@ -180,7 +204,7 @@ if __name__ == '__main__':
         title, clips = CH[k]; d = f'{OUT}/{k}'; os.makedirs(d, exist_ok=True); allw = []; meta = []
         for i, (ct, lines) in enumerate(clips):
             if ct == 'The secret': ct = title   # her 8 Nov: the first clip is named after the chapter
-            tl = []; w = render(lines, tl); allw += [w, np.zeros(int(SR * .8))]
+            tl = []; w = render(lines, tl, first=(i == 0), last=(i == len(clips) - 1)); allw += [w, np.zeros(int(SR * .8))]
             fn = f'{i + 1:02d}-{re.sub(r"[^a-z0-9]+", "-", ct.lower()).strip("-")}.mp3'; mp3(w, f'{d}/{fn}'); meta.append({'title': ct, 'file': fn, 'sec': round(len(w) / SR), 'lines': tl})
         mp3(np.concatenate(allw), f'{d}/{k}-all.mp3')
         json.dump({'key': k, 'title': title, 'clips': meta}, open(f'{d}/clips.json', 'w'), indent=1)

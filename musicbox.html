@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Listen · The Butler's Music Box</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@700;800&display=swap">
+<style>
+:root { --navy:#26296b; --coral:#e4572e; --coral-soft:#fbe3da; --cream:#faf6ec; --paper:#fffefa; --line:rgba(38,41,107,.14); --mute:#6e70a0; }
+* { box-sizing:border-box }
+html, body { margin:0 }
+body { background:var(--cream); color:var(--navy); font-family:Inter, system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased }
+.wrap { max-width:760px; margin:0 auto; padding:24px 16px 48px }
+.kick { font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--mute) }
+.lessons { display:flex; gap:6px; flex-wrap:wrap; margin:14px 0 18px }
+.lessons a { text-decoration:none; color:var(--navy); border:1.5px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:600; background:var(--paper) }
+.lessons a.on { background:var(--navy); color:#fff; border-color:var(--navy) }
+.lno { font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--coral) }
+h1 { font-family:'Playfair Display', Georgia, serif; font-weight:800; font-size:clamp(30px, 7vw, 44px); line-height:1.05; margin:4px 0 14px; text-wrap:balance }
+.tunes { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px }
+.tunes button { font:inherit; font-size:14px; font-weight:600; color:var(--navy); background:none; border:none; border-bottom:2px solid transparent; padding:4px 2px; cursor:pointer }
+.tunes button.on { border-bottom-color:var(--coral) }
+.tunes .sep { color:var(--mute); font-size:12px; align-self:center; letter-spacing:.14em; text-transform:uppercase; margin-left:8px }
+.bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:var(--paper); border:1.5px solid var(--line); border-radius:14px; padding:12px }
+.play { font:inherit; font-weight:800; font-size:17px; color:#fff; background:var(--navy); border:none; border-radius:999px; padding:12px 26px; cursor:pointer; min-width:120px }
+.play.stop { background:var(--coral) }
+.seg { display:flex; border:1.5px solid var(--line); border-radius:999px; overflow:hidden }
+.seg button { font:inherit; font-size:13px; font-weight:600; color:var(--navy); background:none; border:none; padding:8px 14px; cursor:pointer }
+.seg button.on { background:var(--navy); color:#fff }
+.tempo { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums }
+.tempo input { width:130px; accent-color:var(--coral) }
+.chk { display:flex; gap:6px; align-items:center; font-size:13px; font-weight:600; cursor:pointer; user-select:none }
+.chk input { accent-color:var(--navy); width:16px; height:16px }
+.sheet { margin-top:18px; display:grid; gap:14px }
+.line { display:flex; flex-wrap:wrap; gap:4px 0; background:var(--paper); border:1.5px solid var(--line); border-radius:12px; padding:12px 10px }
+.m { display:flex; border-right:1.5px solid var(--line); padding:0 6px }
+.m:last-child { border-right:none }
+.n { display:flex; flex-direction:column; align-items:center; gap:6px; padding:0 3px; min-width:30px }
+.n b { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; background:var(--navy); color:#fff; transition:background .12s, transform .12s }
+.n.long b { background:#fff; color:var(--navy); box-shadow:inset 0 0 0 2px var(--navy) }
+.n.lh { padding-top:22px } .n.lh b { background:#fff; color:var(--navy); box-shadow:inset 0 0 0 2px var(--navy) }
+.n.rest b { background:transparent; color:var(--mute); box-shadow:inset 0 0 0 1.5px var(--line) }
+.n span { font-size:15px; min-height:20px; white-space:nowrap }
+.n.now b { background:var(--coral); color:#fff; box-shadow:none; transform:scale(1.18) }
+.n.now span { color:var(--coral); font-weight:700 }
+.kb { margin:22px auto 0; display:block; width:100%; max-width:420px }
+.foot { margin-top:26px; font-size:13px; color:var(--mute); line-height:1.5 }
+.foot b { color:var(--navy) }
+@media (max-width:480px) { .n { min-width:26px } .n b { width:24px; height:24px; font-size:12px } .n span { font-size:13px } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick">The Piano Butler · The Music Box</div>
+  <nav class="lessons" id="lessons"></nav>
+  <div class="lno" id="lno"></div>
+  <h1 id="title"></h1>
+  <div class="tunes" id="tunes"></div>
+  <div class="bar">
+    <button class="play" id="play">▶ Play</button>
+    <div class="seg" id="speed"><button data-s="0.6">Slow</button><button data-s="0.8">Steady</button><button data-s="1" class="on">Normal</button></div>
+    <label class="tempo"><input type="range" id="tempo" min="40" max="130" step="5" value="100"><span id="tval"></span></label>
+    <label class="chk"><input type="checkbox" id="count" checked> Count in</label>
+    <label class="chk"><input type="checkbox" id="loop"> Again and again</label>
+    <div class="seg" id="acc"><button data-a="">Tune</button><button data-a="piano">Piano</button><button data-a="band">Band</button><button data-a="ens">Ensemble</button></div>
+    <label class="chk" id="mew"><input type="checkbox" id="me"> I play the tune</label>
+  </div>
+  <div class="sheet" id="sheet"></div>
+  <svg class="kb" id="kb" viewBox="0 0 294 110"></svg>
+  <p class="foot"><b>Listen first:</b> hear it once, then point to each note as it lights up. The second time, sing along. <b>Piano</b> plays your left hand. Tick <b>I play the tune</b> and play the right hand with it; or pick <b>Band</b> and play both hands with them. Slow it down with the slider until it feels easy, then speed it up.</p>
+  <p class="foot" style="font-size:11px">Instrument sounds: tonejs-instruments samples.</p>
+</div>
+<script>
+const SONGS = [{"id":"buns","n":1,"title":"Hot Cross Buns","meter":"4/4","bpm":92,"tunes":[{"t":"The song","b":[[["e4","c","Hot",""],["d4","c","cross",""],["c4","m","buns",""]],[["e4","c","hot",""],["d4","c","cross",""],["c4","m","buns",""]],[["c4","q","one",""],["c4","q","a",""],["c4","q","pen",""],["c4","q","ny",""],["d4","q","two",""],["d4","q","a",""],["d4","q","pen",""],["d4","q","ny",""]],[["e4","c","hot",""],["d4","c","cross",""],["c4","m","buns",""]]]}],"piano":{"bpm":92,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["C",4]],[["C",4]]]},"band":{"swing":1,"bpm":96,"voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"chords":[[["C6",4]],[["C6",4]],[["C6",4]],[["C6",4]]],"style":"swing"},"ens":{"style":"brass","bpm":92,"voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["C",4]],[["C",4]]]}},{"id":"mary","n":2,"title":"Mary Had a Little Lamb","meter":"4/4","bpm":96,"tunes":[{"t":"The song","b":[[["e4","c","Ma","i"],["d4","c","ry",""],["c4","c","had",""],["d4","c","a",""]],[["e4","c","lit","i"],["e4","c","tle",""],["e4","m","lamb",""]],[["d4","c","lit","i"],["d4","c","tle",""],["d4","m","lamb",""]],[["e4","c","lit","i"],["g4","c","tle",""],["g4","m","lamb",""]],[["e4","c","Ma","i"],["d4","c","ry",""],["c4","c","had",""],["d4","c","a",""]],[["e4","c","lit","i"],["e4","c","tle",""],["e4","c","lamb",""],["e4","c","its",""]],[["d4","c","fleece",""],["d4","c","was",""],["e4","c","white",""],["d4","c","as",""]],[["c4","s","snow",""]]]}],"piano":{"bpm":96,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]]]},"band":{"swing":0,"bpm":100,"voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"chords":[[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]]],"style":"funk"},"ens":{"style":"winds","bpm":96,"voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]]]}},{"id":"auclair","n":3,"title":"Au Clair de la Lune","meter":"4/4","bpm":84,"tunes":[{"t":"The song","b":[[["c4","c","Au",""],["c4","c","clair",""],["c4","c","de",""],["d4","c","la",""]],[["e4","m","lu","i"],["d4","m","ne",""]],[["c4","c","mon",""],["e4","c","a","i"],["d4","c","mi",""],["d4","c","Pier","i"]],[["c4","s","rot",""]],[["c4","c","Prê","i"],["c4","c","te","i"],["c4","c","moi",""],["d4","c","ta",""]],[["e4","m","plu","i"],["d4","m","me",""]],[["c4","c","pour",""],["e4","c","é","i"],["d4","c","crire",""],["d4","c","un",""]],[["c4","s","mot",""]]]}],"piano":{"bpm":84,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]]]},"band":{"swing":0,"style":"popballad","voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"bpm":88,"chords":[[["C6",4]],[["G7",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["C6",4]]]},"ens":{"style":"moon","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"bpm":84,"chords":[[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]]]}},{"id":"lightly","n":4,"title":"Lightly Row","meter":"4/4","bpm":92,"tunes":[{"t":"The song","b":[[["g4","c","Light","i"],["e4","c","ly",""],["e4","m","row",""]],[["f4","c","light","i"],["d4","c","ly",""],["d4","m","row",""]],[["c4","c","o’er",""],["d4","c","the",""],["e4","c","glass","i"],["f4","c","y",""]],[["g4","c","waves",""],["g4","c","we",""],["g4","m","go",""]],[["g4","c","Smooth","i"],["e4","c","ly",""],["e4","m","glide",""]],[["f4","c","smooth","i"],["d4","c","ly",""],["d4","m","glide",""]],[["c4","c","on",""],["e4","c","the",""],["g4","c","si","i"],["g4","c","lent",""]],[["c4","s","tide",""]]]}],"piano":{"bpm":92,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]]]},"band":{"swing":0,"style":"bossa","voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"bpm":96,"chords":[[["C6",4]],[["G7",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["C6",4]]]},"ens":{"style":"winds","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"bpm":92,"chords":[[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]]]}},{"id":"ode","n":5,"title":"Ode to Joy","meter":"4/4","bpm":96,"tunes":[{"t":"The song","b":[[["e4","c","Joy","i"],["e4","c","ful,",""],["f4","c","joy","i"],["g4","c","ful,",""]],[["g4","c","we",""],["f4","c","a","i"],["e4","c","dore",""],["d4","c","thee,",""]],[["c4","c","God",""],["c4","c","of",""],["d4","c","glo","i"],["e4","c","ry,",""]],[["e4","c","Lord",""],["d4","c","of",""],["d4","m","love;",""]],[["e4","c","hearts",""],["e4","c","un","i"],["f4","c","fold",""],["g4","c","like",""]],[["g4","c","flowers",""],["f4","c","be","i"],["e4","c","fore",""],["d4","c","thee,",""]],[["c4","c","o","i"],["c4","c","pening",""],["d4","c","to",""],["e4","c","the",""]],[["d4","c","sun",""],["c4","c","a","i"],["c4","m","bove.",""]]]}],"piano":{"bpm":96,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["G",4]],[["C",4]],[["G",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]]]},"band":{"swing":1,"bpm":100,"voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"chords":[[["C6",4]],[["G7",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["C6",4]]],"style":"gospel"},"ens":{"style":"orchestra","bpm":96,"voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["G",4]],[["C",4]],[["G",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]]]}},{"id":"jingle","n":6,"title":"Jingle Bells","meter":"4/4","bpm":112,"tunes":[{"t":"The song","b":[[["e4","c","Jin","i"],["e4","c","gle",""],["e4","m","bells",""]],[["e4","c","jin","i"],["e4","c","gle",""],["e4","m","bells",""]],[["e4","c","jin","i"],["g4","c","gle",""],["c4","c","all",""],["d4","c","the",""]],[["e4","s","way",""]],[["f4","c","oh",""],["f4","c","what",""],["f4","c","fun",""],["f4","c","it",""]],[["f4","c","is",""],["e4","c","to",""],["e4","c","ride",""],["e4","q","in",""],["e4","q","a",""]],[["e4","c","one","i"],["d4","c","horse",""],["d4","c","o","i"],["e4","c","pen",""]],[["d4","m","sleigh,",""],["g4","m","hey!",""]],[["e4","c","Jin","i"],["e4","c","gle",""],["e4","m","bells",""]],[["e4","c","jin","i"],["e4","c","gle",""],["e4","m","bells",""]],[["e4","c","jin","i"],["g4","c","gle",""],["c4","c","all",""],["d4","c","the",""]],[["e4","s","way",""]],[["f4","c","oh",""],["f4","c","what",""],["f4","c","fun",""],["f4","c","it",""]],[["f4","c","is",""],["e4","c","to",""],["e4","c","ride",""],["e4","q","in",""],["e4","q","a",""]],[["g4","c","one","i"],["g4","c","horse",""],["f4","c","o","i"],["d4","c","pen",""]],[["c4","s","sleigh!",""]]]}],"piano":{"bpm":112,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["F",4]],[["C",4]],[["G",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["F",4]],[["C",4]],[["G",4]],[["C",4]]]},"band":{"swing":1,"bpm":116,"voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"chords":[[["C6",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["Fmaj7",4]],[["C6",4]],[["G7",4]],[["G7",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["Fmaj7",4]],[["C6",4]],[["G7",4]],[["C6",4]]],"style":"walking"},"ens":{"style":"winter","bpm":112,"voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["F",4]],[["C",4]],[["G",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["F",4]],[["C",4]],[["G",4]],[["C",4]]]}},{"id":"twinkle","n":7,"title":"Twinkle, Twinkle, Little Star","meter":"4/4","bpm":88,"tunes":[{"t":"The song","b":[[["c4","c","Twin","i"],["c4","c","kle",""],["g4","c","twin","i"],["g4","c","kle",""]],[["a4","c","lit","i"],["a4","c","tle",""],["g4","m","star",""]],[["f4","c","how",""],["f4","c","I",""],["e4","c","won","i"],["e4","c","der",""]],[["d4","c","what",""],["d4","c","you",""],["c4","m","are",""]],[["g4","c","Up",""],["g4","c","a","i"],["f4","c","bove",""],["f4","c","the",""]],[["e4","c","world",""],["e4","c","so",""],["d4","m","high",""]],[["g4","c","like",""],["g4","c","a",""],["f4","c","dia","i"],["f4","c","mond",""]],[["e4","c","in",""],["e4","c","the",""],["d4","m","sky",""]],[["c4","c","Twin","i"],["c4","c","kle",""],["g4","c","twin","i"],["g4","c","kle",""]],[["a4","c","lit","i"],["a4","c","tle",""],["g4","m","star",""]],[["f4","c","how",""],["f4","c","I",""],["e4","c","won","i"],["e4","c","der",""]],[["d4","c","what",""],["d4","c","you",""],["c4","m","are",""]]]}],"piano":{"bpm":88,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["F",4]],[["G",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["G",4]],[["C",4]],[["F",4]],[["G",4]],[["C",4]]]},"band":{"swing":0,"bpm":92,"voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"chords":[[["C6",4]],[["Fmaj7",4]],[["G7",4]],[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["Fmaj7",4]],[["G7",4]],[["C6",4]]],"style":"bossa"},"ens":{"style":"harp","bpm":88,"voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["F",4]],[["G",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["G",4]],[["C",4]],[["F",4]],[["G",4]],[["C",4]]]}},{"id":"london","n":8,"title":"London Bridge","meter":"4/4","bpm":100,"tunes":[{"t":"The song","b":[[["g4","c","Lon","i"],["a4","c","don",""],["g4","c","bridge",""],["f4","c","is",""]],[["e4","c","fall","i"],["f4","c","ing",""],["g4","m","down",""]],[["d4","c","fall","i"],["e4","c","ing",""],["f4","m","down",""]],[["e4","c","fall","i"],["f4","c","ing",""],["g4","m","down",""]],[["g4","c","Lon","i"],["a4","c","don",""],["g4","c","bridge",""],["f4","c","is",""]],[["e4","c","fall","i"],["f4","c","ing",""],["g4","m","down",""]],[["d4","m","my",""],["g4","m","fair",""]],[["e4","c","la","i"],["c4","d","dy",""]]]}],"piano":{"bpm":100,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]]]},"band":{"bpm":104,"style":"calypso","voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"chords":[[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]]]},"ens":{"bpm":100,"style":"quartet","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]]]}},{"id":"saints","n":9,"title":"When the Saints Go Marching In","meter":"4/4","bpm":104,"tunes":[{"t":"The song","b":[[["r","c","",""],["c4","c","Oh",""],["e4","c","when",""],["f4","c","the",""]],[["g4","s","saints",""]],[["r","c","",""],["c4","c","go",""],["e4","c","march","i"],["f4","c","ing",""]],[["g4","s","in",""]],[["r","c","",""],["c4","c","Oh",""],["e4","c","when",""],["f4","c","the",""]],[["g4","m","saints",""],["e4","m","go",""]],[["c4","m","march","i"],["e4","m","ing",""]],[["d4","s","in",""]],[["r","c","",""],["e4","c","Oh",""],["e4","c","Lord,",""],["d4","c","I",""]],[["c4","d","want",""],["c4","c","to",""]],[["e4","m","be",""],["g4","c","in",""],["g4","c","that",""]],[["f4","m","num","i"],["f4","m","ber",""]],[["r","c","",""],["c4","c","Oh",""],["e4","c","when",""],["f4","c","the",""]],[["g4","m","saints",""],["e4","m","go",""]],[["c4","m","march","i"],["d4","m","ing",""]],[["c4","s","in",""]]]}],"piano":{"bpm":104,"style":"lh","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"chords":[[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["F",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]]]},"band":{"swing":0,"style":"gospel","voicing":{"Cmaj7":["e3","g3","b3","d4"],"Cmaj9":["e3","g3","b3","d4"],"C6":["e3","a3","c4"],"C6/9":["e3","a3","d4"],"Am7":["e3","g3","c4"],"Dm7":["f3","a3","c4"],"Dm9":["f3","a3","c4","e4"],"Em7":["d3","g3","b3"],"Fmaj7":["e3","a3","c4"],"G7":["f3","b3","d4"],"G9":["f3","a3","b3"],"G13":["f3","b3","e4"],"G9sus":["f3","a3","c4"],"D9":["fs3","c4","e4"],"A7sus":["d3","e3","g3"]},"bpm":108,"chords":[[["C6",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]],[["C6",4]],[["C6",4]],[["Fmaj7",4]],[["C6",4]],[["C6",4]],[["G7",4]],[["C6",4]]]},"ens":{"style":"brass","voicing":{"C":["e3","g3","b3"],"C_end":["e3","a3","d4"],"Am":["c3","e3","g3"],"Dm":["c3","f3","a3"],"G":["b2","f3","a3"],"G7":["b2","f3","a3"],"F":["e3","a3","c4"],"Em":["d3","g3","b3"],"D7":["c3","e3","fs3"]},"bpm":104,"chords":[[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]],[["C",4]],[["C",4]],[["F",4]],[["C",4]],[["C",4]],[["G",4]],[["C",4]]]}}];
+const LEN = { s: 4, m: 2, c: 1, q: 0.5, d: 3 };   // d: a dotted minim (Lesson 10, 3/4)
+const FREQ = p => { const st = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[p[0]] + (p[1] === 's' ? 1 : p[1] === 'f' && p.length > 2 ? -1 : 0); const oct = +p.replace(/[^0-9]/g, ''); return 261.63 * Math.pow(2, (st + 12 * (oct - 4)) / 12); };
+const $ = id => document.getElementById(id);
+let OUT = null, BUS = null, ACCBUS = null, acc = 'band', song = SONGS[0], tune = 0, speed = 1, ctx = null, playing = false, timer = null, events = [], startAt = 0;
+
+// the keyboard: middle C up to B, the lit key follows the tune
+const KEYS = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
+function drawKb() {
+  let s = '';
+  KEYS.forEach((k, i) => s += `<rect id="k-${k}" x="${i * 42}" y="0" width="42" height="104" rx="3" fill="#fff" stroke="#26296b" stroke-width="1.5"/><text x="${i * 42 + 21}" y="94" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" font-size="14" fill="#26296b">${k.toUpperCase()}</text>`);
+  [0, 1, 3, 4, 5].forEach(i => s += `<rect x="${(i + 1) * 42 - 12}" y="0" width="24" height="62" rx="2" fill="#26296b"/>`);
+  $('kb').innerHTML = s;
+}
+function lightKey(p) { KEYS.forEach(k => { const r = $('k-' + k); if (r) r.setAttribute('fill', p && p[0] === k ? '#e4572e' : '#fff'); }); }
+
+function render() {
+  $('lessons').innerHTML = SONGS.map(s => `<a href="#${s.id}" class="${s === song ? 'on' : ''}">${s.n}</a>`).join('');
+  $('lno').textContent = 'Song ' + song.n;
+  $('title').textContent = song.title;
+  $('tunes').innerHTML = song.tunes.map((t, i) => (i === 1 ? '<span class="sep">More to play</span>' : '') + `<button data-t="${i}" class="${i === tune ? 'on' : ''}">${t.t}</button>`).join('');
+  const bars = song.tunes[tune].b; let html = '', k = 0;
+  for (let l = 0; l < bars.length; l += 4) {
+    html += '<div class="line">';
+    bars.slice(l, l + 4).forEach(bar => {
+      html += '<div class="m">';
+      bar.forEach(([p, d, syl, wp, h]) => { const hy = wp === 'i' || wp === 'm' ? '-' : '';
+        if (p === 'r') { html += `<div class="n rest" id="n${k++}"><b>·</b><span></span></div>`; return; }   // a rest: a quiet beat
+        html += `<div class="n${LEN[d] >= 2 ? ' long' : ''}${h === 'L' ? ' lh' : ''}" id="n${k++}"><b>${p[0].toUpperCase()}</b><span>${syl ? syl + hy : h ? (h === 'L' ? 'L' : 'R') : ''}</span></div>`; });
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  $('sheet').innerHTML = html;
+  document.querySelectorAll('#tunes button').forEach(b => b.onclick = () => { stop(); tune = +b.dataset.t; render(); });
+  setAcc(); if ($('tval')) setSpeed(speed, true);
+}
+
+// real instruments: recorded notes (a few per instrument), each played a little faster or slower to reach its neighbours.
+// Until they have loaded (or if they can't) a soft synthesized tone plays instead.
+const INST = { piano: { dir: 'audio/piano/', notes: ['C2', 'Fs2', 'C3', 'Fs3', 'C4', 'Ds4', 'Fs4', 'A4', 'C5', 'Ds5', 'Fs5', 'A5', 'C6'] },
+  "violin": { dir: 'audio/ens/violin/', notes: ["G3", "C4", "E4", "A4", "C5", "E5", "A5", "C6"], sus: true },
+  "cello": { dir: 'audio/ens/cello/', notes: ["C2", "E2", "G2", "A2", "C3", "E3", "G3", "C4"], sus: true },
+  "contrabass": { dir: 'audio/ens/contrabass/', notes: ["G1", "C2", "E2", "A2", "E3"], sus: true },
+  "flute": { dir: 'audio/ens/flute/', notes: ["E4", "A4", "C5", "E5", "A5", "C6"], sus: true },
+  "clarinet": { dir: 'audio/ens/clarinet/', notes: ["D3", "F3", "As3", "D4", "F4", "As4", "D5"], sus: true },
+  "bassoon": { dir: 'audio/ens/bassoon/', notes: ["G2", "A2", "C3", "G3", "A3", "C4"], sus: true },
+  "french-horn": { dir: 'audio/ens/french-horn/', notes: ["G2", "D3", "F3", "A3", "C4", "D5"], sus: true },
+  "trumpet": { dir: 'audio/ens/trumpet/', notes: ["Ds4", "F4", "G4", "D5", "F5", "A5", "C6"], sus: true },
+  "tuba": { dir: 'audio/ens/tuba/', notes: ["As1", "Ds2", "F2", "As2", "D3", "F3"], sus: true },
+  "harp": { dir: 'audio/ens/harp/', notes: ["C3", "E3", "G3", "B3", "D4", "F4", "A4", "C5", "E5"], sus: false },
+  "xylophone": { dir: 'audio/ens/xylophone/', notes: ["G4", "C5", "G5", "C6"], sus: false },
+};
+const MIDI = n => ({ C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 })[n[0]] + (n[1] === 's' ? 1 : 0) + 12 * (+n.replace(/[^0-9]/g, '') + 1);
+const RAW = {}, BUFS = {}; let bufCtx = null;
+async function loadInst(names) {   // recorded notes, fetched once, decoded for this audio context
+  if (bufCtx !== ctx) { for (const k in BUFS) delete BUFS[k]; bufCtx = ctx; }
+  await Promise.all(names.map(async nm => { const I = INST[nm]; if (!I || BUFS[nm]) return;
+    try { if (!RAW[nm]) RAW[nm] = await Promise.all(I.notes.map(n => fetch(I.dir + n + '.mp3').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })));
+      const out = {}; await Promise.all(I.notes.map((n, i) => ctx.decodeAudioData(RAW[nm][i].slice(0)).then(b => { out[MIDI(n)] = b; }))); BUFS[nm] = out;
+    } catch (e) { BUFS[nm] = null; } }));
+}
+function inst(nm, f, t, dur, peak) {   // one note on a recorded instrument; false if it isn't loaded
+  const B = BUFS[nm]; if (!B || bufCtx !== ctx) return false; const keys = Object.keys(B).map(Number); if (!keys.length) return false;
+  const m = 69 + 12 * Math.log2(f / 440), k = keys.reduce((a, b) => Math.abs(b - m) < Math.abs(a - m) ? b : a);
+  const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = B[k]; s.playbackRate.value = Math.pow(2, (m - k) / 12);
+  const sus = INST[nm].sus, end = t + Math.max(0.15, dur), att = sus ? 0.05 : 0.002;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak * 2.2, t + att); g.gain.setValueAtTime(peak * 2.2, end);
+  g.gain.exponentialRampToValueAtTime(0.0001, end + (sus ? 0.25 : 0.35));
+  s.connect(g); g.connect(BUS || OUT); s.start(t); s.stop(end + 0.4); return true;
+}
+const sampled = (f, t, dur, peak) => inst('piano', f, t, dur, peak);
+function bells(t) {   // a sleigh-bell shake: a burst of bright noise
+  const n = ctx.createBufferSource(), b = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+  const hp = ctx.createBiquadFilter(), g = ctx.createGain(); hp.type = 'highpass'; hp.frequency.value = 6500; g.gain.value = 0.18;
+  n.buffer = b; n.connect(hp); hp.connect(g); g.connect(BUS || OUT); n.start(t);
+}
+function pianoNote(f, t, dur, peak = 0.42) {
+  if (sampled(f, t, dur, peak)) return;   // a soft piano-like tone: a quick attack and a long fall
+  const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  o1.type = 'triangle'; o1.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2;
+  const g2 = ctx.createGain(); g2.gain.value = 0.18;
+  lp.type = 'lowpass'; lp.frequency.value = 2400;
+  o1.connect(g); o2.connect(g2); g2.connect(g); g.connect(lp); lp.connect(BUS || OUT);
+  const end = t + Math.max(0.25, dur * 0.95);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.012);
+  g.gain.exponentialRampToValueAtTime(peak * 0.38, t + 0.25); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.15);
+  o1.start(t); o2.start(t); o1.stop(end + 0.2); o2.stop(end + 0.2);
+}
+function bassNote(f, t, dur) {   // a plucked upright bass: a round low note plus the overtones small speakers can play (her 5 Nov 12:32: hard to hear)
+  const o = ctx.createOscillator(), saw = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter(), gs = ctx.createGain();
+  o.type = 'sine'; o.frequency.value = f; saw.type = 'sawtooth'; saw.frequency.value = f; gs.gain.value = 0.55;
+  lp.type = 'lowpass'; lp.frequency.setValueAtTime(1800, t); lp.frequency.exponentialRampToValueAtTime(500, t + 0.25); lp.Q.value = 2;
+  o.connect(g); saw.connect(gs); gs.connect(g); g.connect(lp); lp.connect(OUT);   // straight to the mix: the bass is the band's backbone
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.26, t + 0.008); g.gain.exponentialRampToValueAtTime(0.1, t + 0.18);   // her 12:37 and 12:47: still too loud
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.12);
+  o.start(t); saw.start(t); o.stop(t + dur + 0.15); saw.stop(t + dur + 0.15);
+}
+function click(t, hi) {
+  const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'square'; o.frequency.value = hi ? 1500 : 1000;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  o.connect(g); g.connect(OUT); o.start(t); o.stop(t + 0.06);
+}
+
+async function play() {
+  if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); OUT = ctx.createDynamicsCompressor(); OUT.threshold.value = -14; OUT.ratio.value = 4; OUT.connect(ctx.destination);
+    ACCBUS = ctx.createGain(); ACCBUS.gain.value = 0.45; ACCBUS.connect(OUT); }   // the accompaniment sits under the tune (her 5 Nov 10:46)
+  if (ctx.state === 'suspended') ctx.resume();
+  const ENS_INST = { brass: ['trumpet', 'french-horn', 'tuba', 'flute', 'clarinet'], moon: ['clarinet', 'french-horn', 'cello', 'violin', 'harp'], winds: ['flute', 'clarinet', 'bassoon', 'violin', 'french-horn'], orchestra: ['french-horn', 'flute', 'violin', 'clarinet', 'bassoon', 'cello', 'contrabass'], winter: ['xylophone', 'harp', 'contrabass', 'flute', 'violin'], harp: ['flute', 'harp', 'cello', 'violin', 'clarinet'] };
+  const ENS_MEL = { brass: 'trumpet', moon: 'clarinet', winds: 'flute', orchestra: 'french-horn', winter: 'xylophone', harp: 'flute' };
+  const MEL_OCT = { orchestra: 1, moon: 1 };   // the horn and the clarinet sing the tune where it is written, warm and low
+  const pre = accData(), E0 = pre && acc === 'ens' ? pre : null;
+  $('play').textContent = '…'; await loadInst(['piano', ...(E0 ? ENS_INST[E0.style] || [] : [])]);
+  const ACC = accData(), beat = 60 / ((ACC ? ACC.bpm : song.tunes[tune].bpm || song.bpm) * speed), per = +song.meter.split('/')[0];
+  let t = ctx.currentTime + 0.15;
+  if ($('count').checked || $('me').checked) { for (let i = 0; i < per; i++) click(t + i * beat, i === 0); t += per * beat; }
+  startAt = t; events = []; let k = 0;
+  const J = ACC && acc === 'band' ? ACC : null, P = ACC && acc === 'piano' ? ACC : null, E = ACC && acc === 'ens' ? ACC : null, ME = $('me').checked;
+  const MEL = E ? ENS_MEL[E.style] : null;
+  const sw = J && J.swing ? 2 / 3 : 0.5;   // only the swung band styles   // swing: the 'and' comes late, two thirds into the beat
+  const at = pos => { const b = Math.floor(pos + 1e-6), f = pos - b; return t + (b + (Math.abs(f - 0.5) < 1e-6 ? sw : f)) * beat; };
+  let pos = 0;
+  song.tunes[tune].b.forEach(bar => bar.forEach(([p, d]) => { const t0 = at(pos), t1 = at(pos + LEN[d]); const ps = p.split('+'), f = FREQ(ps[0]) * (ACC && !(E && MEL_OCT[E.style]) ? 2 : 1);
+    if (p !== 'r' && ps.length > 1 && !ME) ps.slice(1).forEach(q => pianoNote(FREQ(q) * (f / FREQ(ps[0])), t0, t1 - t0, 0.6));   // a chord (the BANG): every note, loud
+    if (p !== 'r' && !ME) { if (!(MEL && inst(MEL, f, t0, (t1 - t0) * 0.92, 0.36))) pianoNote(f, t0, t1 - t0, ps.length > 1 ? 0.7 : ACC ? 0.5 : 0.42); if (E && E.style === 'orchestra') inst('flute', f * 2, t0, (t1 - t0) * 0.92, 0.12); } events.push({ t: t0, end: t1, k: k++, p }); pos += LEN[d]; }));
+  // every song its own groove (her 5 Nov 01:54: 'all different'): A.style picks the pattern
+  const STY = {
+    // the teacher's piano
+    lh: (r, v, s, len) => { pianoNote(r * 2, at(s), len * beat * 0.96, 0.34); },   // the Music Box: your left hand, one key a bar
+    waltz: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 3 === 0) pianoNote(r, at(s + x), 0.9 * beat, 0.28); else v.forEach(f => pianoNote(f, at(s + x), 0.45 * beat, 0.12)); } },
+    alberti: (r, v, s, len) => { pianoNote(r, at(s), len * beat, 0.26); for (let x = 0; x < len; x++) pianoNote(v[[0, 2, 1, 2][x % 4]], at(s + x), 0.9 * beat, 0.13); },
+    march: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) pianoNote(x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.6 * beat, 0.3); else v.forEach(f => pianoNote(f, at(s + x), 0.3 * beat, 0.13)); } },
+    lullaby: (r, v, s, len) => { pianoNote(r, at(s), len * beat, 0.24); for (let x = 0; x < len; x++) pianoNote(v[x % 3], at(s + x), 1.5 * beat, 0.12); },
+    stride: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) pianoNote(x % 4 === 2 ? r * 1.5 / 2 : r / 2, at(s + x), 0.5 * beat, 0.32); else v.forEach(f => pianoNote(f, at(s + x), 0.4 * beat, 0.14)); } },
+    hymn: (r, v, s, len) => { pianoNote(r, at(s), len * beat, 0.24); for (let x = 0; x < len; x += 2) v.forEach(f => pianoNote(f, at(s + x), 1.9 * beat, 0.1)); },
+    gallop: (r, v, s, len) => { for (let x = 0; x < len; x++) { pianoNote(x % 2 ? r * 1.5 : r, at(s + x), 0.45 * beat, 0.28); v.forEach(f => pianoNote(f, at(s + x + 0.5), 0.3 * beat, 0.12)); } },
+    drops: (r, v, s, len) => { pianoNote(r, at(s), len * beat, 0.24); for (let x = 0; x < len; x++) pianoNote(v[2] * 2, at(s + x + 0.5), 0.4 * beat, 0.09); },
+    bells: (r, v, s, len) => { for (let x = 0; x < len; x += 2) { pianoNote(r, at(s + x), 1.9 * beat, 0.26); pianoNote(r * 1.5, at(s + x + 1), 0.9 * beat, 0.16); }   // church bells: the low C and G swing in turn
+      v.forEach(f => pianoNote(f * 2, at(s), 0.6 * beat, 0.07)); },
+    toybox: (r, v, s, len) => { pianoNote(r, at(s), 0.9 * beat, 0.24); for (let h = 0; h < len * 2; h++) pianoNote(v[h % v.length] * 2, at(s + h / 2), 0.4 * beat, 0.07); },   // a music box over the root
+    alberti: (r, v, s, len) => { const pat = [v[0], v[2], v[1], v[2]]; for (let h = 0; h < len * 2; h++) pianoNote(pat[h % 4] / 2, at(s + h / 2), 0.45 * beat, 0.11); },   // Haydn's own left hand: low, middle, high, middle
+    // the band
+    swing: (r, v, s, len) => { for (let x = 0; x < len; x++) bassNote(x % 2 ? r * 1.5 : r, at(s + x), 0.9 * beat); v.forEach(f => { pianoNote(f, at(s), 0.4 * beat, 0.14); pianoNote(f, at(s + len - 0.5), 0.35 * beat, 0.14); }); },
+    walking: (r, v, s, len) => { const w = [r, r * 1.26, r * 1.5, r * 1.68]; for (let x = 0; x < len; x++) bassNote(w[x % 4], at(s + x), 0.9 * beat); for (let x = 1; x < len; x += 2) v.forEach(f => pianoNote(f, at(s + x), 0.3 * beat, 0.13)); },
+    bossa: (r, v, s, len) => { for (let x = 0; x < len; x += 2) { bassNote(r, at(s + x), 1.4 * beat); bassNote(r * 1.5, at(s + x + 1.5), 0.45 * beat); }
+      [0, 1.5, 3, 3.5].filter(o => o < len).forEach(o => v.forEach(f => pianoNote(f, at(s + o), 0.4 * beat, 0.12))); },
+    funk: (r, v, s, len) => { for (let h = 0; h < len * 2; h++) bassNote(h % 4 === 3 ? r * 2 : r, at(s + h / 2), 0.35 * beat); for (let x = 1; x < len; x += 2) v.forEach(f => pianoNote(f, at(s + x), 0.25 * beat, 0.15)); },
+    gospel: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) bassNote(r, at(s + x), 1.6 * beat); v.forEach(f => { pianoNote(f, at(s + x), 0.3 * beat, 0.12); pianoNote(f, at(s + x + 0.5), 0.2 * beat, 0.08); }); } },
+    shuffle: (r, v, s, len) => { const w = [r, r * 1.5, r * 1.68, r * 1.5]; for (let x = 0; x < len; x++) { bassNote(w[x % 4], at(s + x), 0.6 * beat); bassNote(w[x % 4], at(s + x + 0.67), 0.25 * beat); }
+      for (let x = 1; x < len; x += 2) v.forEach(f => pianoNote(f, at(s + x), 0.3 * beat, 0.14)); },
+    calypso: (r, v, s, len) => { for (let x = 0; x < len; x += 4) { bassNote(r, at(s + x), 0.9 * beat); if (x + 1.5 < len) bassNote(r * 1.5, at(s + x + 1.5), 0.45 * beat); if (x + 2 < len) bassNote(r * 1.5, at(s + x + 2), 0.9 * beat); }
+      [0.5, 1.5, 2.5, 3].filter(o => o < len).forEach(o => v.forEach(f => pianoNote(f, at(s + o), 0.25 * beat, 0.12))); },
+    popballad: (r, v, s, len) => { for (let x = 0; x < len; x += 4) { bassNote(r, at(s + x), 1.4 * beat); if (x + 2.5 < len) bassNote(r * 1.5, at(s + x + 2.5), 1.2 * beat); }
+      for (let x = 0; x < len; x++) v.forEach(f => pianoNote(f, at(s + x + 0.5), 0.3 * beat, 0.08)); },
+    reggae: (r, v, s, len) => { bassNote(r, at(s), 0.9 * beat); bassNote(r * 1.5, at(s + Math.min(2, len - 0.5)), 0.9 * beat); for (let x = 0; x < len; x++) v.forEach(f => pianoNote(f, at(s + x + 0.5), 0.2 * beat, 0.14)); },
+  };
+  const ROOT = name => name[0].toLowerCase() + (name[1] === 'b' ? 'f' : name[1] === '#' ? 's' : '') + '2';
+  const voice = (A, name) => (A.voicing[name] || []).map(FREQ);
+  const segs = A => { const out = []; let b = 0; A.chords.forEach((bar, bi) => { bar.forEach(([name, len]) => { out.push({ name, s: b, len, last: bi === A.chords.length - 1 }); b += len; }); }); return out; };
+  BUS = ACCBUS;   // from here on: the accompaniment
+  [[J, 'swing', true], [P, 'alberti', false]].forEach(([A, def, band]) => { if (!A) return;
+    segs(A).forEach(({ name, s, len, last }) => { const r = FREQ(ROOT(name)), v = voice(A, last && A.voicing[name + '_end'] ? name + '_end' : name);
+      if (last && A.style === 'lh') { pianoNote(r * 2, at(s), Math.max(len, 3) * beat, 0.34); return; }
+      if (last) { v.forEach(f => pianoNote(f, at(s), Math.max(len, 3) * beat, 0.15)); band ? bassNote(r, at(s), Math.max(len, 3) * beat) : pianoNote(r, at(s), Math.max(len, 3) * beat, 0.28); return; }
+      (STY[A.style] || STY[def])(r, v, s, len); }); });
+  if (E) { const up = f => (f < 190 ? f * 2 : f), I = (nm, f, t0, d, g) => inst(nm, f, t0, d, g) || pianoNote(f, t0, d, g);
+    const ENS = {
+      brass: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) I('tuba', x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.7 * beat, 0.32); else v.forEach(f => I('french-horn', f, at(s + x), 0.45 * beat, 0.12)); }
+        I('clarinet', up(v[1]), at(s), len * beat, 0.07); I('flute', up(v[2]) * 2, at(s), len * beat, 0.05); },
+      moon: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.24); v.forEach(f => I('french-horn', f, at(s), len * beat, 0.05)); I('violin', up(v[2]) * 2, at(s), len * beat, 0.05);
+        [r * 2, v[0], v[1], v[2]].forEach((f, h) => I('harp', up(f), at(s + h * 0.25), 1.5 * beat, 0.09)); },
+      winds: (r, v, s, len) => { for (let x = 0; x < len; x += 2) I('bassoon', r * 2, at(s + x), 0.9 * beat, 0.26); const p = [v[0], v[1], v[2], v[1]]; for (let h = 0; h < len * 2; h++) I('clarinet', up(p[h % 4]), at(s + h / 2), 0.45 * beat, 0.1);
+        I('french-horn', v[0], at(s), len * beat, 0.05); for (let x = 1; x < len; x += 2) I('violin', up(v[2]) * 2, at(s + x), 0.2 * beat, 0.06); },
+      orchestra: (r, v, s, len) => { I('contrabass', r, at(s), len * beat, 0.26); I('cello', r * 2, at(s), len * beat, 0.18); for (let x = 0; x < len; x++) v.forEach((f, i) => I(i % 2 ? 'clarinet' : 'bassoon', up(f), at(s + x), 0.9 * beat, 0.06));
+        v.forEach(f => I('violin', up(f) * 2, at(s), len * beat, 0.04)); I('flute', up(v[2]) * 2, at(s), len * beat, 0.04); },
+      winter: (r, v, s, len) => { for (let x = 0; x < len; x++) { if (x % 2 === 0) I('contrabass', x % 4 === 2 ? r * 1.5 : r, at(s + x), 0.5 * beat, 0.3); else { v.forEach(f => I('harp', up(f) * 2, at(s + x), 0.3 * beat, 0.1)); I('violin', up(v[1]) * 2, at(s + x), 0.15 * beat, 0.05); } }
+        I('flute', up(v[2]) * 2, at(s), len * beat, 0.04);
+        for (let h = 0; h < len * 2; h++) bells(at(s + h / 2)); },
+      abbey: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.22); I('bassoon', r * 3, at(s), len * beat, 0.08); v.forEach(f => I('french-horn', f, at(s), len * beat, 0.05));   // a stone church: the drone, then the bells
+        for (let x = 0; x < len; x += 2) I('harp', up(v[0]) * 2, at(s + x), 1.8 * beat, 0.12); I('harp', up(v[2]) * 2, at(s + 1), 1.2 * beat, 0.09); I('flute', up(v[2]) * 2, at(s), len * beat, 0.04); },
+      quartet: (r, v, s, len) => { for (let x = 0; x < len; x += 2) I('cello', r * 2, at(s + x), 0.35 * beat, 0.26);   // a string quartet, plucked: cello on 1 and 3, the others on 2 and 4
+        for (let x = 1; x < len; x += 2) { I('violin', up(v[2]) * 2, at(s + x), 0.25 * beat, 0.07); I('clarinet', up(v[1]), at(s + x), 0.3 * beat, 0.06); } I('french-horn', v[0], at(s), len * beat, 0.04); },
+      haydn: (r, v, s, len) => { for (let x = 0; x < len; x++) { I('contrabass', r, at(s + x), 0.4 * beat, 0.18); if (x % 2) { I('violin', up(v[1]) * 2, at(s + x), 0.3 * beat, 0.06); I('violin', up(v[2]) * 2, at(s + x), 0.3 * beat, 0.05); } }   // Haydn's orchestra, tiptoeing: plucked bass, short violins, a held horn
+        I('french-horn', v[0], at(s), len * beat, 0.04); I('flute', up(v[2]) * 4, at(s), len * beat * 0.9, 0.03); },
+      harp: (r, v, s, len) => { I('cello', r * 2, at(s), len * beat, 0.22); I('violin', up(v[1]) * 2, at(s), len * beat, 0.04); I('clarinet', up(v[0]), at(s), len * beat, 0.05); const p = [r * 2, v[0], v[1], v[2], v[0] * 2, v[1] * 2, v[2] * 2, v[1] * 2]; for (let h = 0; h < len * 2; h++) I('harp', p[h % 8], at(s + h / 2), 1.2 * beat, 0.14); },
+    };
+    const FIN = { brass: ['tuba', 'french-horn'], moon: ['cello', 'french-horn'], winds: ['bassoon', 'clarinet'], orchestra: ['contrabass', 'french-horn'], winter: ['contrabass', 'harp'], harp: ['cello', 'harp'], abbey: ['cello', 'french-horn'], quartet: ['cello', 'violin'], haydn: ['contrabass', 'violin'] }[E.style] || ['cello', 'french-horn'];
+    segs(E).forEach(({ name, s, len, last }) => { const r = FREQ(ROOT(name)), v = voice(E, last && E.voicing[name + '_end'] ? name + '_end' : name);
+      if (last) { I(FIN[0], FIN[0] === 'cello' || FIN[0] === 'bassoon' ? r * 2 : r, at(s), Math.max(len, 3) * beat, 0.3); v.forEach(f => I(FIN[1], up(f), at(s), Math.max(len, 3) * beat, 0.11)); if (E.style === 'winter') bells(at(s)); return; }
+      (ENS[E.style] || ENS.moon)(r, v, s, len); }); }
+  BUS = null;
+  t = at(pos);
+  playing = true; $('play').textContent = '■ Stop'; $('play').classList.add('stop');
+  const endT = t; let last = -1;
+  const tick = () => {
+    if (!playing) return;
+    const now = ctx.currentTime; const e = events.findIndex(ev => now >= ev.t && now < ev.end);
+    if (e !== last) { document.querySelectorAll('.n.now').forEach(n => n.classList.remove('now'));
+      if (e >= 0) { const el = $('n' + events[e].k); el.classList.add('now'); lightKey(events[e].p === 'r' ? null : events[e].p);
+        const r = el.getBoundingClientRect(); if (r.top < 60 || r.bottom > innerHeight - 60) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+      else lightKey(null); last = e; }
+    if (now > endT + 0.3) { if ($('loop').checked) { playing = false; play(); return; } stop(); return; }
+    timer = requestAnimationFrame(tick);
+  };
+  timer = requestAnimationFrame(tick);
+}
+function stop() {
+  playing = false; if (timer) cancelAnimationFrame(timer);
+  if (ctx) { ctx.close(); ctx = null; }
+  document.querySelectorAll('.n.now').forEach(n => n.classList.remove('now')); lightKey(null);
+  $('play').textContent = '▶ Play'; $('play').classList.remove('stop');
+}
+$('play').onclick = () => playing ? stop() : play();
+function setSpeed(s, fromSlider) { speed = s; if (!fromSlider) $('tempo').value = Math.round(s * 100);
+  document.querySelectorAll('#speed button').forEach(x => x.classList.toggle('on', Math.abs(+x.dataset.s - s) < 0.001));
+  const A = accData(); $('tval').textContent = '♩ = ' + Math.round((A ? A.bpm : song.tunes[tune].bpm || song.bpm) * s); }
+document.querySelectorAll('#speed button').forEach(b => b.onclick = () => { setSpeed(+b.dataset.s); if (playing) { stop(); play(); } });
+$('tempo').oninput = () => setSpeed($('tempo').value / 100, true);
+$('tempo').onchange = () => { if (playing) { stop(); play(); } };
+function accData() { return tune === 0 && acc ? song[acc] : null; }
+function setAcc() {   // the sound: the tune alone, the teacher's piano, or the band (only what this song has)
+  const has = a => !a || (tune === 0 && song[a]);
+  if (!has(acc)) acc = song.band && tune === 0 ? 'band' : song.piano && tune === 0 ? 'piano' : song.ens && tune === 0 ? 'ens' : '';
+  const LBL = { lh: 'Your left hand', waltz: 'Waltz', brass: 'Brass band', moon: 'Moonlight ensemble', strings: 'String quartet', winds: 'Woodwinds', orchestra: 'Orchestra', winter: 'Winter ensemble', harp: 'Harp and strings', march: 'March', lullaby: 'Lullaby', stride: 'Stride', hymn: 'Hymn', gallop: 'Gallop', drops: 'Raindrops', swing: 'Swing', walking: 'Walking jazz', bossa: 'Bossa nova', funk: 'Funk', gospel: 'Gospel', reggae: 'Reggae', bells: 'Church bells', shuffle: 'Shuffle', abbey: 'Abbey bells', toybox: 'Music box', calypso: 'Calypso', quartet: 'String quartet', alberti: 'Haydn’s piano', popballad: 'Pop ballad', haydn: 'Haydn’s orchestra' };
+  document.querySelectorAll('#acc button').forEach(b => { const a = b.dataset.a; b.hidden = !has(a); b.classList.toggle('on', a === acc);
+    b.textContent = !a ? 'Tune' : ({ piano: 'Piano', band: 'Band', ens: 'Ensemble' })[a] + (song[a] && song[a].style ? ' · ' + LBL[song[a].style] : ''); });
+  $('acc').hidden = !(tune === 0 && (song.band || song.piano || song.ens)); $('mew').hidden = !acc;
+  if (!acc) $('me').checked = false;
+}
+document.querySelectorAll('#acc button').forEach(b => b.onclick = () => { acc = b.dataset.a; setAcc(); setSpeed(speed, true); if (playing) { stop(); play(); } });
+function route() { const id = location.hash.slice(1); stop(); song = SONGS.find(s => s.id === id) || SONGS[0]; tune = 0; render(); }
+addEventListener('hashchange', route);
+drawKb(); route();
+</script>
+</body>
+</html>
