@@ -27,6 +27,7 @@ function mei(v) {
   for (let i = 0; i < n; i++) {
     ms += `<measure n="${i + 1}"${v.nobar ? ' right="invis"' : i === n - 1 ? ' right="end"' : ''}>` + staves.map((s, k) => `<staff n="${k + 1}"><layer n="1">${(bars[k][i] || '').trim() ? layer(bars[k][i], dflt) : `<space dur="1"/>`}</layer></staff>`).join('') + '</measure>';
   }
+  if (v.tiebar) { const parts = ms.split('</measure>'); const j = v.tiebar - 1; parts[j] += (v.ties || []).map(([a, b]) => `<tie startid="#n${a}" endid="#n${b}"/>`).join(''); ms = parts.join('</measure>'); v = { ...v, ties: null }; }   // her 11 Nov: a tie across the bar line lives in the bar where it starts
   if (v.ties || v.slurs) ms = ms.replace('</measure>', (v.ties || []).map(([a, b]) => `<tie startid="#n${a}" endid="#n${b}"/>`).join('') + (v.slurs || []).map(([a, b]) => `<slur startid="#n${a}" endid="#n${b}" curvedir="${v.slurdir || 'below'}"/>`).join('') + '</measure>');   // one-bar snippets: ties and slurs by note number
   const key = v.key ? ` key.sig="${v.key}"` : '';
   const sd = staves.map((s, k) => `<staffDef n="${k + 1}" lines="5" clef.shape="${s[0]}" clef.line="${s[1]}"${key}${v.meter ? ` meter.count="${v.meter.split('/')[0]}" meter.unit="${v.meter.split('/')[1]}"` : ''}/>`).join('');

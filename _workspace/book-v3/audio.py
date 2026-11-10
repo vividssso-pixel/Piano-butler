@@ -155,12 +155,20 @@ def count(spec):   # {'beats': beat tokens (timing only, no sound), 'notes': pia
     sw = spec.get('say', '').split(); slots = [.62 * _dur(x)[1] for x in toks]
     idx = [i for i, w in enumerate(sw) if w != '-' and i < len(times)]
     if idx:
-        segs = _phrase([sw[i] for i in idx])
+        segs = []   # her 11 Nov (again, still late with the piano): each number said on its own, so its true start is known exactly; no cutting a phrase apart
+        for i in idx:
+            w = sw[i]
+            if ('one', w) not in _CNT:
+                x = say('C', _CW.get(w, w) + ',')
+                j = np.where(np.abs(x) > 0.015)[0]; _CNT[('one', w)] = x[max(0, j[0] - 60):j[-1] + 240] if len(j) else x
+            segs.append(_CNT[('one', w)] * (.8 if w in ('&', 'e', 'a') else 1.0))
         for i, a in zip(idx, segs):
             fit = SR * max(slots[i], .3) * .9
             if len(a) > fit: a = _stretch(a, len(a) / fit)
             f = np.minimum(1, np.arange(len(a)) / 60.0) * np.minimum(1, (len(a) - np.arange(len(a))) / 200.0)
-            a = _clear(a) * f * .36; k = max(0, int(SR * times[i]) - 220); v[k:k + len(a)] += a[:len(v) - k]
+            a = _clear(a) * f * .36
+            env = np.convolve(np.abs(a), np.ones(240) / 240, mode='same'); pc = int(np.argmax(env >= .35 * env.max()))   # her 11 Nov (again): the ear hears a word where its vowel starts, not its first consonant
+            k = int(SR * times[i]) - pc + int(SR * .012); a = a[max(0, -k):]; k = max(0, k); v[k:k + len(a)] += a[:len(v) - k]
     tracks.append(v)
     L = max(len(x) for x in tracks); out = np.zeros(L)
     for x in tracks: out[:len(x)] += x
