@@ -5,7 +5,7 @@ import numpy as np, soundfile as sf, os, json, subprocess, sys, re
 from kokoro_onnx import Kokoro
 SR = 24000
 K = Kokoro('/tmp/claude-0/tts/kokoro-v1.0.onnx', '/tmp/claude-0/tts/voices-v1.0.bin')
-VOICE = {'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_lily', 0.86), 'K': ('bm_lewis', 0.88)}
+VOICE = {'C': ('bf_emma', 1.0), 'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_lily', 0.86), 'K': ('bm_lewis', 0.88)}
 SHIFT = {'K': 0.92}   # her 9 Nov: the King below the Butler; the Queen is Lily, slow and calm, unshifted (a pitched-up voice sounded like a child)   # her 9 Nov: the Queen (treble) and the King (bass) visit now and then
 NOTES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 def freq(n):
@@ -60,7 +60,7 @@ def piano(spec):
             st = tok.endswith('!'); tok = tok.rstrip('!')
             nm, mul = _dur(tok); L = int(SR * .62 * mul)
             if nm not in ('X', 'M', 'x', 'R'): parts.append(g * np.pad(tone([freq(nm)], .1 if st else .5 * min(mul, 1.6)), (0, L))[:L]); continue
-            if nm in ('X', 'M', 'x'): parts.append(np.pad(click(nm), (0, L))[:L])
+            if nm in ('X', 'M', 'x'): parts.append(np.pad({'X': .55, 'M': .38, 'x': .28}[nm] * tone([freq('C5')], .12), (0, L))[:L])   # her 10 Nov: no heartbeat; a beat on its own is a light piano tap
             elif nm == 'R': parts.append(np.zeros(L))
             else: parts.append(np.pad(tone([freq(nm)], .5 * min(mul, 1.6)), (0, L))[:L])
     return np.concatenate(parts + [np.zeros(int(SR * .3))])
@@ -77,24 +77,50 @@ _WORD = {}
 NUMW = {'1': 'One', '2': 'Two', '3': 'Three', '4': 'Four', '5': 'Five', '6': 'Six', '&': 'and'}
 _CNT = {}
 _CW = {'1': 'one', '2': 'two', '3': 'three', '4': 'four', '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine', '&': 'and', 'e': 'ee', 'a': 'uh'}
-def word(w):   # her 10 Nov: the Butler's stiff "One. Two." replaced: Clara counts along, light and quick, each word said as if more follow ("one,")
-    if w not in _CNT:
-        t = _CW.get(w, w)
-        a = say('P', t + ',') if w not in ('e', 'a') else say('P', t)
-        k = np.where(np.abs(a) > 0.03)[0]; a = a[max(0, k[0] - 120):k[-1] + 200] if len(k) else a
-        a = a[:int(SR * (.3 if w in ('&', 'e', 'a') else .42))]
-        f = np.minimum(1, np.arange(len(a)) / 120.0) * np.minimum(1, (len(a) - np.arange(len(a))) / 500.0)
-        _CNT[w] = a * f * (.75 if w in ('&', 'e', 'a') else .9)
-    return _CNT[w]
-def count(spec):   # {'beats': click tokens, 'notes': piano tokens (optional), 'say': '1 2 3 …' one word per beat, '-' for silence}
+def _stretch(a, r):   # speed up by ratio r, same pitch (ffmpeg atempo), so a word fits its beat without being cut off
+    if r <= 1.02: return a
+    import tempfile; d = tempfile.mkdtemp(); sf.write(d + '/i.wav', a, SR)
+    f = ','.join(['atempo=2.0'] * int(np.log2(r)) + [f'atempo={r / 2 ** int(np.log2(r)):.4f}'])
+    subprocess.run(['ffmpeg', '-loglevel', 'error', '-y', '-i', d + '/i.wav', '-af', f, d + '/o.wav'], check=True)
+    return sf.read(d + '/o.wav', dtype='float32')[0]
+def word(w, slot=.62):   # her 10 Nov: count the beats "one, two, three, four" in a separate, smooth voice (Emma): whole words, gently sped up to fit the beat, never cut off
+    k = (w, round(slot, 2))
+    if k not in _CNT:
+        if w not in _CNT:
+            a = say('C', _CW.get(w, w) + ',')
+            j = np.where(np.abs(a) > 0.012)[0]; a = a[max(0, j[0] - 120):j[-1] + 240] if len(j) else a
+            _CNT[w] = a
+        a = _CNT[w]; fit = SR * slot * .82
+        a = _stretch(a, len(a) / fit)
+        f = np.minimum(1, np.arange(len(a)) / 80.0) * np.minimum(1, (len(a) - np.arange(len(a))) / 300.0)
+        _CNT[k] = a * f * (.6 if w in ('&', 'e', 'a') else .75)
+    return _CNT[k]
+def _phrase(words):   # her 10 Nov: say the whole count as one flowing phrase ("one, two, three, four"), then cut it at the quiet points between words
+    a = say('C', ', '.join(_CW.get(w, w) for w in words) + '.')
+    j = np.where(np.abs(a) > 0.012)[0]; a = a[j[0]:j[-1] + 240] if len(j) else a
+    n = len(words); fr = int(SR * .01); e = np.array([np.abs(a[i:i + fr]).mean() for i in range(0, max(1, len(a) - fr), fr)])
+    cuts = [0]
+    for k in range(1, n):   # the quietest moment near where the k-th word should end
+        c = int(len(e) * k / n); lo, hi = max(cuts[-1] + 5, c - 18), min(len(e) - 5, c + 18)
+        cuts.append(lo + int(np.argmin(e[lo:hi])) if hi > lo else c)
+    cuts.append(len(e))
+    return [a[cuts[i] * fr:cuts[i + 1] * fr] for i in range(n)]
+def count(spec):   # {'beats': beat tokens (timing only, no sound), 'notes': piano tokens (optional), 'say': '1 2 3 …' one word per beat, '-' for silence}
     toks = spec['beats'].split(); times = []; t = 0.0
     for tok in toks: times.append(t); t += .62 * _dur(tok)[1]
-    tracks = [piano(spec['beats']) * .8]
-    if spec.get('notes'): tracks.append(piano(untie(spec['notes'])))
+    tracks = []   # her 10 Nov: no heartbeat / click under the beat
+    if spec.get('notes'): tracks.append(piano(untie(spec['notes'])) * 1.15)   # the melody in front
+    else: tracks.append(piano(spec['beats']))   # no tune: the beat as light piano taps (beat 1 a little stronger)
     v = np.zeros(int(SR * (t + 1)))
-    for w, t0 in ([] if True else zip(spec.get('say', '').split(), times)):
-        if w == '-': continue
-        a = word(w) * .9; i = int(SR * t0); v[i:i + len(a)] += a[:len(v) - i]
+    sw = spec.get('say', '').split(); slots = [.62 * _dur(x)[1] for x in toks]
+    idx = [i for i, w in enumerate(sw) if w != '-' and i < len(times)]
+    if idx:
+        segs = _phrase([sw[i] for i in idx])
+        for i, a in zip(idx, segs):
+            fit = SR * max(slots[i], .3) * .9
+            if len(a) > fit: a = _stretch(a, len(a) / fit)
+            f = np.minimum(1, np.arange(len(a)) / 60.0) * np.minimum(1, (len(a) - np.arange(len(a))) / 200.0)
+            a = a * f * .42; k = int(SR * times[i]); v[k:k + len(a)] += a[:len(v) - k]
     tracks.append(v)
     L = max(len(x) for x in tracks); out = np.zeros(L)
     for x in tracks: out[:len(x)] += x
