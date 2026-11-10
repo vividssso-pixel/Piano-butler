@@ -5,6 +5,10 @@ import json, copy
 base = json.load(open('let1.json'))
 B = lambda r, l, w='': {'r': r, 'l': l, 'w': w}
 F = lambda b, f: dict(b, f=f)   # a bar with its own fingers
+OOM = {'C': 'C G C G', 'G': 'G D G D', 'F': 'F C F C'}
+O = lambda b: dict(b, lp=OOM[b['l']])
+RK = {'C': 'C - G -', 'G': 'G - D -', 'F': 'F - C -'}
+Rock = lambda b: dict(b, lp=RK[b['l']])   # bottom, then top: a slow rocking left hand   # oom-pah: the root, then the other key, the hand never moves
 LH2 = ('C with finger 5, G with the thumb.', {'c': 5, 'g': 1})
 LH3 = ('C with 5, F with 2, G with the thumb.', {'c': 5, 'f': 2, 'g': 1})
 S = [
@@ -54,11 +58,11 @@ S = [
       rf=({'C': 1, 'D': 1, 'E': 2, 'G': 4, 'A': 5}, {'d': 1, 'e': 2, 'g': 4, 'a': 5}, 'Thumb on D, 2 on E, 4 on G, 5 on A. At the end the thumb slides to C.'),
       how='The L.H. boxes now hold two keys: play the bottom and top together, once a bar.',
       g=[[B('G G E G', 'C+G', 'Camp- town la- dies'), B('A G E -', 'C+G', 'sing this song -'), B('E D - -', 'D+G', 'doo- dah - -'), B('E D - -', 'D+G', 'doo- dah - -')],
-         [B('G G E G', 'C+G', 'Camp- town race- track'), B('A G E -', 'C+G', 'five miles long -'), B('D D E D', 'D+G', 'oh, doo- dah'), B('C - - -', 'C+G', 'day! - - -')]]),
- dict(t='Old MacDonald Had a Farm', id='oldmac', job='Everyone knows it, so everyone joins in. Make the animal noises too.', lh=('C with 5, F with 2, G with the thumb. The thumb also plays A, one key up.', {'c': 5, 'f': 2, 'g': 1, 'a': 1}),
+         [B('G G E G', 'C+G', 'Camp- town race- track'), B('A G E -', 'C+G', 'five miles long -'), F(B('D D E D', 'D+G', 'oh, doo- dah'), '1 1 3 2'), B('C - - -', 'C+G', 'day! - - -')]]),
+ dict(t='Old MacDonald Had a Farm', id='oldmac', job='Everyone knows it, so everyone joins in. Make the animal noises too.', lh=('C with 5, F with 2, G with the thumb. For A, finger 2 crosses over the thumb.', {'c': 5, 'f': 2, 'g': 1, 'a': 2}),
       how='When the left hand has the tune (L.H.), it plays no chord in that bar: one job at a time.',
-      g=[[B('C C C <G', 'C', 'Old Mac- Don- ald'), B('<A <A <G -', '', 'had a farm -'), B('E E D D', 'G', 'E I E I'), B('C - - <G', 'C', 'O - - and')],
-         [B('C C C <G', 'C', 'on his farm he'), B('<A <A <G -', '', 'had a cow -'), B('E E D D', 'G', 'E I E I'), B('C - - -', 'C', 'O - - -')]]),
+      g=[[B('C C C <G', 'C', 'Old Mac- Don- ald'), dict(B('<A <A <G -', '', 'had a farm -'), lf='2 2 1 -'), B('E E D D', 'G', 'E I E I'), B('C - - <G', 'C', 'O - - and')],
+         [B('C C C <G', 'C', 'on his farm he'), dict(B('<A <A <G -', '', 'had a cow -'), lf='2 2 1 -'), B('E E D D', 'G', 'E I E I'), B('C - - -', 'C', 'O - - -')]]),
  dict(t='Happy Birthday', id='birthday', meter='3/4', job='The song for every birthday, in three: ONE two three. Both thumbs share middle C.', lh=('Thumb on middle C, with the right thumb. 2 on B, 3 on A, 4 on G.', {'g': 4, 'a': 3, 'b': 2}),
       rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5}, 'Thumb on middle C too: the two thumbs take turns.'),
       how='New: a song in three. The tune walks from hand to hand; L.H. means the left hand plays it.',
@@ -70,12 +74,22 @@ S = [
       how='Both thumbs on middle C. Count 1 2 3 4 and keep marching: the hands take turns.',
       g=[[B('C C D E', '', 'Yan- kee Doo- dle'), B('C E D <G', '', 'went to town a-'), B('C C D E', '', 'rid- ing on a'), B('C - <B -', '', 'po- - ny -')],
          [B('C C D E', '', 'stuck a fea- ther'), B('F E D C', '', 'in his cap and'), B('<B <G <A <B', '', 'called it ma- ca-'), B('C - C -', '', 'ro- - ni -')]]),
- dict(t='Ode to Joy, the Whole Song', id='odefull', job='You know the start. Now the whole tune, as Beethoven wrote it.', lh=('C: C and G (5, 1). G: D and G (4, 1).', {'c': 5, 'd': 4, 'g': 1}),
-      how='Two keys a chord. In line 3 the tune dips to low G: your left thumb is there.',
-      g=[[B('E E F G', 'C+G', 'Joy- ful, joy- ful,'), B('G F E D', 'D+G', 'we a- dore thee,'), B('C C D E', 'C+G', 'God of glo- ry,'), B('E D D -', 'D+G', 'Lord of love; -')],
-         [B('E E F G', 'C+G', 'hearts un- fold like'), B('G F E D', 'D+G', 'flowers be- fore thee,'), B('C C D E', 'C+G', 'o- pening to the'), B('D C C -', 'C+G', 'sun a- bove -')],
-         [B('D D E C', 'D+G', 'Melt the clouds of'), B('D E.F E C', 'C+G', 'sin and. sad- ness,'), B('D E.F E D', 'D+G', 'drive the. dark of'), B('C D <G -', 'D+G', 'doubt a- way; -')],
-         [B('E E F G', 'C+G', 'Giv- er of im-'), B('G F E D', 'D+G', 'mor- tal glad- ness,'), B('C C D E', 'C+G', 'fill us with the'), B('D C C -', 'C+G', 'light of day! -')]]),
+ dict(t='Amazing Grace', id='amazing', meter='3/4', job='A slow song in three, sung all over the world for two hundred years. Let every long note ring.', lh=('Thumb on middle C too. 3 on A, 4 on G.', {'g': 4, 'a': 3}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'G': 5}, {'c': 1, 'd': 2, 'e': 3, 'g': 5}, 'Thumb on middle C, 5 on G. No F in this song.'),
+      how='Slow, in three. A line holds the note; it can carry on into the next bar.',
+      g=[[B('r r <G', '', '- - A-'), B('C - E.C', '', 'maz- - ing.'), B('E - D', '', 'grace - how'), B('C - <A', '', 'sweet - the')],
+         [B('<G - <G', '', 'sound - that'), B('C - E.C', '', 'saved - a.'), B('E - D.E', '', 'wretch - like.'), B('G - -', '', 'me - -')],
+         [B('- - E.G', '', '- - I.'), B('G - E.C', '', 'once - was.'), B('E - D', '', 'lost - but'), B('C - <A', '', 'now - am')],
+         [B('<G - <G', '', 'found - was'), B('C - E.C', '', 'blind - but.'), B('E - D', '', 'now - I'), B('C - -', '', 'see - -')]]),
+ dict(t='Goin\u2019 Home', id='goinhome', job='A tune from Dvo\u0159\u00e1k\u2019s New World Symphony, 1893. Play it slowly, like a long way home.', lh=('C: C then G (5, 1). G: G then D (1, 4). The hand stays.', {'c': 5, 'd': 4, 'g': 1}),
+      how='New: the left hand rocks in the song. The box names the chord; then its other key, on beat 3.',
+      g=[[Rock(B('E G G -', 'C', 'Go- in\u2019 home -')), Rock(B('E D C -', 'C', 'go- in\u2019 home -')), Rock(B('D E G E', 'G', 'I\u2019m a go- in\u2019')), dict(B('D - - -', 'G', 'home - - -'), lp='G - D -')],
+         [Rock(B('E G G -', 'C', 'Qui- et- like -')), Rock(B('E D C -', 'C', 'some still day -')), Rock(B('D E D C', 'G', 'I\u2019m jes\u2019 go- in\u2019')), dict(B('C - - -', 'C', 'home - - -'), lp='C - - -')]]),
+ dict(t='This Old Man', id='oldman', job='A counting song: verse 1 is \u201cthumb\u201d, then shoe, knee, door\u2026 Sing as many verses as you can.', lh=('C: C then G (5, 1). F: F then C (2, 5). G: G then D (1, 4).', {'c': 5, 'd': 4, 'f': 2, 'g': 1}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5, 'A': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5, 'a': 5}, 'Thumb on middle C. Finger 5 reaches to A, then back to G.'),
+      how='New: oom-pah in the song. The box names the chord; then its keys in turn, one a beat.',
+      g=[[O(B('G E G -', 'C', 'This old man, -')), O(B('G E G -', 'C', 'he played one, -'))], [O(B('A G F E', 'F', 'he played knick- knack')), O(B('D E F -', 'G', 'on my thumb, -'))],
+         [O(B('E.F G C C.C', 'C', 'with.a knick knack pad.dy')), O(B('C D.E F G', 'C', 'whack, give.a dog a'))], [O(B('G D D F', 'G', 'bone, this old man')), dict(B('E.E D C -', 'C', 'came.roll ing home -'), lp='C - - -')]]),   # two bars a line: room for the split boxes
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
@@ -112,9 +126,9 @@ WAYS = {
  'saints': ('Two keys on every chord, and F joins in. The hand still stays put: C and G, C and F, D and G.',
           [('Way 1|together', 'C+G - - -'), ('Way 2|twice', 'C+G - C+G -'), ('Way 3|bottom, top', 'C - G -'), ('Way 4|oom-pah', 'C G C G')],
           'C chord: C and G (5 and 1). F chord: C and F (5 and 2). G chord: D and G (4 and 1).'),
- 'oldmac': ('The split box again, and now the left hand finds the "&" between the beats.',
+ 'camptown': ('Back to one key a chord, and now the left hand finds the "&" between the beats.',
           [('Way 1|tap, lift', 'C.r C.r C.r C.r'), ('Way 2|skip', 'C - C.C -'), ('Way 3|the push', 'C - r.C -'), ('Way 4|on the &', 'r.C r.C r.C r.C')],
-          'Count "1 & 2 & 3 & 4 &". The dot is a lift. Play the ways in the bars that have a chord box.'),
+          'Count "1 & 2 & 3 & 4 &". The dot is a lift. Play each chord\u2019s bottom key: C, or G.'),
  'ode': ('Ode to Joy again. Rests in new places: the left hand starts to talk back to the tune.',
           [('Way 1|hold, lift, go', 'C - r C'), ('Way 2|play, lift, two', 'C r C C'), ('Way 3|late start', 'r r C -'), ('Way 4|the answer', 'r C - C')],
           'Big beats only. Count out loud; the dot is a lift. On G bars, the same rhythm on G.'),
