@@ -27,10 +27,13 @@ def untie(spec):   # Time 3: 'C4*2~ C4' is one sound of 3 slots (a tie); the len
         if tok.endswith('~'): carry += mul; continue
         out.append(f'{n}*{carry + mul:g}' if carry else tok); carry = 0
     return ' '.join(out)
-def click(level):   # her Time chapters: a woodblock-like tick; X strong (beat 1), M medium, x weak
-    t = np.arange(int(SR * .09)) / SR; f = {'X': 1900, 'M': 1500, 'x': 1250}[level]
-    w = (np.sin(2 * np.pi * f * t) + .4 * np.sin(2 * np.pi * f * 2.7 * t)) * np.exp(-t * 60)
-    return w * {'X': .55, 'M': .38, 'x': .26}[level]
+def click(level):   # her 10 Nov: the beat as a soft heartbeat (lub-dub), not a tick; X strong (beat 1), M medium, x weak
+    def thump(f, dur, decay):
+        t = np.arange(int(SR * dur)) / SR
+        return (np.sin(2 * np.pi * f * t * (1 - .25 * t / dur)) + .5 * np.sin(2 * np.pi * 2 * f * t) + .25 * np.sin(2 * np.pi * 3 * f * t)) * np.exp(-t * decay) * np.minimum(1, t / .004)
+    lub = thump(88, .16, 28); dub = .45 * thump(108, .12, 34)
+    w = np.zeros(int(SR * .32)); w[:len(lub)] += lub; i = int(SR * .13); w[i:i + len(dub)] += dub
+    return w * {'X': .95, 'M': .7, 'x': .55}[level]
 DYNG = {'pp': .22, 'p': .38, 'mp': .55, 'mf': .72, 'f': .95, 'ff': 1.25}
 def piano(spec):
     parts = []
@@ -72,7 +75,7 @@ def count(spec):   # {'beats': click tokens, 'notes': piano tokens (optional), '
     tracks = [piano(spec['beats']) * .8]
     if spec.get('notes'): tracks.append(piano(untie(spec['notes'])))
     v = np.zeros(int(SR * (t + 1)))
-    for w, t0 in zip(spec.get('say', '').split(), times):
+    for w, t0 in ([] if True else zip(spec.get('say', '').split(), times)):
         if w == '-': continue
         a = word(w) * .9; i = int(SR * t0); v[i:i + len(a)] += a[:len(v) - i]
     tracks.append(v)
