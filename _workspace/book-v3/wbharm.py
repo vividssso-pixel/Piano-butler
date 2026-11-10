@@ -1,7 +1,7 @@
 # The Piano Butler Workbook, Harmony: two pages per chapter (Learn, Use), matching Handbook Part III
 exec(open('/tmp/claude-0/pk/wbpitch.py').read())   # helpers, css, SIZEJS, firstdone (rewrites the Pitch workbook, harmless)
 def hpage2(inner, n, hb):
-    return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{('HARMONY · HANDBOOK P.\u2009' + PM.resolve('{{' + hb + '}}')) if isinstance(hb, str) else ('HARMONY · HANDBOOK P. ' + str(hb + 2)) if hb else 'HARMONY'}</span></div><div class="rule"></div><div class="body">{inner}</div>
+    return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{('HARMONY · HANDBOOK P.\u2009' + PM.resolve('{{' + hb + '}}')) if isinstance(hb, str) else ('HARMONY · HANDBOOK P.\u2009' + PM.resolve('{{H%d}}' % ((hb - 64) // 2 + 1))) if hb else 'HARMONY'}</span></div><div class="rule"></div><div class="body">{inner}</div>
 <div class="sign"><span style="flex:0 0 240px">Date <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
 def th(kind, topic, title, rule, inner, n, hb):
     return hpage2(f'<div class="kick">Harmony · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
@@ -45,9 +45,9 @@ HA3 = th('Learn', 'Chords in a key', 'Chords in a key', 'I on the 1st note, IV o
 HB3 = th('Use', 'Chords in a key', 'Chords in a key', 'I holds C E G, IV holds F A C, V holds G B D: every note of C major is in one of them.', f"""
 {ex(1, 'Which chord holds it?', 1, 'Write I, IV or V for each note of C major. C and G fit two chords: write both.', '<div class="anrow">' + ''.join(f'<span><b>{n}</b>{BOX}</span>' for n in ('C', 'D', 'E', 'F', 'G', 'A', 'B')) + '</div>')}
 {ex(2, 'Chords for Twinkle', 2, 'Write I, IV or V at the start of each bar, and again halfway through bars 2, 3 and 4.', wpx('w_twk', 70) + '<div class="anrow">' + ''.join(f'<span><b>{l}</b>{BOX}</span>' for l in ('bar 1', 'bar 2', '½', 'bar 3', '½', 'bar 4', '½')) + '</div>')}
-{ex(3, 'The twelve-bar blues', 2, 'The same chart in G major: write the letter of each chord (I = G).', '<div class="bl12">' + ''.join(f'<span><i>{n}</i>{BOX}</span>' for n in ['I', 'I', 'I', 'I', 'IV', 'IV', 'I', 'I', 'V', 'IV', 'I', 'V']) + '</div>')}
+{ex(3, 'V and vii°', 2, 'Write the notes of each chord. In a minor key, remember the raised 7th.', tbl(['Chord', 'Notes'], [['<b>V in D minor</b>', LINE], ['<b>vii° in C major</b>', LINE], ['<b>vii° in G major</b>', LINE]], ['42%', '58%'], 'bld'))}
 {ex(4, 'Chords in A minor', 2, 'Write the notes of i, iv and V in A minor. Remember the raised 7th, G♯, in V.', tbl(['Chord', 'Notes'], [['<b>i (A minor)</b>', LINE], ['<b>iv (D minor)</b>', LINE], ['<b>V (E major)</b>', LINE]], ['34%', '66%'], 'bld'))}
-{ex(5, 'Play the blues', 2, 'Play the twelve bars in C and in G with your left hand, four steady beats on each chord. Tick a circle each time you reach the end without stopping.', ticks(5))}""", 6, 69)
+{ex(5, 'Play i, iv, V, i', 2, 'Play i, iv, V, i in A minor with your left hand, slowly. Listen for the G♯ pulling home to A. Tick a circle each time.', ticks(5))}""", 6, 69)
 
 # ---------- 4 Inversions (Handbook pp. 70–71) ----------
 def pos3(t): return f'<div class="row"><b>{t}</b><span class="tf">root &nbsp;·&nbsp; 1st &nbsp;·&nbsp; 2nd</span></div>'
@@ -158,7 +158,7 @@ hans = [('p. 1', 'Build it: C E G · D F A · F A C · G B D · A C E · B D F. 
         ('p. 3', 'Keys between: C E G 3 + 2 major · A C E 2 + 3 minor · G B D 3 + 2 major · E G B 2 + 3 minor · B D F 2 + 2 diminished. Which kind: minor, major, dim, aug, minor, major. Major to minor: C E♭ G · F A♭ C · G B♭ D · D F A.'),
         ('p. 4', 'Draw: major D F♯ A, A C♯ E, E G♯ B; minor C E♭ G, G B♭ D, F A♭ C. Bright or dark: bright, dark, bright, dark. White keys: C major, D minor, E minor, F major, G major, A minor, B diminished.'),
         ('p. 5', 'Numerals: I, ii, iii, IV, V, vi, vii°. I IV V: G C D · F B♭ C · D G A. In G: G B D · C E G · D F♯ A. On the staff: IV, V, ii, vi.'),
-        ('p. 6', 'Which chord: C I or IV · D V · E I · F IV · G I or V · A IV · B V. Twinkle: I · IV I · IV I · V I. Blues in G: G G G G · C C G G · D C G D. A minor: A C E · D F A · E G♯ B.'),
+        ('p. 6', 'Which chord: C I or IV · D V · E I · F IV · G I or V · A IV · B V. Twinkle: I · IV I · IV I · V I. V and vii°: A C♯ E · B D F · F♯ A C. A minor: A C E · D F A · E G♯ B.'),
         ('p. 7', 'Position: root, 1st, 2nd, 1st, 2nd, 1st. Roots: C, F, G, F, G, C. Inversions: F: A C F, C F A · G: B D G, D G B · Am: C E A, E A C.'),
         ('p. 8', 'Draw: G C E, C F A, D G B. Name it: C/E, F/C, G/D, G/B. Slash chords: B D G · A C F · C E A. Common notes: C and G: G · Am and F: A, C · Em and C: E, G.'),
         ('p. 9', 'Top floor: B, B♭, G, F, E. Keys between: C7 3 + 2 + 2 · Cm7 2 + 3 + 2 · Cø7 2 + 2 + 3 · C°7 2 + 2 + 2. Spot the difference: Cmaj7, C7, Cmaj7, C7.'),
@@ -176,7 +176,7 @@ hans = [('p. 1', 'Build it: C E G · D F A · F A C · G B D · A C E · B D F. 
         ('p. 21', 'Cakes: D V · E I · F IV · G I, V · A IV · B V. Pick the chord: I, IV, V, I, V. G major: IV C E G · V D F♯ A. Pick in G: IV, V, I.'),
         ('p. 22', 'Mary: I, I, V, I, I, I, V, I. Alberti: F C A C · G D B D. Broken: F A C A · G B D B · A C E C.'),
         ('p. 23', 'Numbers into chords: fifties C Am F G · jazz Dm G C · canon C G Am Em F C F G. Into numbers: vi IV I V · IV V iii vi · ii V I. Name the trip (G): pop four, fifties, jazz three-step. In F: I vi IV V fifties · ii V I jazz three-step.'),
-        ('p. 24', 'G major: G D Em C · F major: F C Dm B♭ · D major: D A Bm G. Jobs: away, pull, home (cousin), away, pull. Own trip: for example C F G C (I IV V I) or C Dm G C (I ii V I).')]
+        ('p.\u200924', 'G major: G D Em C · F major: F C Dm B♭ · D major: D A Bm G. Jobs: away, pull, home (cousin), away, pull. Own trip: for example C F G C (I IV V I) or C Dm G C (I ii V I).')]
 HAN = hpage2(f'''<div class="kick">Harmony · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in hans[:10]], ['12%', '88%'], 'ansT')}''', 25, None)
 HAN2 = hpage2(f'''<div class="kick">Harmony · Answers · continued</div>

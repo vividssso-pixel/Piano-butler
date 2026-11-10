@@ -171,7 +171,7 @@ def count(spec):   # {'beats': beat tokens (timing only, no sound), 'notes': pia
             fit = SR * max(slots[i], .3) * .9
             if len(a) > fit: a = _stretch(a, len(a) / fit)
             f = np.minimum(1, np.arange(len(a)) / 60.0) * np.minimum(1, (len(a) - np.arange(len(a))) / 200.0)
-            a = _clear(a) * f * COUNT_VOL   # her 11 Nov: a little quieter again
+            a = _clear(a) * f * COUNT_VOL * {'X': 1.25, 'M': .9}.get(toks[i][0], .7)   # her 11 Nov: a little quieter again; beat one strong, the others weaker
             env = np.convolve(np.abs(a), np.ones(240) / 240, mode='same'); pc = int(np.argmax(env >= .35 * env.max()))   # her 11 Nov (again): the ear hears a word where its vowel starts, not its first consonant
             k = int(SR * times[i]) - pc + int(SR * .012); a = a[max(0, -k):]; k = max(0, k); v[k:k + len(a)] += a[:len(v) - k]
     if COUNT_BLOCK:   # option: a woodblock tick on every beat under the numbers
