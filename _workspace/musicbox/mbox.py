@@ -59,6 +59,17 @@ S = [
       how='When the left hand has the tune (L.H.), it plays no chord in that bar: one job at a time.',
       g=[[B('C C C <G', 'C', 'Old Mac- Don- ald'), B('<A <A <G -', '', 'had a farm -'), B('E E D D', 'G', 'E I E I'), B('C - - <G', 'C', 'O - - and')],
          [B('C C C <G', 'C', 'on his farm he'), B('<A <A <G -', '', 'had a cow -'), B('E E D D', 'G', 'E I E I'), B('C - - -', 'C', 'O - - -')]]),
+ dict(t='Happy Birthday', id='birthday', meter='3/4', job='The song for every birthday, in three: ONE two three. Both thumbs share middle C.', lh=('Thumb on middle C, with the right thumb. 2 on B, 3 on A, 4 on G.', {'g': 4, 'a': 3, 'b': 2}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5}, 'Thumb on middle C too: the two thumbs take turns.'),
+      how='New: a song in three. The tune walks from hand to hand; L.H. means the left hand plays it.',
+      g=[[B('r r <G.G', '', '- - Hap.py'), B('<A <G C', '', 'birth- day to'), B('<B - <G.G', '', 'you, - hap.py')],
+         [B('<A <G D', '', 'birth- day to'), B('C - <G.G', '', 'you, - hap.py'), B('G E C', '', 'birth- day dear')],
+         [B('<B <A F.F', '', 'Sam- my, hap.py'), B('E C D', '', 'birth- day to'), B('C - -', '', 'you! - -')]]),   # three bars a line
+ dict(t='Yankee Doodle', id='yankee', job='A marching song from 1700s America. March on the spot while you sing it.', lh=('Thumb on middle C again. 2 on B, 3 on A, 4 on G.', {'g': 4, 'a': 3, 'b': 2}),
+      rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5}, 'Thumb on middle C: both thumbs share it.'),
+      how='Both thumbs on middle C. Count 1 2 3 4 and keep marching: the hands take turns.',
+      g=[[B('C C D E', '', 'Yan- kee Doo- dle'), B('C E D <G', '', 'went to town a-'), B('C C D E', '', 'rid- ing on a'), B('C - <B -', '', 'po- - ny -')],
+         [B('C C D E', '', 'stuck a fea- ther'), B('F E D C', '', 'in his cap and'), B('<B <G <A <B', '', 'called it ma- ca-'), B('C - C -', '', 'ro- - ni -')]]),
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
@@ -75,6 +86,7 @@ for i, s in enumerate(S, 1):
     d = copy.deepcopy(base)
     d.update({'title': s['t'], 'label': f'Song {i}', 'lesson': i, 'id': s['id']})
     if s.get('rf'): d['gig']['rfing'], d['gig']['rmap'], d['gig']['r_cap'] = s['rf']
+    if s.get('meter'): d['meter'], d['beats'] = s['meter'], int(s['meter'][0])
     d['gig'].update({'job': s['job'], 'tool_cap': s['lh'][0], 'fmap': s['lh'][1], 'song_how': s['how'], 'song_grid': s['g']})
     json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
 
