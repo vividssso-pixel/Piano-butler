@@ -6,7 +6,9 @@ base = json.load(open('let1.json'))
 B = lambda r, l, w='': {'r': r, 'l': l, 'w': w}
 F = lambda b, f: dict(b, f=f)   # a bar with its own fingers
 OOM = {'C': 'C G C G', 'G': 'G D G D', 'F': 'F C F C'}
-O = lambda b: dict(b, lp=OOM[b['l']])   # oom-pah: the root, then the other key, the hand never moves
+O = lambda b: dict(b, lp=OOM[b['l']])
+RK = {'C': 'C - G -', 'G': 'G - D -', 'F': 'F - C -'}
+Rock = lambda b: dict(b, lp=RK[b['l']])   # bottom, then top: a slow rocking left hand   # oom-pah: the root, then the other key, the hand never moves
 LH2 = ('C with finger 5, G with the thumb.', {'c': 5, 'g': 1})
 LH3 = ('C with 5, F with 2, G with the thumb.', {'c': 5, 'f': 2, 'g': 1})
 S = [
@@ -79,6 +81,10 @@ S = [
          [B('<G - <G', '', 'sound - that'), B('C - E.C', '', 'saved - a.'), B('E - D.E', '', 'wretch - like.'), B('G - -', '', 'me - -')],
          [B('- - E.G', '', '- - I.'), B('G - E.C', '', 'once - was.'), B('E - D', '', 'lost - but'), B('C - <A', '', 'now - am')],
          [B('<G - <G', '', 'found - was'), B('C - E.C', '', 'blind - but.'), B('E - D', '', 'now - I'), B('C - -', '', 'see - -')]]),
+ dict(t='Goin\u2019 Home', id='goinhome', job='A tune from Dvo\u0159\u00e1k\u2019s New World Symphony, 1893. Play it slowly, like a long way home.', lh=('C: C then G (5, 1). G: G then D (1, 4). The hand stays.', {'c': 5, 'd': 4, 'g': 1}),
+      how='New: the left hand rocks in the song. The box names the chord; then its other key, on beat 3.',
+      g=[[Rock(B('E G G -', 'C', 'Go- in\u2019 home -')), Rock(B('E D C -', 'C', 'go- in\u2019 home -')), Rock(B('D E G E', 'G', 'I\u2019m a go- in\u2019')), dict(B('D - - -', 'G', 'home - - -'), lp='G - D -')],
+         [Rock(B('E G G -', 'C', 'Qui- et- like -')), Rock(B('E D C -', 'C', 'some still day -')), Rock(B('D E D C', 'G', 'I\u2019m jes\u2019 go- in\u2019')), dict(B('C - - -', 'C', 'home - - -'), lp='C - - -')]]),
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})
