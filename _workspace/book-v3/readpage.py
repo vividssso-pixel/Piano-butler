@@ -381,7 +381,17 @@ function lensShell(key, head, svg) {
   lensEl.dataset.t = key;
   lensEl.innerHTML = `<div class="lens"><div class="lh"><svg width="16" height="16" viewBox="0 0 16 16" style="width:16px"><circle cx="6.5" cy="6.5" r="5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M10.5 10.5l4 4" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>${head}</div>${svg}</div>`;
 }
-function drawAuto(L, t) {
+function drawAuto(L, t) {   // her 11 Nov: long tunes crowded the staff. Show about eight notes at a time, breaking at a bar line where possible
+  const n0 = L.items.length; if (n0 <= 10) return drawAuto0(L, t);
+  const br = L.bar || [], wins = []; let s0 = 0;
+  while (s0 < n0) { let e = Math.min(n0, s0 + 8);
+    if (e < n0) { for (let j = e; j > s0 + 4; j--) if (br[j] !== br[j - 1]) { e = j; break; } }
+    if (n0 - e < 3) e = n0; wins.push([s0, e]); s0 = e; }
+  const cur = L.at.filter(v => v <= t).length - 1; let wi = wins.findIndex(([a, e]) => cur >= a && cur < e); if (wi < 0) wi = 0;
+  const [a, e] = wins[wi];
+  return drawAuto0({ ...L, items: L.items.slice(a, e), at: L.at.slice(a, e), bar: br.slice(a, e) }, t);
+}
+function drawAuto0(L, t) {
   const cols = L.items.map(c => c.map(pn)), n = cols.length;
   { const st = {}; let pb = -1; cols.forEach((col, i) => { const b = (L.bar || [])[i] || 0; if (b !== pb) { for (const k in st) delete st[k]; pb = b; }   // a sign lasts to the bar line: show ♮ when it is cancelled
       col.forEach(p => { const k = p.L + p.o, was = st[k] || ''; p.nat = !p.acc && was !== ''; st[k] = p.acc; }); }); }
@@ -433,7 +443,21 @@ function drawAuto(L, t) {
 }
 
 const GL = {"E0A3": "M278 64c0 22 -17 39 -43 39c-12 0 -26 -3 -41 -10c-85 -43 -165 -94 -165 -156c5 -25 15 -32 49 -32c67 11 200 95 200 159zM0 -36c0 68 73 174 200 174c66 0 114 -39 114 -97c0 -84 -106 -173 -218 -173c-64 0 -96 32 -96 96z", "E0A2": "M198 133c102 0 207 -45 207 -133c0 -92 -118 -133 -227 -133c-101 0 -178 46 -178 133c0 88 93 133 198 133zM293 -21c0 14 -3 29 -8 44c-7 20 -18 38 -33 54c-20 21 -43 31 -68 31l-20 -2c-15 -5 -27 -14 -36 -28c-4 -9 -6 -17 -8 -24s-3 -16 -3 -27c0 -15 3 -34 9 -57 s18 -41 34 -55c15 -15 36 -23 62 -23c4 0 10 1 18 2c19 5 32 15 40 30s13 34 13 55z", "E0A4": "M0 -39c0 68 73 172 200 172c66 0 114 -37 114 -95c0 -84 -106 -171 -218 -171c-64 0 -96 30 -96 94z", "E240": "M179 -646c15 29 29 55 46 102c18 49 30 108 30 138c0 105 -80 173 -168 200c-18 5 -47 9 -87 16v190h22c8 0 33 -61 71 -95c4 -3 -2 3 61 -56c62 -58 122 -137 122 -241c0 -38 -13 -106 -35 -163c-20 -51 -43 -99 -66 -132c-6 -5 -10 -7 -13 -7s-5 2 -5 5l4 10 c1 3 14 25 18 33z", "E4E5": "M107 292c-13 24 -30 49 -52 71c-1 1 0 2 0 3l-2 2c3 3 4 4 6 4c12 0 26 -7 40 -20s44 -40 89 -81c26 -24 28 -29 46 -47c4 -4 8 -9 10 -14c6 -8 8 -16 8 -27c0 -19 -12 -40 -36 -61c-28 -23 -49 -38 -61 -73c-4 -11 -7 -27 -10 -50c13 -43 34 -83 59 -121 c31 -47 59 -79 101 -129c-8 0 -26 7 -54 20l-62 29l-21 6l-23 1c-25 0 -45 -10 -60 -30l-4 -14l-1 -12c0 -33 20 -56 39 -78c8 -9 17 -18 26 -26c17 -15 27 -24 28 -30l-3 -3c-11 5 -19 10 -25 15c-9 3 -37 21 -45 26c-24 14 -45 32 -63 51c-19 21 -37 44 -37 71 c0 63 27 95 80 95c41 0 86 -18 136 -52c-19 26 -37 48 -55 66c-23 23 -48 44 -73 65c-28 23 -47 40 -58 53s-17 26 -18 39c75 64 113 125 113 183c0 27 -7 48 -18 68z", "E4E6": "M0 123c7 34 33 56 69 60c29 -3 43 -9 53 -29c4 -8 7 -15 10 -22c0 -21 -1 -25 -11 -35c-5 -8 -18 -14 -40 -20l12 -3l15 -1c44 0 97 26 122 56c10 11 18 26 24 42c7 1 15 2 22 3l-140 -424h-36l111 330c-10 -6 -27 -12 -53 -16l-52 -8h-10l-20 1c-1 0 -8 3 -21 6 c-37 9 -55 28 -55 60z", "E4E4": "M0 10v105c0 9 1 10 10 10h280c9 0 10 -1 10 -10v-105c0 -9 -1 -10 -10 -10h-280c-9 0 -10 1 -10 10z", "E4E3": "M0 -115v105c0 9 1 10 10 10h280c9 0 10 -1 10 -10v-105c0 -9 -1 -10 -10 -10h-280c-9 0 -10 1 -10 10z"};
-function drawRhy(L, t) {
+function drawRhy(L, t) {   // her 11 Nov: long examples crowded the lens (notes on top of bar lines). Show two bars at a time, the bars being played, and move on
+  const N0 = L.n || L.beats.length, BR = (L.bars || [0]).slice().sort((x, y) => x - y);
+  if (N0 <= 8 || BR.length < 3) return drawRhy0(L, t);
+  const st = BR[0] > 0 ? [0, ...BR] : BR, wins = []; let w0 = st[0];
+  for (let i = 1; i <= st.length; i++) { const e = i < st.length ? st[i] : N0; if (e - w0 > 8.001 && st[i - 1] > w0) { wins.push([w0, st[i - 1]]); w0 = st[i - 1]; } }
+  wins.push([w0, N0]);
+  const cur = L.beats.filter(b => b[0] <= t).length - 1, cp = cur < 0 ? 0 : (L.beats[cur][3] == null ? cur : L.beats[cur][3]);
+  let wi = wins.findIndex(([a, e]) => cp >= a - 1e-6 && cp < e - 1e-6); if (wi < 0) wi = cur < 0 ? 0 : wins.length - 1;
+  const [a, e] = wins[wi], inW = p => p >= a - 1e-6 && p < e - 1e-6;
+  const beats = L.beats.map((b, i) => [b[0], b[1], b[2], (b[3] == null ? i : b[3])]).filter(b => inW(b[3])).map(b => [b[0], b[1], b[2], b[3] - a]);
+  const sub = { ...L, beats, notes: (L.notes || []).filter(n => inW(n[1])).map(n => [n[0], n[1] - a, Math.min(n[2], e - n[1]), n[3], n[4]]), ands: (L.ands || []).filter(x => inW(x[1])).map(x => [x[0], x[1] - a, x[2]]),
+    bars: st.filter(x => x >= a - 1e-6 && x < e - 1e-6).map(x => x - a), n: e - a, win: `bars ${st.filter(x => x < a - 1e-6).length + 1}–${st.filter(x => x < e - 1e-6).length} of ${st.length}`, last: wi === wins.length - 1 };
+  return drawRhy0(sub, t);
+}
+function drawRhy0(L, t) {
   const B = L.beats, N = L.n || B.length, NT = L.notes, AN = L.ands || [];
   const cb = B.filter(b => b[0] <= t).length - 1, cn = NT.filter(n => n[0] <= t).length - 1, ca = AN.filter(a => a[0] <= t).length - 1;
   const key = 'rhy' + B[0][0] + ':' + cb + ':' + cn + ':' + ca; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
@@ -446,7 +470,7 @@ function drawRhy(L, t) {
   // bar lines through both rows
   const top = hasN ? LY - 58 : BY - 34, bot = BY + 34;
   L.bars.forEach(i => { if (i > 0) g += `<line x1="${X(i) - 4}" x2="${X(i) - 4}" y1="${top}" y2="${bot}" stroke="${INK}" stroke-width="2"/>`; });
-  g += `<line x1="${X(N) - 4}" x2="${X(N) - 4}" y1="${top}" y2="${bot}" stroke="${INK}" stroke-width="2"/><line x1="${X(N) + 1}" x2="${X(N) + 1}" y1="${top}" y2="${bot}" stroke="${INK}" stroke-width="5"/>`;
+  g += `<line x1="${X(N) - 4}" x2="${X(N) - 4}" y1="${top}" y2="${bot}" stroke="${INK}" stroke-width="2"/>` + (L.last === false ? '' : `<line x1="${X(N) + 1}" x2="${X(N) + 1}" y1="${top}" y2="${bot}" stroke="${INK}" stroke-width="5"/>`);
   if (hasN) {
     g += `<line x1="${X0 - 14}" x2="${X(N) - 4}" y1="${LY}" y2="${LY}" stroke="${INK}" stroke-width="1.8"/>`;
     g += `<text x="${X0 - 18}" y="${LY - 22}" text-anchor="end" font-size="12" fill="#5a5d8f" ${F}>notes</text>`;
@@ -493,7 +517,7 @@ function drawRhy(L, t) {
   AN.forEach((a, j) => { const on = j === ca && a[0] >= B[cb][0], x = X(a[1]) + Math.min(bw / 2, 22) - 4;
     g += `<text x="${x}" y="${BY + 6}" text-anchor="middle" font-size="${(on ? 22 : 17) * Math.min(1, bw / 64 + .3)}" font-weight="700" fill="${on ? ACC : j < ca ? INK : '#9a9cc0'}" ${F}>${a[2]}</text>`; });
   const VH = BY + (clickOnly ? 48 : 40);
-  const head = hasN ? '♪ The beat and the notes' : '♪ The beat';
+  const head = (hasN ? '♪ The beat and the notes' : '♪ The beat') + (L.win ? ' · ' + L.win : '');
   lensShell('rhy' + B[0][0], head, `<svg viewBox="0 0 600 ${VH}" role="img" aria-label="${head}">${g}</svg>`);
 }
 

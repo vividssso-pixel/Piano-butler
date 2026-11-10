@@ -16,7 +16,7 @@ def wpx(k, h=70, spx=None):
     return '<figure class="vx px"><div class="vs">' + svg + '</div></figure>'
 def pc(k, lab, h=70): return f'<div class="fc">{wpx(k, 84, 26)}<div class="add">{lab.replace(BOX, WL)}</div></div>'
 def _hbl(hb):   # her 5 Nov (A): topics 1-5 are Part I Pitch (pp. 22-31), 6-12 Part III Scales and keys (pp. 50-63)
-    return ('PITCH · HANDBOOK P. ' + str(22 + 2 * (hb - 22))) if hb < 27 else ('PITCH · HANDBOOK P. ' + str(50 + 2 * (hb - 27))) if hb < 29 else ('SCALES AND KEYS · HANDBOOK P. ' + str(50 + 2 * (hb - 27)))
+    return ('PITCH · HANDBOOK P. ' + str(22 + 2 * (hb - 22))) if hb < 27 else ('PITCH · HANDBOOK P. ' + str(50 + 2 * (hb - 27))) if hb < 29 else ('SCALES AND KEYS · HANDBOOK P.\u2009' + str(PM.PAGE['S1'] if hb < 31 else PM.PAGE['S3']))   # her 11 Nov audit: real chapter pages
 def wpage2(inner, n, hb, lab='PITCH'):
     return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{_hbl(hb) if hb else lab}</span></div><div class="rule"></div><div class="body">{inner}</div>
 <div class="sign"><span style="flex:0 0 240px">Date <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
@@ -97,7 +97,7 @@ A5 = tq('Learn', 'Scales', 'Scales and keys', 'Every major scale has the same pa
 {ex(1, 'Fix the scale', 2, 'This should be G major, but one note is missing its sharp. Add it, then answer.', wpx('g_noacc', 92) + f'<div class="add">the note that needs a sharp {BOX} &nbsp; semitones between degrees {BOX} – {BOX} and {BOX} – {BOX}</div>')}
 {ex(2, 'The major pattern', 1, 'Write T or S between each pair of degrees.', '<div class="tsp">' + ''.join(f'<span class="dg">{i}</span>' + (f'<span class="ab{" dn" if i < 3 else ""}">{"T" if i < 3 else ""}</span>' if i < 8 else '') for i in range(1, 9)) + '</div>')}
 {ex(3, 'Degree names', 1, 'Write the name of each degree.', tbl(['Degree', 'Name', 'Degree', 'Name'], [['1', '<b class="done2">tonic</b>', '2', LINE], ['5', LINE, '3', LINE], ['4', LINE, '6', LINE], ['7', LINE, '', '']], ['12%', '38%', '12%', '38%']))}
-{ex(4, 'Relative minor', 2, 'Each major key shares its key signature with a minor key, three semitones lower.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> → {BOX if not d else "<b class=done2>" + d + "</b>"} <span class="mu2">minor</span></div>' for a, d in (('C major', 'A'), ('G major', ''), ('F major', ''), ('D major', ''), ('B♭ major', ''), ('E♭ major', ''))) + '</div>')}''', 11, 29)
+{ex(4, 'Relative minor', 2, 'Each major key shares its key signature with a minor key. To find it, go down a minor 3rd: count 2 keys between, then land.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> → {BOX if not d else "<b class=done2>" + d + "</b>"} <span class="mu2">minor</span></div>' for a, d in (('C major', 'A'), ('G major', ''), ('F major', ''), ('D major', ''), ('B♭ major', ''), ('E♭ major', ''))) + '</div>')}''', 11, 29)
 B5 = tq('Use', 'Scales', 'Scales and keys', 'The order of sharps: F C G D A E B. The order of flats is the same, backwards.', f'''
 {ex(1, 'Name the key', 2, 'Write the major key and its relative minor for each key signature.', grid([pc('ks' + k, f'major {BOX} &nbsp; minor {BOX}', 56) for k in ('1s', '1f', '2s', '2f', '3s', '3f')], 3, 'ksg'))}
 {ex(2, 'Which minor?', 3, 'Three forms of A minor, going up. Write natural, harmonic or melodic under each.', ''.join(f'<div class="opc mrow"><span class="ol">{l}</span>{wpx(k, 64)}<span class="al mf"></span></div>' for l, k in (('A', 'mf_a'), ('B', 'mf_b'), ('C', 'mf_c'))))}
@@ -133,9 +133,9 @@ R3 = wpage2(f'''<div class="kick">Scales and keys · Review</div><h1>Review</h1>
 {ex(2, 'Complete it', 2, 'One word, letter or number in each space.', f'<div class="sent"><p>The relative minor of G major is {BOX} minor.</p><p>In a major scale the semitones fall between degrees 3–4 and {BOX} .</p><p>The major key with one sharp is {BOX} major.</p></div>')}
 {ex(3, 'True or false?', 1, 'Circle T or F.', tfrows(('A key signature applies to every line of the piece.', 'C up to E is a 3rd.', 'A minor 3rd is four semitones.')))}
 <div class="score">Score <span class="ab"></span> / 10</div>''', 3, None, SL)
-concepts3 = [('major scales', 54), ('scale degree names', 54), ('minor scales', 56), ('key signatures', 58), ('finding the key', 60), ('the circle of fifths', 62)]
+concepts3 = [('major scales', PM.PAGE['S1']), ('scale degree names', PM.PAGE['H3']), ('minor scales', PM.PAGE['S2']), ('key signatures', PM.PAGE['S3']), ('finding the key', PM.PAGE['S4']), ('the circle of fifths', PM.PAGE['S5'])]   # her 11 Nov audit: the real chapter pages
 PR3 = wpage2(f'''<div class="kick">Scales and keys · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
-{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in concepts3], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
+{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p.\u2009{p}'] for c, p in concepts3], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
 <div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 4, None, SL)
 ans3 = [('p. 1', 'F needs a sharp (F♯); semitones 3–4 and 7–8. Pattern: T T S T T T S. Degrees: 2 supertonic, 3 mediant, 4 subdominant, 5 dominant, 6 submediant, 7 leading note. Relative minors: E, D, B, G, C.'),
        ('p. 2', 'Keys: G / E minor · F / D minor · D / B minor · B♭ / G minor · A / F♯ minor · E♭ / C minor. Minor forms: A harmonic, B natural, C melodic. Sharps F C G D A E B; flats B E A D G C F.'),

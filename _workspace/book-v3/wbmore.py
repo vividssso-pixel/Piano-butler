@@ -203,7 +203,7 @@ LB1 = tl('Use', 'Fingering', 'Fingering', 'Going up the right hand, the thumb pa
 {ex(4, 'Play it', 1, 'Play the C major scale, one octave, each hand alone. Tick a circle each clean day.', ticks())}
 {explain(5, 'Explain why it helps to write your fingering in and keep it.')}''', 2, 'L1+1')
 LA2 = tl('Learn', 'Practising well', 'Practising well', 'Slow, small and correct; three correct times, then one notch faster.', f'''
-{ex(1, 'The metronome ladder', 1, 'The Handbook’s ladder (p.\u2009' + PM.resolve('{{L2}}') + ') goes 60 66 72 80 88 96. Write the two missing steps. The first is done.', '<div class="anrow">' + ''.join(f'<span>{x}</span>' for x in ('60', '66', '72', D('80'), BOX)) + '</div>')}
+{ex(1, 'The metronome ladder', 1, 'The Handbook’s ladder (p.\u2009' + PM.resolve('{{L2}}') + ') climbs one notch at a time: 60, 66, then the next. Write the next three steps. The first is done.', '<div class="anrow">' + ''.join(f'<span>{x}</span>' for x in ('60', '66', D('72'), BOX, BOX)) + '</div>')}
 {ex(2, 'Good habit?', 1, 'Circle helps or wastes time.', ''.join(opt(a, ('helps', 'wastes time')) for a in ('the hardest bar first', 'always from the top', 'faster to fix a slip', 'three correct, then faster', 'hands separately first')))}
 {ex(3, 'My fifteen minutes', 2, 'Plan your practice: what will you do in each part?', T4([['2 min · warm up', LINE], ['5 min · hardest bars', LINE], ['5 min · join them', LINE], ['3 min · play it through', LINE]], ('40%', '60%'), ('Time', 'What')))}
 {ex(4, 'True or false?', 1, 'Circle T or F.', tfrows(('Small chunks are easier to fix.', 'Practise only what you can already play.', 'Hands separately first, then together.')))}
@@ -252,7 +252,7 @@ LP = progress('Playing and listening', 'PLAYING AND LISTENING', 12, [('finger nu
 LAN = answers('Playing and listening', 'PLAYING AND LISTENING', 13, [
     ('p. 1', 'Numbers: 2, 3, 4, 5. Five-finger: right 1 2 3 4 5 · left 5 4 3 2 1. C major up: 1 2 3 1 2 3 4 5.'),
     ('p. 2', 'Under or over: thumb under, finger over, finger over, thumb under. Left hand up: 5 4 3 2 1 3 2 1. T/F: F, T, F.'),
-    ('p. 3', 'Ladder: 80, 88. Habits: helps, wastes time, wastes time, helps, helps. T/F: T, F, T.'),
+    ('p. 3', 'Ladder: 72, 80, 88. Habits: helps, wastes time, wastes time, helps, helps. T/F: T, F, T.'),
     ('p. 4', 'T/F: T, F, T.'),
     ('p. 5', 'Scan: G major, 4 beats; G; up. Order: key 1, time 2, first notes 3, rhythm 4, patterns 5, marks 6. T/F: F, T, T.'),
     ('p. 6', 'Scan: G major, 3 beats; F♯. T/F: T, F, T.'),
