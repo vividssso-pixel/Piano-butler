@@ -84,7 +84,8 @@ NEW = {
   ('B', 'Here is a puzzle. Two red notes, both on the bottom line: one in the treble staff, one in the bass. Same line. Same note?', c(34, 'ex2')),
   ('P', 'I think so?', c(34, 'ex2')), ('B', 'Read each from its clef. Pause and try.', c(34, 'ex2')), ('pause', 4, c(34, 'ex2')),
   ('P', 'Treble: G is line two. Step down, F in the space, then the bottom line is E.', c(34, 'ex2', lab=['#0'])), ('piano', 'E4', c(34, 'ex2', seq=['#0'])),
-  ('B', 'And the bass? F is line four. Step down line by line.', c(34, 'ex2')), ('P', 'F, D, B, G. The bottom line is G!', c(34, 'ex2', lab=['#1'], reveal=True)), ('piano', 'G2', c(34, 'ex2', seq=['#1'], reveal=True)),
+  ('B', 'And the bass? F is line four. Step down line by line.', c(34, 'ex2')), ('P', 'Then the bass one is E too! Every Good Boy.', c(34, 'ex2')), ('B', 'Ah, the trap, Clara. That sentence belongs to the treble. Look at the clef first.', c(34, 'ex2')),
+  ('P', 'F, D, B, G. The bottom line is G!', c(34, 'ex2', lab=['#1'], reveal=True)), ('piano', 'G2', c(34, 'ex2', seq=['#1'], reveal=True)),
   ('B', 'Same line, different note. Always read the clef first.', c(34, 'ex2', reveal=True, anim='glasses'))]),
  ('Example: read it downwards', [
   ('B', 'Now read downwards, Clara. Start on G, the clef note, and step down to Middle C. Each step down is the letter before. Pause and say them.', c(34, 'ex3', show=['G', 'steps down', 'skips down (the lines)'])),
@@ -165,6 +166,7 @@ NEW = {
  ('Example: how long does a sign last?', [
   ('B', 'A sharp on the first note of a bar: F sharp. Later in the same bar, the same note with no sign. Sharp or not?', c(40, 'ex2', show=['F♯', 'G'], lab=['F♯'])), ('pause', 3, c(40, 'ex2', show=['F♯', 'G'])),
   ('P', 'Still sharp?', c(40, 'ex2', show=['F♯', 'G'])), ('B', 'Yes, until the bar line. And after the bar line?', c(40, 'ex2', show=['F♯', 'G'])),
+  ('P', 'Still F sharp. The sign is right there.', c(40, 'ex2')), ('B', 'Not quite. A sign lasts only until the bar line. Which side of the bar line is this F?', c(40, 'ex2')),
   ('P', 'Plain F again!', c(40, 'ex2', reveal=True)), ('B', 'A sign lasts to the end of its bar. Now a natural: B, then B flat, and it stays flat for the rest of the bar. Then a natural sign. What does it do?', c(41, 'ex3', show=['B', 'B♭'])), ('pause', 3, c(41, 'ex3', show=['B', 'B♭'])),
   ('P', 'It cancels the flat: back to the white key B.', c(41, 'ex3', lab=['?'], reveal=True)), ('piano', 'B4 Bb4 Bb4 B4', c(41, 'ex3', seq=idx(0, 4), reveal=True))]),
  ('Example: one key, two names', [
@@ -193,7 +195,8 @@ NEW = {
  ('Example: count an interval', [
   ('B', 'F up to A. How many notes? Pause and count.', c(43, 'ex2', show=['F', 'A', 'C', 'G'])), ('pause', 3, c(43, 'ex2', show=['F', 'A', 'C', 'G'])),
   ('P', 'F, G, A. Three: a third.', c(43, 'ex2', show=['F', '(G)', 'A', 'C', 'G'])), ('piano', 'F4 G4 A4', c(43, 'ex2', seq=['F', '(G)', 'A'], show=['F', '(G)', 'A', 'C', 'G'])),
-  ('B', 'And going down? C down to G.', c(43, 'ex2', show=['F', '(G)', 'A', 'C', 'G'])), ('P', 'C, B, A, G. Four: a fourth.', c(43, 'ex2', reveal=True)), ('piano', 'C5 B4 A4 G4', c(43, 'ex2', seq=['C', '(B)', '(A)', 'G'], reveal=True)),
+  ('B', 'And going down? C down to G.', c(43, 'ex2', show=['F', '(G)', 'A', 'C', 'G'])), ('P', 'Three. There are three steps from C down to G.', c(43, 'ex2')), ('B', 'Careful: count the notes, not the steps. C itself is number one.', c(43, 'ex2')),
+  ('P', 'C, B, A, G. Four: a fourth.', c(43, 'ex2', reveal=True)), ('piano', 'C5 B4 A4 G4', c(43, 'ex2', seq=['C', '(B)', '(A)', 'G'], reveal=True)),
   ('B', 'The same way, up or down: the first note is one.', c(43, 'ex2', reveal=True))]),
  ('Example: name an interval', [
   ('B', 'E, and the C above it. Count the notes from E.', c(44, 'ex3', show=['C', 'D', 'E', 'F', 'G', 'A', 'B'])), ('pause', 3, c(44, 'ex3', show=['C', 'D', 'E', 'F', 'G', 'A', 'B'])),
@@ -219,6 +222,7 @@ NEW = {
   ('P', 'A minor third! Dark, like C to E flat.', c(46, 'ex1', reveal=True)), ('piano', '[A4 C5]', c(46, 'ex1', reveal=True))]),
  ('Example: F up to A', [
   ('B', 'F up to A. F, G, A: a third. Now the keys between: they are numbered.', c(46, 'ex2', show=W)),
+  ('P', 'Two between, so a minor third?', c(46, 'ex2')), ('B', 'Look again, Clara. Count the black keys too, every key between.', c(46, 'ex2')),
   ('P', 'F sharp, G, G sharp: three. A major third!', c(46, 'ex2', reveal=True)), ('piano', 'F#4 G4 G#4 | [F4 A4]', c(46, 'ex2', seq=['1', '2', '3'], reveal=True)),
   ('B', 'The same size as C to E.', c(46, 'ex2', reveal=True))]),
  ('Example: D up to A', [
@@ -375,7 +379,7 @@ NEW['T1'] = ('Pulse, tempo and the bar', [
   ('P', 'One, two, three, four. Goodbye!', {'p': 52, 'r': 'think'})])])
 CH['T1'] = NEW['T1']
 
-NEW['T2'] = ('Notes and rests', [('The secret', [('P', 'How do I know how long to hold a note?', {'p': 53, 'r': 'lead'}), ('B', 'Its shape tells you, Clara. Each note is half the one above it. A semibreve lasts four beats. It splits into two minims, two beats each. A minim splits into two crotchets, one beat each. And a crotchet splits into two quavers, half a beat each.', {'p': 53, 'r': 'hero'}), ('B', 'Listen to one bar of each. The beat keeps going; only the notes change.', {'p': 53, 'r': 'hero'}), ('count', {'beats': 'X x M x X x M x X x M x', 'notes': 'C4*4 C4*2 C4*2 C4 C4 C4 C4', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, {'p': 53, 'r': 'hero'}), ('B', 'And quavers: two to every beat.', {'p': 53, 'r': 'hero'}), ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 & 2 & 3 & 4 &'}, {'p': 53, 'r': 'hero'}), ('P', 'For the quavers you said "and" in between.', {'p': 53, 'r': 'sm'}), ('B', 'Yes. Say the beat’s number, then "and" halfway to the next beat. And here is the other half of the secret: every note has a twin rest, a silence of exactly the same length.', {'p': 53, 'r': 'secret'})]), ('Head, stem, flag', [('B', 'A note has a head, on a line or in a space. Every note except the semibreve has a stem. Below the middle line the stem goes up, on the right of the head; on or above the middle line it goes down, on the left.', {'p': 53, 'r': 'two'}), ('P', 'Does a stem going down make the note shorter?', {'p': 53, 'r': 'two'}), ('B', 'Never. The stem only keeps the page tidy. Flags change the length: each flag halves the note. And quavers side by side are joined by a beam instead of flags.', {'p': 53, 'r': 'two'}), ('P', 'So a note on the middle line has its stem going down?', {'p': 53, 'r': 'two'}), ('B', 'Exactly: on or above the middle line, down on the left; below it, up on the right.', {'p': 53, 'r': 'two'})]), ('The semibreve rest’s special power', [('B', 'Most rests last a fixed number of beats. The semibreve rest can also mean a whole bar of silence, in any time signature, and then it sits in the middle of the bar. In four-four it lasts four beats, in three-four three, in two-four two. Listen to three-four: the middle bar is silent, and the beat goes on.', {'p': 53, 'r': 'box'}), ('count', {'beats': 'X x x X x x X x x', 'notes': 'C4 C4 C4 R*3 C4*2 C4', 'say': '1 2 3 1 2 3 1 2 3'}, {'p': 53, 'r': 'box'})]), ('Every note has a twin rest', [('B', 'Every note has a twin rest, the same length with no sound: semibreve, minim, crotchet, quaver, and the semiquaver, a quarter of a beat, which you will meet later.', {'p': 54, 'r': 'svg'}), ('B', 'Two rests look alike. The semibreve rest hangs from the fourth line, heavy, like a coat on a hook. The minim rest sits on the middle line, like a hat.', {'p': 54, 'r': 'svg'})]), ('Pizzas', [('B', 'Some books call the notes whole, half, quarter, eighth and sixteenth notes. Here is why.', {'p': 54, 'r': 'pzbox'}), ('B', 'Think of each beat as a pizza. A bar of four-four is four pizzas. The semibreve fills all four; a minim, two; a crotchet, one; a quaver, half a pizza. A rest is the same share, left empty.', {'p': 54, 'r': 'pzbox'}), ('P', 'So two quavers make one full pizza.', {'p': 54, 'r': 'pzbox'}), ('B', 'Listen: two quavers, then a crotchet. Same-sized pizza.', {'p': 54, 'r': 'pzbox'}), ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4 C4/2 C4/2 C4', 'say': '1 & 2 & 3 & 4 &'}, {'p': 54, 'r': 'pzbox'})]), ('Example: each sound and each silence', [('B', 'Two bars of four-four. Name each shape, say how many beats it lasts, and add them up, rests included. Pause and try.', {'p': 54, 'r': 'ex1'}), ('pause', 4, {'p': 54, 'r': 'ex1'}), ('P', 'Minim, two. Crotchet, one. Crotchet rest, one. Four beats!', {'p': 54, 'r': 'ex1', 'reveal': True}), ('B', 'And the second bar has the same shapes in a different order. Count it with me: the rests are counted too.', {'p': 54, 'r': 'ex1', 'reveal': True}), ('count', {'beats': 'X x M x X x M x', 'notes': 'C4*2 C4 R C4 R C4*2', 'say': '1 2 3 4 1 2 3 4'}, {'p': 54, 'r': 'ex1', 'reveal': True})]), ('How to draw notes and rests', [('B', 'Now draw them yourself, Clara: it is the quickest way to remember them. A note starts with an oval head, tilted a little: filled in for a crotchet or a quaver, hollow for a minim or a semibreve.', {'p': 55, 'r': 'xlate'}), ('B', 'Then a stem, about three spaces tall: going up, it sits on the right of the head; going down, on the left. A quaver adds a flag at the end of the stem, always curling to the right.', {'p': 55, 'r': 'xlate'}), ('P', 'Oval, stem, flag.', {'p': 55, 'r': 'xlate'}), ('B', 'And the rests. The semibreve rest is a little block hanging under line four; the minim rest, a block sitting on line three. The crotchet rest: draw a Z, then a little c underneath. The quaver rest is a seven with a dot on top, and the semiquaver rest a seven with two.', {'p': 55, 'r': 'xlate'}), ('P', 'A Z and a c. I can do that!', {'p': 55, 'r': 'xlate'})]), ('Example: fill the bar', [('B', 'A bar of four-four is a train with four seats. How many seats does the minim take? And the crotchet? How many are left, and which rest fills them? Pause and think.', {'p': 55, 'r': 'ex2'}), ('pause', 4, {'p': 55, 'r': 'ex2'}), ('P', 'The minim takes two and the crotchet one: three. One seat left: a crotchet rest!', {'p': 55, 'r': 'ex2', 'reveal': True}), ('count', {'beats': 'X x M x', 'notes': 'C4*2 C4 R', 'say': '1 2 3 4'}, {'p': 55, 'r': 'ex2', 'reveal': True})]), ('You know this', [('B', 'Twinkle, Twinkle: six crotchets, then a minim at the end of the line, two beats to breathe.', {'p': 55, 'r': 'yk'}), ('count', {'beats': 'X x M x X x M x', 'notes': 'C4 C4 G4 G4 A4 A4 G4*2', 'say': '1 2 3 4 1 2 3 4'}, {'p': 55, 'r': 'yk'}), ('B', 'A rest is not a gap in the music; it is music you can’t hear. Keep counting through it. Until next time, Clara.', {'p': 55, 'r': 'yk'}), ('P', 'One, two, three, four. Goodbye!', {'p': 55, 'r': 'yk'})])])
+NEW['T2'] = ('Notes and rests', [('The secret', [('P', 'How do I know how long to hold a note?', {'p': 53, 'r': 'lead'}), ('B', 'Its shape tells you, Clara. Each note is half the one above it. A semibreve lasts four beats. It splits into two minims, two beats each. A minim splits into two crotchets, one beat each. And a crotchet splits into two quavers, half a beat each.', {'p': 53, 'r': 'hero'}), ('B', 'Listen to one bar of each. The beat keeps going; only the notes change.', {'p': 53, 'r': 'hero'}), ('count', {'beats': 'X x M x X x M x X x M x', 'notes': 'C4*4 C4*2 C4*2 C4 C4 C4 C4', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, {'p': 53, 'r': 'hero'}), ('B', 'And quavers: two to every beat.', {'p': 53, 'r': 'hero'}), ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 & 2 & 3 & 4 &'}, {'p': 53, 'r': 'hero'}), ('P', 'For the quavers you said "and" in between.', {'p': 53, 'r': 'sm'}), ('B', 'Yes. Say the beat’s number, then "and" halfway to the next beat. And here is the other half of the secret: every note has a twin rest, a silence of exactly the same length.', {'p': 53, 'r': 'secret'})]), ('Head, stem, flag', [('B', 'A note has a head, on a line or in a space. Every note except the semibreve has a stem. Below the middle line the stem goes up, on the right of the head; on or above the middle line it goes down, on the left.', {'p': 53, 'r': 'two'}), ('P', 'Does a stem going down make the note shorter?', {'p': 53, 'r': 'two'}), ('B', 'Never. The stem only keeps the page tidy. Flags change the length: each flag halves the note. And quavers side by side are joined by a beam instead of flags.', {'p': 53, 'r': 'two'}), ('P', 'So a note on the middle line has its stem going down?', {'p': 53, 'r': 'two'}), ('B', 'Exactly: on or above the middle line, down on the left; below it, up on the right.', {'p': 53, 'r': 'two'})]), ('The semibreve rest’s special power', [('B', 'Most rests last a fixed number of beats. The semibreve rest can also mean a whole bar of silence, in any time signature, and then it sits in the middle of the bar. In four-four it lasts four beats, in three-four three, in two-four two. Listen to three-four: the middle bar is silent, and the beat goes on.', {'p': 53, 'r': 'box'}), ('count', {'beats': 'X x x X x x X x x', 'notes': 'C4 C4 C4 R*3 C4*2 C4', 'say': '1 2 3 1 2 3 1 2 3'}, {'p': 53, 'r': 'box'})]), ('Every note has a twin rest', [('B', 'Every note has a twin rest, the same length with no sound: semibreve, minim, crotchet, quaver, and the semiquaver, a quarter of a beat, which you will meet later.', {'p': 54, 'r': 'svg'}), ('B', 'Two rests look alike. The semibreve rest hangs from the fourth line, heavy, like a coat on a hook. The minim rest sits on the middle line, like a hat.', {'p': 54, 'r': 'svg'})]), ('Pizzas', [('B', 'Some books call the notes whole, half, quarter, eighth and sixteenth notes. Here is why.', {'p': 54, 'r': 'pzbox'}), ('B', 'Think of each beat as a pizza. A bar of four-four is four pizzas. The semibreve fills all four; a minim, two; a crotchet, one; a quaver, half a pizza. A rest is the same share, left empty.', {'p': 54, 'r': 'pzbox'}), ('P', 'So two quavers make one full pizza.', {'p': 54, 'r': 'pzbox'}), ('B', 'Listen: two quavers, then a crotchet. Same-sized pizza.', {'p': 54, 'r': 'pzbox'}), ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4 C4/2 C4/2 C4', 'say': '1 & 2 & 3 & 4 &'}, {'p': 54, 'r': 'pzbox'})]), ('Example: each sound and each silence', [('B', 'Two bars of four-four. Name each shape, say how many beats it lasts, and add them up, rests included. Pause and try.', {'p': 54, 'r': 'ex1'}), ('pause', 4, {'p': 54, 'r': 'ex1'}), ('P', 'Minim, two. Crotchet, one. Crotchet rest, one. Four beats!', {'p': 54, 'r': 'ex1', 'reveal': True}), ('B', 'And the second bar has the same shapes in a different order. Count it with me: the rests are counted too.', {'p': 54, 'r': 'ex1', 'reveal': True}), ('count', {'beats': 'X x M x X x M x', 'notes': 'C4*2 C4 R C4 R C4*2', 'say': '1 2 3 4 1 2 3 4'}, {'p': 54, 'r': 'ex1', 'reveal': True})]), ('How to draw notes and rests', [('B', 'Now draw them yourself, Clara: it is the quickest way to remember them. A note starts with an oval head, tilted a little: filled in for a crotchet or a quaver, hollow for a minim or a semibreve.', {'p': 55, 'r': 'xlate'}), ('B', 'Then a stem, about three spaces tall: going up, it sits on the right of the head; going down, on the left. A quaver adds a flag at the end of the stem, always curling to the right.', {'p': 55, 'r': 'xlate'}), ('P', 'Oval, stem, flag.', {'p': 55, 'r': 'xlate'}), ('B', 'And the rests. The semibreve rest is a little block hanging under line four; the minim rest, a block sitting on line three. The crotchet rest: draw a Z, then a little c underneath. The quaver rest is a seven with a dot on top, and the semiquaver rest a seven with two.', {'p': 55, 'r': 'xlate'}), ('P', 'A Z and a c. I can do that!', {'p': 55, 'r': 'xlate'})]), ('Example: fill the bar', [('B', 'A bar of four-four is a train with four seats. How many seats does the minim take? And the crotchet? How many are left, and which rest fills them? Pause and think.', {'p': 55, 'r': 'ex2'}), ('pause', 4, {'p': 55, 'r': 'ex2'}), ('P', 'Two seats left!', c(55, 'ex2')), ('B', 'Count again: the crotchet books a seat as well.', c(55, 'ex2')), ('P', 'The minim takes two and the crotchet one: three. One seat left: a crotchet rest!', {'p': 55, 'r': 'ex2', 'reveal': True}), ('count', {'beats': 'X x M x', 'notes': 'C4*2 C4 R', 'say': '1 2 3 4'}, {'p': 55, 'r': 'ex2', 'reveal': True})]), ('You know this', [('B', 'Twinkle, Twinkle: six crotchets, then a minim at the end of the line, two beats to breathe.', {'p': 55, 'r': 'yk'}), ('count', {'beats': 'X x M x X x M x', 'notes': 'C4 C4 G4 G4 A4 A4 G4*2', 'say': '1 2 3 4 1 2 3 4'}, {'p': 55, 'r': 'yk'}), ('B', 'A rest is not a gap in the music; it is music you can’t hear. Keep counting through it. Until next time, Clara.', {'p': 55, 'r': 'yk'}), ('P', 'One, two, three, four. Goodbye!', {'p': 55, 'r': 'yk'})])])
 CH['T2'] = NEW['T2']
 
 NEW['T3'] = ('How long is a note?', [
@@ -408,6 +412,7 @@ NEW['T3'] = ('How long is a note?', [
  ('Example: dot or tie?', [
   ('B', 'Which is longer: the dotted minim, or the minim tied to a crotchet? Add up each one. Pause and try.', {'p': 57, 'r': 'ex3'}),
   ('pause', 4, {'p': 57, 'r': 'ex3'}),
+  ('P', 'The tied notes are longer. There are two of them!', c(57, 'ex3')), ('B', 'Two notes, but one sound. Add them up and compare.', c(57, 'ex3')),
   ('P', 'Dotted minim: two plus one, three. Tied notes: two plus one, three. The same!', {'p': 57, 'r': 'ex3', 'reveal': True}),
   ('count', {'beats': 'X x x X x x', 'notes': 'C4*3 C4*2~ C4', 'say': '1 2 3 1 2 3'}, {'p': 57, 'r': 'ex3', 'reveal': True}),
   ('B', 'Both last three beats. But only the tie could cross a bar line.', {'p': 57, 'r': 'ex3', 'reveal': True})]),
@@ -467,6 +472,7 @@ NEW['T4'] = ('Time signatures', [
  ('Example: what does three-four mean?', [
   ('B', 'Three-four. How many counts in each bar, and which note gets one count? Pause and think.', c(60, 'ex1')),
   ('pause', 3, c(60, 'ex1')),
+  ('P', 'Three counts, and four counts?', c(60, 'ex1')), ('B', 'Ah, the bottom number is not a count, Clara. It names the note that gets one beat.', c(60, 'ex1')),
   ('P', 'Three counts, and the four means a crotchet.', c(60, 'ex1', reveal=True)),
   ('B', 'Check the first bar: two quavers make one, then a crotchet, a crotchet. Three. Count it.', c(60, 'ex1', reveal=True)),
   ('count', {'beats': 'X/2 R/2 x x X x x', 'notes': 'C4/2 C4/2 C4 C4 C4*2 C4', 'say': '1 & 2 3 1 2 3'}, c(60, 'ex1', reveal=True))]),
@@ -508,6 +514,7 @@ NEW['T5'] = ('Compound and irregular time', [
  ('Example: how many beats in nine-eight?', [
   ('B', 'Nine-eight. Does nine divide by three? How many groups of three?', c(63, 'ex1')),
   ('pause', 3, c(63, 'ex1')),
+  ('P', 'Nine beats!', c(63, 'ex1')), ('B', 'Nine quavers, yes. But at speed you feel them in groups. How many groups of three?', c(63, 'ex1')),
   ('P', 'Three groups: three beats, each a dotted crotchet!', c(63, 'ex1', reveal=True)),
   ('count', {'beats': 'X x x M x x M x x', 'notes': 'C4 C4 C4 C4 C4 C4 C4 C4 C4', 'say': '1 2 3 4 5 6 7 8 9'}, c(63, 'ex1', reveal=True))]),
  ('Example: is this still four-four?', [
@@ -590,12 +597,14 @@ CH['T7'] = NEW['T7']
 
 NEW['T8'] = ('Repeats and road signs', [
  ('The secret', [
+  ('P', 'On the way to Grandma’s, Dad drives round the roundabout twice when he misses the turning.', c(71, 'lead')),
+  ('B', 'Music has roundabouts and road signs too, Clara, and they are not mistakes: they are the map.', c(71, 'lead')),
   ('P', 'Why does the music sometimes go backwards?', c(71, 'lead')),
   ('B', 'To save writing the same bars twice, Clara. Two dots facing back mean: go back and play it again. Here you play A, B, then A, B again, then C.', c(71, 'hero')),
-  ('B', 'Read the signs like a map. Jump back at the sign, stop at Fine, or jump to the Coda.', c(71, 'secret'))]),
+  ('B', 'Read the signs like a map. Jump back at the sign, stop at ⟨Fine⟩, or jump to the ⟨Coda⟩.', c(71, 'secret'))]),
  ('The signs', [
   ('B', 'Repeat signs: play the bars between them twice. First and second time bars: the first time, play bar one; after the repeat, skip it and play bar two. D.C., da capo, from the head: back to the very beginning. D.S., dal segno: back to the sign. Fine: the end. And Coda, the tail: at To Coda, jump to the coda sign.', c(71, 'ht')),
-  ('B', 'The rule: follow the map in order. After a jump, stop at the first Fine you meet, or jump at To Coda.', c(71, 'rule'))]),
+  ('B', 'The rule: follow the map in order. After a jump, stop at the first ⟨Fine⟩ you meet, or jump at To ⟨Coda⟩.', c(71, 'rule'))]),
  ('Example: one repeat sign', [
   ('B', 'B ends with a repeat sign, and there is no start sign. In what order do you play? Pause and try.', c(72, 'ex1')),
   ('pause', 4, c(72, 'ex1')),
@@ -611,7 +620,7 @@ NEW['T8'] = ('Repeats and road signs', [
  ('Example: D.C. al Fine', [
   ('B', 'Play straight through to D. D.C. sends you back to the head. Where do you stop?', c(73, 'ex3')),
   ('pause', 4, c(73, 'ex3')),
-  ('P', 'At Fine: A, B, C, D, A, B.', c(73, 'ex3', reveal=True))]),
+  ('P', 'At ⟨Fine⟩: A, B, C, D, A, B.', c(73, 'ex3', reveal=True))]),
  ('Example: D.S. al Coda', [
   ('B', 'Play through to D, ignoring To Coda the first time. D.S. sends you back to the sign. Then play on to To Coda, and jump. Pause and try.', c(73, 'ex4')),
   ('pause', 5, c(73, 'ex4')),
@@ -623,13 +632,16 @@ CH['T8'] = NEW['T8']
 # ---- Part III Expression 1–5 (her 10 Nov: "응": the same pass, with audio) ----
 NEW['E1'] = ('Loud and soft', [
  ('The secret', [
+  ('P', 'At the library I have to whisper, and at the park I can shout as loud as I like.', c(76, 'lead')),
+  ('B', 'Quite right, and you choose without thinking. Music asks you to choose too.', c(76, 'lead')),
   ('P', 'Can music whisper?', c(76, 'lead')),
   ('B', 'It can whisper, chat or shout, Clara. Small Italian words tell you which: the dynamics. Six steps, from very soft to very loud.', c(76, 'hero')),
-  ('B', 'Pianissimo, very soft. Piano, soft. Mezzo-piano, half soft. Mezzo-forte, half loud. Forte, loud. Fortissimo, very loud.', c(76, 'hero')),
+  ('B', 'Pianissimo, very soft. ⟨Piano⟩, soft. Mezzo-piano, half soft. Mezzo-forte, half loud. ⟨Forte⟩, loud. Fortissimo, very loud.', c(76, 'hero')),
   ('piano', 'pp:C4 p:C4 mp:C4 mf:C4 f:C4 ff:C4', c(76, 'hero')),
   ('B', 'P is soft, f is loud, and m, mezzo, means half. And a sign lasts until the next one arrives.', c(76, 'xlate'))]),
  ('Example: mp or mf?', [
   ('B', 'Which is louder: mp or mf? Pause and think.', c(76, 'ex1')), ('pause', 3, c(76, 'ex1')),
+  ('P', 'Mezzo-piano? Mezzo sounds big and loud.', c(76, 'ex1')), ('B', 'It does sound grand, but mezzo only means half. Half of what?', c(76, 'ex1')),
   ('P', 'Mezzo-forte, half loud. It is louder than half soft.', c(76, 'ex1', reveal=True)),
   ('piano', 'mp:E4 mp:E4 | mf:E4 mf:E4', c(76, 'ex1', reveal=True))]),
  ('Growing and fading', [
@@ -642,11 +654,11 @@ NEW['E1'] = ('Loud and soft', [
   ('piano', 'p:C5 p:G4 p:E4 p:G4 ff:C5*2 | f:C5 pp:C5 pp:G4*2', c(77, 'ex2', reveal=True))]),
  ('Example: the hairpins', [
   ('B', 'Follow the hairpins. Where does it start, and what happens?', c(77, 'ex3')), ('pause', 3, c(77, 'ex3')),
-  ('P', 'It starts piano, grows into forte, then fades.', c(77, 'ex3', reveal=True)),
+  ('P', 'It starts ⟨piano⟩, grows into ⟨forte⟩, then fades.', c(77, 'ex3', reveal=True)),
   ('piano', 'p:C4 mp:C4 mf:G4 f:G4 | f:A4 mf:A4 p:G4*2', c(77, 'ex3', reveal=True))]),
  ('Example: the loudest note', [
   ('B', 'Now find the loudest note. Start mezzo-piano and follow the hairpin.', c(78, 'ex4')), ('pause', 4, c(78, 'ex4')),
-  ('P', 'The first A in bar two, at forte. Then it fades all the way to piano.', c(78, 'ex4', reveal=True))]),
+  ('P', 'The first A in bar two, at ⟨forte⟩. Then it fades all the way to ⟨piano⟩.', c(78, 'ex4', reveal=True))]),
  ('Try it', [
   ('B', 'Try it: play Middle C six ways, from pianissimo to fortissimo. Use the weight of your arm, not by hitting harder. Then come back down.', c(78, 'try10')),
   ('piano', 'pp:C4 p:C4 mp:C4 mf:C4 f:C4 ff:C4 | f:C4 mf:C4 mp:C4 p:C4 pp:C4', c(78, 'try10')),
@@ -658,9 +670,11 @@ CH['E1'] = NEW['E1']
 
 NEW['E2'] = ('Touch: smooth, short, strong', [
  ('The secret', [
+  ('P', 'This morning I tiptoed past my sleeping brother, then stamped all the way up the stairs.', c(79, 'lead')),
+  ('B', 'Same feet, two different touches. Your fingers can do the same on the keys.', c(79, 'lead')),
   ('P', 'Can the same notes sound different?', c(79, 'lead')),
   ('B', 'Completely different, Clara. Small marks tell your fingers how to touch the keys. A curve: join them, legato.', c(79, 'hero')),
-  ('piano', 'E4 D4 C4 D4', c(79, 'hero')),
+  ('piano', 'E4_ D4_ C4_ D4*1.5', c(79, 'hero')),
   ('B', 'Dots: short and detached, staccato.', c(79, 'hero')), ('piano', 'E4! D4! C4! D4!', c(79, 'hero')),
   ('B', 'Lines: hold the full length, leaning a little, tenuto. And arrows: a stronger start, the accent.', c(79, 'hero')),
   ('piano', 'mf:E4 mf:D4 mf:C4 mf:D4 | f:E4 p:D4 f:C4 p:D4', c(79, 'hero')),
@@ -672,20 +686,22 @@ NEW['E2'] = ('Touch: smooth, short, strong', [
  ('Slurs and phrases', [
   ('B', 'A curve over different notes is a slur: join them, then lift at its end, like a breath. A long slur over a whole line is a phrase: one musical sentence.', c(80, 'xlate')),
   ('B', 'Ode to Joy has two long phrases. Lift your hand only at the end of each, like a singer taking a breath.', c(80, 'xlate')),
-  ('piano', 'E4 E4 F4 G4 G4 F4 E4 D4 C4 C4 D4 E4 E4*1.5 D4/2 D4*2', c(80, 'xlate'))]),
+  ('piano', 'E4_ E4_ F4_ G4_ G4_ F4_ E4_ D4 | C4_ C4_ D4_ E4_ E4*1.5_ D4/2_ D4*2', c(80, 'xlate'))]),
  ('Example: which notes are short?', [
   ('B', 'Bar one has a curve. Bar two has dots, and one other mark. Which notes are short?', c(80, 'ex2')), ('pause', 4, c(80, 'ex2')),
   ('P', 'The two dotted Gs. The third G has an accent: strong, but full length.', c(80, 'ex2', reveal=True)),
-  ('piano', 'C4 D4 E4 F4 | G4! G4! f:G4 R', c(80, 'ex2', reveal=True))]),
+  ('piano', 'C4_ D4_ E4_ F4 | G4! G4! f:G4 R', c(80, 'ex2', reveal=True))]),
  ('Two-note slurs', [
   ('B', 'A slur over just two notes is a little sigh: drop into the first, then lift off the second, lighter and shorter. Drop, lift.', c(81, 'xlate')),
-  ('piano', 'f:E4 p:D4! | f:G4 p:F4! | f:E4 p:D4!', c(81, 'xlate')),
+  ('piano', 'f:E4_ p:D4! | f:G4_ p:F4! | f:E4_ p:D4!', c(81, 'xlate')),
   ('B', 'And some words describe the mood: dolce, sweetly. Cantabile, singing. Leggiero, lightly. Maestoso, majestically.', c(81, 'xlate2')),
   ('B', 'Legato is walking: one foot leaves the ground as the other lands. Staccato is hopping on hot sand. Until next time, Clara.', c(81, 'think')), ('P', 'Goodbye!', c(81, 'think'))])])
 CH['E2'] = NEW['E2']
 
 NEW['E3'] = ('Speed words', [
  ('The secret', [
+  ('P', 'When I am late for school I run, and on Sundays I stroll.', c(82, 'lead')),
+  ('B', 'Then you already know about tempo, Clara: the same walk at different speeds.', c(82, 'lead')),
   ('P', 'How do I know how fast to play?', c(82, 'lead')),
   ('B', 'A word at the top of the music tells you, Clara, usually in Italian. Largo is very slow. Adagio, slow. Andante, a walking pace. Moderato, moderate. Allegro, fast and lively. Presto, very fast.', c(82, 'hero')),
   ('count', {'beats': 'X@60 x@60 x@60 x@60', 'say': '1 2 3 4'}, c(82, 'hero')),
@@ -696,6 +712,7 @@ NEW['E3'] = ('Speed words', [
   ('B', 'Often there is a number too. Crotchet equals seventy-six means seventy-six beats in one minute. Set a metronome to seventy-six: each click is one beat.', c(83, 'xlate'))]),
  ('Example: crotchet equals sixty', [
   ('B', 'How fast is crotchet equals sixty? Pause and think.', c(83, 'ex1')), ('pause', 3, c(83, 'ex1')),
+  ('P', 'Sixty beats! That must be very fast.', c(83, 'ex1')), ('B', 'Sixty in a whole minute, Clara. How many seconds are there in a minute?', c(83, 'ex1')),
   ('P', 'Sixty beats in a minute, and a minute has sixty seconds. One beat every second!', c(83, 'ex1', reveal=True)),
   ('count', {'beats': 'X@60 x@60 x@60 x@60', 'say': '1 2 3 4'}, c(83, 'ex1', reveal=True))]),
  ('Changing speed', [
@@ -707,12 +724,15 @@ NEW['E3'] = ('Speed words', [
  ('Example: the fermata', [
   ('B', 'How long do you hold the minim with the fermata?', c(84, 'ex3')), ('pause', 3, c(84, 'ex3')),
   ('P', 'Longer than two beats, until it feels finished. Then go on.', c(84, 'ex3', reveal=True)),
+  ('B', 'Like the deep breath before you blow out your birthday candles: everyone waits, and then the moment comes.', c(84, 'ex3', reveal=True)),
   ('B', 'Players often slow down into the end of Twinkle, Twinkle, then wait on the last note. A rit. is a car braking gently at the lights; a tempo is driving off again. Until next time, Clara.', c(84, 'yk')),
   ('P', 'Goodbye!', c(84, 'yk'))])])
 CH['E3'] = NEW['E3']
 
 NEW['E4'] = ('The pedals', [
  ('The secret', [
+  ('P', 'When I clap in the big school hall, the sound keeps going after my hands stop.', c(85, 'lead')),
+  ('B', 'A piano can do that too, with a little help from your foot.', c(85, 'lead')),
   ('P', 'What are the pedals for?', c(85, 'lead')),
   ('B', 'Most pianos have three, Clara. The left one, the soft pedal, makes the sound gentler. The right one, the sustain pedal, keeps the notes ringing after your fingers let go.', c(85, 'hero')),
   ('B', 'Inside the piano, each string has a felt damper resting on it. Let go of a key and the damper stops the string. The sustain pedal lifts every damper at once, so the strings ring on.', c(85, 'xlate')),
@@ -720,6 +740,7 @@ NEW['E4'] = ('The pedals', [
   ('B', 'The soft pedal is written u.c., una corda, and let up at t.c. The sustain pedal is written Ped.', c(85, 'xlate2'))]),
  ('Example: which pedal?', [
   ('B', 'Which pedal is Ped.? Which is u.c.? And what does t.c. ask? Pause and think.', c(86, 'ex1')), ('pause', 4, c(86, 'ex1')),
+  ('P', 'Ped. is the soft pedal?', c(86, 'ex1')), ('B', 'Not quite. The soft pedal is the left one, written u.c. Ped. keeps the notes ringing.', c(86, 'ex1')),
   ('P', 'Ped. is the right pedal, u.c. the left, and t.c. means let the left pedal up.', c(86, 'ex1', reveal=True))]),
  ('Writing the sustain pedal', [
   ('B', 'Down at Ped., up at the star. Or a bracket: the notch is a quick change, up and down again. Heel on the floor, press with the ball of your foot. Play first, then pedal.', c(86, 'xlate'))]),
@@ -736,6 +757,8 @@ CH['E4'] = NEW['E4']
 
 NEW['E5'] = ('Ornaments', [
  ('The secret', [
+  ('P', 'Grandma puts sprinkles on top of my birthday cake. The cake is the same, but it sparkles.', c(88, 'lead')),
+  ('B', 'Music has sprinkles too. Look at this one.', c(88, 'lead')),
   ('P', 'What is that little tr above the note?', c(88, 'lead')),
   ('B', 'A trill, Clara. An ornament: a small sign that stands for a quick burst of notes around the main note.', c(88, 'hero')),
   ('piano', 'D5/4 E5/4 D5/4 E5/4 D5/4 E5/4 D5/4 E5/4 C5*2', c(88, 'hero')),
@@ -748,6 +771,7 @@ NEW['E5'] = ('Ornaments', [
   ('piano', 'D5/4 C5/4 D5*1.5 | E5/4 D5/4 C5/4 D5/4 D5 C5*2', c(89, 'xlate'))]),
  ('Example: a lower mordent on G', [
   ('B', 'A lower mordent on G. Which next-door note does it borrow? Pause and think.', c(89, 'ex1')), ('pause', 3, c(89, 'ex1')),
+  ('P', 'G, A, G!', c(89, 'ex1')), ('B', 'That would be an upper mordent, with the note above. A lower mordent goes down.', c(89, 'ex1')),
   ('P', 'The note below G: F. G, F, G!', c(89, 'ex1', reveal=True)),
   ('piano', 'G4/4 F4/4 G4*1.5', c(89, 'ex1', reveal=True))]),
  ('Example: the trill', [
