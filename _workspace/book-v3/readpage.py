@@ -176,7 +176,7 @@ for c in CH:
             bars = [b[3] for b in beats if b[1] == 'X'] or [0]
             ln['lens'] = {'k': 'rhy', 'beats': beats, 'ands': ands, 'notes': notes, 'bars': bars, 'n': round(cum[-1] / bsec, 3), 'at': [b[0] for b in beats], 'full': True}
 for c in CH:
-    if c['k'] not in _S.CH or not c['k'].startswith('P'): continue
+    if c['k'] not in _S.CH or not c['k'].startswith(('P', 'S')): continue
     sc = [ls for _, ls in _S.CH[c['k']][1]]
     for k, sl in zip(c.get('clips', []), sc):
         if len(sl) != len(k['l']): print('lens: line mismatch', c['k'], k['t']); continue

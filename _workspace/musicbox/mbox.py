@@ -8,7 +8,9 @@ F = lambda b, f: dict(b, f=f)   # a bar with its own fingers
 OOM = {'C': 'C G C G', 'G': 'G D G D', 'F': 'F C F C'}
 O = lambda b: dict(b, lp=OOM[b['l']])
 RK = {'C': 'C - G -', 'G': 'G - D -', 'F': 'F - C -'}
-Rock = lambda b: dict(b, lp=RK[b['l']])   # bottom, then top: a slow rocking left hand   # oom-pah: the root, then the other key, the hand never moves
+Rock = lambda b: dict(b, lp=RK[b['l']])
+WZ = {'C': 'C G G', 'G': 'G D D', 'F': 'F C C'}
+Waltz = lambda b: dict(b, lp=WZ[b['l']])   # oom-pah-pah: the root on ONE, the other key on two and three   # bottom, then top: a slow rocking left hand   # oom-pah: the root, then the other key, the hand never moves
 LH2 = ('C with finger 5, G with the thumb.', {'c': 5, 'g': 1})
 LH3 = ('C with 5, F with 2, G with the thumb.', {'c': 5, 'f': 2, 'g': 1})
 S = [
@@ -90,6 +92,11 @@ S = [
       how='New: oom-pah in the song. The box names the chord; then its keys in turn, one a beat.',
       g=[[O(B('G E G -', 'C', 'This old man, -')), O(B('G E G -', 'C', 'he played one, -'))], [O(B('A G F E', 'F', 'he played knick- knack')), O(B('D E F -', 'G', 'on my thumb, -'))],
          [O(B('E.F G C C.C', 'C', 'with.a knick knack pad.dy')), O(B('C D.E F G', 'C', 'whack, give.a dog a'))], [O(B('G D D F', 'G', 'bone, this old man')), dict(B('E.E D C -', 'C', 'came.roll ing home -'), lp='C - - -')]]),   # two bars a line: room for the split boxes
+ dict(t='The Blue Danube', id='danube', meter='3/4', job='Johann Strauss\u2019s most famous waltz, 1867. The left hand is the dance: ONE two three.', lh=('C: C then G, G (5, 1, 1). G: G then D, D (1, 4, 4).', {'c': 5, 'd': 4, 'g': 1}),
+      how='New: the waltz. The box names the chord: play it on ONE, then its other key twice. Oom-pah-pah.',
+      g=[[B('r r C', '', '- - -'), Waltz(B('C E G', 'C', '- - -')), Waltz(B('G - -', 'C', '- - -')), Waltz(B('r G G', 'C', '- - -'))],
+         [Waltz(B('r E E', 'C', '- - -')), Waltz(B('r r C', 'C', '- - -')), Waltz(B('C E G', 'C', '- - -')), Waltz(B('G - -', 'C', '- - -'))],
+         [Waltz(B('r G G', 'C', '- - -')), Waltz(B('r F F', 'G', '- - -')), Waltz(B('E - -', 'C', '- - -')), dict(B('C - -', 'C', '- - -'), lp='C - -')]]),
 ]
 def mary4(i):
     d = json.load(open('let1.json')); d.update({'title': 'Mary, Four Ways', 'label': f'Song {i}', 'lesson': i, 'id': 'mary'})

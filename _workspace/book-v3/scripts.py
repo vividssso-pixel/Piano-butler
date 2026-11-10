@@ -687,7 +687,7 @@ NEW['E1'] = ('Loud and soft', [
   ('B', 'Now, a story. A long time ago, a composer called Haydn noticed that people sometimes dozed off at his concerts.', c(78, 'yk')),
   ('P', 'Fell asleep? At a concert?', c(78, 'yk')),
   ('B', 'Some of them even snored. Very rude. So he wrote a tune that tiptoes along, very softly. Then it comes again, even softer. Eyes start to close. And then...', c(78, 'yk')),
-  ('piano', 'p:C4/2 p:C4/2 p:E4/2 p:E4/2 p:G4/2 p:G4/2 p:E4 | pp:C4/2 pp:C4/2 pp:E4/2 pp:E4/2 [ff G3 B3 D4 G4]', c(78, 'yk')),
+  ('piano', 'p:C4/2 p:C4/2 p:E4/2 p:E4/2 p:G4/2 p:G4/2 p:E4 p:F4/2 p:F4/2 p:D4/2 p:D4/2 p:B3/2 p:B3/2 p:G3 | pp:C4/2 pp:C4/2 pp:E4/2 pp:E4/2 pp:G4/2 pp:G4/2 pp:E4 pp:F4/2 pp:F4/2 pp:D4/2 pp:D4/2 pp:B3/2 pp:B3/2 [ff G3 B3 D4 F4 G4]', c(78, 'yk')),
   ('P', 'Ha! The dragon woke up!', c(78, 'yk')),
   ('B', 'Not a single snore for the rest of the evening. That’s why they call it the Surprise Symphony. Just remember one thing: louder doesn’t mean faster. A dragon can walk slowly too. Until next time, Clara.', c(78, 'watch')),
   ('P', 'Bye, Butler!', c(78, 'watch'))])])
@@ -838,6 +838,19 @@ LESSON = {   # her 11 Nov: not everyone has a teacher, so the Butler is the teac
  'E3': 'Your little task for next time: find the speed word at the top of a piece. What does it say?',
  'E4': 'Your little task for next time: lift the lid, press the right pedal, and watch the dampers lift.',
  'E5': 'Your little task for next time: play a trill slowly, then fast. Can you count the notes?',
+ 'S1': 'Your little task for next time: build the G major scale on your own, and say the secret knock as you play it.',
+ 'S2': 'Your little task for next time: play C major, then C minor, and tell someone at home which one sounds like rain.',
+ 'S3': 'Your little task for next time: find the key signature in a piece, and name every sharp or flat in it, in order.',
+ 'S4': 'Your little task for next time: be a detective. Pick a piece, and find its key from the signature, the clue notes and the last note.',
+ 'S5': 'Your little task for next time: say the circle out loud, right and then left, without looking.',
+ 'H1': 'Your little task for next time: build a triad on every white key, with the cake rule.',
+ 'H2': 'Your little task for next time: play C major, C minor, C diminished and C augmented, and give each one a weather.',
+ 'H3': 'Your little task for next time: play one, four and five in C, and sing a nursery tune over them.',
+ 'H4': 'Your little task for next time: play C, F and G chords moving your hand as little as possible.',
+ 'H5': 'Your little task for next time: play C seven, then C major seven, and say which is bluesy and which is dreamy.',
+ 'H6': 'Your little task for next time: play the shimmer, C, sus four, C, sus two, C, slowly.',
+ 'H7': 'Your little task for next time: build C nine with both hands, leaving out the fifth.',
+ 'H8': 'Your little task for next time: play C, C slash B, A minor, and let the bass walk down.',
 }
 for _k, _q in LESSON.items():
     if _k not in CH: continue
