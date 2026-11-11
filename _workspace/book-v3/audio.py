@@ -65,6 +65,10 @@ def piano_ped(spec):   # her 11 Nov: the sustain pedal you can hear. 'Ped' down,
         w = g * tone(fs, round(dur, 2)); i = int(SR * t0); out[i:i + len(w)] += w[:len(out) - i]
     return out
 def piano(spec):
+    if '||' in spec:   # her 11 Nov: two voices at once (a tune over its bass), each on the same 0.62 s slot grid
+        vs = [piano(x) for x in spec.split('||')]; L = max(len(v) for v in vs); out = np.zeros(L)
+        for v in vs: out[:len(v)] += v * .8
+        return out
     if 'Ped' in spec.split(): return piano_ped(spec)
     parts = []
     for tok in re.findall(r'\[[^\]]+\]|\S+', spec):
@@ -242,7 +246,7 @@ def render(lines, timed=None, first=False, last=False):
             if kind == 'pause': item['text'] = 'Pause and try.'
             if kind == 'count': item['who'] = 'piano'; item['notes'] = [round(t + x, 2) for x in ctimes]
             if kind == 'piano':   # one note every 0.62 s (a chord or bar gap counts as its own slot)
-                toks = re.findall(r'\[[^\]]+\]|\S+', val); tt = t; item['notes'] = []
+                toks = re.findall(r'\[[^\]]+\]|\S+', val.split('||')[0]); tt = t; item['notes'] = []
                 for tok in toks:
                     step = 1.45 if tok.startswith('[') else (.25 if tok == '|' else .62 * _dur(tok)[1])
                     if tok != '|': item['notes'].append(round(tt, 2))
