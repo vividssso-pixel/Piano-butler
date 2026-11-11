@@ -2327,8 +2327,10 @@ const NOTE_NAMES_DRILL = {
   Learn: NoteNamesLearn,
 };
 
+const NO_LEARN_TAB = true;
 // Wrapper for a concept (Learn + Drill). Level/mode/tab live in App so they can sync to the URL.
 function ConceptView({ concept, tab: tabIn, level, mode, locked, onChange, drillOnly }) {   // Phase 534: drillOnly = opened from Home: no Learn tab (the lessons are on the Home)
+  drillOnly = drillOnly || NO_LEARN_TAB;   // her 11 Nov: the Handbook is the lesson now; a drill opens straight on its questions (the Learn code stays, hidden)
   const tab = drillOnly ? 'drill' : tabIn;
   const lv = concept.levels.find(l => l.n === level) || concept.levels[0];
   const Learn = concept.Learn;
@@ -16895,6 +16897,539 @@ function ComposersHero() {
 const COMPOSERS_DRILL = { id: 'composers', label: 'Composers through Time' };   // its levels, lesson and questions: Phase 482 (Object.assign below)
 
 const SAC_DRILL = { id: 'accidentals', label: 'Accidentals' };   // Phase 472: filled in with the chapter's code
+// ─── Handbook drills (her 11 Nov 2026) ─────────────────────────────────────────────
+// One drill for each Handbook chapter that had none, so every chapter ends: read it → Workbook → a 10-question drill.
+// The Learn side is the Handbook itself now; each drill's Learn tab only points to its chapter.
+// Every question: { key, prompt: [en, ko], show: { big?: [en, ko] | string, chords?: [{ notes, label }], clef?, sound? },
+// answer: id, choices: [id], labels: { id: [en, ko] } }. Choices are compared by id; labels translate them.
+const hbL = (p) => (Array.isArray(p) ? t(p[0], p[1]) : p);
+function hbPack(prompt, show, answer, others, key) {
+  const all = [answer, ...others].map(x => (Array.isArray(x) ? x : [x, x]));
+  const labels = {}; all.forEach(x => { labels[x[0]] = x; });
+  return { key: key || (all[0][0] + '|' + (show && show.big ? hbL(show.big) : '')), prompt, show, answer: all[0][0], choices: shuffle(all.map(x => x[0])), labels };
+}
+// a bank of [term, meaning] pairs: show one side, choose the other
+function hbTerms(bank, dir) {
+  return () => {
+    const it = pick(bank), others = sampleN(bank.filter(x => x !== it), 3);
+    return dir === 'mt'
+      ? hbPack(['Which word means this?', '어떤 말이 이 뜻일까요?'], { big: it[1], small: true }, it[0], others.map(x => x[0]), it[0][0])
+      : hbPack(['What does it mean?', '무슨 뜻일까요?'], { big: it[0] }, it[1], others.map(x => x[1]), it[0][0]);
+  };
+}
+// true / false statements: [[en, ko], true|false]
+const HB_TF = { T: ['True', '맞아요'], F: ['False', '틀려요'] };
+function hbTrueFalse(bank) {
+  return () => { const it = pick(bank), a = it[1] ? HB_TF.T : HB_TF.F, b = it[1] ? HB_TF.F : HB_TF.T;
+    const q = hbPack(['True or false?', '맞을까요, 틀릴까요?'], { big: it[0], small: true }, a, [b], it[0][0]);
+    q.choices = [HB_TF.T[0], HB_TF.F[0]]; return q; };
+}
+// scenario → best choice: [[situation en, ko], [best en, ko], [[wrong en, ko], ...]]
+function hbScenes(bank, prompt) {
+  return () => { const it = pick(bank); return hbPack(prompt, { big: it[0], small: true }, it[1], sampleN(it[2], 3), it[0][0]); };
+}
+
+// ── note helpers: a note is { d, acc } (d = staff step, 28 = middle C) ──
+const HB_ROOTS = [['C', 0], ['D', 0], ['E', 0], ['F', 0], ['G', 0], ['A', 0], ['B', -1]];
+function hbRoot(r) { return { d: 28 + STAFF_LETTERS.indexOf(r[0]), acc: r[1] }; }
+function hbUp(n, k, q) { return ivBuild(n, k, q); }                 // k = interval number (2..8), q = 'M' | 'm' | 'P' | 'A' | 'd'
+function hbHigh(n, k, q) { const x = ivBuild(n, k, q); return { d: x.d + 7, acc: x.acc }; }  // the same interval an octave higher (9, 11, 13)
+const hbNm = (n) => ivName(n);
+const hbOk = (ns) => ns.every(n => Math.abs(n.acc) <= 1);
+const hbRootName = (r) => prettyNote(r[0] + (r[1] < 0 ? 'b' : r[1] > 0 ? '#' : ''));
+function hbChordSound(notes) { return () => playChord(notes, 'both'); }
+function hbSeq(chords, gap = 0.75) {   // play chords one after another
+  return () => { chords.forEach((c, i) => setTimeout(() => playChord(c, 'block'), i * gap * 1000)); };
+}
+const hbKeyName = (k, minor) => t(prettyNote(k) + (minor ? ' minor' : ' major'), prettyNote(k) + (minor ? ' 단조' : ' 장조'));
+
+// ── T7 Off the beat ──
+const HB_OFFBEAT_TERMS = [
+  [['syncopation', '당김음 (싱코페이션)'], ['The accent lands off the beat, between the strong beats', '강세가 박 사이, 약한 곳에 와요']],
+  [['swing', '스윙'], ['Pairs of quavers played long–short', '8분음표 두 개를 길게–짧게 연주해요']],
+  [['hemiola', '헤미올라'], ['Two bars of 3/4 feel like one big bar of 3/2', '3/4 두 마디가 3/2 한 마디처럼 느껴져요']],
+  [['rubato', '루바토'], ['Stretching and pushing the time, freely, for expression', '표현을 위해 시간을 자유롭게 늘이고 당겨요']],
+  [['polyrhythm', '폴리리듬'], ['Two different beats at once, such as 3 against 2', '두 가지 박을 동시에, 예를 들면 3 대 2']],
+  [['straight', '스트레이트'], ['Pairs of quavers played exactly even', '8분음표 두 개를 똑같은 길이로']],
+];
+function hbSwingQ() {
+  const swing = Math.random() < 0.5, ds = [30, 32, 34, 32, 31, 33, 35, 33].map(d => (Math.random() < 0.3 ? d + 1 : d));
+  const notes = ds.map((d, i) => ({ d, acc: 0, dur: swing ? (i % 2 ? 1 / 3 : 2 / 3) : 0.5 }));
+  return hbPack(['Listen. Straight or swing?', '들어 보세요. 스트레이트일까요, 스윙일까요?'], { sound: () => playMelody(notes, 92), big: ['♪ ♪ ♪ ♪', '♪ ♪ ♪ ♪'] },
+    swing ? ['Swing', '스윙'] : ['Straight', '스트레이트'], [swing ? ['Straight', '스트레이트'] : ['Swing', '스윙']], (swing ? 's' : 'n') + ds.join(''));
+}
+const HB_OFFBEAT_TF = [
+  [['In syncopation the strong beats are made weak and the weak places strong.', '싱코페이션에서는 강박이 약해지고 약한 곳이 강해져요.'], true],
+  [['Swing quavers are written differently from straight quavers.', '스윙 8분음표는 스트레이트 8분음표와 다르게 적어요.'], false],
+  [['A hemiola often comes just before a cadence in 3/4.', '헤미올라는 3/4에서 마침꼴 바로 앞에 자주 나와요.'], true],
+  [['Rubato means the pulse disappears completely.', '루바토는 박이 완전히 사라진다는 뜻이에요.'], false],
+  [['A tie across the beat is a common way to write syncopation.', '박을 가로지르는 붙임줄은 싱코페이션을 적는 흔한 방법이에요.'], true],
+  [['In 3 against 2, both hands start together on beat 1.', '3 대 2에서 두 손은 1박에 함께 시작해요.'], true],
+  [['Swing is played long–short on every crotchet.', '스윙은 모든 4분음표를 길게–짧게 연주해요.'], false],
+];
+const HB_OFFBEAT_DRILL = { levels: [
+  { n: 1, label: 'Off the beat: name it', time: 10, gen: hbTerms(HB_OFFBEAT_TERMS, 'mt') },
+  { n: 2, label: 'Straight or swing? (by ear)', time: 9, gen: hbSwingQ },
+  { n: 3, label: 'Off the beat: true or false', time: 12, gen: hbTrueFalse(HB_OFFBEAT_TF) },
+] };
+
+// ── E4 The pedals ──
+const HB_PEDAL_TERMS = [
+  [['Ped.', 'Ped.'], ['Press the sustain (right) pedal down', '댐퍼(오른쪽) 페달을 밟아요']],
+  [['* (star)', '* (별표)'], ['Let the sustain pedal up', '댐퍼 페달을 떼요']],
+  [['a bracket line under the notes', '음표 아래의 괄호 선'], ['Pedal down at the start of the line, up at the end', '선이 시작할 때 밟고 끝날 때 떼요']],
+  [['a notch in the pedal line', '페달 선의 꺾인 곳'], ['Change the pedal: up and straight down again', '페달 바꾸기: 떼고 바로 다시 밟아요']],
+  [['una corda (u.c.)', '우나 코르다 (u.c.)'], ['Use the soft (left) pedal', '소프트(왼쪽) 페달을 써요']],
+  [['tre corde (t.c.)', '트레 코르데 (t.c.)'], ['Let the soft pedal up', '소프트 페달을 떼요']],
+  [['con pedale', '콘 페달레'], ['With the pedal', '페달을 써서']],
+  [['senza pedale', '센차 페달레'], ['Without the pedal', '페달 없이']],
+  [['sostenuto (middle pedal)', '소스테누토 (가운데 페달)'], ['Holds only the notes already pressed down', '이미 누르고 있는 음만 이어 줘요']],
+];
+const HB_PEDAL_TF = [
+  [['Change the pedal when the harmony changes.', '화음이 바뀔 때 페달을 바꿔요.'], true],
+  [['Keep the pedal down through every chord change for a smoother sound.', '더 매끄럽게 들리도록 화음이 바뀌어도 페달을 계속 밟고 있어요.'], false],
+  [['Play the new chord first, then change the pedal: up and straight down.', '새 화음을 먼저 치고, 그다음 페달을 바꿔요: 떼고 바로 밟기.'], true],
+  [['The soft pedal makes the notes last longer.', '소프트 페달은 음을 더 길게 이어 줘요.'], false],
+  [['The sustain pedal lifts every damper off the strings.', '댐퍼 페달은 모든 댐퍼를 현에서 들어 올려요.'], true],
+  [['The sustain pedal is the one on the left.', '댐퍼 페달은 왼쪽 페달이에요.'], false],
+  [['Changing the pedal at the exact moment you play the new chord can blur it with the old one.', '새 화음을 치는 바로 그 순간에 페달을 바꾸면 앞 화음과 섞일 수 있어요.'], true],
+];
+const HB_PEDAL_DRILL = { levels: [
+  { n: 1, label: 'Pedal signs and words', time: 10, gen: hbTerms(HB_PEDAL_TERMS, 'tm') },
+  { n: 2, label: 'Which sign or word?', time: 10, gen: hbTerms(HB_PEDAL_TERMS, 'mt') },
+  { n: 3, label: 'Using the pedal: true or false', time: 12, gen: hbTrueFalse(HB_PEDAL_TF) },
+] };
+
+// ── E5 Ornaments ──
+const HB_ORN_TERMS = [
+  [['trill (tr)', '트릴 (tr)'], ['The note and the one above, back and forth, fast', '그 음과 바로 위 음을 빠르게 번갈아요']],
+  [['upper mordent', '윗모르덴트'], ['Note, the one above, note: one quick flick', '음, 위 음, 음: 한 번 재빨리']],
+  [['lower mordent', '아랫모르덴트'], ['Note, the one below, note', '음, 아래 음, 음']],
+  [['turn', '턴'], ['Above, note, below, note', '위, 음, 아래, 음']],
+  [['acciaccatura', '아치아카투라'], ['A tiny note with a slash: crushed in as fast as you can', '빗금 있는 작은 음: 재빨리 끼워 넣어요']],
+  [['appoggiatura', '아포자투라'], ['A tiny note without a slash: it leans, taking about half the main note', '빗금 없는 작은 음: 기대듯, 본음 길이의 절반쯤']],
+];
+function hbOrnWritten() {
+  const L = ['C', 'D', 'E', 'F', 'G', 'A', 'B'], i = 1 + Math.floor(Math.random() * 5), n = L[i], up = L[i + 1], dn = L[i - 1];
+  const pats = [
+    [['upper mordent', '윗모르덴트'], [n, up, n].join(' ')],
+    [['lower mordent', '아랫모르덴트'], [n, dn, n].join(' ')],
+    [['turn', '턴'], [up, n, dn, n].join(' ')],
+    [['trill', '트릴'], [n, up, n, up, n, up, n].join(' ')],
+  ];
+  const it = pick(pats);
+  return hbPack([t('In C major: how do you play it on ' + n + '?', 'C 장조에서 ' + n + '에서는 어떻게 칠까요?'), t('In C major: how do you play it on ' + n + '?', 'C 장조에서 ' + n + '에서는 어떻게 칠까요?')], { big: it[0] },
+    it[1], pats.filter(p => p !== it).map(p => p[1]), it[0][0] + n);
+}
+const HB_ORN_TF = [
+  [['A trill, mordent or turn begins on the beat.', '트릴, 모르덴트, 턴은 박 위에서 시작해요.'], true],
+  [['An acciaccatura is played as quickly as possible.', '아치아카투라는 최대한 재빨리 연주해요.'], true],
+  [['An appoggiatura is crushed in as fast as possible.', '아포자투라는 최대한 빨리 눌러 넣어요.'], false],
+  [['Ornaments use the next-door notes of the key unless the music adds a sharp or flat.', '꾸밈음은 음악이 올림표나 내림표를 붙이지 않으면 조 안의 바로 옆 음을 써요.'], true],
+  [['Learn the plain notes in time first, then add the ornament.', '먼저 꾸밈 없는 음을 박에 맞게 익히고, 그다음 꾸밈음을 더해요.'], true],
+  [['A lower mordent uses the note above.', '아랫 모르덴트는 위 음을 써요.'], false],
+];
+const HB_ORN_DRILL = { levels: [
+  { n: 1, label: 'Name the ornament', time: 10, gen: hbTerms(HB_ORN_TERMS, 'mt') },
+  { n: 2, label: 'Written out: which notes?', time: 12, gen: hbOrnWritten },
+  { n: 3, label: 'Ornaments: true or false', time: 12, gen: hbTrueFalse(HB_ORN_TF) },
+] };
+
+// ── H5 Seventh chords (her 11 Nov: the old drills had none for this chapter) ──
+const HB_SEVENTHS = {
+  maj7: { f: (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 7, 'M')], keys: '3 + 2 + 3' },
+  '7': { f: (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 7, 'm')], keys: '3 + 2 + 2' },
+  m7: { f: (r) => [r, hbUp(r, 3, 'm'), hbUp(r, 5, 'P'), hbUp(r, 7, 'm')], keys: '2 + 3 + 2' },
+  'ø7': { f: (r) => [r, hbUp(r, 3, 'm'), hbUp(r, 5, 'd'), hbUp(r, 7, 'm')], keys: '2 + 2 + 3' },
+  '°7': { f: (r) => [r, hbUp(r, 3, 'm'), hbUp(r, 5, 'd'), hbUp(r, 7, 'd')], keys: '2 + 2 + 2' },
+};
+function hbSeventh(kind) {
+  return () => {
+    for (let g = 0; g < 40; g++) {
+      const rr = pick(HB_ROOTS.filter(x => x[0] !== 'B')), r = hbRoot(rr), suf = pick(Object.keys(HB_SEVENTHS)), ns = HB_SEVENTHS[suf].f(r);
+      if (!hbOk(ns)) continue;
+      const nm = hbRootName(rr) + suf, others = sampleN(Object.keys(HB_SEVENTHS).filter(x => x !== suf), 3);
+      if (kind === 'name') return hbPack(['Name this seventh chord', '이 7화음의 이름은?'], { chords: [{ notes: ns }], sound: hbChordSound(ns) }, nm, others.map(x => hbRootName(rr) + x), nm);
+      if (kind === 'keys') return hbPack(['Keys in between, black and white: which seventh?', '사이에 있는 건반 수(검은 건반 포함): 어떤 7화음일까요?'], { big: hbRootName(rr) + ': ' + HB_SEVENTHS[suf].keys }, nm, others.map(x => hbRootName(rr) + x), nm + 'k');
+      const sp = (x) => HB_SEVENTHS[x].f(r).map(hbNm).join(' '), opts = others.map(sp).filter(x => x !== sp(suf));
+      if (opts.length < 3 || !others.every(x => hbOk(HB_SEVENTHS[x].f(r)))) continue;
+      return hbPack(['Which notes?', '어떤 음들일까요?'], { big: nm, sound: hbChordSound(ns) }, sp(suf), opts, nm + 's');
+    }
+  };
+}
+const HB_SEVENTH_DRILL = { levels: [
+  { n: 1, label: 'Keys in between: which seventh?', time: 12, gen: hbSeventh('keys') },
+  { n: 2, label: 'Name the seventh chord', time: 14, gen: hbSeventh('name') },
+  { n: 3, label: 'Spell the seventh chord', time: 16, gen: hbSeventh('spell') },
+] };
+
+// ── H6 Colour chords ──
+const HB_COLOURS = {
+  sus2: (r) => [r, hbUp(r, 2, 'M'), hbUp(r, 5, 'P')],
+  sus4: (r) => [r, hbUp(r, 4, 'P'), hbUp(r, 5, 'P')],
+  '5': (r) => [r, hbUp(r, 5, 'P')],
+  '6': (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 6, 'M')],
+  add9: (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbHigh(r, 2, 'M')],
+};
+function hbColour(kind) {
+  return () => {
+    for (let g = 0; g < 30; g++) {
+      const rr = pick(HB_ROOTS), r = hbRoot(rr), suf = pick(Object.keys(HB_COLOURS)), ns = HB_COLOURS[suf](r);
+      if (!hbOk(ns)) continue;
+      const nm = hbRootName(rr) + suf, others = sampleN(Object.keys(HB_COLOURS).filter(s => s !== suf), 3);
+      if (kind === 'name') return hbPack(['Name this chord', '이 화음의 이름은?'], { chords: [{ notes: ns }], sound: hbChordSound(ns) }, nm, others.map(s => hbRootName(rr) + s), nm);
+      const sp = (s) => HB_COLOURS[s](r).map(hbNm).join(' ');
+      return hbPack(['Which notes?', '어떤 음들일까요?'], { big: nm, sound: hbChordSound(ns) }, sp(suf), others.map(sp).filter(x => x !== sp(suf)), nm + 's');
+    }
+  };
+}
+const HB_COLOUR_TF = [
+  [['A sus chord has no 3rd.', 'sus 화음에는 3음이 없어요.'], true],
+  [['In sus4 the 4th takes the place of the 3rd.', 'sus4에서는 4음이 3음 자리를 대신해요.'], true],
+  [['A 5 chord (power chord) is only the root and the 5th.', '5 화음(파워 코드)은 근음과 5음뿐이에요.'], true],
+  [['C6 has the notes C E G A.', 'C6의 음은 C E G A예요.'], true],
+  [['Cadd9 has a 7th in it.', 'Cadd9에는 7음이 들어 있어요.'], false],
+  [['A sus4 chord usually wants to move back to the plain major chord.', 'sus4 화음은 보통 원래 장화음으로 돌아가고 싶어 해요.'], true],
+];
+const HB_COLOUR_DRILL = { levels: [
+  { n: 1, label: 'Name the colour chord', time: 12, gen: hbColour('name') },
+  { n: 2, label: 'Spell the colour chord', time: 14, gen: hbColour('spell') },
+  { n: 3, label: 'Colour chords: true or false', time: 12, gen: hbTrueFalse(HB_COLOUR_TF) },
+] };
+
+// ── H7 The tower: 9, 11, 13 ──
+const HB_TOWER = {
+  '7': (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 7, 'm')],
+  maj7: (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 7, 'M')],
+  '9': (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 7, 'm'), hbHigh(r, 2, 'M')],
+  maj9: (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 7, 'M'), hbHigh(r, 2, 'M')],
+  m9: (r) => [r, hbUp(r, 3, 'm'), hbUp(r, 5, 'P'), hbUp(r, 7, 'm'), hbHigh(r, 2, 'M')],
+  '13': (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 7, 'm'), hbHigh(r, 6, 'M')],
+};
+function hbTowerName() {
+  for (let g = 0; g < 30; g++) {
+    const rr = pick(HB_ROOTS.filter(x => ['C', 'F', 'G', 'D'].includes(x[0]))), r = hbRoot(rr), suf = pick(Object.keys(HB_TOWER)), ns = HB_TOWER[suf](r);
+    if (!hbOk(ns)) continue;
+    const nm = hbRootName(rr) + suf;
+    return hbPack(['Name this chord', '이 화음의 이름은?'], { chords: [{ notes: ns }], sound: hbChordSound(ns) }, nm, sampleN(Object.keys(HB_TOWER).filter(s => s !== suf), 3).map(s => hbRootName(rr) + s), nm);
+  }
+}
+function hbTowerFloor() {
+  const rr = pick(HB_ROOTS), r = hbRoot(rr), fl = pick([[9, 2, 'M'], [11, 4, 'P'], [13, 6, 'M']]);
+  const ans = hbNm(hbUp(r, fl[1], fl[2]));
+  const others = [2, 3, 4, 5, 6, 7].map(k => hbNm(hbUp(r, k, IV_PERFECT[k] ? 'P' : 'M'))).filter(x => x !== ans);
+  return hbPack([t('The ' + fl[0] + 'th of ' + hbRootName(rr) + ' is…', hbRootName(rr) + '의 ' + fl[0] + '음은…'), t('The ' + fl[0] + 'th of ' + hbRootName(rr) + ' is…', hbRootName(rr) + '의 ' + fl[0] + '음은…')],
+    { big: [t('Take 7 away: ' + fl[0] + ' → ' + (fl[0] - 7), '7을 빼요: ' + fl[0] + ' → ' + (fl[0] - 7)), '7을 빼요: ' + fl[0] + ' → ' + (fl[0] - 7)] }, ans, sampleN(others, 3), rr[0] + fl[0]);
+}
+function hbTowerWith() {
+  const rr = pick(HB_ROOTS.filter(x => ['C', 'F', 'G'].includes(x[0]))), r = hbRoot(rr);
+  const set = { '6': HB_COLOURS['6'](r), '13': HB_TOWER['13'](r), add9: HB_COLOURS.add9(r), '9': HB_TOWER['9'](r) };
+  const suf = pick(Object.keys(set)), nm = hbRootName(rr) + suf;
+  return hbPack(['Name the chord (look for the 7th)', '화음 이름은? (7음을 찾아보세요)'], { big: set[suf].map(hbNm).join(' '), sound: hbChordSound(set[suf]) },
+    nm, Object.keys(set).filter(s => s !== suf).map(s => hbRootName(rr) + s), nm + 'w');
+}
+const HB_TOWER_DRILL = { levels: [
+  { n: 1, label: 'Find the floor: 9, 11, 13', time: 12, gen: hbTowerFloor },
+  { n: 2, label: 'Name the tall chord', time: 14, gen: hbTowerName },
+  { n: 3, label: 'With or without the 7th?', time: 14, gen: hbTowerWith },
+] };
+
+// ── H8 Slash chords ──
+function hbSlashMake() {
+  for (let g = 0; g < 40; g++) {
+    const rr = pick(HB_ROOTS), r = hbRoot(rr), minor = Math.random() < 0.35;
+    const tri = [r, hbUp(r, 3, minor ? 'm' : 'M'), hbUp(r, 5, 'P')];
+    const kind = pick(['3rd', '5th', 'colour2', 'colour7']);
+    const bass = kind === '3rd' ? tri[1] : kind === '5th' ? tri[2] : kind === 'colour2' ? hbUp(r, 2, 'M') : hbUp(r, 7, minor ? 'm' : 'M');
+    if (!hbOk([...tri, bass])) continue;
+    const ch = hbRootName(rr) + (minor ? 'm' : '');
+    return { tri, bass, kind, ch, name: ch + '/' + hbNm(bass), inv: kind === '3rd' || kind === '5th' };
+  }
+}
+function hbSlashBass() {
+  const s = hbSlashMake(), others = sampleN(['C', 'D', 'E', 'F', 'G', 'A', 'B', ...s.tri.map(hbNm)].filter((x, i, a) => a.indexOf(x) === i && x !== hbNm(s.bass)), 3);
+  return hbPack(['Which note does the left hand play?', '왼손은 어떤 음을 칠까요?'], { big: s.name }, hbNm(s.bass), others, s.name + 'b');
+}
+function hbSlashJob() {
+  const s = hbSlashMake();
+  return hbPack(['Inversion or colour bass?', '자리바꿈일까요, 색깔 베이스일까요?'], { big: s.name },
+    s.inv ? ['inversion', '자리바꿈'] : ['colour bass', '색깔 베이스'], [s.inv ? ['colour bass', '색깔 베이스'] : ['inversion', '자리바꿈']], s.name + 'j');
+}
+function hbSlashName() {
+  const s = hbSlashMake(), all = [s.tri[0], s.tri[1], s.tri[2], hbUp(s.tri[0], 2, 'M')].map(hbNm);
+  const others = [...new Set([...s.tri.slice(1).map(n => s.ch + '/' + hbNm(n)), s.ch + '/' + all[3], s.ch + '/' + hbNm(hbUp(s.tri[0], 7, 'M'))])].filter(x => x !== s.name);
+  return hbPack(['Left hand and right hand: name the slash chord', '왼손과 오른손: 슬래시 화음의 이름은?'],
+    { big: [t('Left hand ' + hbNm(s.bass) + ' · right hand ' + s.tri.map(hbNm).join(' '), '왼손 ' + hbNm(s.bass) + ' · 오른손 ' + s.tri.map(hbNm).join(' ')), '왼손 ' + hbNm(s.bass) + ' · 오른손 ' + s.tri.map(hbNm).join(' ')],
+      sound: hbChordSound([{ d: s.bass.d - 7, acc: s.bass.acc }, ...s.tri]) }, s.name, sampleN(others, 3), s.name + 'n');
+}
+const HB_SLASH_DRILL = { levels: [
+  { n: 1, label: 'Read the slash: the bass note', time: 9, gen: hbSlashBass },
+  { n: 2, label: 'Inversion or colour bass?', time: 10, gen: hbSlashJob },
+  { n: 3, label: 'Name the slash chord', time: 14, gen: hbSlashName },
+] };
+
+// ── M1 Chords from outside the key (guest chords) ──
+// each: the guest chord built from the tonic, its guest note, where the guest goes (one small step) and the chord it leads to
+const HB_GUESTS = [   // as in Handbook p. 136: in C major D F♯ A, E G♯ B, A C♯ E (sharp guests up), F A♭ C, A♭ C E♭ (flat guests down), B♭ D F (B♭ walks up to C)
+  { nm: 'V of V', root: [2, 'M'], minor: false, guest: 1, to: [5, 'P'], next: [5, 'P'], nextMinor: false, hint: 'up' },
+  { nm: 'V of vi', root: [3, 'M'], minor: false, guest: 1, to: [6, 'M'], next: [6, 'M'], nextMinor: true, hint: 'up' },
+  { nm: 'V of ii', root: [6, 'M'], minor: false, guest: 1, to: [2, 'M'], next: [2, 'M'], nextMinor: true, hint: 'up' },
+  { nm: 'iv', root: [4, 'P'], minor: true, guest: 1, to: [5, 'P'], next: [1, 'P'], nextMinor: false, hint: 'down' },
+  { nm: '♭VI', root: [6, 'm'], minor: false, guest: 0, to: [5, 'P'], next: null, hint: 'down' },
+  { nm: '♭VII', root: [7, 'm'], minor: false, guest: 0, to: [1, 'P'], next: [1, 'P'], nextMinor: false, hint: 'walk' },
+];
+function hbGuestMake() {
+  for (let g = 0; g < 30; g++) {
+    const key = pick(['C', 'G', 'F', 'D']), tonic = hbRoot([key, 0]), x = pick(HB_GUESTS);
+    const r = x.root[0] === 1 ? tonic : hbUp(tonic, x.root[0], x.root[1]);
+    const tri = [r, hbUp(r, 3, x.minor ? 'm' : 'M'), hbUp(r, 5, 'P')];
+    const nr = !x.next ? null : x.next[0] === 1 ? tonic : hbUp(tonic, x.next[0], x.next[1]);
+    if (!hbOk(tri)) continue;
+    return { key, x, tri, guest: hbNm(tri[x.guest]), to: hbNm(x.to[0] === 1 ? tonic : hbUp(tonic, x.to[0], x.to[1])), chord: hbNm(r) + (x.minor ? 'm' : ''), next: nr && hbNm(nr) + (x.nextMinor ? 'm' : ''),
+      nextTri: nr && [nr, hbUp(nr, 3, x.nextMinor ? 'm' : 'M'), hbUp(nr, 5, 'P')] };
+  }
+}
+function hbGuestNote() {
+  let s = hbGuestMake(); while (s.x.nm === '♭VI') s = hbGuestMake();   // A♭ C E♭ holds two guests: not a one-answer question
+  return hbPack([t('In ' + prettyNote(s.key) + ' major, which note is the guest?', prettyNote(s.key) + ' 장조에서 손님 음은?'), t('In ' + prettyNote(s.key) + ' major, which note is the guest?', prettyNote(s.key) + ' 장조에서 손님 음은?')],
+    { big: s.chord + ' = ' + s.tri.map(hbNm).join(' '), sound: hbChordSound(s.tri) }, s.guest, s.tri.map(hbNm).filter(n => n !== s.guest), s.key + s.chord);
+}
+function hbGuestStep() {
+  const s = hbGuestMake();
+  const sc = spellScale(s.key).map(prettyNote), i = sc.findIndex(n => n[0] === s.guest[0]);   // the key's own spelling of each letter
+  const wrong = [sc[(i + 1) % 7], s.x.hint === 'walk' ? null : sc[(i + 6) % 7], sc[(i + 2) % 7], sc[(i + 5) % 7], sc[(i + 3) % 7]].filter(x => x && x !== s.to);   // B♭ walks up to C: the step down is not offered
+  const g = s.guest + (s.guest.length === 1 && sc[i] !== s.guest ? '♮' : '');
+  return hbPack([t('In ' + prettyNote(s.key) + ' major the guest note is ' + g + '. Where does it go?', prettyNote(s.key) + ' 장조에서 손님 음은 ' + g + '. 어디로 갈까요?'), t('In ' + prettyNote(s.key) + ' major the guest note is ' + g + '. Where does it go?', prettyNote(s.key) + ' 장조에서 손님 음은 ' + g + '. 어디로 갈까요?')],
+    { big: s.chord + ' = ' + s.tri.map(hbNm).join(' '), sound: hbChordSound(s.tri) }, s.to, sampleN([...new Set(wrong)].slice(0, 3), 3), s.key + s.guest + 'st');
+}
+function hbGuestNext() {
+  let s = hbGuestMake(); while (!s.next) s = hbGuestMake();   // ♭VI can go to V or to I: not asked
+  const pool = ['', 'm'].flatMap(q => [1, 2, 3, 4, 5, 6].map(k => hbNm(k === 1 ? hbRoot([s.key, 0]) : hbUp(hbRoot([s.key, 0]), k, IV_PERFECT[k] ? 'P' : 'M')) + q));
+  return hbPack([t('In ' + prettyNote(s.key) + ' major: which chord does it lead to?', prettyNote(s.key) + ' 장조: 다음에 어떤 화음으로 갈까요?'), t('In ' + prettyNote(s.key) + ' major: which chord does it lead to?', prettyNote(s.key) + ' 장조: 다음에 어떤 화음으로 갈까요?')],
+    { big: s.chord + ' (' + s.tri.map(hbNm).join(' ') + ')  →  ?', sound: hbSeq([s.tri, s.nextTri]) }, s.next, sampleN(pool.filter(x => x !== s.next), 3), s.key + s.chord + 'nx');
+}
+const HB_GUEST_DRILL = { levels: [
+  { n: 1, label: 'Find the guest note', time: 12, gen: hbGuestNote },
+  { n: 2, label: 'Where does the guest go?', time: 12, gen: hbGuestStep },
+  { n: 3, label: 'Which chord comes next?', time: 14, gen: hbGuestNext },
+] };
+
+// ── M3 Chords under a melody ──
+function hbKeyTriads(key) { const sc = scaleNotes(key, false).map(n => (n.d < 28 ? { d: n.d + 7, acc: n.acc } : n)); return { I: triadOn(sc, 0), IV: triadOn(sc, 3), V: triadOn(sc, 4) }; }
+function hbMelNote() {
+  const key = pick(['C', 'G', 'F', 'D']), tr = hbKeyTriads(key);
+  const only = ['I', 'IV', 'V'].flatMap(c => tr[c].map(n => [c, hbNm(n)])).filter((x, i, a) => a.filter(y => y[1] === x[1]).length === 1);
+  const it = pick(only), lab = (c) => [c + ' (' + tr[c].map(hbNm).join(' ') + ')', c + ' (' + tr[c].map(hbNm).join(' ') + ')'];
+  return hbPack([t('In ' + prettyNote(key) + ' major: which chord holds the note?', prettyNote(key) + ' 장조: 이 음을 품은 화음은?'), t('In ' + prettyNote(key) + ' major: which chord holds the note?', prettyNote(key) + ' 장조: 이 음을 품은 화음은?')],
+    { big: it[1] }, lab(it[0]), ['I', 'IV', 'V'].filter(c => c !== it[0]).map(lab), key + it[1]);
+}
+function hbMelBar() {
+  const key = pick(['C', 'G', 'F']), tr = hbKeyTriads(key), c = pick(['I', 'IV', 'V']);
+  let notes; do { notes = Array.from({ length: 4 }, (_, i) => (i === 0 ? tr[c][0] : pick(tr[c]))); } while (new Set(notes.map(hbNm)).size < 2);   // two different notes at least, or C C C C fits I and IV
+  return hbPack([t('A bar of melody in ' + prettyNote(key) + ' major: which chord goes under it?', prettyNote(key) + ' 장조의 한 마디: 아래에 어떤 화음이 올까요?'), t('A bar of melody in ' + prettyNote(key) + ' major: which chord goes under it?', prettyNote(key) + ' 장조의 한 마디: 아래에 어떤 화음이 올까요?')],
+    { big: notes.map(hbNm).join('  '), sound: () => playMelody(notes.map(n => ({ ...n, dur: 1 })), 110) }, c, ['I', 'IV', 'V'].filter(x => x !== c), key + c + notes.map(hbNm).join(''));
+}
+const HB_MEL_TF = [
+  [['Look at the strong beats and the long notes to choose the chord.', '화음을 고를 땐 강박과 긴 음을 봐요.'], true],
+  [['Every note of a major key belongs to I, IV or V.', '장조의 모든 음은 I, IV, V 중 하나에 들어 있어요.'], true],
+  [['A passing note on a weak beat must change the chord.', '약박의 경과음이 나오면 반드시 화음을 바꿔야 해요.'], false],
+  [['An Alberti bass on C plays C G E G.', 'C 위의 알베르티 베이스는 C G E G예요.'], true],
+  [['Most tunes end with chord V.', '대부분의 곡은 V 화음으로 끝나요.'], false],
+];
+const HB_MEL_DRILL = { levels: [
+  { n: 1, label: 'Which chord holds the note?', time: 10, gen: hbMelNote },
+  { n: 2, label: 'Choose the chord for a bar', time: 12, gen: hbMelBar },
+  { n: 3, label: 'Chords under a melody: true or false', time: 12, gen: hbTrueFalse(HB_MEL_TF) },
+] };
+
+// ── M4 Progressions everywhere ──
+const HB_TRIPS = [
+  { id: 'pop', name: ['the pop four', '팝 4코드 진행'], deg: [0, 4, 5, 3] },
+  { id: 'fifties', name: ['the fifties', '50년대 진행'], deg: [0, 5, 3, 4] },
+  { id: 'jazz', name: ['the jazz three-step', '투-파이브-원'], deg: [1, 4, 0] },
+  { id: 'cadence', name: ['the cadence trip', '마침 진행'], deg: [0, 3, 4, 0] },
+];
+function hbDeg(key, i) { const sc = scaleNotes(key, false), tr = triadOn(sc, i), q = triadQuality(tr); return { tr, roman: romanFor(i, q), name: hbNm(tr[0]) + (q === 'minor' ? 'm' : q === 'diminished' ? '°' : '') }; }
+const hbRomans = (tp) => tp.deg.map(i => romanFor(i, triadQuality(triadOn(scaleNotes('C', false), i)))).join(' ');
+function hbTripChords() {
+  const key = pick(['C', 'G', 'D', 'F', 'A']), tp = pick(HB_TRIPS), ch = (k, p) => p.deg.map(i => hbDeg(k, i).name).join(' ');
+  const ans = ch(key, tp), others = [...new Set([...HB_TRIPS.filter(x => x !== tp).map(x => ch(key, x)), ...['C', 'G', 'D', 'F', 'A'].filter(k => k !== key).map(k => ch(k, tp))])].filter(x => x !== ans);
+  return hbPack([t('Turn the numbers into chords in ' + prettyNote(key) + ' major', prettyNote(key) + ' 장조로 숫자를 화음으로 바꿔요'), t('Turn the numbers into chords in ' + prettyNote(key) + ' major', prettyNote(key) + ' 장조로 숫자를 화음으로 바꿔요')],
+    { big: hbRomans(tp), sound: hbSeq(tp.deg.map(i => hbDeg(key, i).tr)) }, ans, sampleN(others, 3), key + tp.id + 'c');
+}
+function hbTripNumbers() {
+  const key = pick(['C', 'G', 'D', 'F', 'A']), tp = pick(HB_TRIPS), ans = hbRomans(tp);
+  return hbPack([t('In ' + prettyNote(key) + ' major: which numbers?', prettyNote(key) + ' 장조: 어떤 숫자일까요?'), t('In ' + prettyNote(key) + ' major: which numbers?', prettyNote(key) + ' 장조: 어떤 숫자일까요?')],
+    { big: tp.deg.map(i => hbDeg(key, i).name).join(' '), sound: hbSeq(tp.deg.map(i => hbDeg(key, i).tr)) }, ans, HB_TRIPS.filter(x => x !== tp).map(hbRomans), key + tp.id + 'n');
+}
+function hbTripName() {
+  const tp = pick(HB_TRIPS);
+  return hbPack(['Which trip is it?', '어떤 진행일까요?'], { big: hbRomans(tp), sound: hbSeq(tp.deg.map(i => hbDeg('C', i).tr)) }, tp.name, HB_TRIPS.filter(x => x !== tp).map(x => x.name), tp.id + 'nm');
+}
+const HB_PROG_DRILL = { levels: [
+  { n: 1, label: 'Name the trip', time: 10, gen: hbTripName },
+  { n: 2, label: 'Numbers into chords', time: 14, gen: hbTripChords },
+  { n: 3, label: 'Chords into numbers', time: 14, gen: hbTripNumbers },
+] };
+
+// ── F3 Texture ──
+const HB_TEXTURE_TERMS = [
+  [['monophonic (one line)', '단선율 (한 줄)'], ['One tune alone, with nothing under it', '아래에 아무것도 없이 선율 하나만']],
+  [['melody and accompaniment', '선율과 반주'], ['A tune on top, with chords or a pattern underneath', '위에 선율, 아래에 화음이나 반주 음형']],
+  [['chordal (block chords)', '화성적 (블록 화음)'], ['All the parts move together in chords, like a hymn', '모든 성부가 화음으로 함께 움직여요, 찬송가처럼']],
+  [['polyphonic (counterpoint)', '다성적 (대위법)'], ['Two or more tunes at once, each with its own shape', '각자 모양을 가진 선율 둘 이상이 동시에']],
+  [['Alberti bass', '알베르티 베이스'], ['A broken chord in the left hand: low, high, middle, high', '왼손의 분산화음: 낮게, 높게, 가운데, 높게']],
+  [['imitation', '모방'], ['One part copies the tune another part has just played', '한 성부가 다른 성부가 방금 연주한 선율을 따라 해요']],
+];
+const HB_TEXTURE_TF = [
+  [['A round like Frère Jacques is polyphonic.', '“Frère Jacques” 같은 돌림노래는 다성이에요.'], true],
+  [['Melody and accompaniment is the most common texture in piano pieces.', '선율과 반주는 피아노 곡에서 가장 흔한 짜임새예요.'], true],
+  [['In a chordal texture each part has a different rhythm.', '화음적 짜임새에서는 성부마다 리듬이 달라요.'], false],
+  [['A Bach invention is mostly melody and accompaniment.', '바흐 인벤션은 대부분 선율과 반주예요.'], false],
+  [['Texture means how many layers there are and how they fit together.', '짜임새는 층이 몇 개이고 어떻게 어울리는지를 말해요.'], true],
+];
+const HB_TEXTURE_DRILL = { levels: [
+  { n: 1, label: 'Name the texture', time: 10, gen: hbTerms(HB_TEXTURE_TERMS, 'mt') },
+  { n: 2, label: 'What does it mean?', time: 10, gen: hbTerms(HB_TEXTURE_TERMS, 'tm') },
+  { n: 3, label: 'Texture: true or false', time: 12, gen: hbTrueFalse(HB_TEXTURE_TF) },
+] };
+
+// ── F4 Changing key ──
+const HB_MOD_KEYS = ['C', 'G', 'D', 'F', 'Bb', 'A'];
+const hbNat = (n) => hbNm(n) + (n.acc ? '' : '♮');   // the clue always leaves the key signature: a plain letter is a natural
+function hbNear(key) {
+  const tonic = hbRoot([key[0], key[1] === 'b' ? -1 : 0]);
+  return { dom: hbNm(hbUp(tonic, 5, 'P')), sub: hbNm(hbUp(tonic, 4, 'P')), rel: hbNm(hbUp(tonic, 6, 'M')), far: hbNm(hbUp(tonic, 2, 'M')),
+    domClue: hbNat(hbUp(tonic, 4, 'A')), subClue: hbNat(hbUp(tonic, 7, 'm')), relClue: hbNat(hbUp(tonic, 5, 'A')) };
+}
+const hbKL = (n, minor) => [n + (minor ? ' minor' : ' major'), n + (minor ? ' 단조' : ' 장조')];
+function hbModNear() {
+  const key = pick(HB_MOD_KEYS), k = hbNear(key), w = pick([['dom', ['the dominant key (one step right on the circle)', '딸림조 (오도권 오른쪽 한 칸)']], ['sub', ['the subdominant key (one step left)', '버금딸림조 (왼쪽 한 칸)']], ['rel', ['the relative minor', '나란한조(단조)']]]);
+  const all = { dom: hbKL(k.dom), sub: hbKL(k.sub), rel: hbKL(k.rel, true), far: hbKL(k.far) };
+  return hbPack([t('From ' + prettyNote(key) + ' major: which is ' + w[1][0] + '?', prettyNote(key) + ' 장조에서 ' + w[1][1] + '는?'), t('From ' + prettyNote(key) + ' major: which is ' + w[1][0] + '?', prettyNote(key) + ' 장조에서 ' + w[1][1] + '는?')],
+    { big: hbKeyName(key) }, all[w[0]], Object.keys(all).filter(x => x !== w[0]).map(x => all[x]), key + w[0]);
+}
+function hbModClue() {
+  const key = pick(HB_MOD_KEYS), k = hbNear(key), w = pick([['dom', k.domClue], ['sub', k.subClue], ['rel', k.relClue]]);
+  const all = { dom: hbKL(k.dom), sub: hbKL(k.sub), rel: hbKL(k.rel, true), stay: hbKL(prettyNote(key)) };
+  return hbPack([t('A piece in ' + prettyNote(key) + ' major keeps using ' + w[1] + '. Where has it gone?', prettyNote(key) + ' 장조 곡에 ' + w[1] + ' 음이 계속 나와요. 어디로 갔을까요?'), t('A piece in ' + prettyNote(key) + ' major keeps using ' + w[1] + '. Where has it gone?', prettyNote(key) + ' 장조 곡에 ' + w[1] + ' 음이 계속 나와요. 어디로 갔을까요?')],
+    { big: w[1] }, all[w[0]], Object.keys(all).filter(x => x !== w[0]).map(x => all[x]), key + w[0] + 'c');
+}
+const HB_MOD_DRILL = { levels: [
+  { n: 1, label: 'The nearest keys', time: 12, gen: hbModNear },
+  { n: 2, label: 'Follow the clue note', time: 14, gen: hbModClue },
+] };
+
+// ── L2 Practising well ──
+const HB_WRONG_PRACTICE = [
+  ['Play the whole piece again from the start until it goes right', '맞을 때까지 처음부터 곡 전체를 다시 쳐요'],
+  ['Play it faster so the mistake has less time to happen', '실수할 틈이 없게 더 빨리 쳐요'],
+  ['Skip that bar for now and practise only the easy parts', '그 마디는 일단 건너뛰고 쉬운 부분만 연습해요'],
+  ['Practise for two hours once a week instead', '대신 일주일에 한 번 두 시간 연습해요'],
+  ['Look at the keys instead of the music every time', '매번 악보 대신 건반을 봐요'],
+];
+const HB_PRACTICE = [
+  [['You keep stumbling in bar 12.', '12마디에서 자꾸 걸려요.'], ['Take bar 12 alone, slowly, then join it to bars 11 and 13', '12마디만 천천히 따로, 그다음 11·13마디와 이어요'], HB_WRONG_PRACTICE],
+  [['A fast passage only works slowly.', '빠른 부분이 느릴 때만 돼요.'], ['Climb the metronome ladder: a few clicks faster once it is clean five times', '메트로놈 사다리: 다섯 번 깨끗하면 몇 칸씩 빠르게'], HB_WRONG_PRACTICE],
+  [['You have fifteen minutes today.', '오늘 15분 있어요.'], ['Warm up, work on one hard spot, then play something through', '손 풀기, 어려운 곳 한 군데, 그다음 한 곡 끝까지'], HB_WRONG_PRACTICE],
+  [['The left hand is weaker than the right.', '왼손이 오른손보다 약해요.'], ['Practise the left hand alone, then hands together slowly', '왼손만 따로, 그다음 두 손을 천천히'], HB_WRONG_PRACTICE],
+  [['You made the same mistake three times in a row.', '같은 실수를 세 번 연속 했어요.'], ['Stop, find exactly where it goes wrong, and fix that spot slowly', '멈추고, 정확히 어디서 틀리는지 찾아 그곳만 천천히 고쳐요'], HB_WRONG_PRACTICE],
+  [['How do you know a spot is fixed?', '고쳐졌는지 어떻게 알까요?'], ['Five perfect in a row', '다섯 번 연속 완벽하게'], [['It went right once', '한 번 맞게 쳤어요'], ['You played it fast', '빠르게 쳤어요'], ['You practised it for a long time', '오래 연습했어요'], ['It sounded nearly right', '거의 맞게 들렸어요']]],
+  [['A long piece feels too big to learn.', '긴 곡이 너무 커서 막막해요.'], ['Split it into chunks of a phrase or two and learn one chunk a day', '한두 프레이즈씩 조각내서 하루에 한 조각'], HB_WRONG_PRACTICE],
+  [['When is practice most useful?', '언제 연습이 가장 효과적일까요?'], ['A short time every day', '매일 조금씩'], [['Two hours once a week', '일주일에 한 번 두 시간'], ['Only the day before a lesson', '레슨 전날에만'], ['Whenever you feel like it', '내킬 때만'], ['Late at night when you are tired', '피곤한 늦은 밤에']]],
+];
+const HB_PRACTICE_DRILL = { levels: [
+  { n: 1, label: 'What would you do?', time: 14, gen: hbScenes(HB_PRACTICE, ['What is the best thing to do?', '가장 좋은 방법은?']) },
+] };
+
+// ── L5 Performing ──
+const HB_WRONG_PERFORM = [
+  ['Stop and start the piece again from the beginning', '멈추고 처음부터 다시 시작해요'],
+  ['Say sorry to the audience and explain what went wrong', '청중에게 사과하고 무엇이 틀렸는지 설명해요'],
+  ['Play faster to get to the end sooner', '빨리 끝나도록 더 빠르게 쳐요'],
+  ['Learn a new piece the week before the concert', '연주회 일주일 전에 새 곡을 배워요'],
+  ['Practise only from the beginning, never from the middle', '처음부터만 연습하고 중간부터는 절대 안 해요'],
+];
+const HB_PERFORM = [
+  [['You slip on a note in the middle of the piece.', '곡 중간에 음 하나를 틀렸어요.'], ['Keep going, in time, as if nothing happened', '아무 일 없었던 듯 박을 지키며 계속 쳐요'], HB_WRONG_PERFORM],
+  [['Your memory goes blank on stage.', '무대에서 머릿속이 하얘졌어요.'], ['Jump to the next starting point you have practised', '연습해 둔 다음 시작 지점으로 넘어가요'], HB_WRONG_PERFORM],
+  [['Your hands shake before you play.', '치기 전에 손이 떨려요.'], ['Breathe slowly, feel the first bar\'s tempo in your head, then begin', '천천히 숨 쉬고, 첫 마디 빠르기를 머릿속으로 느끼고 시작해요'], HB_WRONG_PERFORM],
+  [['How do you prepare to play from memory?', '외워서 치려면 어떻게 준비할까요?'], ['Practise starting from several points in the piece', '곡 여러 곳에서 시작하는 연습을 해요'], HB_WRONG_PERFORM],
+  [['The week before a performance…', '연주 일주일 전에는…'], ['Play it through for someone every day, without stopping', '매일 누군가 앞에서 멈추지 않고 끝까지 쳐 봐요'], HB_WRONG_PERFORM],
+  [['When you finish playing…', '연주를 마치면…'], ['Hold the last sound, lift your hands, then stand and bow', '마지막 소리를 끝까지 듣고, 손을 들고, 일어나 인사해요'], [['Jump up the moment the last key goes down', '마지막 건반을 누르자마자 벌떡 일어나요'], ['Shake your head if there was a slip', '실수가 있었으면 고개를 저어요'], ['Start packing your music straight away', '바로 악보를 챙겨요'], ['Ask the audience how it was', '청중에게 어땠는지 물어봐요']]],
+  [['Before your first note…', '첫 음을 치기 전에…'], ['Check the stool, your posture, the key signature and the speed, then begin', '의자, 자세, 조표, 빠르기를 확인하고 시작해요'], [['Start as soon as you sit down', '앉자마자 시작해요'], ['Play a few wrong notes to warm up', '손을 풀려고 아무 음이나 쳐 봐요'], ['Look at the audience until you feel calm', '마음이 가라앉을 때까지 청중을 봐요'], ['Play the first bar as fast as you can', '첫 마디를 최대한 빨리 쳐요']]],
+];
+const HB_PERFORM_DRILL = { levels: [
+  { n: 1, label: 'On stage: what would you do?', time: 14, gen: hbScenes(HB_PERFORM, ['What is the best thing to do?', '가장 좋은 방법은?']) },
+] };
+
+Object.assign(LEVEL_KO, {
+  'Off the beat: name it': '엇박 리듬: 이름 맞히기', 'Straight or swing? (by ear)': '스트레이트일까 스윙일까? (듣고)', 'Off the beat: true or false': '엇박 리듬: 맞을까 틀릴까',
+  'Pedal signs and words': '페달 기호와 말', 'Which sign or word?': '어떤 기호나 말일까?', 'Using the pedal: true or false': '페달 쓰기: 맞을까 틀릴까',
+  'Name the ornament': '꾸밈음 이름', 'Written out: which notes?': '풀어 쓰면 어떤 음?', 'Ornaments: true or false': '꾸밈음: 맞을까 틀릴까',
+  'Keys in between: which seventh?': '사이 건반 수: 어떤 7화음?', 'Name the seventh chord': '7화음 이름', 'Spell the seventh chord': '7화음의 음',
+  'Name the colour chord': '색깔 화음 이름', 'Spell the colour chord': '색깔 화음의 음', 'Colour chords: true or false': '색깔 화음: 맞을까 틀릴까',
+  'Find the floor: 9, 11, 13': '층 찾기: 9, 11, 13', 'Name the tall chord': '높은 화음 이름', 'With or without the 7th?': '7음이 있을까 없을까?',
+  'Read the slash: the bass note': '슬래시 읽기: 베이스 음', 'Inversion or colour bass?': '자리바꿈일까 색깔 베이스일까?', 'Name the slash chord': '슬래시 화음 이름',
+  'Find the guest note': '손님 음 찾기', 'Where does the guest go?': '손님 음은 어디로?', 'Which chord comes next?': '다음 화음은?',
+  'Which chord holds the note?': '이 음을 품은 화음은?', 'Choose the chord for a bar': '한 마디의 화음 고르기', 'Chords under a melody: true or false': '선율 아래 화음: 맞을까 틀릴까',
+  'Name the trip': '진행 이름', 'Numbers into chords': '숫자를 화음으로', 'Chords into numbers': '화음을 숫자로',
+  'Name the texture': '짜임새 이름', 'What does it mean?': '무슨 뜻일까?', 'Texture: true or false': '짜임새: 맞을까 틀릴까',
+  'The nearest keys': '가까운 조', 'Follow the clue note': '단서 음 따라가기', 'What would you do?': '어떻게 할까?', 'On stage: what would you do?': '무대에서 어떻게 할까?',
+});
+
+function HbQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given, sh = q.show || {};
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  useEffect(() => { if (sh.sound) { const tm = setTimeout(() => sh.sound(), 250); return () => clearTimeout(tm); } }, [q.uid]);
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  const lab = (c) => (q.labels && q.labels[c] ? hbL(q.labels[c]) : c);
+  const long = q.choices.some(c => lab(c).length > 18);
+  return (<div>
+    <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{hbL(q.prompt)}</p>
+    {sh.big && <div style={{textAlign:'center',fontSize:pixel ? 14 : (sh.small ? 19 : 28),fontWeight:sh.small ? 700 : 900,lineHeight:1.35,margin:'0 0 12px',color:'var(--navy)'}}>{hbL(sh.big)}</div>}
+    {sh.chords && <div style={{background:'#fff',borderRadius:pixel ? 0 : 8,padding:'4px 0',marginBottom:10}}><ChordStaff clef={sh.clef || 'treble'} chords={sh.chords} width={200}/></div>}
+    {sh.sound && <div style={{textAlign:'center',marginBottom:10}}><button className="chip" onClick={() => sh.sound()}>{t('▶ Play again', '▶ 다시 듣기')}</button></div>}
+    <div style={{display:'grid',gridTemplateColumns:long ? '1fr' : 'repeat(2,1fr)',gap:8}}>
+      {q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:long ? '11px 12px' : '14px 0',fontSize:pixel ? 10 : (long ? 14.5 : 17),textAlign:long ? 'left' : 'center',lineHeight:1.35}} onClick={() => onAnswer(c)}>{lab(c)}</button>)}
+    </div>
+  </div>);
+}
+// the Learn tab of a Handbook drill: the chapter is the lesson
+function hbLearnFor(part, ch, title, page) {
+  return function HbLearn({ onStart }) {
+    return (<div className="card" style={{textAlign:'center',padding:'22px 18px'}}>
+      <div style={{fontSize:12,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--coral)'}}>{t('The Piano Butler Handbook', '피아노 버틀러 핸드북')}</div>
+      <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:800,color:'var(--navy)',margin:'6px 0 4px'}}>{part} · {ch} · {hbL(title)}</div>
+      <p style={{fontSize:14.5,color:'var(--muted)',lineHeight:1.5,margin:'0 0 14px'}}>{t('Read and listen to this chapter in the Handbook (p. ' + page + '), then try ten questions here.', '핸드북 ' + page + '쪽에서 이 챕터를 읽고 들은 다음, 여기서 열 문제를 풀어 보세요.')}</p>
+      <button className="primary-btn" onClick={onStart}>{t('Start the drill', '드릴 시작')}</button>
+    </div>);
+  };
+}
+function hbDrill(id, label, ko, def, part, ch, page) {
+  return { id, label, levels: def.levels,
+    generate: (lv, prev) => { let q = null; for (let g = 0; g < 30; g++) { q = lv.gen(); if (q && (!prev || q.key !== prev.key)) break; } return { ...q, uid: Math.random() }; },
+    check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+    answerLabel: (q) => (q.labels && q.labels[q.answer] ? hbL(q.labels[q.answer]) : q.answer),
+    Question: HbQuestion, Learn: hbLearnFor(part, ch, [label, ko], page) };
+}
+const HB_DRILLS = [
+  ['hb-offbeat', 'Off the Beat', '엇박 리듬', HB_OFFBEAT_DRILL, 'Part II', 7, 68, 'rhythm'],
+  ['hb-pedals', 'The Pedals', '페달', HB_PEDAL_DRILL, 'Part III', 4, 85, 'reading'],
+  ['hb-ornaments', 'Ornaments', '꾸밈음', HB_ORN_DRILL, 'Part III', 5, 88, 'reading'],
+  ['hb-sevenths', 'Seventh Chords', '7화음', HB_SEVENTH_DRILL, 'Part V', 5, 122, 'pitch'],
+  ['hb-colour', 'Colour Chords', '색깔 화음', HB_COLOUR_DRILL, 'Part V', 6, 125, 'pitch'],
+  ['hb-tower', 'The Tower: 9, 11, 13', '탑: 9, 11, 13', HB_TOWER_DRILL, 'Part V', 7, 128, 'pitch'],
+  ['hb-slash', 'Slash Chords', '슬래시 화음', HB_SLASH_DRILL, 'Part V', 8, 131, 'pitch'],
+  ['hb-guest', 'Chords from Outside the Key', '조 밖의 화음', HB_GUEST_DRILL, 'Part VI', 1, 136, 'pitch'],
+  ['hb-melchords', 'Chords under a Melody', '선율 아래 화음', HB_MEL_DRILL, 'Part VI', 3, 142, 'pitch'],
+  ['hb-progressions', 'Progressions Everywhere', '어디에나 있는 진행', HB_PROG_DRILL, 'Part VI', 4, 144, 'pitch'],
+  ['hb-texture', 'Texture', '짜임새', HB_TEXTURE_DRILL, 'Part VII', 3, 152, 'reading'],
+  ['hb-modulation', 'Changing Key', '조바꿈', HB_MOD_DRILL, 'Part VII', 4, 154, 'reading'],
+  ['hb-practice', 'Practising Well', '잘 연습하기', HB_PRACTICE_DRILL, 'Part VIII', 2, 165, 'start'],
+  ['hb-performing', 'Performing', '연주하기', HB_PERFORM_DRILL, 'Part VIII', 5, 171, 'start'],
+].map(([id, label, ko, def, part, ch, page, track]) => ({ id, label, concept: hbDrill(id, label, ko, def, part, ch, page), track, hb: true }));
+
 const DRILLS = [ // Phase 361: in the music map's order
   { id: 'posture-hands', label: 'Posture & Hand Shape', concept: POSTURE_HANDS_DRILL, track: 'start' },
   { id: 'first-steps', label: 'Keyboard Patterns', concept: FIRST_STEPS_DRILL, track: 'start' },
@@ -16964,6 +17499,7 @@ const DRILLS = [ // Phase 361: in the music map's order
   { id: 'composers', label: 'Composers through Time', concept: COMPOSERS_DRILL, track: 'about' },
   { id: 'pitch-range', label: 'Instruments', concept: PITCH_RANGE_DRILL, track: 'pitch' },   // Build AQ: was 'Pitch, Hz & Range'
   { id: 'styles', label: 'Styles & Genres', concept: STYLES_DRILL, track: 'about' },
+  ...HB_DRILLS,   // her 11 Nov: one drill for each Handbook chapter that had none
 ];
 
 // Phase 276: Korean chapter names. `label` becomes a getter (English kept as labelEn) so every list, header and link follows LANG.
@@ -25221,7 +25757,8 @@ function thCleanLay(state, rooms, cmp) {   // m18: the clean room -- the number,
 const VIS_OPEN = new Set(['first-steps', 'note-values', 'staff', 'rhythm', 'scales', 'intervals', 'key-signatures', 'melody', 'harmony-2', 'harmony-3', 'melody-3', 'keys-4', 'harmony-5', 'arps-6', 'pieces-78', 'composers', 'styles']);
 const isVisitor = () => !UI_TEACHER && !(linkTokenFromHash() || loadStoredLink());
 const LEARNER_FREE = () => [0, 1].flatMap(k => PATH_STAGES[k] ? pathStageIds(PATH_STAGES[k]) : []);   // m57: free with an account
-const visLocked = (id) => isVisitor() && !!id && !VIS_OPEN.has(id) && !(learnerWho() && LEARNER_FREE().includes(id));
+const ALL_OPEN = true;   // her 11 Nov: nothing is public yet, so every room is open; which parts stay open is decided at launch
+const visLocked = (id) => !ALL_OPEN && isVisitor() && !!id && !VIS_OPEN.has(id) && !(learnerWho() && LEARNER_FREE().includes(id));
 function VisitorLock({ onBack }) {
   return <div data-testid="visitor-lock" className="fade-up" style={{textAlign:'center',background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:16,padding:'26px 18px',margin:'10px 0'}}>
     <svg width="40" height="44" viewBox="0 0 40 44" aria-hidden="true"><rect x="5" y="19" width="30" height="22" rx="4" fill="var(--navy)"/><path d="M12 19v-6a8 8 0 0 1 16 0v6" fill="none" stroke="var(--navy)" strokeWidth="4"/><circle cx="20" cy="30" r="3" fill="#c9a24f"/></svg>

@@ -20,6 +20,7 @@ def build(count=None, legacy=False):
     page['X'] = n; page['_END'] = n + 2
     return page
 PAGE = build()
+COUNT['B1'] = 3; PAGE['B1'] = START - 3   # her 11 Nov: Before you play, pp. 18-20, just before the Pitch opener (nothing after it moves)
 def pages_of(key): return PAGE[key], (COUNT.get(key, 2) if key[1:].isdigit() else 1)
 def resolve(t):
     return re.sub(r'\{\{([A-Z]{1,2}\d{0,2}|X)(?:\+(\d))?\}\}', lambda m: str(PAGE[m.group(1)] + int(m.group(2) or 0)), t)

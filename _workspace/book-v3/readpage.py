@@ -10,13 +10,13 @@ if '--pages' in sys.argv:   # re-render the page images from the merged PDF (pdf
     subprocess.run(['pdftoppm', '-jpeg', '-jpegopt', 'quality=72', '-scale-to-x', '1000', '-scale-to-y', '-1', '/mnt/user-data/outputs/books/handbook-draft.pdf', tmp + '/pg'], check=True)
     from PIL import Image
     for f in sorted(glob.glob(tmp + '/pg-*.jpg')):
-        n = int(os.path.basename(f)[3:6]) + 20; Image.open(f).save(f'{OUT}/pages/p{n:03d}.webp', 'WEBP', quality=70, method=5)
+        n = int(os.path.basename(f)[3:6]) + 17; Image.open(f).save(f'{OUT}/pages/p{n:03d}.webp', 'WEBP', quality=70, method=5)   # her 11 Nov: Before you play (pp. 18-20) now opens the merged draft
 else:
     for f in glob.glob('/tmp/claude-0/read/pages/*.webp'): shutil.copy(f, OUT + '/pages/')
 LAST = max(int(os.path.basename(f)[1:4]) for f in glob.glob(OUT + '/pages/*.webp'))
 TIPS = {L[-1][3]: L[-1][1] for L in (OA.LEG_P, OA.LEG_T, OA.LEG_E, OA.LEG_S, OA.LEG_H, OA.LEG_M, OA.LEG_F, OA.LEG_L)}
 PNAME = dict(CB.PARTS)
-CH = []
+CH = [{'k': 'B1', 'part': 'Before you play', 't': 'Posture and hand shape', 'pages': [18, 19, 20]}]   # her 11 Nov
 for p, name, k in PM.PARTS:
     part = PNAME[p]
     CH.append({'k': p + 'O', 'part': part, 't': 'Opening map', 'pages': [PM.PAGE[p + 'O']]})
@@ -41,7 +41,7 @@ RG = json.load(open('/tmp/claude-0/pk/regions.json')) if os.path.exists('/tmp/cl
 REG = {}
 # her 11 Nov (p. 72): an example covers its labels until the voice says them, but the question itself must stay in view:
 # the bar letters and road signs of a map, tempo and time signatures, rall. / a tempo, the start mark, the note glyphs.
-_GIVEN_ALL = {('72', 'ex1'), ('72', 'ex2'), ('73', 'ex3'), ('73', 'ex4')}
+_GIVEN_ALL = {('20', 'ex2'), ('72', 'ex1'), ('72', 'ex2'), ('73', 'ex3'), ('73', 'ex4')}
 _GIVEN_TXT = {'You play:', 'start', 'Fine', 'D.C. al Fine', 'D.S. al Coda', 'To Coda', 'rall.', 'a tempo', '= 96', '𝅘𝅥', '𝅗𝅥', '𝅘𝅥𝅮', '𝅘𝅥𝅭', '𝅝'}
 def _given(pg, key, L):
     if (pg, key) in _GIVEN_ALL or L[0] in _GIVEN_TXT: return True
@@ -203,18 +203,38 @@ for c in CH:
                 ns = [n_ for n_ in ns if _re.match(r'^[A-G][#b]?\d$', n_)]
                 if ns: items.append([ns, round(tt - 0.03, 2), br])
             if items: ln['lens'] = {'k': 'auto', 'items': [x[0] for x in items], 'at': [x[1] for x in items], 'bar': [x[2] for x in items], 'kb': c['k'] == 'P1', 'full': True}   # chapter 1 comes before the staff: keys only
-PRACT = {   # chapter: (workbook pages in the merged workbook draft, [(drill id, drill name, extra query)])
-    'P1': ((1, 2), [('first-steps', 'Keyboard Patterns', ''), ('note-names', 'The Musical Alphabet', '')]),
-    'P2': ((3, 4), [('staff', 'The Staff & the Two Clefs', '')]),
-    'P3': ((5, 6), [('staff', 'The Staff & the Two Clefs', ''), ('whole-staff', 'Line and Space Names', '')]),
-    'P4': ((7, 8), [('whole-staff', 'Line and Space Names', ''), ('reading-steps', 'Steps & Skips', '')]),
-    'P5': ((9, 10), [('ledger-lines', 'Ledger Lines', '')]),
-    'P6': ((11, 12), [('accidentals', 'Accidentals', ''), ('tones', 'Tones & Semitones', '')]),
-    'P7': ((13, 14), [('intervals', 'Intervals', ''), ('tones', 'Tones & Semitones', '')]),
-    'P8': ((15, 16), [('intervals', 'Intervals', '')]),
+# her 11 Nov: every chapter ends with two separate next steps: print its Workbook pages (paper), and a 10-question drill (screen)
+# (chapter: [(drill id, drill name, level or 0)]); the workbook file is the chapter's own PDF from the Books page
+DRILL = {
+    'B1': [('posture-hands', 'Posture & Hand Shape', 0)],
+    'P1': [('note-names', 'The Musical Alphabet', 1)], 'P2': [('whole-staff', 'Line and Space Names', 1)], 'P3': [('whole-staff', 'Find it on the keys', 7)],
+    'P4': [('whole-staff', 'Landmark hop', 5), ('reading-steps', 'Steps & Skips', 2)], 'P5': [('ledger-lines', 'Ledger Lines', 3)], 'P6': [('accidentals', 'Accidentals', 1)],
+    'P7': [('intervals', 'Intervals: count it', 1)], 'P8': [('intervals', 'Major or perfect?', 9)],
+    'T1': [('pulse', 'Pulse & Counting', 1)], 'T2': [('note-values', 'Notes & Rests', 1)], 'T3': [('note-values', 'Dotted crotchets & quavers', 7)], 'T4': [('time-signatures', 'Time Signatures', 1)],
+    'T5': [('six-eight', '3/4 or 6/8?', 3)], 'T6': [('rhythm', 'Rhythm Patterns', 1)], 'T7': [('hb-offbeat', 'Off the Beat', 0)], 'T8': [('signs', 'All the roads', 8)],
+    'E1': [('dynamics', 'Dynamics', 1)], 'E2': [('dynamics', 'Articulation', 4)], 'E3': [('tempo', 'Tempo words', 2)], 'E4': [('hb-pedals', 'The Pedals', 0)], 'E5': [('hb-ornaments', 'Ornaments', 0)],
+    'S1': [('scales', 'Build the scale', 3)], 'S2': [('minor-scales', 'Minor Scales', 0)], 'S3': [('key-signatures', 'Name the major key', 13)],
+    'S4': [('key-signatures', 'Which key is the piece in?', 17)], 'S5': [('key-signatures', 'Sharps and flats: name the key', 15)],
+    'H1': [('chords', 'Stack a triad', 1)], 'H2': [('chords', 'Major or minor?', 3)], 'H3': [('chords', 'I, IV or V', 8)], 'H4': [('harmony-3', 'Root position or first inversion?', 4)],
+    'H5': [('hb-sevenths', 'Seventh Chords', 0)], 'H6': [('hb-colour', 'Colour Chords', 0)], 'H7': [('hb-tower', 'The Tower: 9, 11, 13', 0)], 'H8': [('hb-slash', 'Slash Chords', 0)],
+    'M1': [('hb-guest', 'Chords from Outside the Key', 0)], 'M2': [('harmony-4', 'Which cadence?', 3)], 'M3': [('hb-melchords', 'Chords under a Melody', 0)], 'M4': [('hb-progressions', 'Progressions', 0)],
+    'F1': [('melody', 'Question or answer?', 4)], 'F2': [('melody', 'Repetition or sequence?', 7)], 'F3': [('hb-texture', 'Texture', 0)], 'F4': [('hb-modulation', 'Changing Key', 0)],
+    'F5': [('form', 'Binary or ternary?', 5)], 'F6': [('styles', 'Which period?', 3)],
+    'L1': [('hand-positions', 'Hand Positions', 1)], 'L2': [('hb-practice', 'Practising Well', 0)], 'L3': [('reading-steps', 'Name the next note', 3)], 'L4': [('listen-write', 'Ear Training', 0)], 'L5': [('hb-performing', 'Performing', 0)],
 }
+_WBF = {'B': 'Before you play', 'P': 'Pitch', 'T': 'Time', 'E': 'Expression', 'S': 'Scales and keys', 'H': 'Chords and harmony', 'M': 'Chords and harmony', 'F': 'Shape and style', 'L': 'Playing and listening'}
+_WBN = {'B': 0, 'P': 1, 'T': 2, 'E': 3, 'S': 4, 'H': 5, 'M': 6, 'F': 7, 'L': 8}
+import urllib.parse as _up
+def _wb(key):
+    p, i = key[0], int(key[1:]); d = '/mnt/user-data/outputs/books-latest/2 Workbook/' + _WBF[p]
+    pre = f'workbook-{_WBN[p]}-{1 if p == "S" else i}-'
+    f = [x for x in sorted(os.listdir(d)) if x.startswith(pre)] if os.path.isdir(d) else []
+    if not f: return None
+    pages = str(i) if p == 'S' else f'{2 * i - 1}–{2 * i}'
+    return ['Claude outputs/Books - latest/2 Workbook/' + _up.quote(_WBF[p]) + '/' + f[0], ('p. ' if p == 'S' else 'pp. ') + pages, _WBF[p]]
 for c in CH:
-    if c['k'] in PRACT: c['pr'] = PRACT[c['k']]
+    if c['k'] in DRILL: c['nx'] = {'wb': _wb(c['k']), 'dr': DRILL[c['k']]}
+
 DATA = json.dumps(CH, ensure_ascii=False)
 REGD = json.dumps(REG, ensure_ascii=False)
 HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
@@ -244,7 +264,7 @@ select{font:inherit;font-size:15px;color:var(--ink);background:var(--panel);bord
 .sub{min-height:3.2em;margin-top:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;font-size:15.5px}
 .sub b{color:var(--accent);margin-right:6px} .sub:empty{display:none}
 .ctl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px} .ctl .btn{padding:6px 12px;font-size:14px} .ctl .sp{font-size:12.5px;padding:4px 7px;border-radius:999px} .ctl .sp.on{background:var(--accent);color:#fff;border-color:var(--accent)}
-.prac{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px} .prac .ph{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)} .prac a{display:block;font-weight:700;font-size:14.5px;color:var(--ink);text-decoration:none;border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--bg)} .prac a.dr{border-color:var(--accent)} .prac a:hover{border-color:var(--accent)}
+.prac{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px} .prac .ph{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)} .prac a{display:block;font-weight:700;font-size:14.5px;color:var(--ink);text-decoration:none;border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--bg)} .prac a b{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)} .prac a span{display:block} .prac a.ndr{border-color:var(--accent)} .prac a.ndr b{color:var(--accent)} .prac a:hover{border-color:var(--accent)} .prac .nhint{margin:2px 0 0;font-size:12.5px;color:var(--soft)}
 #lens:not(:empty){position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,245,240,.82);z-index:3;pointer-events:none}   /* her 9 Nov: one place to look - the lens in the middle, the page faded behind */
 .lens{position:relative;width:90%;background:#fff;border:4px solid var(--accent);border-radius:22px;box-shadow:0 10px 30px rgba(20,22,60,.28);padding:6px 10px 2px;animation:lz .35s ease;z-index:3;pointer-events:none} .seek{margin:8px 0 10px} .seek .sr{display:flex;align-items:center;gap:8px} .seek input{flex:1;accent-color:#e4572e} .seek #tm{font:600 12px var(--body);color:#5a5d8f;min-width:76px;text-align:right} .seek .sb{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px} .seek .sb .btn{font-size:12px;padding:4px 8px} .lens .lh{display:flex;align-items:center;gap:6px;font:700 clamp(10px,1.6vw,14px) var(--body);letter-spacing:.12em;text-transform:uppercase;color:#e4572e} .lens svg{display:block;width:100%;height:auto}
 #lens .fold{opacity:.55;animation:fold 1.8s ease-in-out .5s forwards} #lens .meet{animation:meet .5s ease 2.3s forwards}
@@ -298,7 +318,7 @@ function drawSide() {
   const c = CH[ci];
   side.innerHTML = `<div class="kick">${c.part}</div><h2>${c.t}</h2>` + (c.clips ? `<button class="play" id="all"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M4 2l12 7-12 7z" fill="currentColor"/></svg>${playing >= 0 ? 'Playing…' : 'Listen to the whole chapter'}</button><div class="ctl"><button class="btn" id="pp">${audio.paused ? '▶ Resume' : '❚❚ Pause'}</button>${[0.8, 1, 1.2, 1.5].map(v => `<button class="btn sp${v === rate ? ' on' : ''}" data-v="${v}">${v}×</button>`).join('')}</div><div class="seek"><div class="sr"><input type="range" id="sk" min="0" max="1000" value="0" aria-label="Position in this clip"${playing < 0 ? ' disabled' : ''}><span id="tm">0:00</span></div><div class="sb"><button class="btn" id="lprev" title="Previous line">⏮ Line</button><button class="btn" id="lagain" title="Hear this line again">↺ Again</button><button class="btn" id="b10">−10 s</button><button class="btn" id="f10">+10 s</button><button class="btn" id="lnext" title="Next line">Line ⏭</button></div></div><div class="clips">` +
     c.clips.map((k, i) => `<button class="clip${i === playing ? ' on' : ''}" data-i="${i}"><span class="n">${i + 1}</span><span>${k.t}</span><span class="s">${Math.floor(k.s / 60)}:${String(k.s % 60).padStart(2, '0')}</span></button>`).join('') + '</div>'
-    : `<p class="none">No audio for this chapter yet. The pages are all here.</p>`) + (c.pr ? `<div class="prac"><div class="ph">Practise it</div><a href="${site('books/workbook-draft.pdf')}#page=${c.pr[0][0]}" target="_blank" rel="noopener">Workbook pp. ${c.pr[0][0]}–${c.pr[0][1]}</a>${c.pr[1].map(d => `<a class="dr" href="${site('drills.html')}?drill=${d[0]}${d[2] || '&tab=learn'}" target="_blank" rel="noopener">Drill: ${d[1]}</a>`).join('')}</div>` : '') + `<label class="follow"><input type="checkbox" id="fol" ${follow ? 'checked' : ''}> Follow on the page</label><p class="who">The Butler explains, Clara asks. Each Example asks first, then pauses so you can try.</p>`;
+    : `<p class="none">No audio for this chapter yet. The pages are all here.</p>`) + (c.nx ? `<div class="prac"><div class="ph">Next steps</div>${c.nx.wb ? `<a class="nwb" href="${site(c.nx.wb[0].replace(/ /g, '%20'))}" target="_blank" rel="noopener"><b>1 · Workbook</b><span>Print ${c.nx.wb[1]} · ${c.nx.wb[2]}</span></a>` : ''}${c.nx.dr.map((d, i) => `<a class="ndr" href="${site('drills.html')}?drill=${d[0]}&tab=drill${d[2] ? '&level=' + d[2] : ''}" target="_blank" rel="noopener"><b>${c.nx.wb ? 2 + i : 1 + i} · Drill</b><span>${d[1]} · 10 questions</span></a>`).join('')}<p class="nhint">Workbook today, on paper. The drill tomorrow, and again the day after.</p></div>` : '') + `<label class="follow"><input type="checkbox" id="fol" ${follow ? 'checked' : ''}> Follow on the page</label><p class="who">The Butler explains, Clara asks. Each Example asks first, then pauses so you can try.</p>`;
   const fo = document.getElementById('fol'); if (fo) fo.onchange = () => { follow = fo.checked; };
   if (c.clips) { const pp = document.getElementById('pp'); pp.disabled = playing < 0; pp.onclick = () => { if (audio.paused) { audio.play().catch(() => {}); } else audio.pause(); drawSide(); };
     side.querySelectorAll('.sp').forEach(b => b.onclick = () => { rate = +b.dataset.v; audio.playbackRate = rate; drawSide(); });
