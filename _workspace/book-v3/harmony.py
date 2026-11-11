@@ -78,7 +78,7 @@ def guestman(letters, redi=(), w=70, tag=''):
 
 # ---------- her 7 Nov: the chord metaphor is a layer cake (triad = 3 layers; one more layer per note; decorations for colour chords) ----------
 CAKEFL = [('#f7b6a3', '#e4572e'), ('#fff3d6', '#d9a84e'), ('#f9d9e6', '#d77fa1'), ('#d9ecf7', '#5b9cc8'), ('#e3f2dc', '#6aa85a'), ('#efe3f7', '#9a6bc0'), ('#fde8c8', '#e0963a')]
-def _layer(cx, yb, w, h, i, letter, red=False, seed=0):   # her 7 Nov: a pretty cake layer: pastel sponge, wavy icing, sprinkles, the note in a white disc
+def _layer(cx, yb, w, h, i, letter, red=False, seed=0, solid=False):   # her 7 Nov: a pretty cake layer: pastel sponge, wavy icing, sprinkles, the note in a white disc
     import random as _rnd; rg = _rnd.Random(seed * 31 + i)
     f, st = CAKEFL[i % len(CAKEFL)]
     if red: st = R
@@ -91,6 +91,9 @@ def _layer(cx, yb, w, h, i, letter, red=False, seed=0):   # her 7 Nov: a pretty 
         if abs(sx - cx) < h * .45: continue
         o += f'<rect x="{sx:.0f}" y="{sy:.0f}" width="{h * .15:.1f}" height="{h * .06:.1f}" rx="1" fill="{CAKEFL[(i + 3) % len(CAKEFL)][1]}" transform="rotate({rg.randint(-50, 50)} {sx:.0f} {sy:.0f})"/>'
     rr = h * .34
+    if solid:   # her 11 Nov: the note that changes is a full red disc, everything else stays plain
+        o += f'<circle cx="{cx}" cy="{y + h * .57:.1f}" r="{rr * 1.08:.1f}" fill="{R if red else "#fff"}" stroke="{R if red else N}" stroke-width="2"/><text x="{cx}" y="{y + h * .57 + rr * .5:.1f}" text-anchor="middle" font-family="PF,serif" font-size="{rr * 1.35:.1f}" font-weight="700" fill="{"#fff" if red else N}">{letter}</text>'
+        return o
     o += f'<circle cx="{cx}" cy="{y + h * .57:.1f}" r="{rr:.1f}" fill="#fff" stroke="{st}" stroke-width="2"/><text x="{cx}" y="{y + h * .57 + rr * .5:.1f}" text-anchor="middle" font-family="PF,serif" font-size="{rr * 1.35:.1f}" font-weight="700" fill="{R if (red or i == 0) else N}">{letter}</text>'
     return o
 def _stand(cx, yb, w):
@@ -98,12 +101,12 @@ def _stand(cx, yb, w):
 def _cherry(cx, ytop, s=1):
     return f'<path d="M{cx},{ytop - 15 * s} q{6 * s},{-12 * s} {14 * s},{-14 * s}" fill="none" stroke="#3f8f6b" stroke-width="2.4"/><circle cx="{cx}" cy="{ytop - 8 * s}" r="{9 * s}" fill="#d7263d"/><circle cx="{cx - 3 * s}" cy="{ytop - 11 * s}" r="{2.5 * s}" fill="#fff" opacity=".8"/>'
 def _tier(cx, yb, w, h, fill, stroke, sw): return f'<rect x="{cx - w / 2:.1f}" y="{yb - h:.1f}" width="{w:.1f}" height="{h:.1f}" rx="6" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
-def cakeman(letters, redi=(), w=70, tag=''):   # a pretty three-layer cake: chapter heroes only (her 7 Nov: one cake per chapter)
+def cakeman(letters, redi=(), w=70, tag='', solid=False):   # a pretty three-layer cake: chapter heroes only (her 7 Nov: one cake per chapter)
     ws, hs = [128, 108, 88], [46, 42, 38]
     o = f'<svg viewBox="0 0 160 250" style="width:{w}px;height:auto;display:block;margin:0 auto">'
     yb = 196; o += _stand(80, yb, 128)
     for i in range(3):
-        o += _layer(80, yb, ws[i], hs[i], i, letters[i], i in redi, len(letters[0])); yb -= hs[i]
+        o += _layer(80, yb, ws[i], hs[i], i, letters[i], i in redi, len(letters[0]), solid); yb -= hs[i]
     o += _cherry(80, yb)
     if tag:
         tw = 22 + 15 * len(tag.replace('♭', 'b').replace('♯', '#'))
@@ -159,8 +162,8 @@ def building(notes, labels, top_new=1, w=150, h=46):   # a tall chord stack with
 
 BIGSNOW = cake_tall(['C', 'E', 'G'], ['root', '3rd: skip D', '5th: skip F'], 0, w=56).replace('style="width:100%;max-width:', 'style="width:100%;max-height:330px;max-width:1', 1)
 def hero_kinds():   # her 6 Nov: the four kinds side by side, the middle layer (or the top) is what changes
-    K = [(('C', 'E', 'G'), (), 'C', 'major', '3 + 2'), (('C', 'E♭', 'G'), (1,), 'Cm', 'minor', '2 + 3'), (('C', 'E♭', 'G♭'), (1, 2), 'C°', 'diminished', '2 + 2'), (('C', 'E', 'G♯'), (2,), 'C+', 'augmented', '3 + 3')]
-    return '<div class="hk4">' + ''.join(f'<div>{cakeman(l, r, 140, t)}<b>{n}</b><span>{c}</span></div>' for l, r, t, n, c in K) + '</div>'
+    K = [(('C', 'E', 'G'), (), 'C', 'major', '3 + 2', 'the plain cake'), (('C', 'E♭', 'G'), (1,), 'Cm', 'minor', '2 + 3', 'E one key lower'), (('C', 'E♭', 'G♭'), (1, 2), 'C°', 'diminished', '2 + 2', 'E and G one key lower'), (('C', 'E', 'G♯'), (2,), 'C+', 'augmented', '3 + 3', 'G one key higher')]
+    return '<div class="hk4">' + ''.join(f'<div>{cakeman(l, r, 140, t, True)}<b>{n}</b><span>{c}</span><em style="font-style:normal;font-size:13px;font-weight:700;color:{R if r else N}">{d}</em></div>' for l, r, t, n, c, d in K) + '</div>'
 def hero_keychords():   # the seven cakes of C major; I, IV and V in red
     D = [(('C', 'E', 'G'), 'C', 'I'), (('D', 'F', 'A'), 'Dm', 'ii'), (('E', 'G', 'B'), 'Em', 'iii'), (('F', 'A', 'C'), 'F', 'IV'), (('G', 'B', 'D'), 'G', 'V'), (('A', 'C', 'E'), 'Am', 'vi'), (('B', 'D', 'F'), 'B°', 'vii°')]
     return '<div class="hk7">' + ''.join(f'<div class="{"on" if n in ("I", "IV", "V") else ""}">{cakeman(l, (0, 1, 2) if n in ("I", "IV", "V") else (), 74, t)}<b>{n}</b></div>' for l, t, n in D) + '</div>'
@@ -310,7 +313,7 @@ H5A = hpage(f"""{head('Part IV · Harmony · 5', 'Seventh chords', 'Add one more
 {two(cake_tall(['C', 'E', 'G', 'B'], ['root', '3rd', '5th', '7th']), '<div class="big3"><div><span>1</span><p>Build the triad: <b>C E G</b>.</p></div><div><span>2</span><p>Skip one, add the next: <b class="co">B</b>.</p></div><div><span>3</span><p>Count the keys between: <b>3 + 2 + 3</b>. That is <b>Cmaj7</b>.</p></div></div>' + minikb([(0, 'C'), (4, 'E'), (7, 'G'), (11, 'B')], '3 + 2 + 3', 34, 110), '1fr 1.1fr')}
 {h3('Five flavours, all on C')}
 {CARDS}
-<p class="sm">How the names work: major triad + major 7th = <b>maj7</b> · major triad + minor 7th = <b>7</b> · minor triad + minor 7th = <b>m7</b> · diminished triad + minor 7th = <b>ø7</b> · diminished triad + diminished 7th = <b>°7</b>.</p>
+<p class="sm">How the names work: major triad + major 7th = <b>maj7</b> · major triad + minor 7th = <b>7</b>, the <b>dominant 7th</b> (C7 is said “C seven” or “C dominant seventh”: in a key it sits on the 5th note, the dominant, as V7) · minor triad + minor 7th = <b>m7</b> · diminished triad + minor 7th = <b>ø7</b> · diminished triad + diminished 7th = <b>°7</b>.</p>
 {h3('A seventh on every note of C major')}
 {px('h7_key', 84, 'Only white keys: count the keys between to name each one.')}""", 72)
 

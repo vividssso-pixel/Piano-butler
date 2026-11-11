@@ -1435,7 +1435,7 @@ NEW['H5'] = ('Seventh chords', [
  ('Five flavours', [
   ('B', 'There are five flavours, all on C. Major seven: dreamy, like bossa nova.', c(122, 'k7')),
   ('piano', '[C4 E4 G4 B4]', c(122, 'k7')),
-  ('B', 'Seven: bluesy. The top goes down just one key, to B flat.', c(122, 'k7')),
+  ('B', 'Seven: bluesy. The top goes down just one key, to B flat. Its full name is the dominant seventh: C seven, or C dominant seventh. Dominant, because in a key it lives on the fifth note, the dominant: G seven in C major.', c(122, 'k7')),
   ('piano', '[C4 E4 G4 Bb4]', c(122, 'k7')),
   ('B', 'Minor seven: mellow, like a soul ballad.', c(122, 'k7')),
   ('piano', '[C4 Eb4 G4 Bb4]', c(122, 'k7')),
