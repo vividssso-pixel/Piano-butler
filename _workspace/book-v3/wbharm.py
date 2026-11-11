@@ -178,13 +178,13 @@ hans = [('p. 1', 'Build it: C E G · D F A · F A C · G B D · A C E · B D F. 
         ('p. 23', 'Numbers into chords: fifties C Am F G · jazz Dm G C · canon C G Am Em F C F G. Into numbers: vi IV I V · IV V iii vi · ii V I. Name the trip (G): pop four, fifties, jazz three-step. In F: I vi IV V fifties · ii V I jazz three-step.'),
         ('p.\u200924', 'G major: G D Em C · F major: F C Dm B♭ · D major: D A Bm G. Jobs: away, pull, home (cousin), away, pull. Own trip: for example C F G C (I IV V I) or C Dm G C (I ii V I).')]
 # her 11 Nov ("응 추가해줘"): Harmony was the one part with no review or progress page
-HR = hpage2(f'''<div class="kick">Harmony · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 28.</p>
+HR = hpage2(f'''<div class="kick">Harmony · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 28: one mark for each answer.</p>
 {ex(1, 'Build it', 3, 'Write the three notes of each triad, root first.', tbl(['Triad', 'Root', '3rd', '5th'], [[f'<b>{a}</b>', BOX, BOX, BOX] for a in ('F major', 'A minor', 'B diminished')], ['34%', '22%', '22%', '22%'], 'bld'))}
 {ex(2, 'Name the cadence', 2, 'Write perfect, plagal, imperfect or interrupted.', '<div class="ts6" style="grid-template-columns:1fr 1fr">' + ''.join(f'<div><b>{a}</b> <span class="al" style="flex:1"></span></div>' for a in ('V → I', 'IV → I', 'I → V', 'V → vi')) + '</div>')}
 {ex(3, 'Complete it', 2, 'One word, letter or number in each space.', f'<div class="sent"><p>In C major, chord V is G B {BOX} .</p><p>A chord with its 3rd at the bottom is in {BOX} inversion.</p></div>')}
 {ex(4, 'Chords in G major', 2, 'Write the notes of chords I, IV and V in G major.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> <span class="al" style="flex:1"></span></div>' for a in ('I', 'IV', 'V')) + '</div>')}
 {ex(5, 'True or false?', 1, 'Circle T or F.', tfrows(('G/B means a G chord with B in the bass.', 'A sus4 chord has a 3rd.', 'C7 has the notes C E G B♭.')))}
-<div class="score">Score <span class="ab"></span> / 10</div>''', 25, None)
+<div class="score">Score <span class="ab"></span> / 15</div>''', 25, None)
 hconcepts = [('chords and triads', 1), ('four kinds of triad', 2), ('chords in a key', 3), ('inversions', 4), ('seventh chords', 5), ('colour chords', 6), ('the tower: 9, 11, 13', 7), ('slash chords', 8), ('guest chords', 'M1'), ('cadences', 'M2'), ('chords under a melody', 'M3'), ('progressions everywhere', 'M4')]
 HPR = hpage2(f'''<div class="kick">Harmony · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
 {tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', 'p.\u2009' + PM.resolve('{{' + (k if isinstance(k, str) else 'H%d' % k) + '}}')] for c, k in hconcepts], ['36%', '15%', '17%', '17%', '15%'], 'prog')}

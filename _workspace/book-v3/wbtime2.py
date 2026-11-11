@@ -201,10 +201,10 @@ rsum = ''.join('<div class="sum">' + ' <span class="pl">+</span> '.join(gin('n',
 R = wpage(f'''<div class="kick">Time · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 19: one mark for each answer.</p>
 {ex(1, 'Name the notes', 1, 'Write the name of each note.', '<div class="nm4">' + ''.join(f'<div>{gcell("n", k, 40)}{LINE}</div>' for k in ('m', 'q', 'dc', 'sb')) + '</div>')}
 {ex(2, 'How many beats?', 1, 'Crotchet = 1 beat.', f'<div class="sums">{rsum}</div>')}
-{ex(3, 'Time signatures', 2, 'Write a time signature for each bar, then circle the compound ones.', grid([cell(k, 'time signature ' + BOX, 56) for k in ('wt3', 'wt5', 'wt6')], 3))}
+{ex(3, 'Time signatures', 2, 'Write a time signature for each bar, then circle the compound ones (one more mark).', grid([cell(k, 'time signature ' + BOX, 56) for k in ('wt3', 'wt5', 'wt6')], 3))}
 {ex(4, 'Count it', 2, 'Write a count in every box.', wx('wrev', 74))}
 {ex(5, 'True or false?', 2, 'Circle T or F.', ''.join(f'<div class="row">{t}<span class="tf">T &nbsp; F</span></div>' for t in ('A tie joins two notes of different pitches.', '6/8 has two beats in a bar.', 'In 4/4, a beam may cross the middle of the bar.')))}
-<div class="score">Score <span class="ab"></span> / 18</div>''', 17, None)
+<div class="score">Score <span class="ab"></span> / 20</div>''', 17, None)
 concepts = ['pulse, tempo and strong beats', 'bar lines and repeat signs', 'note and rest values', 'dots and ties', 'simple time signatures', 'compound time (6/8)', 'irregular time (5/4, 7/8)', 'grouping with beams', 'triplets and semiquavers', 'upbeats', 'syncopation', 'swing', 'hemiola', 'repeat signs and 1st/2nd time bars', 'D.C., D.S., Fine and Coda']
 PR = wpage(f'''<div class="kick">Time · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
 {tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (34, 34, 36, 38, 40, 42, 42, 44, 44, 44, 46, 46, 46, 48, 48))], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
