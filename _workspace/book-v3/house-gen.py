@@ -21,8 +21,11 @@ def wb(k):
     f=[x for x in sorted(os.listdir(d)) if x.startswith(pre)]
     pages=str(i) if p=='S' else f'{2*i-1}–{2*i}'
     return ['Claude outputs/Books - latest/2 Workbook/'+WBF[p]+'/'+f[0], ('p. ' if p=='S' else 'pp. ')+pages]
+# her 11 Nov: rooms hold slices -- the clips (1-based, in Read & listen order) a floor needs; no entry = the whole chapter
+SLICE={'P1':[1,2,3,4,9],'T1':[1,3,6,7,8],'T2':[1,2,6,7,8,11],'E1':[1,7],
+       'T3':[1,2,3,5,7,10,11,12],'T4':[1,2,3,4,6,8],'T8':[1,2,3,4,5],'E2':[1,2,3,4],'S1':[1,2,3,7],'S2':[1,2,4,6]}
 FLOORS=[('Beginner','B1 P1 L1 P2 T1 T2 E1 L2',[]),
-('Prelim','P3 P4 T3 T4 T8 E2 S1 S2 H1',[]),
+('Prelim','P3 P4 T3 T4 T8 E2 S1 S2 H1',[('P1','note-names',3,'The two ends and the eight Cs','양 끝과 여덟 개의 C',[5,6,7,8]),('T1','pulse',3,'Tempo, strong and weak beats','빠르기, 강박과 약박',[2,4,5]),('T2','note-values',4,'Quavers, stems and flags','8분음표, 기둥과 꼬리',[3,4,9,10]),('E1','dynamics',3,'mp, mf and the hairpins','mp, mf와 헤어핀',[2,3,5,6])]),
 ('Grade 1','P5 P6 P7 S3 T5 E3 H2 L3',[('S2','minor-scales',4,'The raised 7th','올린 7음'),('H1','chords',7,'Tonic triads: which key?','으뜸3화음: 무슨 조?')]),
 ('Grade 2','P8 T6 S4 E4 H3 F1',[('S3','key-signatures',14,'Major keys from flats','플랫으로 장조 찾기'),('P7','intervals',5,'Melodic or harmonic?','가락 음정일까 화성 음정일까?')]),
 ('Grade 3','S5 E5 H4 F2 L4',[('S3','key-signatures',15,'Sharps and flats mixed','샵과 플랫 섞어서'),('P8','intervals',7,'Intervals by ear','듣고 음정 맞히기'),('T6','rhythm',8,'Semiquavers: 1 e + a','16분음표: 1 e + a')]),
@@ -48,12 +51,13 @@ for fname,new,rev in FLOORS:
     for k in new.split():
         a,c=PM.pages_of(k); pg=f'{a}' if c==1 else f'{a}–{a+c-1}'
         n=k[1:]
-        rooms.append(dict(id='hbr-'+k,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=('' if k[0]=='B' else n),pages=pg,wb=wb(k),dr=[[d,lv,lab] for d,lv,lab in D[k]],again=None))
+        rooms.append(dict(id='hbr-'+k,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=('' if k[0]=='B' else n),pages=pg,wb=wb(k),dr=[[d,lv,lab] for d,lv,lab in D[k]],again=None,clips=SLICE.get(k)))
         ids.append('hbr-'+k)
-    for k,d,lv,en,ko in rev:
+    for rv in rev:
+        k,d,lv,en,ko=rv[:5]; cl=rv[5] if len(rv)>5 else None
         a,c=PM.pages_of(k); pg=f'{a}–{a+c-1}'
         rid=f'hbr-{k}-{fname.replace(" ","").lower()}'
-        rooms.append(dict(id=rid,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=k[1:],pages=pg,wb=wb(k),dr=[[d,lv,en]],again=[en,ko]))
+        rooms.append(dict(id=rid,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=k[1:],pages=pg,wb=wb(k),dr=[[d,lv,en]],again=[en,ko],clips=cl))
         ids.append(rid)
     floors.append(dict(ids=ids,en=[fname,FLOOR_TXT[fname][0]],ko=[fname,FLOOR_TXT[fname][1]]))
 assert len({r['ch'] for r in rooms if not r['again']})==50, len({r['ch'] for r in rooms if not r['again']})
