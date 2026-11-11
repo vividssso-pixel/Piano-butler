@@ -5,8 +5,8 @@ import numpy as np, soundfile as sf, os, json, subprocess, sys, re
 from kokoro_onnx import Kokoro
 SR = 24000
 K = Kokoro('/tmp/claude-0/tts/kokoro-v1.0.onnx', '/tmp/claude-0/tts/voices-v1.0.bin')
-VOICE = {'C': ('af_heart', 1.0), 'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_lily', 0.86), 'K': ('bm_lewis', 0.88)}
-SHIFT = {'K': 0.92}   # her 9 Nov: the King below the Butler; the Queen is Lily, slow and calm, unshifted (a pitched-up voice sounded like a child)   # her 9 Nov: the Queen (treble) and the King (bass) visit now and then
+VOICE = {'C': ('af_heart', 1.0), 'B': ('bm_george', 0.98), 'P': ('bf_isabella', 1.06), 'Q': ('bf_lily', 0.86), 'K': ('bm_lewis', 0.88), 'D': ('bm_daniel', 0.9), 'G': ('bf_emma', 1.04), 'S': ('bm_fable', 1.0)}   # her 11 Nov: the Doorkeeper (key signature), the Guest (accidentals), the Stationmaster (time signature)
+SHIFT = {'K': 0.92, 'D': 0.94}   # her 9 Nov: the King below the Butler; the Queen is Lily, slow and calm, unshifted (a pitched-up voice sounded like a child)   # her 9 Nov: the Queen (treble) and the King (bass) visit now and then
 NOTES = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
 def freq(n):
     m = re.match(r'([A-G])([#b]?)(\d)', n); k = NOTES[m.group(1)] + {'#': 1, 'b': -1, '': 0}[m.group(2)]
@@ -94,7 +94,7 @@ IT_WORDS = ['pianissimo', 'fortissimo', 'mezzo-piano', 'mezzo-forte', 'mezzo pia
 _ITRX = re.compile(r'⟨([^⟩]+)⟩|\b(' + '|'.join(sorted((re.escape(w) for w in IT_WORDS), key=len, reverse=True)) + r')\b', re.I)
 def _say1(who, text, it=False):
     if it:   # her 10 Nov: Italian words in an Italian voice (Nicola for the men, Sara for Clara and the Queen)
-        v = 'im_nicola' if who in ('B', 'K') else 'if_sara'
+        v = 'im_nicola' if who in ('B', 'K', 'D', 'S') else 'if_sara'
         a, sr = K.create(text, voice=v, speed=0.95, lang='it'); a = np.asarray(a, dtype=np.float32)
         j = np.where(np.abs(a) > 0.01)[0]; return a[max(0, j[0] - 120):j[-1] + 600] if len(j) else a
     v, sp = VOICE[who]; a, sr = K.create(text, voice=v, speed=sp, lang='en-gb'); a = np.asarray(a, dtype=np.float32)
