@@ -336,7 +336,23 @@ function fmt(t) { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60)
 audio.addEventListener('timeupdate', () => { const sk = document.getElementById('sk'), tm = document.getElementById('tm'); if (!sk || !audio.duration) return; if (document.activeElement !== sk) sk.value = Math.round(audio.currentTime / audio.duration * 1000); tm.textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration); });
 function play(i) {
   const k = CH[ci].clips[i]; playing = i; audio.src = k.f; audio.playbackRate = rate; audio.play().catch(() => {});
-  const p = CH[ci].pages.indexOf(k.p); if (p >= 0) { pi = p; showPage(); } drawSide();
+  const p = CH[ci].pages.indexOf(k.p); if (p >= 0) { pi = p; showPage(); } drawSide(); mediaMeta();
+}
+// her 11 Nov: keep playing with the phone locked or the browser in the background, with play/pause/next on the lock screen
+function mediaMeta() {
+  if (!('mediaSession' in navigator) || playing < 0) return; const c = CH[ci], k = c.clips[playing];
+  try { navigator.mediaSession.metadata = new MediaMetadata({ title: k.t, artist: 'The Piano Butler', album: c.t, artwork: [{ src: new URL('pages/p' + pad(k.p) + '.webp', location.href).href, sizes: '1000x1415', type: 'image/webp' }] }); } catch (e) {}
+}
+if ('mediaSession' in navigator) {
+  const H = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch (e) {} };
+  H('play', () => { audio.play().catch(() => {}); }); H('pause', () => { audio.pause(); });
+  H('previoustrack', () => { if (playing > 0) play(playing - 1); else audio.currentTime = 0; });
+  H('nexttrack', () => { if (playing >= 0 && playing + 1 < CH[ci].clips.length) play(playing + 1); });
+  H('seekbackward', (d) => { audio.currentTime = Math.max(0, audio.currentTime - ((d && d.seekOffset) || 10)); });
+  H('seekforward', (d) => { audio.currentTime = Math.min(audio.duration || 1e9, audio.currentTime + ((d && d.seekOffset) || 10)); });
+  H('seekto', (d) => { if (d && d.seekTime != null) audio.currentTime = d.seekTime; });
+  audio.addEventListener('play', () => { navigator.mediaSession.playbackState = 'playing'; });
+  audio.addEventListener('pause', () => { navigator.mediaSession.playbackState = 'paused'; });
 }
 let follow = true;
 const stage = document.getElementById('stage'), ov = document.getElementById('ov'), sub = document.getElementById('sub');
