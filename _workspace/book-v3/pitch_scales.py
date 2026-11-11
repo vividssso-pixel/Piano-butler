@@ -71,7 +71,7 @@ P30 = ppage(f"""{head('Part I · Pitch · 10', 'Keys and key signatures', 'Why w
 {youknow('Minuet in G', ykfig('yk_minuet2', ('n5',), 88), 'One sharp in the key signature: every F is <b class="co">F♯</b>, like the one just before the top G. One sharp, and the piece ends on G: <b>G major</b>.', 'Find every F in the piece and play it as F♯.')}
 {inaction('Which notes are flat?', qtag(px('ks_3f', 84)), ['<b>Count the flats.</b>', '<b>Name them in order:</b> the first flat is always B, then …', '<b>Which keys turn black?</b>'], 'Three flats, <b>B♭ E♭ A♭</b>: every B, E and A in the piece.')}
 {watch(['Writing a key signature in the wrong order: sharps always F C G D A E B.', 'Reading it once and forgetting it: glance at the key signature at the start of every line.'])}
-{thinkt('A dress code on a party invitation: written once at the top, it applies to every guest all night. Only an accidental, a word to one guest, overrules it, and only until the bar line.')}
+{thinkt('The Doorkeeper: at the door of every line he reads out the dress code, and it lasts all night. Only the Guest, an accidental, changes it, and only until the bar line.')}
 {game('Which comes next?', qitems(['sharps: F C G …', 'flats: B E …', 'the 1st flat', 'the 2nd sharp'], 4), 'Use the orders of sharps and flats.', '1 D · 2 A · 3 B♭ · 4 C♯.')}
 {try10(px('sharps', 60), 'Say the sharps in order.', '“Father Charles Goes Down And Ends Battle”: F C G D A E B. Then backwards for the flats: B E A D G C F.')}
 {foot('Major scales p. {{S1}} · Finding the key p. {{S4}} · The circle of fifths p. {{S5}}', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 31)

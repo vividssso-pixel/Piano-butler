@@ -304,7 +304,10 @@ NEW['P6'] = ('Sharps, flats and naturals', [
   ('B', 'And a natural cancels a sharp or a flat: back to the plain white key. It’s the undo button.', c(39, 'ht')),
   ('B', 'Now, where there’s no black key in between, a sharp or flat lands on a white key: E sharp is F, B sharp is C, F flat is E, and C flat is B.', c(39, 'xlate')),
   ('P', 'So E sharp is really F wearing a disguise.', c(39, 'xlate')),
-  ('B', 'A very thin disguise. And one rule to remember: a sign belongs to one line or space. It changes only that line or space, in that octave, and only until the bar line. The same letter in another octave stays as it is.', c(40, 'xlate'))]),
+  ('B', 'A very thin disguise. And one rule to remember: a sign belongs to one line or space. It changes only that line or space, in that octave, and only until the bar line. The same letter in another octave stays as it is.', c(40, 'xlate')),
+  ('G', 'Hello, hello! Sorry I’m late. I’m the Guest. I pop into a bar wearing my sharp hat, or my flat one, and everyone on my line or space wears it too.', c(40, 'xlate')),
+  ('P', 'And how long do you stay?', c(40, 'xlate')),
+  ('G', 'Until the bar line, darling. That’s the front door. Then I’m off, and the next bar is plain again. And when I take my hat off, that’s a natural.', c(40, 'xlate'))]),
  ('Two names for every black key', [
   ('B', 'Now, Clara, something we skipped in chapter one. The white keys have letters. But the black keys have no letters of their own. So what are they called?', c(39, 'hero')),
   ('P', 'Um. Blacky One, Blacky Two?', c(39, 'hero')),
@@ -338,8 +341,9 @@ NEW['P6'] = ('Sharps, flats and naturals', [
   ('P', 'Still sharp?', c(40, 'ex2', show=['F♯', 'G'])),
   ('B', 'Yes, until the bar line. And after the bar line?', c(40, 'ex2', show=['F♯', 'G'])),
   ('P', 'Still F sharp. The sign is right there.', c(40, 'ex2', oops=True)),
-  ('B', 'Ah, that one catches everybody. Think of a sign as a sticky note: it falls off at the bar line. Which side of the bar line is this F?', c(40, 'ex2')),
-  ('P', 'The other side. Plain F again!', c(40, 'ex2', reveal=True)),
+  ('B', 'Ah, that one catches everybody. Remember our Guest: she leaves at the bar line, and takes her hat with her. Which side of the bar line is this F?', c(40, 'ex2')),
+  ('P', 'The other side. The Guest has gone home: plain F again!', c(40, 'ex2', reveal=True)),
+  ('G', 'I never stay past the bar line. It’s a rule.', c(40, 'ex2', reveal=True)),
   ('B', 'Now a natural. B, then B flat, and it stays flat for the rest of the bar. Then a natural sign. What does it do?', c(41, 'ex3', show=['B', 'B♭'])),
   ('pause', 3, c(41, 'ex3', show=['B', 'B♭'])),
   ('P', 'It presses undo: back to the white key B.', c(41, 'ex3', lab=['?'], reveal=True)),
@@ -356,7 +360,8 @@ NEW['P6'] = ('Sharps, flats and naturals', [
   ('B', 'Now a famous one. Beethoven’s Für Elise begins on E and the black key just left of it: D sharp. Back and forth, like a nervous knock at the door.', c(41, 'yk')),
   ('piano', 'E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4 | C4/2 E4/2 A4/2 B4 | E4/2 G#4/2 B4/2 C5 | E4/2 E5/2 D#5/2 E5/2 D#5/2 E5/2 B4/2 D5/2 C5/2 A4*2', c(41, 'yk')),
   ('B', 'Look closely: the sharp is written again in the new bar, because the bar line wiped it out. And later the D has a natural sign, so it’s plain D again.', c(41, 'yk')),
-  ('P', 'The sticky note fell off, and then Beethoven pressed undo.', c(41, 'yk')),
+  ('P', 'The Guest left at the bar line and came back in the next bar. Then she took her hat off.', c(41, 'yk')),
+  ('G', 'Beethoven invited me twice. I was very flattered.', c(41, 'yk')),
   ('B', 'Your mission: play E and D sharp back and forth, then find F sharp and B flat in three different places on the piano. Until next time, Clara.', c(41, 'think')),
   ('P', 'Bye, Butler!', c(41, 'think'))])])
 
@@ -646,14 +651,16 @@ NEW['T4'] = ('Time signatures', [
  ('The secret', [
   ('P', 'Butler, what are the two numbers at the start of the music? Is it a maths test?', c(59, 'lead')),
   ('B', 'Not a test, I promise. It’s the time signature, Clara. Read it like a train ticket. The top number says how many seats each carriage, each bar, has. The bottom number says which note sits in one seat.', c(59, 'hero')),
-  ('B', 'Four-four: four seats, and a crotchet in each. Count the seats with me.', c(59, 'hero')),
+  ('S', 'Tickets, please! Stationmaster here. I check the time signature at the start of the line, and I keep every carriage running on time.', c(59, 'hero')),
+  ('S', 'Four-four: four seats, and a crotchet in each. Count them with me.', c(59, 'hero')),
   ('count', {'beats': 'X x M x X x M x', 'notes': 'C4 C4 C4 C4 C4 C4 C4 C4', 'say': '1 2 3 4 1 2 3 4'}, c(59, 'hero')),
   ('B', 'That is the secret: the top number is how many beats, and the bottom number is which note gets one beat.', c(59, 'secret'))]),
  ('Think of a train', [
   ('B', 'In three-four every carriage has three seats. A minim books two, a crotchet one. A rest books a seat and leaves it empty, like a bag on the seat next to you. A dotted minim is a big family that fills all three.', c(59, 'pzbox')),
   ('count', {'beats': 'X x x X x x X x x', 'notes': 'C4*2 C4 C4 R C4 C4*3', 'say': '1 2 3 1 2 3 1 2 3'}, c(59, 'pzbox')),
   ('B', 'The bottom number is a secret code: two means a minim, four a crotchet, eight a quaver, sixteen a semiquaver.', c(59, 'xlate')),
-  ('P', 'A code! Like spies.', c(59, 'xlate'))]),
+  ('P', 'A code! Like spies.', c(59, 'xlate')),
+  ('S', 'Like railway codes, miss. Every station knows them.', c(59, 'xlate'))]),
  ('Example: what does three-four mean?', [
   ('B', 'Three-four. How many counts in each bar, and which note gets one count? Pause and think.', c(60, 'ex1')),
   ('pause', 3, c(60, 'ex1')),
@@ -670,7 +677,7 @@ NEW['T4'] = ('Time signatures', [
   ('B', 'This carriage has three seats, and a quaver sits in each. Write the ticket. Pause and try.', c(60, 'ex2')),
   ('pause', 4, c(60, 'ex2')),
   ('P', 'Three on top. A quaver is the code eight, so eight underneath: three-eight!', c(60, 'ex2', reveal=True)),
-  ('B', 'Ticket accepted. All aboard.', c(60, 'ex2', reveal=True))]),
+  ('S', 'Ticket accepted. All aboard!', c(60, 'ex2', reveal=True))]),
  ('Example: where does the rest go?', [
   ('B', 'Four-four, and three crotchets. Which seat is empty, and what goes there?', c(61, 'ex3')),
   ('pause', 3, c(61, 'ex3')),
@@ -678,14 +685,16 @@ NEW['T4'] = ('Time signatures', [
   ('count', {'beats': 'X x M x', 'notes': 'C4 C4 C4 R', 'say': '1 2 3 4'}, c(61, 'ex3', reveal=True))]),
  ('Changing time signature', [
   ('B', 'A new time signature can arrive right after a bar line, like a train changing to shorter carriages at a station. Here three-four becomes two-four, and two beats a bar holds until the next change.', c(61, 'xlate')),
+  ('S', 'Change at this station! Two seats per carriage from here on.', c(61, 'xlate')),
   ('count', {'beats': 'X x x X x x X x X x X x', 'notes': 'C4 C4 C4 C4*2 C4 C4 C4 C4*2 C4 C4', 'say': '1 2 3 1 2 3 1 2 1 2 1 2'}, c(61, 'xlate'))]),
  ('You know this', [
   ('B', 'The Minuet from the Notebook for Anna Magdalena Bach: one two three, one two three, the step of an old court dance. That is three-four.', c(61, 'yk')),
   ('count', {'beats': 'X x x X x x X x x X x x X x x X x x X x x X x x', 'notes': 'D5 G4/2 A4/2 B4/2 C5/2 D5 G4 G4 E5 C5/2 D5/2 E5/2 F#5/2 G5 G4 G4 C5 D5/2 C5/2 B4/2 A4/2 B4 C5/2 B4/2 A4/2 G4/2 F#4 G4/2 A4/2 B4/2 G4/2 A4*3', 'say': '1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3 1 2 3'}, c(61, 'yk')),
   ('P', 'I can imagine people in big wigs bowing to each other.', c(61, 'yk')),
   ('Q', 'We still dance it at the palace. And remember, Clara: the bottom number is not a count. It names the note that gets one beat.', c(61, 'watch')),
+  ('S', 'And mind the gap, miss: every carriage must be full. Count every bar.', c(61, 'watch')),
   ('B', 'Until next time, Clara.', c(61, 'watch')),
-  ('P', 'Bye, Butler! Bye, Your Majesty!', c(61, 'watch'))])])
+  ('P', 'Bye, Butler! Bye, Your Majesty! Bye, Stationmaster!', c(61, 'watch'))])])
 
 NEW['T5'] = ('Compound and irregular time', [
  ('The secret', [
@@ -720,7 +729,8 @@ NEW['T5'] = ('Compound and irregular time', [
   ('count', {'beats': 'X x x M x X x x M x', 'notes': 'C4 C4 C4 C4 C4 C4 C4 C4 C4 C4', 'say': '1 2 3 1 2 1 2 3 1 2'}, c(64, 'xlate')),
   ('K', 'Five in a bar? In my day we kept to twos and threes. But I must admit, it does make one dance.', c(64, 'xlate')),
   ('P', 'I’d love to see the King dance in five.', c(64, 'xlate')),
-  ('K', 'Nobody sees the King dance in five.', c(64, 'xlate'))]),
+  ('K', 'Nobody sees the King dance in five.', c(64, 'xlate')),
+  ('S', 'Five-four: one carriage of three seats, one of two, coupled together. Still on time, sir.', c(64, 'xlate'))]),
  ('You know this', [
   ('B', 'Row, Row, Row Your Boat: two big beats in every bar, each a dotted crotchet. Sway twice per bar while you sing, like a boat on gentle waves.', c(64, 'yk')),
   ('count', {'beats': 'X R R M R R X R R M R R X R R M R R X R R M R R X R R M R R X R R M R R X R R M R R X R R M R R', 'notes': 'C4*3 C4*3 C4*2 D4 E4*3 E4*2 D4 E4*2 F4 G4*6 C5 C5 C5 G4 G4 G4 E4 E4 E4 C4 C4 C4 G4*2 F4 E4*2 D4 C4*6', 'say': '1 - - 2 - - 1 - - 2 - - 1 - - 2 - - 1 - - 2 - - 1 - - 2 - - 1 - - 2 - - 1 - - 2 - - 1 - - 2 - -'}, c(64, 'yk')),
@@ -1103,7 +1113,11 @@ NEW['S3'] = ('Keys and key signatures', [
   ('B', 'Look: one sharp, on the F line, right next to the clef. From then on, every F in the piece plays F sharp, high or low.', c(99, 'hero', seq=['#0', '#1', '#2'])),
   ('piano', 'G4 A4 B4 C5 D5 E5 F#5 G5', c(99, 'hero')),
   ('P', 'So it’s like a rule for the whole piece.', c(99, 'secret')),
-  ('B', 'Exactly. That is the secret: the key signature says, once, at the start, which notes are always sharp or flat. Think of a dress code on a party invitation: written once at the top, it applies to every guest, all night.', c(99, 'secret'))]),
+  ('B', 'Exactly. That is the secret: the key signature says, once, at the start, which notes are always sharp or flat. Think of a dress code at a party. And every party needs someone at the door.', c(99, 'secret')),
+  ('D', 'Good evening. I am the Doorkeeper. I stand at the door of every line, just after the King or the Queen, and I read out tonight’s dress code.', c(99, 'secret')),
+  ('D', 'Tonight: every F wears a sharp. High F, low F, every F, all night. No exceptions.', c(99, 'secret')),
+  ('P', 'So the Doorkeeper’s rule lasts the whole piece, but the Guest only stays for one bar.', c(99, 'secret')),
+  ('D', 'Quite right, miss. The Guest may change her hat for one bar. My rule stands until the music ends.', c(99, 'secret'))]),
  ('The order of sharps and flats', [
   ('B', 'And the sharps always arrive in the same order, like children lining up for lunch: F, C, G, D, A, E, B.', c(99, 'two')),
   ('P', 'How do I remember that?', c(99, 'two')),
@@ -1118,7 +1132,8 @@ NEW['S3'] = ('Keys and key signatures', [
  ('Example: which notes are sharp?', [
   ('B', 'Look at this key signature. Count the sharps, then name them in order. The first sharp is always F. Which keys turn black for the whole piece?', c(100, 'ex1')),
   ('pause', 4, c(100, 'ex1')),
-  ('P', 'Two sharps: F sharp and C sharp. Every F and every C, high or low!', c(100, 'ex1', reveal=True))]),
+  ('P', 'Two sharps: F sharp and C sharp. Every F and every C, high or low!', c(100, 'ex1', reveal=True)),
+  ('D', 'Correct. F and C, sharps on, all night.', c(100, 'ex1', reveal=True))]),
  ('Example: the relative minor', [
   ('B', 'Find the relative minor of C major. Start on C, the key note. Count two keys between, going down: B is one, B flat is two. Then the next key is the answer.', c(100, 'ex2')),
   ('pause', 3, c(100, 'ex2')),
@@ -1137,7 +1152,9 @@ NEW['S3'] = ('Keys and key signatures', [
   ('B', 'The Minuet in G again. One sharp in the key signature: every F is F sharp, like the one just before the top G. One sharp, and the piece ends on G: G major.', c(101, 'yk')),
   ('piano', 'D5 G4/2 A4/2 B4/2 C5/2 D5 G4 G4 E5 C5/2 D5/2 E5/2 F#5/2 G5 G4 G4 C5 D5/2 C5/2 B4/2 A4/2 B4 C5/2 B4/2 A4/2 G4/2 F#4 G4/2 A4/2 B4/2 G4/2 A4*3', c(101, 'yk')),
   ('P', 'I heard the F sharp, right before the top!', c(101, 'yk')),
-  ('B', 'A dress code, written once. Only an accidental, a word to one guest, overrules it, and only until the bar line. And remember to glance at the key signature at the start of every line. Until next time, Clara.', c(101, 'think')),
+  ('B', 'A dress code, written once. Only an accidental, our Guest, overrules it, and only until the bar line. And remember to glance at the key signature at the start of every line.', c(101, 'think')),
+  ('D', 'I shall be at every door, miss. Do say hello as you pass.', c(101, 'think')),
+  ('B', 'Until next time, Clara.', c(101, 'think')),
   ('P', 'Bye, Butler!', c(101, 'think'))])])
 
 NEW['S4'] = ('Finding the key', [
@@ -1148,7 +1165,8 @@ NEW['S4'] = ('Finding the key', [
   ('B', 'Here is the secret. For sharps: find the last sharp, then go the very next key up. For flats: the second-last flat is the key.', c(102, 'secret')),
   ('B', 'Look: three sharps. The last one is G sharp. The very next key up is A. Three sharps: A major.', c(102, 'hero')),
   ('piano', 'G#4 A4', c(102, 'hero', seq=['#5', '#6'])),
-  ('P', 'The last sharp is like a doorman, and the key lives one step up.', c(102, 'hero')),
+  ('P', 'The last sharp is like the last guest the Doorkeeper lets in, and the key lives one step up.', c(102, 'hero')),
+  ('D', 'The last one in always holds the door for the key. Good manners.', c(102, 'hero')),
   ('B', 'A very good doorman. And flats: B flat, E flat, A flat. The second-last is E flat, so E flat major. One flat alone has no second-last, so just remember it: F major.', c(102, 'fk')),
   ('B', 'And to find the minor suspect: from A, two keys between, G sharp and G, then land on F sharp. Three sharps is A major or F sharp minor.', c(102, 'fk2'))]),
  ('Clue notes', [
@@ -1663,13 +1681,15 @@ NEW['M1'] = ('Chords from outside the key', [
  ('The secret', [
   ('B', 'Clara, today some visitors arrive.', c(136, 'h:Chords from outside the key')),
   ('P', 'Visitors? In the music?', c(136, 'lead')),
+  ('G', 'Me, darling! Remember? The Guest with the sharp hat. This time I’ve brought a whole chord with me.', c(136, 'lead')),
   ('B', 'In C major, home is the white keys. So a black key in a chord is a guest. And guests never stay long: each one moves to the very next key, and shows you where the music goes next.', c(136, 'lead')),
   ('B', 'Here is the secret: sharp guests push up, flat guests sigh down. Follow them one key, and you find the next chord.', c(136, 'secret')),
   ('B', 'Listen. C sharp pushes up to D. F sharp pushes up to G. G sharp pushes up to A.', c(136, 'two')),
   ('piano', 'C#4 D4*2 | F#4 G4*2 | G#4 A4*2', c(136, 'two')),
   ('B', 'And A flat sighs down to G. E flat sighs down to D.', c(136, 'two')),
   ('piano', 'Ab4 G4*2 | Eb4 D4*2', c(136, 'two')),
-  ('P', 'Like a guest who stands up when they arrive, and one who flops onto the sofa.', c(136, 'two'))]),
+  ('P', 'Like a guest who stands up when they arrive, and one who flops onto the sofa.', c(136, 'two')),
+  ('G', 'I never sit still for long. One key, and I’m on my way.', c(136, 'two'))]),
  ('Sharp guests', [
   ('B', 'Exactly. A chord with C sharp, A C sharp E, leads to D minor. With F sharp, D F sharp A, leads to G. With G sharp, E G sharp B, leads to A minor.', c(136, 'gp3')),
   ('piano', '[A3 C#4 E4] [D4 F4 A4] | [D4 F#4 A4] [D4 G4 B4] | [E4 G#4 B4] [E4 A4 C5]', c(136, 'gp3')),
