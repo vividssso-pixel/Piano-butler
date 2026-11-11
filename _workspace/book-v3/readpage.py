@@ -247,7 +247,7 @@ HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
  --display:'Playfair Display',Georgia,serif;--body:'Atkinson Hyperlegible',system-ui,sans-serif}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14153a;--panel:#1e2050;--ink:#eceefe;--soft:#b3b5dc;--line:#33366e;--accent:#ff7a52;--accentbg:#3a2620;--paper:#f7f6f1;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#14153a;--panel:#1e2050;--ink:#eceefe;--soft:#b3b5dc;--line:#33366e;--accent:#ff7a52;--accentbg:#3a2620;--paper:#f7f6f1;color-scheme:dark}
-html,body{margin:0}
+html,body{margin:0} .embed .top,.embed .prac{display:none!important} .embed .desk{padding-top:4px}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;padding-top:env(safe-area-inset-top,0px)}
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
 .brand{font-family:var(--display);font-weight:800;font-size:20px;margin-right:auto}
@@ -725,13 +725,16 @@ function tick() {
   requestAnimationFrame(tick);
 }
 audio.onplay = () => { requestAnimationFrame(tick); drawSide(); }; audio.onpause = () => { if (playing >= 0) drawSide(); };
-audio.onended = () => { const c = CH[ci]; if (chain && playing + 1 < c.clips.length) play(playing + 1); else { playing = -1; drawSide(); clearFollow(); } };
+audio.onended = () => { const c = CH[ci]; if (chain && playing + 1 < c.clips.length) play(playing + 1); else { if (playing === c.clips.length - 1) { try { parent.postMessage({ pb: 'read-done', ch: c.k }, '*'); } catch (e) {} } playing = -1; drawSide(); clearFollow(); } };
 function go(i, p = 0) { audio.pause(); playing = -1; if (typeof clearFollow === 'function') clearFollow(); ci = i; pi = p; sel.value = i; showPage(); drawSide(); history.replaceState(null, '', '#' + CH[i].k); window.scrollTo(0, 0); }
 sel.onchange = () => go(+sel.value);
 document.getElementById('prev').onclick = () => { if (pi > 0) { pi--; showPage(); } else if (ci > 0) go(ci - 1, CH[ci - 1].pages.length - 1); };
 document.getElementById('next').onclick = () => { if (pi < CH[ci].pages.length - 1) { pi++; showPage(); } else if (ci < CH.length - 1) go(ci + 1); };
 document.addEventListener('keydown', e => { if (e.target.tagName === 'SELECT') return; if (e.key === 'ArrowRight') document.getElementById('next').click(); if (e.key === 'ArrowLeft') document.getElementById('prev').click(); });
 const start = CH.findIndex(c => c.k === (location.hash.slice(1) || new URLSearchParams(location.search).get('ch') || 'P1'));
+// her 11 Nov: inside a house room (drills.html) the chapter plays right there: no header, no next steps (the room has them), and the room learns our height
+const EMBED = new URLSearchParams(location.search).get('embed') === '1';
+if (EMBED) { document.documentElement.classList.add('embed'); const tell = () => { try { parent.postMessage({ pb: 'read-h', h: document.documentElement.scrollHeight }, '*'); } catch (e) {} }; try { new ResizeObserver(tell).observe(document.body); } catch (e) {} setInterval(tell, 1500); tell(); }
 go(start >= 0 ? start : 0);
 </script></body></html>'''
 open(OUT + '/index.html', 'w').write(HTML.replace('__DATA__', DATA).replace('__REG__', REGD))
