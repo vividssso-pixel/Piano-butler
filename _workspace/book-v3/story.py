@@ -531,16 +531,23 @@ NEW['T1'] = ('Pulse, tempo and the bar', [
   ('P', 'One, two, three, four. Bye, Butler!', c(52, 'think'))])])
 
 NEW['T2'] = ('Notes and rests', [
- ('The secret', [
-  ('P', 'Butler, how do I know how long to hold a note? Do I just guess?', c(53, 'lead')),
-  ('B', 'No guessing required. Its shape tells you, like the size of a cup tells you how much juice it holds. Each note is half the one above it. A semibreve lasts four beats. It splits into two minims, two beats each. A minim splits into two crotchets, one beat each. And a crotchet splits into two quavers, half a beat each.', c(53, 'hero')),
+ ('Sounds and silences', [
+  ('P', 'Butler, is music just lots and lots of notes?', c(53, 'lead')),
+  ('B', 'Only half of it, Clara. Music is made of two things: sounds and silences. Think of talking. A sentence needs words, and it needs little pauses too. Without the pauses it’s one long breathless rush.', c(53, 'lead')),
+  ('P', 'Like my little brother telling a story.', c(53, 'lead')),
+  ('B', 'Exactly like that. On paper, a sound is written as a note, and a silence is written as a rest. A rest is just as important as a note. It isn’t a break for you: it’s music you can’t hear, and you count it just as carefully.', c(53, 'lead'))]),
+ ('Long and short notes', [
+  ('P', 'So how do I know how long to hold a note? Do I just guess?', c(53, 'hero')),
+  ('B', 'No guessing required. Its shape tells you, like the size of a cup tells you how much juice it holds. Each note is half the one above it. A semibreve lasts four beats. It splits into two minims, two beats each. A minim splits into two crotchets, one beat each.', c(53, 'hero')),
   ('P', 'Like cutting a cake in half, and in half again.', c(53, 'hero')),
   ('B', 'Precisely, and nobody fights over the pieces. Listen to one bar of each. The beat keeps going; only the notes change.', c(53, 'hero')),
   ('count', {'beats': 'X x M x X x M x X x M x', 'notes': 'C4*4 C4*2 C4*2 C4 C4 C4 C4', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(53, 'hero')),
-  ('B', 'And quavers: two to every beat.', c(53, 'hero')),
+  ('B', 'And here’s the other half of the secret: every note has a twin rest, a silence of exactly the same length.', c(53, 'secret'))]),
+ ('Quavers', [
+  ('B', 'One more halving. A crotchet splits into two quavers, half a beat each: two to every beat.', c(53, 'hero')),
   ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 & 2 & 3 & 4 &'}, c(53, 'hero')),
   ('P', 'For the quavers you said “and” in between.', c(53, 'sm')),
-  ('B', 'Yes. Say the beat’s number, then “and” halfway to the next beat. And here’s the other half of the secret: every note has a twin rest, a silence of exactly the same length.', c(53, 'secret'))]),
+  ('B', 'Yes. Say the beat’s number, then “and” halfway to the next beat.', c(53, 'sm'))]),
  ('Head, stem, flag', [
   ('B', 'A note is built like a little person. It has a head, on a line or in a space. Every note except the semibreve has a stem. Below the middle line the stem goes up, on the right of the head; on or above the middle line it goes down, on the left.', c(53, 'two')),
   ('P', 'Does a stem going down make the note shorter? Like it’s sad?', c(53, 'two')),
