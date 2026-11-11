@@ -362,13 +362,19 @@ NEW['P6'] = ('Sharps, flats and naturals', [
 
 NEW['P7'] = ('Counting intervals', [
  ('The secret', [
-  ('B', 'Clara, today we measure distances. The smallest step on the piano is a semitone: from one key to the very next key, black or white, with nothing in between. Next-door neighbours.', c(42, 'hero')),
-  ('piano', 'E4 F4', c(42, 'hero', seq=['#0', '#1'])),
-  ('P', 'E to F has no black key between. A semitone.', c(42, 'hero')),
-  ('B', 'Two semitones make a tone: one key in between, like having one house between you and your friend.', c(42, 'hero')),
-  ('piano', 'C4 D4', c(42, 'hero', seq=['#4', '#5'])),
-  ('P', 'C to D has C sharp between. A tone.', c(42, 'hero')),
-  ('B', 'On the white keys most steps are tones. Only E to F and B to C are semitones, our old best friends. And a semitone can also go from white to black, or black to white.', c(42, 'rule'))]),
+  ('B', 'Clara, a question before we start. Who is your best friend?', c(42, 'h:Counting intervals')),
+  ('P', 'Mia! We do everything together.', c(42, 'lead')),
+  ('B', 'And when you and Mia sit together in class, is anyone sitting between you?', c(42, 'lead')),
+  ('P', 'No way. We sit right next to each other.', c(42, 'lead')),
+  ('B', 'That is a semitone: two keys right next to each other, with nobody between. The smallest step on the piano.', c(42, 'secret')),
+  ('B', 'On the white keys, two pairs are best friends like you and Mia: E and F, with no black key between them.', c(42, 'hero', lab=['#1', '#2'])),
+  ('piano', 'E4 F4', c(42, 'hero', seq=['#1', '#2'])),
+  ('B', 'And B and C. Nobody between: a semitone.', c(42, 'hero', lab=['#5', '#6'])),
+  ('piano', 'B4 C5', c(42, 'hero', seq=['#5', '#6'])),
+  ('B', 'Now C and D. Look: a black key sits between them, C sharp. That is like one classmate sitting between you and Mia. One key between: a tone. Two semitones make a tone.', c(42, 'hero', lab=['#8', '#9'])),
+  ('piano', 'C4 D4', c(42, 'hero', seq=['#8', '#9'])),
+  ('P', 'So every other pair of white keys has a black key in the middle. Only E–F and B–C sit together.', c(42, 'hero')),
+  ('B', 'Exactly. And a semitone can also go from a white key to a black key, or black to white: still next door, nobody between.', c(42, 'rule'))]),
  ('Example: tone or semitone?', [
   ('B', 'Look between the two red keys, E and F. Is there a black key between them?', c(42, 'ex1', show=['C', 'D', 'E', 'F', 'G', 'A', 'B'], lab=['E', 'F'])),
   ('pause', 3, c(42, 'ex1', show=['C', 'D', 'E', 'F', 'G', 'A', 'B'])),
@@ -912,7 +918,10 @@ NEW['E4'] = ('The pedals', [
   ('P', 'So that’s what the pedals are for! I thought they were for driving the piano.', c(85, 'lead')),
   ('B', 'Sadly, it doesn’t go anywhere. Most pianos have three pedals, Clara. The left one, the soft pedal, makes the sound gentler. The right one, the sustain pedal, keeps the notes ringing after your fingers let go.', c(85, 'hero')),
   ('B', 'Inside the piano, most strings have a felt damper resting on them, like a finger on your lips saying shh. Press a key and its damper lifts; let go, and the damper stops the string. The sustain pedal lifts every damper at once, so the strings ring on.', c(85, 'xlate')),
-  ('piano', '[C4 E4 G4]', c(85, 'xlate')),
+  ('B', 'Listen. First without the pedal: each note stops when the finger lifts.', c(85, 'xlate')),
+  ('piano', 'C4 E4 G4 C5', c(85, 'xlate')),
+  ('B', 'And now with the sustain pedal down: every note keeps ringing.', c(85, 'xlate')),
+  ('piano', 'Ped C4 E4 G4 C5 R*2 *', c(85, 'xlate')),
   ('B', 'The soft pedal is written u.c., una corda, and let up at t.c. The sustain pedal is written Ped.', c(85, 'xlate2'))]),
  ('Example: which pedal?', [
   ('B', 'Which pedal is Ped.? Which is u.c.? And what does t.c. ask? Pause and think.', c(86, 'ex1')),
@@ -921,24 +930,30 @@ NEW['E4'] = ('The pedals', [
   ('B', 'Not quite, Clara. The soft pedal is the left one, written u.c. Ped. is the right one, and it keeps the notes ringing.', c(86, 'ex1')),
   ('P', 'Ped. is the right pedal, u.c. the left, and t.c. means let the left pedal up.', c(86, 'ex1', reveal=True))]),
  ('Writing the sustain pedal', [
-  ('B', 'Down at Ped., up at the star. Or a bracket: the notch is a quick change, up and down again. Heel on the floor, press with the ball of your foot, like gently squeezing a soft sponge. Play first, then pedal.', c(86, 'xlate'))]),
+  ('B', 'Down at Ped., up at the star. Heel on the floor, press with the ball of your foot, like gently squeezing a soft sponge. Play first, then pedal.', c(86, 'xlate'))]),
  ('Example: down and up', [
   ('B', 'Where does the pedal go down, where does it change, and where does it come up?', c(86, 'ex2')),
   ('pause', 4, c(86, 'ex2')),
   ('P', 'Down on the first C, changed at the F, and up at the end.', c(86, 'ex2', reveal=True)),
-  ('piano', 'C4 E4 G4 C5 | F4 A4 C5 F5', c(86, 'ex2', reveal=True))]),
+  ('piano', 'Ped C4 E4 G4 C5 ^ F4 A4 C5 F5 R *', c(86, 'ex2', reveal=True))]),
  ('Changing the pedal', [
   ('B', 'At every new chord, change the pedal just after you play it: up, and straight down again. Each chord rings clean, and they still join. Forget to change, and the chords pile up like muddy footprints on a clean floor.', c(87, 'xlate')),
-  ('piano', '[C4 E4 G4] [F4 A4 C5] [G4 B4 D5] [C4 E4 G4]', c(87, 'xlate')),
+  ('B', 'Listen, with a clean change at each chord.', c(87, 'xlate')),
+  ('piano', 'Ped [C4 E4 G4] ^ [F4 A4 C5] ^ [G4 B4 D5] ^ [C4 E4 G4] R *', c(87, 'xlate')),
+  ('B', 'And here is the muddy floor: the pedal held down through every chord.', c(87, 'xlate')),
+  ('piano', 'Ped [C4 E4 G4] [F4 A4 C5] [G4 B4 D5] R *', c(87, 'xlate')),
+  ('P', 'Eww. It sounds like everyone talking at once.', c(87, 'xlate')),
+  ('B', 'Exactly. One more thing: the pedal is written in several ways. Ped. and a star. A Ped. under every chord, where each new Ped. is a change. A line with two hooks, down where it starts and up where it ends; notches in the line are changes. The words con Ped., with pedal, or senza Ped., without. And Ped. simile: go on pedalling the same way.', c(87, 'xlate2')),
   ('B', 'Try it: play C, E and G together, press the right pedal and take your hands off. The chord keeps sounding. Lift the pedal: silence.', c(87, 'try10')),
+  ('piano', 'Ped [C4 E4 G4] R*3 *', c(87, 'try10')),
   ('P', 'Magic! My hands are gone and the music is still there.', c(87, 'try10')),
   ('B', 'The sustain pedal holds a door open: every note that walks in stays in the room until you let the door shut. Until next time, Clara.', c(87, 'think')),
   ('P', 'Bye, Butler!', c(87, 'think'))])])
 
 NEW['E5'] = ('Ornaments', [
  ('The secret', [
-  ('P', 'Grandma puts sprinkles on top of my birthday cake. The cake is the same, but it sparkles.', c(88, 'lead')),
-  ('B', 'Music has sprinkles too. Look at this one.', c(88, 'lead')),
+  ('P', 'Butler, look! Mum let me wear her necklace and a sparkly hair clip today.', c(88, 'lead')),
+  ('B', 'Very elegant. You are the same Clara, but the accessories make you shine. Music has accessories too. Look at this one.', c(88, 'lead')),
   ('P', 'What’s that little t r above the note? Is it a typo?', c(88, 'lead')),
   ('B', 'Not a typo, a trill, Clara. An ornament: a small sign that stands for a quick burst of notes around the main note. Like a bird showing off.', c(88, 'hero')),
   ('piano', 'D5/4 E5/4 D5/4 E5/4 D5/4 E5/4 D5/4 E5/4 C5*2', c(88, 'hero')),
@@ -968,7 +983,7 @@ NEW['E5'] = ('Ornaments', [
   ('piano', 'D5/8 C5*2 | D5 C5', c(90, 'xlate')),
   ('B', 'Now let’s add a mordent to the first D of the Minuet in G: one quick flick, and the beat doesn’t move.', c(90, 'yk')),
   ('piano', 'D5/4 E5/4 D5/2 G4/2 A4/2 B4/2 C5/2 D5 G4 G4 E5 C5/2 D5/2 E5/2 F#5/2 G5 G4 G4', c(90, 'yk')),
-  ('B', 'Learn the plain notes in time first, then add the sparkle. Cake first, sprinkles after. Until next time, Clara.', c(90, 'think')),
+  ('B', 'Ornaments are accessories: they make the music look lovely, but you get dressed first. Learn the plain notes in time, then put on the necklace. Until next time, Clara.', c(90, 'think')),
   ('P', 'Bye, Butler!', c(90, 'think'))])])
 
 # ---- Part IV, Scales and keys (her 11 Nov: "다음 거 진행해줘"): audio for S1-S5 in the same storybook style ----
@@ -979,10 +994,11 @@ NEW['S1'] = ('Major scales', [
   ('P', 'Like my family? We are very noisy.', c(93, 'lead')),
   ('B', 'Some scales are noisy too. A scale climbs from a home note, the key note, up to the next note with the same name, using every letter once. Like a staircase from the ground floor to the first floor.', c(93, 'lead')),
   ('B', 'Here is the most famous staircase of all: C major.', c(93, 'hero')),
-  ('piano', CM, c(93, 'hero', seq=['#0', '#2', '#4', '#6', '#8', '#10', '#12', '#14'])),
+  ('piano', CM, c(93, 'hero', seq=['#0', '#1', '#2', '#3', '#4', '#5', '#6', '#7'])),
   ('P', 'Do re mi fa so la ti do! I know that one.', c(93, 'hero')),
   ('B', 'Everybody does. Now look at the steps between the notes. Most of them are big steps, tones. But two of them are tiny, semitones. Like a staircase where two of the steps are only half as high.', c(93, 'hero')),
   ('P', 'I’d trip on those!', c(93, 'hero')),
+  ('B', 'Read each arrow from one note to the next. C to D: a tone. D to E: a tone. E to F: a semitone, best friends. F to G, G to A, A to B: tones. And B to C: a semitone again.', c(93, 'hero', lab=['#10', '#14'])),
   ('B', 'Everyone does at first. Here is the secret, and it works on any note at all: tone, tone, semitone, tone, tone, tone, semitone.', c(93, 'secret')),
   ('P', 'Tone, tone, semitone, tone, tone, tone, semitone. It sounds like a secret knock on a door.', c(93, 'secret')),
   ('B', 'It is exactly that. Knock it right, and the door to any major key opens. A tone has one key between. A semitone has no key between: the very next key, best friends.', c(93, 'rule'))]),

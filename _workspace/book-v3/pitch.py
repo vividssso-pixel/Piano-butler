@@ -64,18 +64,22 @@ def hero_third():   # C to E on the keyboard: count the letters 1 2 3
     marks = [_num(i * W + W / 2, 128, i + 1, i in (0, 2)) for i in range(3)]
     marks.append(f'<path d="M{W / 2},96 Q{1.5 * W},70 {2.5 * W},96" fill="none" stroke="#e4572e" stroke-width="3" stroke-dasharray="6 5"/>')
     return keyboard('C', 7, W, 170, label=True, shade={0: '#fbd0c2', 1: '#fdeee8', 2: '#fbd0c2'}, marks=marks, scale=1.0)
-def hero_stairs():   # C major as a staircase: tones are wide steps, the two semitones narrow and red
-    steps = 'TTSTTTS'; x, y, o = 20, 226, ''
-    names = 'C D E F G A B C'.split()
+def hero_stairs():   # C major as a staircase. Her 11 Nov: each T or S sits on an arrow FROM one note TO the next (C to D is a tone), never on top of a note
+    steps = 'TTSTTTS'; names = 'C D E F G A B C'.split(); W, base, o = 70, 300, ''
+    xs, ys = [], []; x, y = 20, 236
     for i in range(8):
-        w = 70
-        o += f'<rect x="{x}" y="{y}" width="{w}" height="{290 - y}" fill="#eef0f8" stroke="#26296b" stroke-width="2"/>' + (f'<rect x="{x}" y="{y - 4}" width="{w}" height="9" fill="#e4572e"/>' if i and steps[i - 1] == 'S' else '') + f'<text x="{x + w / 2}" y="{y + 26}" text-anchor="middle" font-family="PF,serif" font-size="22" font-weight="700" fill="#26296b">{names[i]}</text>'
-        if i < 7:
-            s = steps[i] == 'S'; dy = 13 if s else 28
-            o += f'<text x="{x + w + w / 2}" y="{y - dy - 12}" text-anchor="middle" font-family="AH,Arial" font-size="17" font-weight="700" fill="{"#e4572e" if s else "#6d6f9c"}">{"S" if s else "T"}</text>'
-            y -= dy
-        x += w
-    return f'<svg viewBox="0 0 {x + 20} 296" style="width:100%;max-width:640px">{o}</svg>'
+        xs.append(x); ys.append(y)
+        o += f'<rect x="{x}" y="{y}" width="{W}" height="{base - y}" fill="#eef0f8" stroke="#26296b" stroke-width="2"/><text x="{x + W / 2}" y="{y + 28}" text-anchor="middle" font-family="PF,serif" font-size="24" font-weight="700" fill="#26296b">{names[i]}</text>'
+        if i < 7: y -= 14 if steps[i] == 'S' else 30
+        x += W
+    for i in range(7):   # an arc from the middle of one step to the middle of the next, its label above
+        s_ = steps[i] == 'S'; col = '#e4572e' if s_ else '#6d6f9c'
+        x1, y1, x2, y2 = xs[i] + W / 2, ys[i] - 8, xs[i + 1] + W / 2, ys[i + 1] - 8
+        cx, cy = (x1 + x2) / 2, min(y1, y2) - (22 if s_ else 30)
+        o += f'<path d="M{x1},{y1} Q{cx},{cy} {x2 - 4},{y2 - 2}" fill="none" stroke="{col}" stroke-width="{3 if s_ else 2.2}" marker-end="url(#stA{"s" if s_ else "t"})"/>'
+        o += f'<text x="{cx}" y="{cy + 2}" text-anchor="middle" font-family="AH,Arial" font-size="{18 if s_ else 16}" font-weight="700" fill="{col}">{"S" if s_ else "T"}</text>'
+    defs = ''.join(f'<marker id="stA{k}" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="{c}"/></marker>' for k, c in (('s', '#e4572e'), ('t', '#6d6f9c')))
+    return f'<svg viewBox="0 0 {x + 20} {base + 6}" style="width:100%;max-width:640px"><defs>{defs}</defs>{o}</svg>'
 def hero_minor():   # A to A on the white keys, then the 7th raised: G♯
     W = 56
     marks = [_num(i * W + W / 2, 140, i + 1, i in (0, 7)) for i in range(8)]

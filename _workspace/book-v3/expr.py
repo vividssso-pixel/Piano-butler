@@ -130,6 +130,20 @@ def pedmarks():   # the two ways to write the sustain pedal
     o += f'<text x="290" y="58" font-family="AH,Arial" font-size="12.5" fill="#5a5d8f">a bracket: the notch is a quick change</text>'
     o += f'<text x="380" y="84" font-family="AH,Arial" font-size="12" font-weight="700" fill="{R_}">up and down again</text><line x1="392" y1="22" x2="392" y2="70" stroke="{R_}" stroke-width="1.2" stroke-dasharray="2 2"/>'
     return o + '</svg>'
+def pedsign(kind):   # her 11 Nov: the pedal is written in several ways; each drawn small, the same width
+    o = '<svg viewBox="0 0 220 40" style="width:100%;max-width:150px;height:auto;display:block">'
+    P = lambda x, y: f'<text x="{x}" y="{y}" font-family="PF,serif" font-style="italic" font-weight="700" font-size="17" fill="{N_}">Ped.</text>'
+    S = lambda x, y: f'<text x="{x}" y="{y}" font-family="AH,Arial" font-size="22" font-weight="700" fill="{N_}">*</text>'
+    if kind == 'star': o += P(4, 28) + f'<path d="M50,22 H170" stroke="#9a9cc4" stroke-dasharray="5 4" stroke-width="1.5"/>' + S(178, 31)
+    elif kind == 'each': o += P(4, 28) + S(64, 31) + P(80, 28) + S(140, 31) + P(156, 28)
+    elif kind == 'bracket': o += f'<path d="M8,10 V30 H212 V10" fill="none" stroke="{N_}" stroke-width="2.2"/>'
+    elif kind == 'notch': o += f'<path d="M8,10 V30 H66 L76,14 L86,30 H134 L144,14 L154,30 H212 V10" fill="none" stroke="{N_}" stroke-width="2.2"/>'
+    elif kind == 'words': o += f'<text x="4" y="28" font-family="PF,serif" font-style="italic" font-weight="700" font-size="17" fill="{N_}">con Ped. · senza Ped.</text>'
+    elif kind == 'simile': o += P(4, 28) + f'<text x="50" y="28" font-family="PF,serif" font-style="italic" font-weight="700" font-size="17" fill="{N_}">simile</text>'
+    return o + '</svg>'
+PEDWAYS = [('star', '<b>Ped.</b> … <b>*</b>', 'down at Ped., up at the star'), ('each', '<b>* Ped.</b> under each chord', 'every new Ped. is a change: up, and straight down'),
+           ('bracket', 'a line with two hooks', 'down where it starts, up where it ends'), ('notch', 'a line with notches', 'each notch is a change: up and down again'),
+           ('words', '<i>con Ped.</i> · <i>senza Ped.</i>', 'with the pedal (you choose the changes) · without the pedal'), ('simile', '<i>Ped. simile</i>', 'go on pedalling the same way')]
 def pedtime(w=520):   # keys and pedal on one timeline: the pedal changes just after each new chord
     o = f'<svg viewBox="0 0 540 120" style="width:100%;max-width:{w}px;height:auto;display:block;margin:0 auto">'
     o += f'<text x="0" y="34" font-family="AH,Arial" font-size="13" font-weight="700" fill="{N_}">hands</text><text x="0" y="88" font-family="AH,Arial" font-size="13" font-weight="700" fill="{N_}">pedal</text>'
@@ -216,14 +230,16 @@ E4 = epage(f'''{head('Part III · Expression · 4', 'The pedals', 'Most pianos h
 <div class="xlate">{h3('What the sustain pedal does')}{fig_dampers()}<p class="sm">Each string has a felt damper resting on it. Let go of a key and its damper stops the string. The sustain pedal lifts every damper at once, so the strings ring on.</p></div>
 <div class="xlate">{tbl(['Pedal', 'Name and sign', 'What it does'], OTHER, ['14%', '40%', '46%'])}</div>
 {inact('Which pedal?', pedals(True, 340), ['<b>Ped.</b>: which foot pedal?', '<b>u.c.</b>: which one?', '<b>t.c.</b>: what do you do?'], 'Ped. is the <b>right</b> pedal; <i>u.c.</i> the <b>left</b> one; <i>t.c.</i> means let the left pedal up.')}
-<div class="xlate">{h3('Writing the sustain pedal')}{pedmarks()}{rule('Heel on the floor, press with the ball of your foot. <b>Play first, then pedal</b>: new notes, then up and straight down again.')}</div>
+<div class="xlate">{h3('Writing the sustain pedal')}<p class="sm">Down at <b>Ped.</b>, up at the star, or a line with hooks; six ways are on p. {{{{E4+2}}}}.</p>{rule('Heel on the floor, press with the ball of your foot. <b>Play first, then pedal</b>: new notes, then up and straight down again.')}</div>
 {inact('Where does the pedal go down, and where does it come up?', qtagT(ex('p_pedq', 110), 560), ['<b>Find Ped.</b> under the first C.', '<b>Find the next sign:</b> a star with Ped.', '<b>Find the last star.</b>'], 'Down on the first C, <b>changed</b> at the first F (up and down again), and up at the end: each bar rings as one sound.')}
 <!--SPLIT-->
-<div class="xlate">{h3('Changing the pedal')}{pedtime()}{ex('p_ped', 100, 'A chord is three or more notes played together. The ✻Ped. sits under each new chord: play it first, then change straight away.')}</div>
+<div class="xlate">{h3('Changing the pedal')}{pedtime()}<p class="sm">A chord is three or more notes played together. Play each new chord first, then change the pedal straight away.</p></div>
+<!--SPLIT-->
+<div class="xlate">{h3('Six ways to write the pedal')}{tbl(['How it looks', 'Its name', 'What your foot does'], [[pedsign(k), n, d] for k, n, d in PEDWAYS], ['38%', '28%', '34%'], 'pedw')}</div>
 <div class="xlate">{extra('Half pedal and the middle pedal', '<p><b>Half pedal:</b> lift the pedal only part of the way, to clear some of the sound but not all. <b>Sostenuto</b> (the middle pedal on grand pianos): press it while notes are held, and only those notes keep ringing.</p>')}</div>
 {try10('<div style="font:italic 700 44px PF,serif;color:#26296b;text-align:center">Ped.</div>', 'Hear the ringing.', 'Play C, E and G together, press the right pedal and take your hands off: the chord keeps sounding. Lift the pedal: silence. That is the dampers coming back down.')}
 {howto('Practise the pedal change', ['<b>Without playing</b>, say “play, up-down” and move your foot on “up-down”.', '<b>Play C-E-G, then F-A-C, then G-B-D</b>, slowly. Change just after each one.', '<b>Listen</b> for a clean change with no gap of silence.'])}
-{thinkt('The sustain pedal holds a door open: every note that walks in stays in the room until you let the door shut.')}
+{thinkt('The sustain pedal holds a door open: every note that walks in stays until the door shuts.')}
 {watch(['Lifting the pedal before the new notes: a gap of silence. Play first, then change.', 'Keeping the pedal down through a new chord: muddy.'])}
 {foot('Touch p. {{E2}} · Chords p. {{H1}}', 'Online: Library › Pedal')}''', 81)
 
@@ -242,7 +258,7 @@ E5 = epage(f'''{head('Part III · Expression · 5', 'Ornaments', 'Ornaments are 
 <!--SPLIT-->
 <div class="xlate">{h3('Tiny notes before the main note')}<p>A tiny note just before the main note borrows a moment from it. <b>With a slash</b> it is an <b>acciaccatura</b>: crushed in, as fast as you can. <b>Without a slash</b> it is an <b>appoggiatura</b>: it leans, taking about half the main note’s time.</p>{inact('Crushed, or leaning?', qtagT(two(ex('o_acc_w', 50), ex('o_app_w', 50))), ['<b>Look for the slash</b> through the tiny note.', '<b>With a slash:</b> how fast?', '<b>Without:</b> how much time does it take?'], 'Slash (acciaccatura): <b>crushed in</b>, almost at once. No slash (appoggiatura): <b>D for a crotchet</b>, then C.')}</div>
 {youknow('Minuet in G (Notebook for Anna Magdalena Bach)', ex('o_minuet', 76, red=('n1',)), 'Here the first D is decorated with a <b class="co">mordent</b>: D, E, D, one quick flick, then the music walks on in time. The flick borrows from the D; the beat does not move.', 'Play the first bar with the mordent, then without it: hear the sparkle it adds.')}
-{thinkt('Say the sentence first, then add the sparkle: learn the plain notes in time, and the ornament goes on top.')}
+{thinkt('Ornaments are like accessories: a necklace or a hair clip makes you look lovely, but you get dressed first. Learn the plain notes in time, then add the ornament.')}
 {howto('Practise an ornament', ['<b>Play the main notes</b> alone first, in time; then <b>add the ornament slowly</b>, as written-out notes.', '<b>Speed it up</b> bit by bit, keeping the main note on the beat.'])}
 {watch(['Starting a trill, mordent or turn before the beat: it begins on the beat. (Only the crushed acciaccatura slips in just before.)'])}
 {foot('The keyboard p. {{P1}} · Sharps and flats p. {{P6}}', 'Online: Library › Ornaments')}''', 84)
@@ -257,6 +273,6 @@ ET = epage(f'''{head('Part III · Expression · Tips', 'When your playing sounds
 
 EOPEN = _oa('Part III · How it should sound', 'Expression', 'The notes say <b>what</b> to play; expression says <b>how</b>: loud or soft, smooth or short, faster or slower, ringing or dry. Everything in this part is in these three bars.', 'E', PM.PAGE)
 _ebody = ''.join(assemble(f'E{_i + 1}', _pg) for _i, _pg in enumerate((E1, E2, E3, E4, E5))) + ET
-ehtml = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS}</style></head><body>{EOPEN}{_ebody}{FLOWJS}</body></html>'
+ehtml = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS} .pedw td{{padding-top:3px!important;padding-bottom:3px!important;font-size:14px!important;line-height:1.3}}</style></head><body>{EOPEN}{_ebody}{FLOWJS}</body></html>'
 open('/mnt/user-data/outputs/house-rooms/handbook-expression.html', 'w').write(ehtml)
 print('ok expression')

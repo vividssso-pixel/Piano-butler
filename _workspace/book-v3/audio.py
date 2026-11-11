@@ -46,7 +46,26 @@ def click(level):   # her 10 Nov: the beat as a soft heartbeat (lub-dub), not a 
     w = np.zeros(int(SR * .32)); w[:len(lub)] += lub; i = int(SR * .13); w[i:i + len(dub)] += dub
     return w * {'X': .95, 'M': .7, 'x': .55}[level]
 DYNG = {'pp': .22, 'p': .38, 'mp': .55, 'mf': .72, 'f': .95, 'ff': 1.25}
+def piano_ped(spec):   # her 11 Nov: the sustain pedal you can hear. 'Ped' down, '^' change (up and straight down), '*' up; notes ring until the pedal lets go
+    ev, t, ped, changes = [], 0.0, None, []
+    for tok in re.findall(r'\[[^\]]+\]|\S+', spec):
+        if tok == 'Ped': ped = t; changes.append(('d', t)); continue
+        if tok in ('^', '*'): changes.append(('u', t + .12)); ped = (t + .14) if tok == '^' else None
+        if tok == '^': changes.append(('d', t + .14)); continue
+        if tok == '*': continue
+        if tok == '|': t += .25; continue
+        if tok.split('*')[0] == 'R': t += .62 * _dur(tok)[1]; continue
+        if tok.startswith('['): ns = tok[1:-1].split(); g = DYNG.get(ns[0]); ns = ns[1:] if g else ns; ev.append((t, [freq(x) for x in ns], g or 1.0, 1.1, ped is not None)); t += .62 * 1.6; continue
+        nm, mul = _dur(tok.rstrip('!_')); ev.append((t, [freq(nm)], 1.0, .5 * min(mul, 1.6), ped is not None)); t += .62 * mul
+    ups = sorted(x[1] for x in changes if x[0] == 'u')
+    end = max([e[0] for e in ev] + [t]) + 2.5; out = np.zeros(int(SR * end))
+    for t0, fs, g, dur, held in ev:
+        if held:   # ring until the next time the pedal comes up (or the end)
+            u = next((x for x in ups if x > t0 + .05), end - 1.6); dur = max(dur, u - t0)
+        w = g * tone(fs, round(dur, 2)); i = int(SR * t0); out[i:i + len(w)] += w[:len(out) - i]
+    return out
 def piano(spec):
+    if 'Ped' in spec.split(): return piano_ped(spec)
     parts = []
     for tok in re.findall(r'\[[^\]]+\]|\S+', spec):
         if tok.startswith('['):
