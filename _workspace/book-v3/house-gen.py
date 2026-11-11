@@ -21,7 +21,7 @@ def wb(k):
     f=[x for x in sorted(os.listdir(d)) if x.startswith(pre)]
     pages=str(i) if p=='S' else f'{2*i-1}–{2*i}'
     return ['Claude outputs/Books - latest/2 Workbook/'+WBF[p]+'/'+f[0], ('p. ' if p=='S' else 'pp. ')+pages]
-FLOORS=[('Beginner','B1 P1 P2 T1 T2 E1 L1 L2',[]),
+FLOORS=[('Beginner','B1 P1 L1 P2 T1 T2 E1 L2',[]),
 ('Prelim','P3 P4 T3 T4 T8 E2 S1 S2 H1',[]),
 ('Grade 1','P5 P6 P7 S3 T5 E3 H2 L3',[('S2','minor-scales',4,'The raised 7th','올린 7음'),('H1','chords',7,'Tonic triads: which key?','으뜸3화음: 무슨 조?')]),
 ('Grade 2','P8 T6 S4 E4 H3 F1',[('S3','key-signatures',14,'Major keys from flats','플랫으로 장조 찾기'),('P7','intervals',5,'Melodic or harmonic?','가락 음정일까 화성 음정일까?')]),
