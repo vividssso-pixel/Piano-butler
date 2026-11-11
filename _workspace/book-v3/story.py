@@ -2173,3 +2173,42 @@ NEW['LO'] = ('Opening map', [
   ('piano', 'C4 D4 E4 F4 G4 F4 E4 D4 C4*2', c(162, 'map')),
   ('P', 'Ready when you are, Butler!', c(162, 'map'))])])
 for _k in ('MO', 'FO', 'LO'): CH[_k] = NEW[_k]
+
+# her 11 Nov: Before you play (Handbook pp. 18-20): posture, hand shape, finger numbers, warm-ups
+NEW['B1'] = ('Before you play', [
+ ('The secret', [
+  ('P', 'Butler! I want to play something right now. Can I just start?', c(18, 'h:Posture and hand shape')),
+  ('B', 'In one minute, Clara. First we set up the most important instrument in the room.', c(18, 'h:Posture and hand shape')),
+  ('P', 'The piano?', c(18, 'lead')),
+  ('B', 'You. How you sit and how you hold your hands decide how easy everything else will be. Set them up before the first note, check them every time you sit down, and soon they look after themselves.', c(18, 'lead')),
+  ('B', 'Here is the secret: sit tall, forearms level with the keys, a round hand on the fingertips. Then let the weight of your arm do the work.', c(18, 'secret'))]),
+ ('How to sit', [
+  ('B', 'Look at the picture. One: forearms level with the keys, like a table top. The wrist neither drops nor lifts.', c(18, 'hero', lab=['1'])),
+  ('B', 'Two: elbows a little in front of you, not pinned to your sides like a penguin.', c(18, 'hero', lab=['2'])),
+  ('P', 'Penguins can’t play the piano anyway.', c(18, 'hero', lab=['2'])),
+  ('B', 'Quite right. Three: sit on the front half of the stool, opposite Middle C. Four: feet flat on the floor, the right foot near the pedal. Five: back tall, shoulders loose, leaning a little towards the keys.', c(18, 'hero', lab=['3'])),
+  ('B', 'If the stool is too low, raise it, or sit on a cushion. A telephone book works too, if anyone still has one.', c(18, 'hero', lab=['5']))]),
+ ('A round hand', [
+  ('B', 'Now the hands. Imagine a soft ball resting under your palm. That shape is your playing hand: knuckles up like a bridge, fingers curved, and the sound comes from the fingertip, just behind the nail.', c(18, 'two')),
+  ('B', 'The thumb plays on the side of its tip, relaxed. And the wrist stays level and loose. It never rests on the wood, however tired it is.', c(18, 'ht')),
+  ('P', 'So I keep my nails short too?', c(18, 'ht')),
+  ('B', 'Short nails, happy keys. A long nail clicks like a tap-dancing mouse.', c(18, 'ht'))]),
+ ('Finger numbers', [
+  ('B', 'Every finger has a number, the same in both hands. The thumb is one, then two, three, four, and the little finger is five. Music often prints these numbers above or below the notes.', c(19, 'two')),
+  ('P', 'So my left thumb is one too, even though it’s on the other side?', c(19, 'two')),
+  ('B', 'Exactly. Thumbs are always one. Four warm-ups before you play. Rag doll: let your arms hang and swing, loose and heavy. Arm drop: let a round hand fall onto a key, so the arm’s weight makes the sound, not a push. Knuckle bridge: push the knuckles up and hold for five. Wrist balloon: a balloon under the wrist floats it up, then lets it sink back to level.', c(19, 'ht'))]),
+ ('Examples', [
+  ('B', 'Example one. Which hand is round? Look at the knuckles: up, or sunk in? Look at the tips: does the finger stand on its tip?', c(19, 'ex1')),
+  ('pause', 4, c(19, 'ex1')),
+  ('P', 'A! It looks so relaxed.', c(19, 'ex1', oops=True)),
+  ('B', 'Relaxed, yes, but A is lying down on the job. A flat hand can’t play fast or loud. Which one could play all day?', c(19, 'ex1')),
+  ('P', 'C: knuckles up, curved fingers, standing on the tips. And B’s knuckle has caved in.', c(19, 'ex1', reveal=True)),
+  ('B', 'Example two. Is the stool right? Follow the forearm from the elbow to the keys. Uphill or downhill?', c(20, 'ex2')),
+  ('pause', 4, c(20, 'ex2')),
+  ('P', 'B is level. In A the arm goes uphill, so the stool is too low. In C it goes downhill: too high.', c(20, 'ex2', reveal=True)),
+  ('B', 'Every time you sit down, the thirty-second check. Stool, body, shoulders: lift them, then let them drop. Hands: a soft ball under each palm. Breathe out, then play.', c(19, 'howto')),
+  ('B', 'Try it: hold a small ball or an orange, then put your hand on the keys without changing its shape.', c(20, 'try10')),
+  ('P', 'Can I eat the orange afterwards?', c(20, 'try10')),
+  ('B', 'After the scales. Four traps: wrists sinking below the keys, shoulders creeping up to your ears, flat fingers or a caved-in knuckle, and sitting so close your elbows are squashed. Now, Clara, you may start.', c(20, 'watch')),
+  ('P', 'Finally! Bye, Butler!', c(20, 'watch'))])])
+CH['B1'] = NEW['B1']

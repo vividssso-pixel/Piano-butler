@@ -10,13 +10,13 @@ if '--pages' in sys.argv:   # re-render the page images from the merged PDF (pdf
     subprocess.run(['pdftoppm', '-jpeg', '-jpegopt', 'quality=72', '-scale-to-x', '1000', '-scale-to-y', '-1', '/mnt/user-data/outputs/books/handbook-draft.pdf', tmp + '/pg'], check=True)
     from PIL import Image
     for f in sorted(glob.glob(tmp + '/pg-*.jpg')):
-        n = int(os.path.basename(f)[3:6]) + 20; Image.open(f).save(f'{OUT}/pages/p{n:03d}.webp', 'WEBP', quality=70, method=5)
+        n = int(os.path.basename(f)[3:6]) + 17; Image.open(f).save(f'{OUT}/pages/p{n:03d}.webp', 'WEBP', quality=70, method=5)   # her 11 Nov: Before you play (pp. 18-20) now opens the merged draft
 else:
     for f in glob.glob('/tmp/claude-0/read/pages/*.webp'): shutil.copy(f, OUT + '/pages/')
 LAST = max(int(os.path.basename(f)[1:4]) for f in glob.glob(OUT + '/pages/*.webp'))
 TIPS = {L[-1][3]: L[-1][1] for L in (OA.LEG_P, OA.LEG_T, OA.LEG_E, OA.LEG_S, OA.LEG_H, OA.LEG_M, OA.LEG_F, OA.LEG_L)}
 PNAME = dict(CB.PARTS)
-CH = []
+CH = [{'k': 'B1', 'part': 'Before you play', 't': 'Posture and hand shape', 'pages': [18, 19, 20]}]   # her 11 Nov
 for p, name, k in PM.PARTS:
     part = PNAME[p]
     CH.append({'k': p + 'O', 'part': part, 't': 'Opening map', 'pages': [PM.PAGE[p + 'O']]})
@@ -41,7 +41,7 @@ RG = json.load(open('/tmp/claude-0/pk/regions.json')) if os.path.exists('/tmp/cl
 REG = {}
 # her 11 Nov (p. 72): an example covers its labels until the voice says them, but the question itself must stay in view:
 # the bar letters and road signs of a map, tempo and time signatures, rall. / a tempo, the start mark, the note glyphs.
-_GIVEN_ALL = {('72', 'ex1'), ('72', 'ex2'), ('73', 'ex3'), ('73', 'ex4')}
+_GIVEN_ALL = {('20', 'ex2'), ('72', 'ex1'), ('72', 'ex2'), ('73', 'ex3'), ('73', 'ex4')}
 _GIVEN_TXT = {'You play:', 'start', 'Fine', 'D.C. al Fine', 'D.S. al Coda', 'To Coda', 'rall.', 'a tempo', '= 96', '𝅘𝅥', '𝅗𝅥', '𝅘𝅥𝅮', '𝅘𝅥𝅭', '𝅝'}
 def _given(pg, key, L):
     if (pg, key) in _GIVEN_ALL or L[0] in _GIVEN_TXT: return True
@@ -206,6 +206,7 @@ for c in CH:
 # her 11 Nov: every chapter ends with two separate next steps: print its Workbook pages (paper), and a 10-question drill (screen)
 # (chapter: [(drill id, drill name, level or 0)]); the workbook file is the chapter's own PDF from the Books page
 DRILL = {
+    'B1': [('posture-hands', 'Posture & Hand Shape', 0)],
     'P1': [('note-names', 'The Musical Alphabet', 1)], 'P2': [('whole-staff', 'Line and Space Names', 1)], 'P3': [('whole-staff', 'Find it on the keys', 7)],
     'P4': [('whole-staff', 'Landmark hop', 5), ('reading-steps', 'Steps & Skips', 2)], 'P5': [('ledger-lines', 'Ledger Lines', 3)], 'P6': [('accidentals', 'Accidentals', 1)],
     'P7': [('intervals', 'Intervals: count it', 1)], 'P8': [('intervals', 'Major or perfect?', 9)],
@@ -221,8 +222,8 @@ DRILL = {
     'F5': [('form', 'Binary or ternary?', 5)], 'F6': [('styles', 'Which period?', 3)],
     'L1': [('hand-positions', 'Hand Positions', 1)], 'L2': [('hb-practice', 'Practising Well', 0)], 'L3': [('reading-steps', 'Name the next note', 3)], 'L4': [('listen-write', 'Ear Training', 0)], 'L5': [('hb-performing', 'Performing', 0)],
 }
-_WBF = {'P': 'Pitch', 'T': 'Time', 'E': 'Expression', 'S': 'Scales and keys', 'H': 'Chords and harmony', 'M': 'Chords and harmony', 'F': 'Shape and style', 'L': 'Playing and listening'}
-_WBN = {'P': 1, 'T': 2, 'E': 3, 'S': 4, 'H': 5, 'M': 6, 'F': 7, 'L': 8}
+_WBF = {'B': 'Before you play', 'P': 'Pitch', 'T': 'Time', 'E': 'Expression', 'S': 'Scales and keys', 'H': 'Chords and harmony', 'M': 'Chords and harmony', 'F': 'Shape and style', 'L': 'Playing and listening'}
+_WBN = {'B': 0, 'P': 1, 'T': 2, 'E': 3, 'S': 4, 'H': 5, 'M': 6, 'F': 7, 'L': 8}
 import urllib.parse as _up
 def _wb(key):
     p, i = key[0], int(key[1:]); d = '/mnt/user-data/outputs/books-latest/2 Workbook/' + _WBF[p]
