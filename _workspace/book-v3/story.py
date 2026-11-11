@@ -536,13 +536,32 @@ NEW['T2'] = ('Notes and rests', [
   ('B', 'Only half of it, Clara. Music is made of two things: sounds and silences. Think of talking. A sentence needs words, and it needs little pauses too. Without the pauses it’s one long breathless rush.', c(53, 'lead')),
   ('P', 'Like my little brother telling a story.', c(53, 'lead')),
   ('B', 'Exactly like that. On paper, a sound is written as a note, and a silence is written as a rest. A rest is just as important as a note. It isn’t a break for you: it’s music you can’t hear, and you count it just as carefully.', c(53, 'lead'))]),
- ('Long and short notes', [
+ ('The crotchet: one beat', [
   ('P', 'So how do I know how long to hold a note? Do I just guess?', c(53, 'hero')),
-  ('B', 'No guessing required. Its shape tells you, like the size of a cup tells you how much juice it holds. Each note is half the one above it. A semibreve lasts four beats. It splits into two minims, two beats each. A minim splits into two crotchets, one beat each.', c(53, 'hero')),
-  ('P', 'Like cutting a cake in half, and in half again.', c(53, 'hero')),
-  ('B', 'Precisely, and nobody fights over the pieces. Listen to one bar of each. The beat keeps going; only the notes change.', c(53, 'hero')),
+  ('B', 'No guessing required. Its shape tells you, like the size of a cup tells you how much juice it holds. Let’s start with the beat you already feel. A filled-in note with a stem is a crotchet. It lasts one beat.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4 C4 C4 C4', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('B', 'And every note has a twin rest: a silence of exactly the same length. The crotchet rest is one beat of silence. It looks like a little lightning bolt.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4 R C4 R', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('P', 'Play, shh, play, shh. The shh still counts!', c(53, 'hero'))]),
+ ('The minim: two beats', [
+  ('B', 'Now hollow out the head. A white note with a stem is a minim. It lasts two beats: two crotchets joined together.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4*2 C4*2', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('B', 'Its rest is a little block sitting on the middle line, like a hat sitting on a head. Two beats of silence.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4*2 R R', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('P', 'A minim, then a hat. Got it.', c(53, 'hero'))]),
+ ('Three beats', [
+  ('B', 'Put a dot after a minim and it grows by half of itself: two beats, plus one more. A dotted minim lasts three beats.', c(56, 'hero')),
+  ('count', {'beats': 'X x x X x x', 'notes': 'C4*3 C4*3', 'say': '1 2 3 1 2 3'}, c(56, 'hero')),
+  ('P', 'One, two, three. Like a waltz!', c(56, 'hero')),
+  ('B', 'Exactly like a waltz. You’ll meet the dot properly later. For now, remember: a minim with a dot is three beats.', c(56, 'hero'))]),
+ ('The semibreve: four beats', [
+  ('B', 'And the longest of them all: the semibreve. A hollow oval with no stem at all. It lasts four beats, a whole bar of four-four.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4*4', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('B', 'Its rest hangs from the fourth line, heavy, like a coat on a hook. Coat hangs, hat sits.', c(53, 'hero')),
+  ('P', 'Coat hangs, hat sits. I’ll never mix them up.', c(53, 'hero')),
+  ('B', 'Now see them together. Each note is half the one above it: one semibreve, two minims, four crotchets. Like cutting a cake in half, and in half again.', c(53, 'hero')),
   ('count', {'beats': 'X x M x X x M x X x M x', 'notes': 'C4*4 C4*2 C4*2 C4 C4 C4 C4', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(53, 'hero')),
-  ('B', 'And here’s the other half of the secret: every note has a twin rest, a silence of exactly the same length.', c(53, 'secret'))]),
+  ('B', 'That is the secret: each note is half the one above it, and every note has a twin rest.', c(53, 'secret'))]),
  ('Quavers', [
   ('B', 'One more halving. A crotchet splits into two quavers, half a beat each: two to every beat.', c(53, 'hero')),
   ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 & 2 & 3 & 4 &'}, c(53, 'hero')),
@@ -559,8 +578,7 @@ NEW['T2'] = ('Notes and rests', [
   ('count', {'beats': 'X x x X x x X x x', 'notes': 'C4 C4 C4 R*3 C4*2 C4', 'say': '1 2 3 1 2 3 1 2 3'}, c(53, 'box'))]),
  ('Every note has a twin rest', [
   ('B', 'Every note has a twin rest, the same length with no sound: semibreve, minim, crotchet, quaver, and the semiquaver, a quarter of a beat, which you’ll meet later.', c(54, 'svg')),
-  ('B', 'Two rests look like identical twins. The semibreve rest hangs from the fourth line, heavy, like a coat on a hook. The minim rest sits on the middle line, like a hat.', c(54, 'svg')),
-  ('P', 'Coat hangs, hat sits. I’ll never mix them up.', c(54, 'svg'))]),
+  ('P', 'Twins everywhere. Silent ones.', c(54, 'svg'))]),
  ('Pizzas', [
   ('B', 'Some books call the notes whole, half, quarter, eighth and sixteenth notes. Here is why.', c(54, 'pzbox')),
   ('B', 'Think of each beat as a pizza. A bar of four-four is four pizzas. The semibreve eats all four; a minim, two; a crotchet, one; a quaver, half a pizza. A rest is the same share, left on the plate.', c(54, 'pzbox')),

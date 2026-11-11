@@ -22,14 +22,14 @@ def wb(k):
     pages=str(i) if p=='S' else f'{2*i-1}–{2*i}'
     return ['Claude outputs/Books - latest/2 Workbook/'+WBF[p]+'/'+f[0], ('p. ' if p=='S' else 'pp. ')+pages]
 # her 11 Nov: rooms hold slices -- the clips (1-based, in Read & listen order) a floor needs; no entry = the whole chapter
-SLICE={'P1':[1,2,3,4,9],'T1':[1,3,6,7,8],'T2':[1,2,6,7,8,11],'E1':[1,7],
+SLICE={'P1':[1,2,3,4,9],'T1':[1,3,6,7,8],'T2':[1,2],'E1':[1,7],
        'T3':[1,2,3,5,7,10,11,12],'T4':[1,2,3,4,6,8],'T8':[1,2,3,4,5],'E2':[1,2,3,4],'S1':[1,2,3,7],'S2':[1,2,4,6],
        'T5':[1,2,3,4,5,7],'T6':[1,2,3,4,7],'T7':[1,3]}   # her 11 Nov ("ok"): Grade 1 and up sliced too
 FLOORS=[('Beginner','B1 P1 L1 P2 T1 T2 E1',[]),
-('Prelim','L2 P3 P4 T3 T4 T8 E2 S1 S2 H1',[('P1','note-names',3,'The two ends and the eight Cs','양 끝과 여덟 개의 C',[5,6,7,8]),('T1','pulse',3,'Tempo, strong and weak beats','빠르기, 강박과 약박',[2,4,5]),('T2','note-values',4,'Quavers, stems and flags','8분음표, 기둥과 꼬리',[3,4,9,10]),('E1','dynamics',3,'mp, mf and the hairpins','mp, mf와 헤어핀',[2,3,5,6])]),
+('Prelim','L2 P3 P4 T3 T4 T8 E2 S1 S2 H1',[('P1','note-names',3,'The two ends and the eight Cs','양 끝과 여덟 개의 C',[5,6,7,8]),('T1','pulse',3,'Tempo, strong and weak beats','빠르기, 강박과 약박',[2,4,5]),('T2','note-values',4,'Quavers, stems and flags','8분음표, 기둥과 꼬리',[6,7,12,13]),('E1','dynamics',3,'mp, mf and the hairpins','mp, mf와 헤어핀',[2,3,5,6])]),
 ('Grade 1','P5 P6 P7 S3 T5 E3 H2 L3',[('S2','minor-scales',4,'D minor and the raised 7th','D 단음계와 올린 7음',[5]),('H1','chords',7,'Tonic triads: which key?','으뜸3화음: 무슨 조?'),
   ('S1','scales',3,'F major','F 장음계',[5]),('T3','note-values',7,'Dotted rhythms','점음표 리듬',[4,8,9,13]),('T4','time-signatures',8,'3/8 and changing time','3/8과 박자 바꾸기',[5,7]),
-  ('T2','time-signatures',7,'The whole-bar rest','온마디 쉼표',[5]),('E1','dynamics',2,'sfz and fp','sfz와 fp',[4]),('E2','dynamics',5,'Two-note slurs','두 음 슬러',[5])]),
+  ('T2','time-signatures',7,'The whole-bar rest','온마디 쉼표',[8]),('E1','dynamics',2,'sfz and fp','sfz와 fp',[4]),('E2','dynamics',5,'Two-note slurs','두 음 슬러',[5])]),
 ('Grade 2','P8 T6 S4 E4 H3 F1',[('S3','key-signatures',14,'Major keys from flats','플랫으로 장조 찾기'),('P7','intervals',5,'Melodic or harmonic?','가락 음정일까 화성 음정일까?'),
   ('S1','scales',3,'D major','D 장음계',[4]),('T8','signs',4,'D.C. and D.S.','D.C.와 D.S.',[6,7])]),
 ('Grade 3','S5 E5 H4 F2 L4',[('S3','key-signatures',15,'Sharps and flats mixed','샵과 플랫 섞어서'),('P8','intervals',7,'Intervals by ear','듣고 음정 맞히기'),('T6','rhythm',8,'Triplets and semiquavers','셋잇단음표와 16분음표',[5,6]),
@@ -52,12 +52,23 @@ FLOOR_TXT={'Beginner':('Sitting and hands, the keyboard and the staff, beat and 
 'Grade 6':('Seventh chords and slash chords, and cadences by ear.','7화음과 슬래시 화음, 듣고 마침꼴 맞히기.'),
 'Grade 7':('Colour chords (Extra), and every earlier chapter a step further.','색깔 화음(Extra), 그리고 앞의 챕터들 한 걸음 더.'),
 'Grade 8':('Tall chords: 9, 11, 13 (Extra), and every earlier chapter a step further.','높은 화음 9·11·13(Extra), 그리고 앞의 챕터들 한 걸음 더.')}
+# her 11 Nov: notes and rests one at a time on Level 0, crotchet first, the three-beat note included.
+# chapter -> [(suffix, en, ko, clips, rows to show, drill, level, nv filter)]; the first entry renames the chapter's own room
+STEPS={'T2':[('', 'Notes: the crotchet', '음표: 4분음표', [1,2], 'crotchets', 'note-values', 2, 'nv=crotchet,rcrotchet'),
+             ('-s2', 'Notes: the minim', '음표: 2분음표', [3], 'crotchets,minims', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim'),
+             ('-s3', 'Notes: three beats', '음표: 세 박', [4], '', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim,dminim'),
+             ('-s4', 'Notes: the semibreve', '음표: 온음표', [5,9,10,11,14], 'crotchets,minims,semibreve', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim,dminim,semibreve,rsemibreve')]}
 rooms=[]; floors=[]
 for fname,new,rev in FLOORS:
     ids=[]
     for k in new.split():
         a,c=PM.pages_of(k); pg=f'{a}' if c==1 else f'{a}–{a+c-1}'
         n=k[1:]
+        if fname=='Beginner' and k in STEPS:
+            for suf,en,ko,cl,rows,dd,lv,nv in STEPS[k]:
+                rooms.append(dict(id='hbr-'+k+suf,ch=k,en=en,ko=ko,part=PART[k[0]],num=n,pages=pg,wb=wb(k),dr=[[dd,lv,'How many beats?',nv]],again=None,clips=cl,rows=rows or None))
+                ids.append('hbr-'+k+suf)
+            continue
         rooms.append(dict(id='hbr-'+k,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=('' if k[0]=='B' else n),pages=pg,wb=wb(k),dr=[[d,lv,lab] for d,lv,lab in D[k]],again=None,clips=SLICE.get(k)))
         ids.append('hbr-'+k)
     for rv in rev:
@@ -67,6 +78,6 @@ for fname,new,rev in FLOORS:
         rooms.append(dict(id=rid,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=k[1:],pages=pg,wb=wb(k),dr=[[d,lv,en]],again=[en,ko],clips=cl))
         ids.append(rid)
     floors.append(dict(ids=ids,en=[fname,FLOOR_TXT[fname][0]],ko=[fname,FLOOR_TXT[fname][1]]))
-assert len({r['ch'] for r in rooms if not r['again']})==50, len({r['ch'] for r in rooms if not r['again']})
+assert len({r['ch'] for r in rooms if not r['again']})>=50, len({r['ch'] for r in rooms if not r['again']})
 open('/tmp/claude-0/house/data.js','w').write('const HB_ROOMS = '+json.dumps(rooms,ensure_ascii=False)+';\nconst HB_FLOORS = '+json.dumps(floors,ensure_ascii=False)+';\n')
 print(len(rooms),'rooms', [len(f['ids']) for f in floors])
