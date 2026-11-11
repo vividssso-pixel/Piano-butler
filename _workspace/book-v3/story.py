@@ -2196,7 +2196,15 @@ NEW['B1'] = ('Before you play', [
  ('Finger numbers', [
   ('B', 'Every finger has a number, the same in both hands. The thumb is one, then two, three, four, and the little finger is five. Music often prints these numbers above or below the notes.', c(19, 'two')),
   ('P', 'So my left thumb is one too, even though it’s on the other side?', c(19, 'two')),
-  ('B', 'Exactly. Thumbs are always one. Four warm-ups before you play. Rag doll: let your arms hang and swing, loose and heavy. Arm drop: let a round hand fall onto a key, so the arm’s weight makes the sound, not a push. Knuckle bridge: push the knuckles up and hold for five. Wrist balloon: a balloon under the wrist floats it up, then lets it sink back to level.', c(19, 'ht'))]),
+  ('B', 'Exactly. Thumbs are always one. Now six warm-ups before you play. Watch them move.', c(19, 'h:Six warm-ups')),
+  ('B', 'One, rag doll: flop forward, arms hanging heavy. Shake them loose, then float the hands up onto the keys.', c(19, 'wu6', anim='warm-ragdoll')),
+  ('P', 'I’m a rag doll! Floppy, floppy.', c(19, 'wu6', anim='warm-ragdoll')),
+  ('B', 'Two, elbow wings: elbows free, not stuck to your body. Float them out like wings, then back.', c(19, 'wu6', anim='warm-wings')),
+  ('B', 'Three, arm glide: skate the whole arm along the keys. The round hand rides to the next group of keys. The fingers ride; they don’t walk.', c(19, 'wu6', anim='warm-glide')),
+  ('B', 'Four, arm drop: lift the whole arm and let it drop into a key on finger three. Firm tip, soft wrist, a round sound.', c(19, 'wu6', anim='warm-dive')),
+  ('B', 'Five, knuckle bridge: your knuckles are a bridge a little car can drive over. Press one key slowly and hold for three. The bridge stays up.', c(19, 'wu6', anim='warm-bridge')),
+  ('P', 'Beep beep, the car made it across!', c(19, 'wu6', anim='warm-bridge')),
+  ('B', 'And six, wrist balloon: as the key goes down, a balloon lifts the wrist back up to level. The fingertip stays on the key.', c(19, 'wu6', anim='warm-balloon'))]),
  ('Examples', [
   ('B', 'Example one. Which hand is round? Look at the knuckles: up, or sunk in? Look at the tips: does the finger stand on its tip?', c(19, 'ex1')),
   ('pause', 4, c(19, 'ex1')),
