@@ -2235,7 +2235,7 @@ NEW['B1'] = ('Before you play', [
   ('B', 'Example two. Is the stool right? Follow the forearm from the elbow to the keys. Uphill or downhill?', c(20, 'ex2')),
   ('pause', 4, c(20, 'ex2')),
   ('P', 'B is level. In A the arm goes uphill, so the stool is too low. In C it goes downhill: too high.', c(20, 'ex2', reveal=True)),
-  ('B', 'Every time you sit down, the thirty-second check. Stool, body, shoulders: lift them, then let them drop. Hands: a soft ball under each palm. Breathe out, then play.', c(19, 'howto')),
+  ('B', 'Every time you sit down, the thirty-second check. Stool, body, shoulders: lift them, then let them drop. Hands: a soft ball under each palm. Breathe out, then play.', c(20, 'howto')),
   ('B', 'Try it: hold a small ball or an orange, then put your hand on the keys without changing its shape.', c(20, 'try10')),
   ('P', 'Can I eat the orange afterwards?', c(20, 'try10')),
   ('B', 'After the scales. Four traps: wrists sinking below the keys, shoulders creeping up to your ears, flat fingers or a caved-in knuckle, and sitting so close your elbows are squashed. Now, Clara, you may start.', c(20, 'watch')),
