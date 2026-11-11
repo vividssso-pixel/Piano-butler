@@ -235,6 +235,7 @@ def _wb(key):
 for c in CH:
     if c['k'] in DRILL: c['nx'] = {'wb': _wb(c['k']), 'dr': DRILL[c['k']]}
 
+shutil.copy('/tmp/claude-0/pk/read_warm.js', OUT + '/warm.js')   # her 11 Nov: the warm-up drawings for the lens
 DATA = json.dumps(CH, ensure_ascii=False)
 REGD = json.dumps(REG, ensure_ascii=False)
 HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
@@ -368,6 +369,7 @@ function drawLens(L, t) {
   if (L.k === 'ladder') return drawLadder();
   if (L.k === 'majmin') return drawMajMin();
   if (L.k === 'glasses') return drawGlasses();
+  if (L.k.indexOf('warm-') === 0) return drawWarm(L.k.slice(5));
   const [name, subt, clef, items] = LENSD[L.k]; const n = items.length;
   const cnt = L.at.length ? L.at.filter(v => v <= t).length : n; const shown = L.full ? n : cnt, cur = cnt - 1;
   const key = L.k + shown + ':' + cur; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
@@ -597,6 +599,14 @@ function drawLinesAnim() {   // lines 1-5 rise from the bottom, then spaces 1-4
   for (let k = 0; k < 4; k++) { const d = 2.7 + k * .45, y = Y(2 * k + 1);
     g += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="${d}s" dur=".25s" fill="freeze"/><rect x="122" y="${y - SP / 2 + 3}" width="396" height="${SP - 6}" fill="${ACC}" opacity=".14"/><text x="532" y="${y + 6}" font-size="17" font-weight="700" fill="${ACC}" ${F}>space ${k + 1}</text></g>`; }
   lensShell(key, '♪ Five lines, four spaces: from the bottom', `<svg viewBox="0 0 640 ${Y(0) + 26}" role="img" aria-label="Lines 1 to 5 and spaces 1 to 4, counted from the bottom">${g}</svg>`);
+}
+function drawWarm(id) {   // her 11 Nov: the app's warm-up drawings, moving while the Butler explains them (frames in warm.js, loaded once)
+  if (!window.WARM) { if (!window.__warmLoading) { window.__warmLoading = 1; const sc = document.createElement('script'); sc.src = 'warm.js'; document.head.appendChild(sc); } return; }
+  const W = window.WARM[id]; if (!W) return; const key = 'warm-' + id;
+  if (lensEl.dataset.k !== key) { lensEl.dataset.k = key; lensEl.dataset.t = ''; lensShell(key, '♪ ' + ({ ragdoll: 'Rag doll', wings: 'Elbow wings', glide: 'Arm glide', dive: 'Arm drop', bridge: 'Knuckle bridge', balloon: 'Wrist balloon' })[id], '<div class="wv" style="display:flex;justify-content:center"></div>'); }
+  const ph = performance.now() % W.ms; let i = 0; while (i + 1 < W.f.length && W.f[i + 1][0] <= ph) i++;
+  if (lensEl.dataset.t === String(i)) return; lensEl.dataset.t = String(i);
+  const box = lensEl.querySelector('.wv'); if (box) box.innerHTML = W.f[i][1].replace('<svg ', '<svg style="width:100%;max-width:340px;max-height:240px;height:auto" ');
 }
 function drawGlasses() {   // the same note on the bottom line: through treble glasses it is E, through bass glasses G
   const key = 'glasses'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
