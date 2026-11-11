@@ -21,7 +21,7 @@ const { chromium } = require('playwright'); const fs = require('fs');
           if (cls === 'secret1') key = (c.querySelector('.sl') || {}).textContent?.toLowerCase().includes('rule') ? 'rule' : 'secret';
           if (cls === 'inact2' || cls === 'inact') { const bh = (c.querySelector('.bh') || {}).textContent || ''; const m = bh.match(/(\d+)/); key = 'ex' + (m ? m[1] : ++ex); }
           if (/^h[1-4]$/.test(cls)) key = 'h:' + c.textContent.trim();
-          const labs = [...c.querySelectorAll('svg text')].map(t => [t.textContent.trim(), box(t)]).filter(x => x[0] && x[0].length <= 12);
+          const labs = [...c.querySelectorAll('svg text')].map(t => [t.textContent.trim(), box(t), getComputedStyle(t).fill]).filter(x => x[0] && x[0].length <= 12);
           const rs = c.querySelector('.ires'); blocks.push(rs ? { key, cls, box: box(c), labs, res: box(rs) } : { key, cls, box: box(c), labs });
         });
         res[n] = blocks;

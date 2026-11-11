@@ -15,13 +15,14 @@ def wpx(k, h=70, spx=None):
         svg = s.replace('<svg ', '<svg style="width:100%%;height:auto;max-height:%dpx" ' % h, 1)
     return '<figure class="vx px"><div class="vs">' + svg + '</div></figure>'
 def pc(k, lab, h=70): return f'<div class="fc">{wpx(k, 84, 26)}<div class="add">{lab.replace(BOX, WL)}</div></div>'
-def _hbl(hb):   # her 5 Nov (A): topics 1-5 are Part I Pitch (pp. 22-31), 6-12 Part III Scales and keys (pp. 50-63)
+def _hbl(hb):
+    if isinstance(hb, str): return 'SCALES AND KEYS · HANDBOOK P.\u2009' + str(PM.PAGE[hb])   # her 11 Nov: one page per Scales chapter   # her 5 Nov (A): topics 1-5 are Part I Pitch (pp. 22-31), 6-12 Part III Scales and keys (pp. 50-63)
     return ('PITCH · HANDBOOK P. ' + str(22 + 2 * (hb - 22))) if hb < 27 else ('PITCH · HANDBOOK P. ' + str(50 + 2 * (hb - 27))) if hb < 29 else ('SCALES AND KEYS · HANDBOOK P.\u2009' + str(PM.PAGE['S1'] if hb < 31 else PM.PAGE['S3']))   # her 11 Nov audit: real chapter pages
 def wpage2(inner, n, hb, lab='PITCH'):
     return f'''<section class="pg"{' data-end="1"' if not hb else ''}><div class="top"><span>THE PIANO BUTLER WORKBOOK</span><span>{_hbl(hb) if hb else lab}</span></div><div class="rule"></div><div class="body">{inner}</div>
 <div class="sign"><span style="flex:0 0 240px">Date <i></i></span></div><div class="foot"><span>{n}</span></div></section>'''
 def tq(kind, topic, title, rule, inner, n, hb):
-    return wpage2(f'<div class="kick">{"Pitch" if hb < 29 else "Scales and keys"} · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
+    return wpage2(f'<div class="kick">{"Pitch" if isinstance(hb, int) and hb < 29 else "Scales and keys"} · {topic} · {kind}</div><h1>{title}</h1><p class="rem2"><span>Remember</span>{rule}</p>{inner}', n, hb)
 def kbd(start, n, W, H, extra_h=0, **kw):
     s = keyboard(start, n, W, H, **kw)
     if extra_h:   # room under the keys for numbers drawn in marks
@@ -128,21 +129,42 @@ AN = wpage2(f'''<div class="kick">Pitch · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in ans], ['12%', '88%'], 'ansT')}
 <p class="sm">“Draw it”, “in your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 13, None)
 SL = 'SCALES AND KEYS'
-R3 = wpage2(f'''<div class="kick">Scales and keys · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 5.</p>
+# her 11 Nov ("응 추가해줘"): the audit found no practice for minor scales, finding the key and the circle of fifths
+C5 = tq('Learn', 'Minor scales', 'Minor scales', 'Natural minor: the major on the same note with 3, 6 and 7 one key lower. Harmonic minor: raise the 7th again.', f'''
+{ex(1, 'Which notes move?', 1, 'From C major to C natural minor, three degrees move one key lower. Write their numbers.', '<div class="anrow">' + BOX * 3 + '</div>')}
+{ex(2, 'Build it', 2, 'Write the notes of each scale, going up. The first is done.', tbl(['Scale', 'Notes'], [['<b>C natural minor</b>', '<b class="done2">C D E♭ F G A♭ B♭ C</b>'], ['<b>D natural minor</b>', LINE], ['<b>A harmonic minor</b>', LINE], ['<b>D harmonic minor</b>', LINE], ['<b>E natural minor</b>', LINE]], ['38%', '62%']))}
+{ex(3, 'Melodic minor', 2, 'Write A melodic minor going up, then coming down.', tbl(['', 'Notes'], [['<b>going up</b>', LINE], ['<b>coming down</b>', LINE]], ['30%', '70%']))}
+{ex(4, 'True or false?', 1, 'Circle T or F.', tfrows(('C natural minor starts on the same note as C major.', 'The harmonic minor raises the 6th.', 'Coming down, the melodic minor is the natural minor.')))}
+{ex(5, 'Play it', 1, 'Play C major, then C natural minor, then C harmonic minor. Bright, dark, then leaning home. Tick a circle each day.', ticks())}''', 2, 'S2')
+D5 = tq('Use', 'Finding the key', 'Finding the key', 'Sharps: the last sharp, then the very next key up. Flats: the second-last flat (one flat: F major). Then look for the clue note and the last note.', f'''
+{ex(1, 'Name the major key', 2, 'Write the major key for each key signature. The first is done.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> → {BOX if not d else "<b class=done2>" + d + "</b>"}</div>' for a, d in (('2 sharps', 'D'), ('3 sharps', ''), ('4 sharps', ''), ('1 flat', ''), ('2 flats', ''), ('3 flats', ''))) + '</div>')}
+{ex(2, 'Major or minor?', 3, 'The key signature gives two suspects. The clue note (a raised 7th) and the last note name the key. The first is done.', tbl(['Key signature', 'Clue note', 'Last note', 'Key'], [['1 sharp', 'D♯', 'E', '<b class="done2">E minor</b>'], ['none', 'G♯', 'A', LINE], ['2 flats', 'F♯', 'G', LINE], ['1 flat', 'none', 'F', LINE], ['2 sharps', 'A♯', 'B', LINE]], ['26%', '22%', '22%', '30%']))}
+{ex(3, 'The detective’s steps', 1, 'Number the steps 1, 2, 3 in the order you check them.', ''.join(f'<div class="row"><b>{t}</b><span class="tk">{BOX}</span></div>' for t in ('the last bass note', 'the key signature', 'the clue notes')))}
+{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', tbl(['Find in a piece you are learning', 'Piece', 'Key'], [[r, LINE, BOX] for r in ('the key signature', 'a clue note (a raised 7th)', 'the last bass note')], ['46%', '38%', '16%']))}''', 4, 'S4')
+E5 = tq('Use', 'The circle of fifths', 'The circle of fifths', 'Go right round the circle: one more sharp each step. Go left: one more flat.', f'''
+{ex(1, 'Walk the circle', 2, 'Write the next keys round the circle, and how many sharps or flats each has. The first two are done.', tbl(['', 'C', '1', '2', '3', '4', '5'], [['<b>right</b>', '<b class="done2">C · 0</b>', '<b class="done2">G · 1♯</b>', BOX, BOX, BOX, BOX], ['<b>left</b>', '<b class="done2">C · 0</b>', '<b class="done2">F · 1♭</b>', BOX, BOX, BOX, BOX]], ['14%', '14%', '14%', '14%', '14%', '14%', '16%'], 'nocap'))}
+{ex(2, 'How many?', 2, 'Count the steps from C to find the number of sharps or flats.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> {BOX} <span class="mu2">{u}</span></div>' for a, u in (('A major', 'sharps'), ('E♭ major', 'flats'), ('E major', 'sharps'), ('B♭ major', 'flats'), ('B major', 'sharps'), ('A♭ major', 'flats'))) + '</div>')}
+{ex(3, 'Neighbours on the clock', 2, 'Write the key.', '<div class="ts6" style="grid-template-columns:1fr 1fr">' + ''.join(f'<div><b>{a}</b> {BOX}</div>' for a in ('right of D', 'left of C', 'opposite C', 'inside G (its relative minor)')) + '</div>')}
+{ex(4, 'Fill the clock', 2, 'Write the twelve major keys round the clock. C, G and F are done. (At the bottom, one key has two names.)', open('/tmp/claude-0/pk/clock5.svg').read())}
+{ex(5, 'Say it', 1, 'Say the circle out loud, right and then left, without looking. Tick a circle each day.', ticks())}''', 5, 'S5')
+R3 = wpage2(f'''<div class="kick">Scales and keys · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 8.</p>
 {ex(1, 'Intervals and keys', 2, 'Write the interval number for the first two; the major key for the last two.', grid([pc('r_iv0', 'interval ' + BOX, 66), pc('r_iv1', 'interval ' + BOX, 66), pc('r_ks0', 'major ' + BOX, 66), pc('r_ks1', 'major ' + BOX, 66)], 4, 'lab2'))}
 {ex(2, 'Complete it', 2, 'One word, letter or number in each space.', f'<div class="sent"><p>The relative minor of G major is {BOX} minor.</p><p>In a major scale the semitones fall between degrees 3–4 and {BOX} .</p><p>The major key with one sharp is {BOX} major.</p></div>')}
 {ex(3, 'True or false?', 1, 'Circle T or F.', tfrows(('A key signature applies to every line of the piece.', 'C up to E is a 3rd.', 'A minor 3rd is four semitones.')))}
-<div class="score">Score <span class="ab"></span> / 10</div>''', 3, None, SL)
+<div class="score">Score <span class="ab"></span> / 10</div>''', 6, None, SL)
 concepts3 = [('major scales', PM.PAGE['S1']), ('scale degree names', PM.PAGE['H3']), ('minor scales', PM.PAGE['S2']), ('key signatures', PM.PAGE['S3']), ('finding the key', PM.PAGE['S4']), ('the circle of fifths', PM.PAGE['S5'])]   # her 11 Nov audit: the real chapter pages
 PR3 = wpage2(f'''<div class="kick">Scales and keys · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
 {tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p.\u2009{p}'] for c, p in concepts3], ['36%', '15%', '17%', '17%', '15%'], 'prog')}
-<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 4, None, SL)
+<div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 7, None, SL)
 ans3 = [('p. 1', 'F needs a sharp (F♯); semitones 3–4 and 7–8. Pattern: T T S T T T S. Degrees: 2 supertonic, 3 mediant, 4 subdominant, 5 dominant, 6 submediant, 7 leading note. Relative minors: E, D, B, G, C.'),
-       ('p. 2', 'Keys: G / E minor · F / D minor · D / B minor · B♭ / G minor · A / F♯ minor · E♭ / C minor. Minor forms: A harmonic, B natural, C melodic. Sharps F C G D A E B; flats B E A D G C F.'),
-       ('p. 3', '5th, 3rd, D major, F major · E, 7–8, G · T, T, F.')]
+       ('p. 2', 'Which move: 3, 6, 7. D natural minor D E F G A B♭ C D · A harmonic minor A B C D E F G♯ A · D harmonic minor D E F G A B♭ C♯ D · E natural minor E F♯ G A B C D E. Melodic up A B C D E F♯ G♯ A, down A G F E D C B A. T, F, T.'),
+       ('p. 3', 'Keys: G / E minor · F / D minor · D / B minor · B♭ / G minor · A / F♯ minor · E♭ / C minor. Minor forms: A harmonic, B natural, C melodic. Sharps F C G D A E B; flats B E A D G C F.'),
+       ('p. 4', 'Major keys: D, A, E, F, B♭, E♭. Major or minor: A minor, G minor, F major, B minor. Steps: 3, 1, 2.'),
+       ('p. 5', 'Right: D 2♯, A 3♯, E 4♯, B 5♯. Left: B♭ 2♭, E♭ 3♭, A♭ 4♭, D♭ 5♭. How many: 3, 3, 4, 2, 5, 4. Neighbours: A, F, F♯ / G♭, E minor. Clock, going right from C: G D A E B F♯/G♭ D♭ A♭ E♭ B♭ F.'),
+       ('p. 6', '5th, 3rd, D major, F major · E, 7–8, G · T, T, F.')]
 AN3 = wpage2(f'''<div class="kick">Scales and keys · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in ans3], ['12%', '88%'], 'ansT')}
-<p class="sm">“Draw it”, “in your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 5, None, SL)
+<p class="sm">“Draw it”, “in your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 8, None, SL)
 
 css += f'''
 .anrow{{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:6px}} .anrow span{{display:flex;align-items:center;gap:6px;font-size:14px}} .anrow b{{color:{C}}}
@@ -160,7 +182,7 @@ css += f'''
 '''
 pages = [A1, B1, A2, B2, C2, D2, A3, B3, A4, B4, R, PR, AN]
 import re as _re3
-pages3 = [_re3.sub(r'<div class="foot"><span>\d+</span>', f'<div class="foot"><span>{k + 1}</span>', p) for k, p in enumerate([A5, B5])] + [R3, PR3, AN3]
+pages3 = [_re3.sub(r'<div class="foot"><span>\d+</span>', f'<div class="foot"><span>{k + 1}</span>', p) for k, p in enumerate([A5, C5, B5, D5, E5])] + [R3, PR3, AN3]
 FITJS = '''<script>
 // Fit every exercise cell's staff to its drawn content (staff, clef, notes), with a small even margin, so it fills the cell, centred.
 (async function(){ try { await document.fonts.ready; } catch (e) {}

@@ -436,7 +436,7 @@ P40 = page(f'''{head('Part II · Time · 5', 'Compound and irregular time', 'Com
 <!--SPLIT-->
 <div class="xlate">{extra('Irregular time', '<p>Five or seven counts, grouped unevenly. Met from Level 5.</p>' + fig_irreg() + tbl(['Time signature', 'Each bar holds', 'First met'], irreg, ['26%', '50%', '24%']))}</div>
 {youknow('Row, Row, Row Your Boat', ykfig('yk_row', ('n1','n2'), 112), 'Two big beats in every bar, each a <b class="co">dotted crotchet</b>: “Row, row”. Each big beat is worth three quavers: “row your” is long-short, a crotchet and a quaver, filling one big beat. That is 6/8.', 'Sway twice per bar while you sing it.')}
-{watch(['Reading 6/8 as six crotchet beats: the 8 means quavers.', 'Beaming 6/8 quavers in twos: in compound time they go in threes.'])}
+{watch(['Reading 6/8 as six crotchet beats: the 8 means quavers.', 'Beaming 6/8 quavers in twos: in compound time they go in threes.', 'Counting 5/4 as four beats and one left over: feel it as 3 + 2 (or 2 + 3), one long group and one short.'])}
 {foot('Time signatures p. {{T4}} · Rhythm: groups and upbeats p. {{T6}}', 'Workbook Levels 1–4 · Compound time · Online: Rhythm clock')}''', 40)
 
 P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Say your own name: long and short sounds, that’s <b>rhythm</b>. The pulse marches steadily on; the rhythm dances around it. How the notes are grouped on the page shows where the beats fall.')}
