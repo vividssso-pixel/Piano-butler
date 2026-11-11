@@ -2327,8 +2327,10 @@ const NOTE_NAMES_DRILL = {
   Learn: NoteNamesLearn,
 };
 
+const NO_LEARN_TAB = true;
 // Wrapper for a concept (Learn + Drill). Level/mode/tab live in App so they can sync to the URL.
 function ConceptView({ concept, tab: tabIn, level, mode, locked, onChange, drillOnly }) {   // Phase 534: drillOnly = opened from Home: no Learn tab (the lessons are on the Home)
+  drillOnly = drillOnly || NO_LEARN_TAB;   // her 11 Nov: the Handbook is the lesson now; a drill opens straight on its questions (the Learn code stays, hidden)
   const tab = drillOnly ? 'drill' : tabIn;
   const lv = concept.levels.find(l => l.n === level) || concept.levels[0];
   const Learn = concept.Learn;
@@ -17033,6 +17035,34 @@ const HB_ORN_DRILL = { levels: [
   { n: 3, label: 'Ornaments: true or false', time: 12, gen: hbTrueFalse(HB_ORN_TF) },
 ] };
 
+// ── H5 Seventh chords (her 11 Nov: the old drills had none for this chapter) ──
+const HB_SEVENTHS = {
+  maj7: { f: (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 7, 'M')], keys: '3 + 2 + 3' },
+  '7': { f: (r) => [r, hbUp(r, 3, 'M'), hbUp(r, 5, 'P'), hbUp(r, 7, 'm')], keys: '3 + 2 + 2' },
+  m7: { f: (r) => [r, hbUp(r, 3, 'm'), hbUp(r, 5, 'P'), hbUp(r, 7, 'm')], keys: '2 + 3 + 2' },
+  'ø7': { f: (r) => [r, hbUp(r, 3, 'm'), hbUp(r, 5, 'd'), hbUp(r, 7, 'm')], keys: '2 + 2 + 3' },
+  '°7': { f: (r) => [r, hbUp(r, 3, 'm'), hbUp(r, 5, 'd'), hbUp(r, 7, 'd')], keys: '2 + 2 + 2' },
+};
+function hbSeventh(kind) {
+  return () => {
+    for (let g = 0; g < 40; g++) {
+      const rr = pick(HB_ROOTS.filter(x => x[0] !== 'B')), r = hbRoot(rr), suf = pick(Object.keys(HB_SEVENTHS)), ns = HB_SEVENTHS[suf].f(r);
+      if (!hbOk(ns)) continue;
+      const nm = hbRootName(rr) + suf, others = sampleN(Object.keys(HB_SEVENTHS).filter(x => x !== suf), 3);
+      if (kind === 'name') return hbPack(['Name this seventh chord', '이 7화음의 이름은?'], { chords: [{ notes: ns }], sound: hbChordSound(ns) }, nm, others.map(x => hbRootName(rr) + x), nm);
+      if (kind === 'keys') return hbPack(['Keys in between, black and white: which seventh?', '사이에 있는 건반 수(검은 건반 포함): 어떤 7화음일까요?'], { big: hbRootName(rr) + ': ' + HB_SEVENTHS[suf].keys }, nm, others.map(x => hbRootName(rr) + x), nm + 'k');
+      const sp = (x) => HB_SEVENTHS[x].f(r).map(hbNm).join(' '), opts = others.map(sp).filter(x => x !== sp(suf));
+      if (opts.length < 3 || !others.every(x => hbOk(HB_SEVENTHS[x].f(r)))) continue;
+      return hbPack(['Which notes?', '어떤 음들일까요?'], { big: nm, sound: hbChordSound(ns) }, sp(suf), opts, nm + 's');
+    }
+  };
+}
+const HB_SEVENTH_DRILL = { levels: [
+  { n: 1, label: 'Keys in between: which seventh?', time: 12, gen: hbSeventh('keys') },
+  { n: 2, label: 'Name the seventh chord', time: 14, gen: hbSeventh('name') },
+  { n: 3, label: 'Spell the seventh chord', time: 16, gen: hbSeventh('spell') },
+] };
+
 // ── H6 Colour chords ──
 const HB_COLOURS = {
   sus2: (r) => [r, hbUp(r, 2, 'M'), hbUp(r, 5, 'P')],
@@ -17337,6 +17367,7 @@ Object.assign(LEVEL_KO, {
   'Off the beat: name it': '엇박 리듬: 이름 맞히기', 'Straight or swing? (by ear)': '스트레이트일까 스윙일까? (듣고)', 'Off the beat: true or false': '엇박 리듬: 맞을까 틀릴까',
   'Pedal signs and words': '페달 기호와 말', 'Which sign or word?': '어떤 기호나 말일까?', 'Using the pedal: true or false': '페달 쓰기: 맞을까 틀릴까',
   'Name the ornament': '꾸밈음 이름', 'Written out: which notes?': '풀어 쓰면 어떤 음?', 'Ornaments: true or false': '꾸밈음: 맞을까 틀릴까',
+  'Keys in between: which seventh?': '사이 건반 수: 어떤 7화음?', 'Name the seventh chord': '7화음 이름', 'Spell the seventh chord': '7화음의 음',
   'Name the colour chord': '색깔 화음 이름', 'Spell the colour chord': '색깔 화음의 음', 'Colour chords: true or false': '색깔 화음: 맞을까 틀릴까',
   'Find the floor: 9, 11, 13': '층 찾기: 9, 11, 13', 'Name the tall chord': '높은 화음 이름', 'With or without the 7th?': '7음이 있을까 없을까?',
   'Read the slash: the bass note': '슬래시 읽기: 베이스 음', 'Inversion or colour bass?': '자리바꿈일까 색깔 베이스일까?', 'Name the slash chord': '슬래시 화음 이름',
@@ -17386,6 +17417,7 @@ const HB_DRILLS = [
   ['hb-offbeat', 'Off the Beat', '엇박 리듬', HB_OFFBEAT_DRILL, 'Part II', 7, 68, 'rhythm'],
   ['hb-pedals', 'The Pedals', '페달', HB_PEDAL_DRILL, 'Part III', 4, 85, 'reading'],
   ['hb-ornaments', 'Ornaments', '꾸밈음', HB_ORN_DRILL, 'Part III', 5, 88, 'reading'],
+  ['hb-sevenths', 'Seventh Chords', '7화음', HB_SEVENTH_DRILL, 'Part V', 5, 122, 'pitch'],
   ['hb-colour', 'Colour Chords', '색깔 화음', HB_COLOUR_DRILL, 'Part V', 6, 125, 'pitch'],
   ['hb-tower', 'The Tower: 9, 11, 13', '탑: 9, 11, 13', HB_TOWER_DRILL, 'Part V', 7, 128, 'pitch'],
   ['hb-slash', 'Slash Chords', '슬래시 화음', HB_SLASH_DRILL, 'Part V', 8, 131, 'pitch'],
@@ -25725,7 +25757,8 @@ function thCleanLay(state, rooms, cmp) {   // m18: the clean room -- the number,
 const VIS_OPEN = new Set(['first-steps', 'note-values', 'staff', 'rhythm', 'scales', 'intervals', 'key-signatures', 'melody', 'harmony-2', 'harmony-3', 'melody-3', 'keys-4', 'harmony-5', 'arps-6', 'pieces-78', 'composers', 'styles']);
 const isVisitor = () => !UI_TEACHER && !(linkTokenFromHash() || loadStoredLink());
 const LEARNER_FREE = () => [0, 1].flatMap(k => PATH_STAGES[k] ? pathStageIds(PATH_STAGES[k]) : []);   // m57: free with an account
-const visLocked = (id) => isVisitor() && !!id && !VIS_OPEN.has(id) && !(learnerWho() && LEARNER_FREE().includes(id));
+const ALL_OPEN = true;   // her 11 Nov: nothing is public yet, so every room is open; which parts stay open is decided at launch
+const visLocked = (id) => !ALL_OPEN && isVisitor() && !!id && !VIS_OPEN.has(id) && !(learnerWho() && LEARNER_FREE().includes(id));
 function VisitorLock({ onBack }) {
   return <div data-testid="visitor-lock" className="fade-up" style={{textAlign:'center',background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:16,padding:'26px 18px',margin:'10px 0'}}>
     <svg width="40" height="44" viewBox="0 0 40 44" aria-hidden="true"><rect x="5" y="19" width="30" height="22" rx="4" fill="var(--navy)"/><path d="M12 19v-6a8 8 0 0 1 16 0v6" fill="none" stroke="var(--navy)" strokeWidth="4"/><circle cx="20" cy="30" r="3" fill="#c9a24f"/></svg>
