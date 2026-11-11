@@ -1,9 +1,9 @@
 # One page map for the whole Handbook (her 5 Nov: topics may take 2 or 3 pages, so page numbers are computed, never typed).
 # Write a reference as {{H3}} (first page of Harmony 3) or {{H3+1}} (its second page); page() fills in the number.
 import re
-PARTS = [('P', 'Pitch', 8), ('T', 'Time', 8), ('E', 'Expression', 5), ('S', 'Scales and keys', 5), ('H', 'Chords', 8), ('M', 'Harmony in music', 4), ('F', 'Shape and style', 6), ('L', 'Playing and listening', 5)]   # her 6 Nov: intervals into Pitch, Harmony split in two
-PLANNED = {}   # chapters planned but not built yet: their numbers follow on, for forward references
-TIPS = {'P': True, 'T': True, 'E': True, 'F': True, 'L': True, 'S': True, 'H': True, 'M': True}
+PARTS = [('P', 'Pitch', 8), ('T', 'Time', 8), ('E', 'Expression', 5), ('S', 'Scales and keys', 5), ('H', 'Chords', 8), ('M', 'Harmony in music', 4), ('F', 'Shape and style', 6), ('L', 'Playing and listening', 5), ('G', 'Going further', 1)]   # her 11 Nov: Part IX Going further (non-chord notes; modes and other scales, transposition planned)   # her 6 Nov: intervals into Pitch, Harmony split in two
+PLANNED = {'G': 3}   # chapters planned but not built yet: their numbers follow on, for forward references
+TIPS = {'G': False, 'P': True, 'T': True, 'E': True, 'F': True, 'L': True, 'S': True, 'H': True, 'M': True}
 COUNT = {'H1': 3, 'H2': 3, 'H3': 3, 'H4': 3, 'H5': 3, 'H6': 3, 'H7': 3, 'H8': 3, 'M1': 3, 'M2': 3, 'P1': 5, 'P2': 2, 'P3': 3, 'P4': 4, 'P5': 3, 'P6': 3, 'P7': 3, 'P8': 3, 'S1': 3, 'S2': 3, 'S3': 3, 'S4': 3, 'S5': 3, 'T1': 3, 'T2': 3, 'T3': 3, 'T4': 3, 'T5': 3, 'T6': 3, 'T7': 3, 'T8': 3, 'E1': 3, 'E2': 3, 'E3': 3, 'E4': 3, 'E5': 3, 'F1': 2, 'F2': 2, 'F3': 2, 'F4': 2, 'F5': 3, 'F6': 2, 'L1': 2, 'L2': 2, 'L3': 2, 'L4': 2, 'L5': 2}          # pages per topic; 2 unless set here
 START = 21          # the Pitch opener
 OLD_PARTS = [('P', 'Pitch', 5), ('T', 'Time', 8), ('S', 'Scales and keys', 7), ('H', 'Harmony', 12)]   # the layout before 6 Nov
@@ -19,6 +19,7 @@ def build(count=None, legacy=False):
         if legacy or TIPS[p]: page[p + 'T'] = n; n += 1
     page['X'] = n; page['_END'] = n + 2
     return page
+COUNT['G1'] = 2
 PAGE = build()
 COUNT['B1'] = 3; PAGE['B1'] = START - 3   # her 11 Nov: Before you play, pp. 18-20, just before the Pitch opener (nothing after it moves)
 def pages_of(key): return PAGE[key], (COUNT.get(key, 2) if key[1:].isdigit() else 1)

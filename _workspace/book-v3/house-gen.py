@@ -23,16 +23,23 @@ def wb(k):
     return ['Claude outputs/Books - latest/2 Workbook/'+WBF[p]+'/'+f[0], ('p. ' if p=='S' else 'pp. ')+pages]
 # her 11 Nov: rooms hold slices -- the clips (1-based, in Read & listen order) a floor needs; no entry = the whole chapter
 SLICE={'P1':[1,2,3,4,9],'T1':[1,3,6,7,8],'T2':[1,2,6,7,8,11],'E1':[1,7],
-       'T3':[1,2,3,5,7,10,11,12],'T4':[1,2,3,4,6,8],'T8':[1,2,3,4,5],'E2':[1,2,3,4],'S1':[1,2,3,7],'S2':[1,2,4,6]}
+       'T3':[1,2,3,5,7,10,11,12],'T4':[1,2,3,4,6,8],'T8':[1,2,3,4,5],'E2':[1,2,3,4],'S1':[1,2,3,7],'S2':[1,2,4,6],
+       'T5':[1,2,3,4,5,7],'T6':[1,2,3,4,7],'T7':[1,3]}   # her 11 Nov ("ok"): Grade 1 and up sliced too
 FLOORS=[('Beginner','B1 P1 L1 P2 T1 T2 E1 L2',[]),
 ('Prelim','P3 P4 T3 T4 T8 E2 S1 S2 H1',[('P1','note-names',3,'The two ends and the eight Cs','양 끝과 여덟 개의 C',[5,6,7,8]),('T1','pulse',3,'Tempo, strong and weak beats','빠르기, 강박과 약박',[2,4,5]),('T2','note-values',4,'Quavers, stems and flags','8분음표, 기둥과 꼬리',[3,4,9,10]),('E1','dynamics',3,'mp, mf and the hairpins','mp, mf와 헤어핀',[2,3,5,6])]),
-('Grade 1','P5 P6 P7 S3 T5 E3 H2 L3',[('S2','minor-scales',4,'The raised 7th','올린 7음'),('H1','chords',7,'Tonic triads: which key?','으뜸3화음: 무슨 조?')]),
-('Grade 2','P8 T6 S4 E4 H3 F1',[('S3','key-signatures',14,'Major keys from flats','플랫으로 장조 찾기'),('P7','intervals',5,'Melodic or harmonic?','가락 음정일까 화성 음정일까?')]),
-('Grade 3','S5 E5 H4 F2 L4',[('S3','key-signatures',15,'Sharps and flats mixed','샵과 플랫 섞어서'),('P8','intervals',7,'Intervals by ear','듣고 음정 맞히기'),('T6','rhythm',8,'Semiquavers: 1 e + a','16분음표: 1 e + a')]),
-('Grade 4','T7 M2 M3 F3 F4',[('P8','intervals',8,'Above the tonic, in my keys','으뜸음 위 음정'),('H4','harmony-4',2,'First inversions: which chord?','첫째 자리바꿈: 어떤 화음?'),('S3','keys-4',1,'The Level 4 keys','4급의 조')]),
-('Grade 5','F5 F6 M1 M4 L5',[('F4','keys-5',5,'Dominant, subdominant or relative?','딸림조, 버금딸림조, 나란한조?'),('S2','keys-5',2,'The melodic minor','가락 단음계'),('H4','harmony-5',2,'I, Ib or Ic?','I, Ib, Ic?')]),
+('Grade 1','P5 P6 P7 S3 T5 E3 H2 L3',[('S2','minor-scales',4,'D minor and the raised 7th','D 단음계와 올린 7음',[5]),('H1','chords',7,'Tonic triads: which key?','으뜸3화음: 무슨 조?'),
+  ('S1','scales',3,'F major','F 장음계',[5]),('T3','note-values',7,'Dotted rhythms','점음표 리듬',[4,8,9,13]),('T4','time-signatures',8,'3/8 and changing time','3/8과 박자 바꾸기',[5,7]),
+  ('T2','time-signatures',7,'The whole-bar rest','온마디 쉼표',[5]),('E1','dynamics',2,'sfz and fp','sfz와 fp',[4]),('E2','dynamics',5,'Two-note slurs','두 음 슬러',[5])]),
+('Grade 2','P8 T6 S4 E4 H3 F1',[('S3','key-signatures',14,'Major keys from flats','플랫으로 장조 찾기'),('P7','intervals',5,'Melodic or harmonic?','가락 음정일까 화성 음정일까?'),
+  ('S1','scales',3,'D major','D 장음계',[4]),('T8','signs',4,'D.C. and D.S.','D.C.와 D.S.',[6,7])]),
+('Grade 3','S5 E5 H4 F2 L4',[('S3','key-signatures',15,'Sharps and flats mixed','샵과 플랫 섞어서'),('P8','intervals',7,'Intervals by ear','듣고 음정 맞히기'),('T6','rhythm',8,'Triplets and semiquavers','셋잇단음표와 16분음표',[5,6]),
+  ('S1','scales',3,'A major','A 장음계',[6]),('S2','minor-scales',4,'C minor','C 단음계',[3])]),
+('Grade 4','T7 M2 M3 F3 F4',[('P8','intervals',8,'Above the tonic, in my keys','으뜸음 위 음정'),('H4','harmony-4',2,'First inversions: which chord?','첫째 자리바꿈: 어떤 화음?'),('S3','keys-4',1,'The Level 4 keys','4급의 조'),
+  ('T3','note-values',9,'The double dot','겹점',[6])]),
+('Grade 5','F5 F6 M1 M4 L5',[('F4','keys-5',5,'Dominant, subdominant or relative?','딸림조, 버금딸림조, 나란한조?'),('S2','keys-5',2,'The melodic minor','가락 단음계'),('H4','harmony-5',2,'I, Ib or Ic?','I, Ib, Ic?'),
+  ('T5','time-signatures',10,'Irregular time (Extra)','불규칙 박자 (Extra)',[6])]),
 ('Grade 6','H5 H8',[('M2','harmony-3',6,'Perfect or plagal cadence?','정격일까 변격일까?'),('H5','harmony-6',1,'V7, V7b, V7c or V7d?','V7의 자리바꿈'),('H2','chords',5,'Major or minor by ear','듣고 장·단 맞히기')]),
-('Grade 7','H6',[('M2','harmony-4',3,'Which cadence? (with interrupted)','어떤 마침꼴? (거짓마침 포함)'),('T7','rhythm',9,'Syncopation','싱코페이션'),('F5','form',7,'Read the road','곡의 지도 읽기'),('F6','styles',4,'Which style is it?','어떤 양식?')]),
+('Grade 7','H6',[('M2','harmony-4',3,'Which cadence? (with interrupted)','어떤 마침꼴? (거짓마침 포함)'),('T7','rhythm',9,'Swing, hemiola and polyrhythm','스윙, 헤미올라, 폴리리듬',[2,4,5]),('F5','form',7,'Read the road','곡의 지도 읽기'),('F6','styles',4,'Which style is it?','어떤 양식?')]),
 ('Grade 8','H7',[('M4','harmony-5',4,'Which chord comes before V?','V 앞에 오는 화음은?'),('H2','harmony-6',4,'Is it a related key?','가까운 조일까?'),('F6','styles',9,'Which style? (by ear)','어떤 양식? (듣고)'),('L4','listen-8',0,'Ear training for Level 8','8급 청음')]),
 ]
 FLOOR_TXT={'Beginner':('Sitting and hands, the keyboard and the staff, beat and note values, loud and soft, fingering and how to practise.','자세와 손, 건반과 오선, 박과 음표 길이, 셈여림, 운지와 연습법.'),
