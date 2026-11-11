@@ -863,6 +863,7 @@ LESSON = {   # her 11 Nov: not everyone has a teacher, so the Butler is the teac
  'F6': 'Your little task for next time: listen to one piece from each period, and say what you notice.',
  'L1': 'Your little task for next time: write the fingering into one tricky bar, and keep it.',
  'B1': 'Your little task for next time: do the thirty-second check every time you sit down, and tick it in your Workbook.',
+ 'G1': 'Your little task for next time: in a piece you play, find one note outside the chord, and tell me which of the five it is.',
  'L2': 'Your little task for next time: climb the metronome ladder on your hardest bar.',
  'L3': 'Your little task for next time: scan an easy new piece for thirty seconds, then play it without stopping.',
  'L4': 'Your little task for next time: ask someone to play major and minor chords, and say bright or dark.',

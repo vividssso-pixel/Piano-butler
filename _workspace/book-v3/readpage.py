@@ -23,7 +23,7 @@ for p, name, k in PM.PARTS:
     for i in range(1, k + 1):
         key = f'{p}{i}'; a, n = PM.pages_of(key)
         CH.append({'k': key, 'part': part, 't': f'{i} · {CB.TITLES[key]}', 'pages': list(range(a, a + n))})
-    CH.append({'k': p + 'T', 'part': part, 't': TIPS[p + 'T'], 'pages': [PM.PAGE[p + 'T']]})
+    if PM.TIPS.get(p): CH.append({'k': p + 'T', 'part': part, 't': TIPS[p + 'T'], 'pages': [PM.PAGE[p + 'T']]})
 CH.append({'k': 'X', 'part': 'At the end', 't': 'Putting it together', 'pages': [PM.PAGE['X'], PM.PAGE['X'] + 1]})
 CH.append({'k': 'GL', 'part': 'At the end', 't': 'Glossary and index', 'pages': list(range(PM.PAGE['X'] + 2, LAST + 1))})
 # audio: clips.json per chapter; clip 1 sits on the chapter's first page, the last on its last page, the rest on page 2
@@ -207,6 +207,7 @@ for c in CH:
 # (chapter: [(drill id, drill name, level or 0)]); the workbook file is the chapter's own PDF from the Books page
 DRILL = {
     'B1': [('posture-hands', 'Posture & Hand Shape', 0)],
+    'G1': [('hb-nonchord', 'Notes outside the Chord', 0)],
     'P1': [('note-names', 'The Musical Alphabet', 1)], 'P2': [('whole-staff', 'Line and Space Names', 1)], 'P3': [('whole-staff', 'Find it on the keys', 7)],
     'P4': [('whole-staff', 'Landmark hop', 5), ('reading-steps', 'Steps & Skips', 2)], 'P5': [('ledger-lines', 'Ledger Lines', 3)], 'P6': [('accidentals', 'Accidentals', 1)],
     'P7': [('intervals', 'Intervals: count it', 1)], 'P8': [('intervals', 'Major or perfect?', 9)],

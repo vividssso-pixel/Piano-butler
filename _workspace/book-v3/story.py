@@ -2278,3 +2278,40 @@ NEW['B1'] = ('Before you play', [
   ('B', 'After the scales. Four traps: wrists sinking below the keys, shoulders creeping up to your ears, flat fingers or a caved-in knuckle, and sitting so close your elbows are squashed. Now, Clara, you may start.', c(20, 'watch')),
   ('P', 'Finally! Bye, Butler!', c(20, 'watch'))])])
 CH['B1'] = NEW['B1']
+
+NEW['G1'] = ('Notes outside the chord', [
+ ('The secret', [
+  ('P', 'Butler, in my piece the left hand plays a C chord, but the tune plays a D. Is that a wrong note?', c(175, 'lead')),
+  ('B', 'Not wrong at all, Clara. Under a tune, the chord holds the main notes. The other notes are notes outside the chord: they lean on the chord for a moment, then step back into it.', c(175, 'lead')),
+  ('B', 'Here is the secret: a note outside the chord moves by step. Into the chord, out of it, or both.', c(175, 'secret')),
+  ('P', 'So they never jump?', c(175, 'secret')),
+  ('B', 'Almost never. Think of stepping stones in a stream. The chord is the bank. You step onto a stone for a moment, then land on the bank again.', c(175, 'secret'))]),
+ ('Five ways out and back', [
+  ('B', 'One, the passing note. E, D, C, over a C chord. The D steps between two chord notes.', c(175, 'hero')),
+  ('piano', 'E5 D5 C5*2', c(175, 'hero')),
+  ('B', 'Two, the auxiliary note. C, D, C. The D steps out and comes straight back.', c(175, 'hero')),
+  ('piano', 'C5 D5 C5*2', c(175, 'hero')),
+  ('P', 'Like popping next door and coming straight home.', c(175, 'hero')),
+  ('B', 'Three, the appoggiatura. The D lands right on the beat and leans, then sighs down to C. Its name comes from the Italian for “to lean”.', c(175, 'hero')),
+  ('piano', 'D5*2 C5*2', c(175, 'hero')),
+  ('B', 'Four, the suspension. Over an F chord the tune plays F. Then the chord changes to C, but the F is held over, and only then falls to E.', c(175, 'hero')),
+  ('piano', 'A4 F5*2 E5', c(175, 'hero')),
+  ('P', 'The F is late for the next chord.', c(175, 'hero')),
+  ('B', 'Late, and then it catches up. And five, the anticipation: the opposite. Over a G chord, the C arrives early, before its own chord.', c(175, 'hero')),
+  ('piano', 'B4 D5/2 C5/2 C5*2', c(175, 'hero')),
+  ('P', 'Late and early. Like me and my brother in the morning.', c(175, 'hero'))]),
+ ('Example: which notes are outside the chord?', [
+  ('B', 'Example. The chord is C: C, E and G. The tune: G, A, B, C, then E, D, C. Which notes are not C, E or G? Pause and try.', c(176, 'ex1')),
+  ('pause', 4, c(176, 'ex1')),
+  ('P', 'A and B! And the D in the second bar.', c(176, 'ex1', reveal=True)),
+  ('B', 'All three are passing notes. A and B climb from G up to C, and D walks from E down to C.', c(176, 'ex1', reveal=True)),
+  ('piano', 'G4 A4 B4 C5 | E5 D5 C5*2', c(176, 'ex1', reveal=True))]),
+ ('Game and Ode to Joy', [
+  ('B', 'Game: name each red note. Passing, auxiliary, appoggiatura or suspension? Pause and try.', c(176, 'game')),
+  ('pause', 5, c(176, 'game')),
+  ('P', 'Passing, auxiliary, appoggiatura, suspension!', c(176, 'game', reveal=True)),
+  ('B', 'And you know this one. Ode to Joy: E, E, F, G, over a C chord. The F slips between E and G: a passing note.', c(176, 'yk')),
+  ('piano', 'E4 E4 F4 G4 | G4 F4 E4 D4', c(176, 'yk')),
+  ('B', 'Two traps. A note outside the chord is not a mistake: it is the tune’s colour. And choose the chord for a bar by its main notes, not its passing notes. Until next time, Clara.', c(176, 'watch')),
+  ('P', 'Bye, Butler!', c(176, 'watch'))])])
+CH['G1'] = NEW['G1']
