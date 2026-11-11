@@ -184,13 +184,13 @@ for c in CH:
             bars = [b[3] for b in beats if b[1] == 'X'] or [0]
             ln['lens'] = {'k': 'rhy', 'beats': beats, 'ands': ands, 'notes': notes, 'bars': bars, 'n': round(cum[-1] / bsec, 3), 'at': [b[0] for b in beats], 'full': True}
 for c in CH:
-    if c['k'] not in _S.CH or not c['k'].startswith(('P', 'S')): continue
+    if c['k'] not in _S.CH or c['k'].startswith(('T', 'B')): continue   # her 11 Nov: the moving staff and keys in every Part (Time has its own rhythm lens)
     sc = [ls for _, ls in _S.CH[c['k']][1]]
     for k, sl in zip(c.get('clips', []), sc):
         if len(sl) != len(k['l']): print('lens: line mismatch', c['k'], k['t']); continue
         for ln, src in zip(k['l'], sl):
             cue = ln.get('cue') or {}
-            if ln.get('who') != 'piano' or ln.get('lens') or src[0] != 'piano': continue
+            if ln.get('who') != 'piano' or ln.get('lens') or src[0] != 'piano' or '||' in src[1] or 'Ped' in src[1].split(): continue
             if str(cue.get('r', '')).startswith('ex') and not cue.get('reveal'): continue
             allt = _re.findall(r'\[[^\]]+\]|\S+', src[1]); bars = []; bn = 0
             for t_ in allt:
@@ -369,6 +369,7 @@ function drawLens(L, t) {
   if (L.k === 'ladder') return drawLadder();
   if (L.k === 'majmin') return drawMajMin();
   if (L.k === 'glasses') return drawGlasses();
+  if (L.k === 'restack') return drawRestack();
   if (L.k.indexOf('warm-') === 0) return drawWarm(L.k.slice(5));
   const [name, subt, clef, items] = LENSD[L.k]; const n = items.length;
   const cnt = L.at.length ? L.at.filter(v => v <= t).length : n; const shown = L.full ? n : cnt, cur = cnt - 1;
@@ -607,6 +608,16 @@ function drawWarm(id) {   // her 11 Nov: the app's warm-up drawings, moving whil
   const ph = performance.now() % W.ms; let i = 0; while (i + 1 < W.f.length && W.f[i + 1][0] <= ph) i++;
   if (lensEl.dataset.t === String(i)) return; lensEl.dataset.t = String(i);
   const box = lensEl.querySelector('.wv'); if (box) box.innerHTML = W.f[i][1].replace('<svg ', '<svg style="width:100%;max-width:340px;max-height:240px;height:auto" ');
+}
+function drawRestack() {   // her 11 Nov: E G C restacked in thirds: the C on top slides to the bottom, and the layers line up as C E G
+  const key = 'restack'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
+  const INK = '#26296b', ACC = '#e4572e', F = 'font-family="Atkinson Hyperlegible,sans-serif"';
+  const tile = (lab, col, ys, xs) => `<g><animateTransform attributeName="transform" type="translate" values="${xs.map((x, i) => x + ' ' + ys[i]).join(';')}" keyTimes="0;.25;.55;.8;1" dur="4.4s" repeatCount="indefinite"/><rect x="-60" y="-22" width="120" height="44" rx="10" fill="${col}" stroke="${INK}" stroke-width="2.4"/><text x="0" y="9" text-anchor="middle" font-size="26" font-weight="700" fill="${INK}" ${F}>${lab}</text></g>`;
+  // slots: top 50, middle 100, bottom 150 (y of the centre); C goes out to the side, down, and back in
+  let g = tile('C', '#fde3d8', [50, 50, 150, 150, 50], [300, 420, 420, 300, 300]) + tile('G', '#eef0f8', [100, 100, 50, 50, 100], [300, 300, 300, 300, 300]) + tile('E', '#eef0f8', [150, 150, 100, 100, 150], [300, 300, 300, 300, 300]);
+  g += `<text x="120" y="56" text-anchor="middle" font-size="16" font-weight="700" fill="${INK}" ${F}>E G C</text><text x="120" y="78" text-anchor="middle" font-size="13" fill="#5a5d8f" ${F}>not in thirds</text>`;
+  g += `<text x="480" y="56" text-anchor="middle" font-size="16" font-weight="700" fill="${ACC}" ${F}>C E G</text><text x="480" y="78" text-anchor="middle" font-size="13" fill="#5a5d8f" ${F}>in thirds: C is the root</text>`;
+  lensShell(key, '♪ Restack it in thirds', `<svg viewBox="0 0 600 190" role="img" aria-label="E G C restacked as C E G">${g}</svg>`);
 }
 function drawGlasses() {   // the same note on the bottom line: through treble glasses it is E, through bass glasses G
   const key = 'glasses'; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;

@@ -1412,7 +1412,8 @@ NEW['H4'] = ('Inversions', [
  ('Example: find the root', [
   ('B', 'Find the root of E G C. Restack the notes so that each skips one letter. Try starting on each note.', c(121, 'ex4')),
   ('pause', 4, c(121, 'ex4')),
-  ('P', 'E G C doesn’t work, G C E doesn’t, but C E G does! The root is C.', c(121, 'ex4', reveal=True)),
+  ('P', 'E G C doesn’t work, G C E doesn’t, but C E G does! The root is C.', c(121, 'ex4', reveal=True, anim='restack')),
+  ('B', 'Watch the layers swap: the C on top slides down to the bottom, and the cake stands in thirds again, C, E, G. The bottom layer is the root.', c(121, 'ex4', reveal=True, anim='restack')),
   ('B', 'C major, first inversion. Now A, D, F: which position?', c(121, 'ex5')),
   ('pause', 4, c(121, 'ex5')),
   ('P', 'Restacked: D F A, D minor. A is the fifth, at the bottom: second inversion!', c(121, 'ex5', reveal=True)),
@@ -1420,6 +1421,10 @@ NEW['H4'] = ('Inversions', [
  ('You know this', [
   ('B', 'Pachelbel’s Canon, the bass, here in C. In the popular version the bass walks straight down the scale: C, B, A, G, F, E, F, G. It can, because some chords are inversions: G stands on B, E minor on G, C on E.', c(121, 'yk')),
   ('piano', 'C3*2 B2*2 A2*2 G2*2 F2*2 E2*2 F2*2 G2*2 | [C3 E4 G4 C5] [B2 D4 G4 B4] [A2 C4 E4 A4] [G2 B3 E4 G4] [F2 A3 C4 F4] [E2 G3 C4 E4] [F2 A3 C4 F4] [G2 B3 D4 G4]', c(121, 'yk')),
+  ('B', 'Now listen to the bass with the famous violin tune on top: mi re do ti la so la ti.', c(121, 'yk')),
+  ('piano', 'C3*2 B2*2 A2*2 G2*2 F2*2 E2*2 F2*2 G2*2 || E5*2 D5*2 C5*2 B4*2 A4*2 G4*2 A4*2 B4*2', c(121, 'yk')),
+  ('B', 'And the part everybody hums: so, mi fa so, mi fa so, so la ti do re mi fa.', c(121, 'yk')),
+  ('piano', 'C3*2 B2*2 A2*2 G2*2 F2*2 E2*2 F2*2 G2*2 || G5 E5/2 F5/2 G5 E5/2 F5/2 G5/2 G4/2 A4/2 B4/2 C5/2 D5/2 E5/2 F5/2 E5 C5/2 D5/2 E5 E4/2 F4/2 G4/2 A4/2 G4/2 F4/2 G4/2 E4/2 F4/2 G4/2', c(121, 'yk')),
   ('P', 'That’s the wedding music! It sounds like a staircase in a palace.', c(121, 'yk')),
   ('B', 'Two traps: never name a chord from its bass note in an inversion; restack it in thirds first. And an inversion is not a new chord: E G C is still C major. Until next time, Clara.', c(121, 'watch')),
   ('P', 'Bye, Butler!', c(121, 'watch'))])])
@@ -1435,7 +1440,7 @@ NEW['H5'] = ('Seventh chords', [
  ('Five flavours', [
   ('B', 'There are five flavours, all on C. Major seven: dreamy, like bossa nova.', c(122, 'k7')),
   ('piano', '[C4 E4 G4 B4]', c(122, 'k7')),
-  ('B', 'Seven: bluesy. The top goes down just one key, to B flat.', c(122, 'k7')),
+  ('B', 'Seven: bluesy. The top goes down just one key, to B flat. Its full name is the dominant seventh: C seven, or C dominant seventh. Dominant, because in a key it lives on the fifth note, the dominant: G seven in C major.', c(122, 'k7')),
   ('piano', '[C4 E4 G4 Bb4]', c(122, 'k7')),
   ('B', 'Minor seven: mellow, like a soul ballad.', c(122, 'k7')),
   ('piano', '[C4 Eb4 G4 Bb4]', c(122, 'k7')),
