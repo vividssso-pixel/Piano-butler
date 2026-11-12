@@ -1,7 +1,14 @@
 # The Level books (her 12 Nov: "레벨북 따로", Level 0 first): the house in print. For one floor, every room in house order:
 # the Handbook blocks its clips point at (re-laid, not cropped), then a short practice sheet. Nothing is written twice:
 # blocks come from the built Handbook and Workbook (extract.js -> blocks.json), the order from the house data and the audio cues.
-import json, re, sys
+import json, re, sys, io, segno
+SITE = 'https://thepianobutler.com/books/read/'
+def listen_url(r):   # her 12 Nov: the room in Read & listen, only its clips and the note rows met so far (same link the app's room uses)
+    q = 'ch=' + r['ch'] + ('&clips=' + ','.join(map(str, r['clips'])) if r.get('clips') else '') + ('&rows=' + r['rows'] if r.get('rows') else '')
+    return SITE + '?' + q
+def qr(url):
+    b = io.BytesIO(); segno.make(url, error='m').save(b, kind='svg', scale=1, border=0, dark='#26296b', xmldecl=False, svgns=True)
+    return b.getvalue().decode().replace('<svg ', '<svg class="qrs" ', 1)
 B = json.load(open('/tmp/claude-0/lvl/blocks.json'))
 D = open('/tmp/claude-0/house/data.js').read().split('\n')
 ROOMS = {r['id']: r for r in json.loads(D[0][len('const HB_ROOMS = '):].rstrip(';'))}
@@ -59,44 +66,95 @@ def room_blocks(r):
         out.append((key, h))
     return out
 def learn_blocks(r):   # her 12 Nov ("단순하게"): one idea per room: its secret, its picture, one example, one Try it
-    bl = room_blocks(r); pick = []
+    bl = room_blocks(r); o = LEARN.get(r['id'], {}); got = {}
     for want in ('secret', 'hero', 'ex', 'try10'):
         h = next((h for k, h in bl if (k.startswith('ex') and k[2:].isdigit() if want == 'ex' else k == want)), None)
-        if h and h not in pick: pick.append(h)
+        if h: got[want] = h
+    if 'secret' in o: got['secret'] = secret_l(o['secret'])
+    if 'ex' in o: got['ex'] = inact_l(*o['ex'])
+    if 'try' in o: got['try10'] = try_l(*o['try'])
+    for a, b_ in o.get('sub', []): got = {k: v.replace(a, b_) for k, v in got.items()}
+    pick = []
+    for want in ('secret', 'hero', 'ex', 'try10'):
+        if got.get(want) and got[want] not in pick: pick.append(got[want])
     return pick
 
 # ---- practice sheets: Workbook exercises for whole chapters and slices, new sheets for the one-note steps ----
-G = lambda s, z=34: f'<span style="font-family:NM;font-size:{z}px;line-height:1;color:#26296b">{s}</span>'
 CR, MI, DM, SB, RC, RM, RS = '𝅘𝅥', '𝅗𝅥', '𝅗𝅥.', '𝅝', '𝄽', '𝄼', '𝄻'
 BOX, LINE = '<span class="ab"></span>', '<span class="al"></span>'
+G = lambda s, z=46: f'<span style="font-family:NM;font-size:{z}px;line-height:1;color:#26296b">{s}</span>'   # review 12 Nov: bigger notes and rests
+def rst(kind, w=70):   # review 12 Nov: minim and semibreve rests drawn on a five-line staff, so hat and coat can be told apart
+    y = {'m': 24, 's': 20}[kind]
+    return f'<svg viewBox="0 0 {w} 60" style="width:{w}px;height:60px">' + ''.join(f'<line x1="2" x2="{w - 2}" y1="{10 + 10 * i}" y2="{10 + 10 * i}" stroke="#26296b" stroke-width="1.3"/>' for i in range(5)) + f'<rect x="{w / 2 - 9}" y="{y}" width="18" height="6.5" fill="#26296b"/></svg>'
+RMS, RSS = rst('m'), rst('s')
+def secret_l(t): return f'<div class="secret1"><span class="sl">The secret</span><span>{t}</span></div>'
+def inact_l(title, fig, steps, result): return '<div class="inact2"><div class="bh">Example</div><b class="it">' + title + '</b><div class="ia2">' + fig + '<ol>' + ''.join(f'<li><span class="in">{i + 1}</span><span>{t}</span></li>' for i, t in enumerate(steps)) + '</ol></div><div class="ires">' + result + '</div></div>'
+def try_l(fig, big, text): return f'<div class="try10"><div class="bh">Try it · 10 seconds</div><div class="t10">{fig}<div><p class="big">{big}</p><p>{text}</p></div></div></div>'
+def dots(groups, mark1=True, w=None):   # beat dots in bars: beat 1 big and coral
+    out = []
+    for g in groups:
+        out.append(''.join(f'<span class="bd{" b1" if (i == 0 and mark1) else ""}"></span>' for i in range(g)))
+    return '<div class="bds">' + '<span class="bl"></span>'.join(out) + '</div>'
+def keys5(nums):   # five white keys C-G with finger numbers
+    return '<div class="k5">' + ''.join(f'<div><b>{n}</b><span>{l}</span></div>' for l, n in zip('CDEFG', nums)) + '</div>'
+LEARN = {
+ 'hbr-P1': {'try': ('<div class="bds" style="font-size:30px">2 · 3</div>', 'Find every group of two.', 'Start at the bottom of the piano. Touch each group of two black keys with fingers 2 and 3, all the way to the top. Then do the same with the groups of three.')},
+ 'hbr-L1': {'ex': ('Which finger plays the E?', keys5('1 ? ? ? ?'.split()), ['<b>Right hand:</b> thumb on C.', '<b>One finger</b> for each key: C D E F G.', '<b>Count up</b> to E: 1, 2, 3.'], 'Finger <b>3</b>. In this position the fingers 1 2 3 4 5 play C D E F G.'),
+            'try': (keys5('1 2 3 4 5'.split()), 'Five fingers, five keys.', 'Thumb on C. Play C D E F G and back, saying the finger numbers out loud.')},
+ 'hbr-P2': {'try': ('<div style="font-family:NM;font-size:54px;color:#26296b">𝄞 𝄢</div>', 'Draw the two clefs.', 'Trace a treble clef in the air, curling round line 2 (G). Then a bass clef, its dot starting on line 4 (F).')},
+ 'hbr-T1': {'secret': 'The beat is steady, like a heartbeat. Bar lines group the beats, and beat 1 of every bar is the strongest.',
+            'sub': [('rest: still count', 'silent beat: still count'), ('nest still count', 'silent beat')],
+            'ex': ('Feel the beat before you play', dots([3, 3]), ['<b>Set a metronome</b> to 96: 96 beats a minute.', '<b>Listen first:</b> let one bar go by, counting 1 2 3 in your head.', '<b>Step in</b> on the next beat 1, like stepping onto a moving escalator.'], 'The first note lands <b>on the beat</b>, not a guess.')},
+ 'hbr-T2': {'secret': 'A <b>crotchet</b> lasts one beat. Its rest, the <b>crotchet rest</b>, is one beat of silence: count it, but do not play.',
+            'ex': ('Count this bar', G(CR + '  ' + CR + '  ' + RC + '  ' + CR, 50), ['<b>Play</b> on each crotchet.', '<b>Shh</b> on the rest, but keep counting.', '<b>Count</b> 1 2 3 4 all the way through.'], 'Play, play, shh, play: <b>four beats</b>, one each.'),
+            'try': (G(CR + ' ' + RC, 54), 'Clap and shh.', 'Clap four crotchets, counting 1 2 3 4. Clap again, but on 3 open your hands and stay silent: a rest.')},
+ 'hbr-T2-s2': {'secret': 'A <b>minim</b> lasts two beats: play on one count and hold through the next. Its rest sits on the middle line, like a hat.',
+            'ex': ('How many beats in this bar?', G(MI + '  ' + CR + '  ' + CR, 50), ['<b>Minim:</b> 2 beats.', '<b>Crotchet, crotchet:</b> 1 + 1.', '<b>Add them up.</b>'], '2 + 1 + 1 = <b>4 beats</b>: a full bar.'),
+            'try': (G(MI, 58), 'Press and hold.', 'Play C as a minim: press on 1, hold through 2. Do it four times, counting out loud.')},
+ 'hbr-T2-s3': {'secret': 'A dot after a note adds half its length again: a minim (2 beats) with a dot lasts <b>3 beats</b>.',
+            'ex': ('Which note fills a bar of three?', G(DM + '   ' + MI + '   ' + CR, 50), ['<b>Count</b> 1 2 3 for the bar.', '<b>Minim:</b> 2. <b>Crotchet:</b> 1.', '<b>Dotted minim:</b> 2 + 1.'], 'The <b>dotted minim</b>: 3 beats, the whole bar.'),
+            'try': (G(DM, 58), 'Waltz on one note.', 'Play a dotted minim on C: press on 1, hold through 2 and 3. Sway on beat 1, like a waltz.')},
+ 'hbr-T2-s4': {'secret': 'A <b>semibreve</b> lasts four beats: a whole bar of four. Its rest hangs from the fourth line, like a coat.',
+            'ex': ('How many crotchets make a semibreve?', G(SB + '  =  ' + CR + ' ' + CR + ' ' + CR + ' ' + CR, 46), ['<b>Semibreve:</b> 4 beats.', '<b>Crotchet:</b> 1 beat.', '<b>Count</b> how many ones make four.'], '<b>Four</b> crotchets, or two minims.'),
+            'try': (G(SB, 58), 'Hold to the very end.', 'Press C and hold for 1 2 3 4. Listen until the sound has had all four beats, then lift.')},
+ 'hbr-E1': {'secret': 'Dynamics tell you how loud to play: <b><i>p</i></b> is soft, <b><i>f</i></b> is loud. The weight of your arm makes the change, not the speed.',
+            'ex': ('Which is louder: mp or mf?', '<div style="font-family:serif;font-style:italic;font-weight:700;font-size:40px;color:#26296b">mp · mf</div>', ['<b>m</b> means <i>mezzo</i>: half.', '<b>p</b> soft, <b>f</b> loud.', '<b>Half loud</b> beats half soft.'], '<b><i>mf</i></b>, half loud, is louder than <i>mp</i>, half soft.')},
+}
 DONE = lambda x: f'<b class="done2">{x}</b>'
+def tbl_l(head, rows): return '<table class="lvt"><tr>' + ''.join(f'<th>{h}</th>' for h in head) + '</tr>' + ''.join('<tr>' + ''.join(f'<td>{c}</td>' for c in r) + '</tr>' for r in rows) + '</table>'
 def ex(n, title, how, body, stars=1): return f'<div class="ex2"><div class="eh"><span class="en">{n}</span><b>{title}</b><span class="el">{"★" * stars}<span class="so">{"★" * (3 - stars)}</span></span></div><p class="how">{how}</p>{body}</div>'
 def grid(cells, cols): return f'<div class="lvg" style="grid-template-columns:repeat({cols},1fr)">' + ''.join(f'<div>{a}<span>{b}</span></div>' for a, b in cells) + '</div>'
 STEP = {
+ 'hbr-T1': [ex(1, 'How many beats in each bar?', 'Count the dots between the bar lines. The first is done.', '<table class="lvt">' + ''.join(f'<tr><td>{dots([n])}</td><td style="width:22%">{a}</td></tr>' for n, a in ((3, DONE('3')), (4, BOX), (2, BOX), (4, BOX))) + '</table>'),
+            ex(2, 'Add the bar lines', 'Beat 1 is the big coral dot. Draw a bar line just before each one (the first is done).', dots([4, 4, 4]).replace('<span class="bl"></span>', '<span class="bl gh"></span>').replace('<span class="bl gh"></span>', '<span class="bl"></span>', 1), 2),
+            ex(3, 'Clap and count', 'Set a metronome to 60. Clap on beat 1, tap your knees on 2, 3 and 4, and count aloud. Keep going for a whole minute. Tick a circle each day.', '<div class="tk5">' + '<span></span>' * 5 + '</div>', 2)],
+ 'hbr-L1': [None, ex(2, 'Which finger?', 'Right hand, thumb on C. Write the finger that plays each note. The first is done.', tbl_l(['Note', 'E', 'G', 'D', 'F', 'C'], [['Finger', DONE('3'), BOX, BOX, BOX, BOX]])), None],
+ 'hbr-E1': [None, None, ex(3, 'Which is louder?', 'Circle the louder sign in each pair. The first is done.', tbl_l(['Pair', 'Louder'], [['<i><b>p</b></i> · <i><b>f</b></i>', DONE('<i>f</i>')], ['<i><b>mp</b></i> · <i><b>mf</b></i>', LINE], ['<i><b>pp</b></i> · <i><b>p</b></i>', LINE], ['<i><b>f</b></i> · <i><b>ff</b></i>', LINE]]))],
  'hbr-T2': [ex(1, 'How many beats?', 'Write the number of beats under each one. The first is done.', grid([(G(CR), DONE('1')), (G(RC), BOX), (G(CR), BOX), (G(RC), BOX)], 4)),
             ex(2, 'Play and count', 'Say the counts out loud and play: a crotchet is play, a rest is shh. Write 1 2 3 4 under the bar.', grid([(G(CR), DONE('1')), (G(CR), BOX), (G(RC), BOX), (G(CR), BOX)], 4), 2),
             ex(3, 'Draw it', 'Draw four crotchets, then two crotchet rests (a little lightning bolt).', '<div class="lvdraw"></div>', 2)],
- 'hbr-T2-s2': [ex(1, 'One beat or two?', 'Write 1 or 2 under each. The first is done.', grid([(G(MI), DONE('2')), (G(CR), BOX), (G(RM), BOX), (G(RC), BOX), (G(MI), BOX)], 5)),
+ 'hbr-T2-s2': [ex(1, 'One beat or two?', 'Write 1 or 2 under each. The first is done.', grid([(G(MI), DONE('2')), (G(CR), BOX), (RMS, BOX), (G(RC), BOX), (G(MI), BOX)], 5)),
                ex(2, 'Fill the bar', 'Four beats in each bar. Write the missing note: crotchet or minim. The first is done.', '<table class="lvt"><tr><td>' + G(CR) + ' ' + G(CR) + ' + ?</td><td>' + DONE('minim') + '</td></tr><tr><td>' + G(MI) + ' + ? + ' + G(CR) + '</td><td>' + LINE + '</td></tr><tr><td>' + G(MI) + ' + ?</td><td>' + LINE + '</td></tr></table>', 2),
                ex(3, 'The hat', 'Draw a minim rest: a block sitting on the middle line, like a hat. Then draw two minims.', '<div class="lvdraw"></div>', 2)],
  'hbr-T2-s3': [ex(1, 'How many beats?', 'Write the number of beats. The first is done.', grid([(G(DM), DONE('3')), (G(MI), BOX), (G(CR), BOX), (G(DM), BOX)], 4)),
-               ex(2, 'Waltz time', 'Each bar has three beats. Count 1 2 3 and play. Which note fills the whole bar?', grid([(G(DM), LINE), (G(MI) + ' ' + G(CR), LINE), (G(CR) + ' ' + G(CR) + ' ' + G(CR), LINE)], 3), 2),
+               ex(2, 'Waltz time', 'Each bar has three beats. Count 1 2 3 and play each bar. Write how many notes it has. The first is done.', grid([(G(DM), DONE('1')), (G(MI + ' ' + CR), BOX), (G(CR + ' ' + CR + ' ' + CR), BOX)], 3), 2),
                ex(3, 'Add the dot', 'Make each minim last three beats: draw the dot after it.', grid([(G(MI), ''), (G(MI), ''), (G(MI), '')], 3), 2)],
- 'hbr-T2-s4': [ex(1, 'Name, beats and rest', 'Fill in the table. The first row is done.', '<table class="lvt"><tr><th>Note</th><th>Name</th><th>Beats</th><th>Its rest</th></tr>' + ''.join(f'<tr><td>{G(n)}</td><td>{a}</td><td>{b}</td><td>{c}</td></tr>' for n, a, b, c in ((SB, DONE('semibreve'), DONE('4'), G(RS, 28)), (MI, LINE, BOX, BOX), (CR, LINE, BOX, BOX), (DM, LINE, BOX, '—'))) + '</table>'),
-               ex(2, 'Coat or hat?', 'The semibreve rest hangs like a coat; the minim rest sits like a hat. Write coat or hat.', grid([(G(RS), DONE('coat')), (G(RM), LINE), (G(RS), LINE), (G(RM), LINE)], 4)),
+ 'hbr-T2-s4': [ex(1, 'Name, beats and rest', 'Fill in the table. The first row is done.', '<table class="lvt"><tr><th>Note</th><th>Name</th><th>Beats</th><th>Its rest</th></tr>' + ''.join(f'<tr><td>{G(n)}</td><td>{a}</td><td>{b}</td><td>{c}</td></tr>' for n, a, b, c in ((SB, DONE('semibreve'), DONE('4'), RSS), (MI, LINE, BOX, BOX), (CR, LINE, BOX, BOX), (DM, LINE, BOX, '—'))) + '</table>'),
+               ex(2, 'Coat or hat?', 'The semibreve rest hangs like a coat; the minim rest sits like a hat. Write coat or hat.', grid([(RSS, DONE('coat')), (RMS, LINE), (RSS, LINE), (RMS, LINE)], 4)),
                ex(3, 'Four beats', 'Each bar must add up to four beats. Write the missing note.', '<table class="lvt"><tr><td>' + G(MI) + ' + ' + G(CR) + ' + ?</td><td>' + DONE('crotchet') + '</td></tr><tr><td>' + G(DM) + ' + ?</td><td>' + LINE + '</td></tr><tr><td>? (one note)</td><td>' + LINE + '</td></tr></table>', 2)],
 }
 WB = {   # room -> (workbook, handbook page of the Learn/Use page, exercise titles)
- 'hbr-B1': [('workbook-before', 18, ['Finger numbers', 'Which hand is round?', 'Too low, too high, or right?', 'The 30-second check'])],
+ 'hbr-B1': [('workbook-before', 18, ['Finger numbers', 'Too low, too high, or right?', 'The 30-second check'])],   # review 12 Nov: 'Which hand is round?' is the Learn page's example
  'hbr-P1': [('workbook-pitch', 22, ['Twos and threes', 'Name the keys', 'Round and round'])],
  'hbr-L1': [('workbook-play', 163, ['Five-finger position', 'C major, right hand', 'Play it'])],
- 'hbr-P2': [('workbook-pitch', 27, ['The clefs', 'Line or space?', 'Treble or bass?']), ('workbook-pitch', 28, ['Which staff?', 'The grand staff'])],
+ 'hbr-P2': [('workbook-pitch', 27, ['The clefs', 'Line or space?']), ('workbook-pitch', 28, ['The grand staff'])],   # review 12 Nov: 'Treble or bass?' names Cs never taught
  'hbr-T1': [('workbook-time2', 50, ['Count it', 'Add the bar lines', 'Clap and count'])],
  'hbr-E1': [('workbook-expression', 76, ['Say it', 'Play it'])],
 }
 def practice(rid):
-    if rid in STEP: xs = STEP[rid]
-    else: xs = [h for f, p, t in WB.get(rid, []) for h in wb_ex(f, p, t)]
+    wb = [h for f, p, t in WB.get(rid, []) for h in wb_ex(f, p, t)]
+    if rid in STEP: xs = [x if x is not None else (wb[i] if i < len(wb) else None) for i, x in enumerate(STEP[rid])]; xs = [x for x in xs if x]
+    else: xs = wb
     return [re.sub(r'<span class="en">\d+</span>', f'<span class="en">{i + 1}</span>', h, count=1) for i, h in enumerate(xs)]
 
 def section(inner, n, flow): return f'<section class="pg" data-flow="{flow}"><div class="top"><span>THE PIANO BUTLER · LEVEL BOOK</span><span>{RIGHT}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
@@ -110,13 +168,13 @@ def build(floor_i, name, line):
     for i, rid in enumerate(ids, 1):
         r = ROOMS[rid]; title = r['en'] if not r.get('again') else r['en'] + ': ' + r['again'][0]
         toc.append((i, title))
-        head = f'<div class="kick">{name} · Room {i}</div><h1>{title}</h1><p class="lead lvl">Handbook pp. {r["pages"]} · listen in the app: Room {i}</p>'
+        head = f'<div class="lvhead"><div><div class="kick">{name} · Room {i}</div><h1>{title}</h1><p class="lead lvl">More in the Handbook, pp. {r["pages"]}</p></div><a class="lvqr" href="{listen_url(r)}">{qr(listen_url(r))}<span>Scan to listen</span></a></div>'
         pr = practice(rid)[:3]   # one spread per room: Learn on the left, three exercises on the right
         out.append(section(head + ''.join(learn_blocks(r)), n, 'L' + rid)); n += 1
         out.append(section(f'<div class="kick">{name} · Room {i} · Practise</div><h1>Practise</h1>' + ''.join(pr), n, 'P' + rid)); n += 1
     cover = f'''<section class="pg part2"><div class="pframe"><div class="pk">The Piano Butler · Level book</div><div class="pt">{name}</div><div class="pdv"></div>
 <p class="pl">{line}</p><div class="pin"><div class="pih">The rooms</div>{"".join(f'<div class="tr"><span>{i} · {t}</span><span class="dots"></span><span></span></div>' for i, t in toc)}</div></div></section>'''
-    extra = """.lvl{font-size:13px!important;color:#6d6f9c} .lvg{display:grid;gap:10px;margin:8px 0} .lvg>div{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #e3e1ee;border-radius:8px;padding:10px 4px}
+    extra = """.lvl{font-size:13px!important;color:#6d6f9c} .lvg>div{white-space:nowrap} .bds{display:flex;align-items:center;gap:7px;flex-wrap:nowrap} .bd{width:16px;height:16px;border-radius:50%;background:#26296b} .bd.b1{width:24px;height:24px;background:#e4572e} .bds .bl{width:2.5px;height:34px;background:#26296b;margin:0 6px} .bds .bl.gh{background:none;border-left:1.5px dashed #c9c7dc;width:0} .k5{display:flex;gap:3px} .k5>div{width:34px;height:74px;border:1.5px solid #26296b;border-radius:0 0 5px 5px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:5px 0 4px;background:#fff} .k5 b{color:#e4572e;font-size:16px} .k5 span{font-size:12px;color:#6d6f9c} .tk5{display:flex;gap:10px;justify-content:flex-end} .tk5 span{width:26px;height:26px;border:1.5px solid #c9c7dc;border-radius:50%} .lvhead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px} .lvqr{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;flex:none} .lvqr .qrs{width:64px;height:64px} .lvqr span{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e4572e} .lvg{display:grid;gap:10px;margin:8px 0} .lvg>div{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #e3e1ee;border-radius:8px;padding:10px 4px}
 .lvt{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px} .lvt td,.lvt th{border-bottom:1px solid #e3e1ee;padding:8px 6px;text-align:left} .lvt th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6d6f9c}
 .lvdraw{height:120px;margin:8px 0;background:repeating-linear-gradient(#fff 0 18px,#26296b 18px 19px,#fff 19px 24px);background-size:100% 24px;border-radius:4px;opacity:.55}
 section.pg.lvempty{display:none} h3.lvpr{margin-top:18px;padding-top:10px;border-top:2px solid #26296b;font-size:20px}"""
