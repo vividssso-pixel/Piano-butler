@@ -10,13 +10,13 @@ if '--pages' in sys.argv:   # re-render the page images from the merged PDF (pdf
     subprocess.run(['pdftoppm', '-jpeg', '-jpegopt', 'quality=72', '-scale-to-x', '1000', '-scale-to-y', '-1', '/mnt/user-data/outputs/books/handbook-draft.pdf', tmp + '/pg'], check=True)
     from PIL import Image
     for f in sorted(glob.glob(tmp + '/pg-*.jpg')):
-        n = int(os.path.basename(f)[3:6]) + 17; Image.open(f).save(f'{OUT}/pages/p{n:03d}.webp', 'WEBP', quality=70, method=5)   # her 11 Nov: Before you play (pp. 18-20) now opens the merged draft
+        n = int(os.path.basename(f)[3:6]) + 16; Image.open(f).save(f'{OUT}/pages/p{n:03d}.webp', 'WEBP', quality=70, method=5)   # her 11 Nov: Before you play (pp. 18-20) now opens the merged draft
 else:
     for f in glob.glob('/tmp/claude-0/read/pages/*.webp'): shutil.copy(f, OUT + '/pages/')
 LAST = max(int(os.path.basename(f)[1:4]) for f in glob.glob(OUT + '/pages/*.webp'))
 TIPS = {L[-1][3]: L[-1][1] for L in (OA.LEG_P, OA.LEG_T, OA.LEG_E, OA.LEG_S, OA.LEG_H, OA.LEG_M, OA.LEG_F, OA.LEG_L)}
 PNAME = dict(CB.PARTS)
-CH = [{'k': 'B1', 'part': 'Before you play', 't': 'Posture and hand shape', 'pages': [18, 19, 20]}]   # her 11 Nov
+CH = [{'k': 'GD', 'part': 'Before you play', 't': 'How to read this book', 'pages': [17]}, {'k': 'B1', 'part': 'Before you play', 't': 'Posture and hand shape', 'pages': [18, 19, 20]}]   # her 11 Nov; 12 Nov: the guide page, p. 17
 for p, name, k in PM.PARTS:
     part = PNAME[p]
     CH.append({'k': p + 'O', 'part': part, 't': 'Opening map', 'pages': [PM.PAGE[p + 'O']]})

@@ -6,7 +6,8 @@ const { chromium } = require('playwright');
   for (const f of process.argv.slice(2)) {
     const p = await b.newPage({ viewport: { width: 900, height: 1200 } });
     await p.goto('file://' + f, { waitUntil: 'networkidle' }).catch(() => {}); await p.waitForTimeout(900);
-    const r = await p.evaluate(() => {
+    const FILL = /handbook-(?!check)/.test(f) ? 0.7 : 0.8;   // her 12 Nov: the Handbook is a book to look things up in; let it breathe (70%); workbooks keep 80%
+    const r = await p.evaluate((FILL) => {
       const out = [];
       const boxes = 'td, th, .mc, .bc, .bsq, .call, .mem, .tt3, .sdc, .mzc, .hb, .tile, .mcell, .opc, .fc, .lock, .dom, .wsc, .mm4 > div';
       document.querySelectorAll('.pg').forEach((pg, i) => {
@@ -42,12 +43,12 @@ const { chromium } = require('playwright');
           let last = 0; body.querySelectorAll('*').forEach(e => { if (e.closest('.links')) return; const R = e.getBoundingClientRect(); if (R.height) last = Math.max(last, R.bottom); });
           if (last > limit) out.push(`p${i + 1}: content runs ${Math.round(last - limit)}px into the footer`);
           if (!pg.classList.contains('part2') && !pg.dataset.end) { const top = body.getBoundingClientRect().top, room = limit - top, used = last - top;   // (6) no wasted space: a page is at least 80% full
-            if (room > 0 && used / room < 0.8) out.push(`p${i + 1}: page only ${Math.round(100 * used / room)}% full`); }
+            if (room > 0 && used / room < FILL) out.push(`p${i + 1}: page only ${Math.round(100 * used / room)}% full`); }
           body.querySelectorAll('*').forEach(e => { const R = e.getBoundingClientRect(); if (R.width && (R.right > P.right - 20 || R.left < P.left + 20)) out.push(`p${i + 1}: ${e.tagName.toLowerCase()} pokes out sideways`); });
         }
       });
       return [...new Set(out)];
-    });
+    }, FILL);
     console.log(f.split('/').pop() + ': ' + (r.length ? r.length + ' problem(s)' : 'OK'));
     r.slice(0, 25).forEach(x => console.log('   ' + x)); bad += (/handbook/.test(f) || process.env.STRICTFILL) ? r.length : r.filter(x => !/% full$/.test(x)).length;   // fill rule is strict for handbooks; a warning elsewhere until those pages are filled
     await p.close();
