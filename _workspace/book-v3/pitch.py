@@ -238,7 +238,7 @@ def circle_hero():   # her 6 Nov (A): the two-band wheel, as in the app's Scale 
     s += f'<path d="M{hx - 13:.1f},{hy - 7:.1f} L{hx + 2:.1f},{hy + 2:.1f} L{hx - 7:.1f},{hy + 14:.1f}" fill="none" stroke="{CO}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>'
     s += tx(C + 246 * math.cos(math.radians(-76)), C + 246 * math.sin(math.radians(-76)), '+1♯', 16, CO, 'AH,Arial')
     return f'<svg viewBox="-34 -46 468 486" style="width:100%;max-width:430px;display:block;margin:0 auto">{s}</svg>'
-P32 = ppage(f"""{head('Part I · Pitch · 12', 'The circle of fifths', 'All the keys on one clock face. Going round clockwise, each key is a <b>5th higher</b> than the last and has <b>one more sharp</b> (or one fewer flat). Anticlockwise, each is a 4th higher, a 5th lower, with one more flat.')}
+P32 = ppage(f"""{head('Part I · Pitch · 12', 'The circle of fifths', 'Twelve major keys sit around one clock face, with C at twelve o’clock. Learn to read this clock and you can name any key signature in seconds.')}
 {hero(circle_hero(), 'Clockwise, one more sharp each step')}
 {h3('How to read the clock') + '<p><b>Outer ring:</b> major keys. <b>Middle ring:</b> their relative minors (small letters). <b>Inner ring:</b> the key signature.</p>' + h3('Neighbours are close') + '<p>Keys next to each other share all but one note, so music moves between them easily: from C major to G major or F major, or to the relative minor. These are the <b>related keys</b>.</p>'}
 {h3('Six jobs for one circle')}

@@ -309,7 +309,7 @@ KINDS7 = [('Cmaj7', 'C E G B', [(0, 'C'), (4, 'E'), (7, 'G'), (11, 'B')], '3 + 2
           ('C°7', 'C E♭ G♭ B𝄫', [(0, 'C'), (3, 'E♭'), (6, 'G♭'), (9, 'B𝄫')], '2 + 2 + 2', 'spooky', 'old film villains')]
 CARDS = '<div class="k7">' + ''.join(f'<div class="kc"><b class="ks">{s}</b>{minikb(k, f)}<span class="kn">{n}</span><span class="km">{m}</span><span class="kw">{w}</span></div>' for s, n, k, f, m, w in KINDS7) + '</div>'
 
-H5A = hpage(f"""{head('Part IV · Harmony · 5', 'Seventh chords', 'Add one more layer to the cake and the chord changes colour: dreamy, bluesy, spooky. Same rule as before: skip one note, stack the next. The new note is the <b class="co">7th</b>.')}
+H5A = hpage(f"""{head('Part IV · Harmony · 5', 'Seventh chords', 'Three notes make a plain chord. Add one more note on top and it can sound dreamy, bluesy or spooky. The new note is the <b>7th</b>.')}
 {two(cake_tall(['C', 'E', 'G', 'B'], ['root', '3rd', '5th', '7th']), '<div class="big3"><div><span>1</span><p>Build the triad: <b>C E G</b>.</p></div><div><span>2</span><p>Skip one, add the next: <b class="co">B</b>.</p></div><div><span>3</span><p>Count the keys between: <b>3 + 2 + 3</b>. That is <b>Cmaj7</b>.</p></div></div>' + minikb([(0, 'C'), (4, 'E'), (7, 'G'), (11, 'B')], '3 + 2 + 3', 34, 110), '1fr 1.1fr')}
 {h3('Five flavours, all on C')}
 {CARDS}
@@ -364,7 +364,7 @@ def _hero6():   # her 5 Nov: big, clear keys; markers outlined and clear of the 
 HERO6 = _hero6()
 ANY = [['<b>sus2</b>', '1 + 4', 'C D G', 'G A D', 'F G C', 'D E A'], ['<b>sus4</b>', '4 + 1', 'C F G', 'G C D', 'F B♭ C', 'D G A'], ['<b>5</b>', '6', 'C G', 'G D', 'F C', 'D A'],
        ['<b>6</b>', '3 + 2 + 1', 'C E G <b class="co">A</b>', 'G B D <b class="co">E</b>', 'F A C <b class="co">D</b>', 'D F♯ A <b class="co">B</b>'], ['<b>add9</b>', '3 + 2 + 6', 'C E G <b class="co">D</b>', 'G B D <b class="co">A</b>', 'F A C <b class="co">G</b>', 'D F♯ A <b class="co">E</b>']]
-H6A = hpage(f"""{head('Part IV · Harmony · 6', 'Colour chords', 'The 3rd is the chord’s mood: major or minor, happy or sad. Slide it aside, take it away, or add one note, and a plain chord takes on a new colour. Five colours, all from C&nbsp;E&nbsp;G.')}
+H6A = hpage(f"""{head('Part IV · Harmony · 6', 'Colour chords', 'The 3rd is the chord’s mood switch: major or minor, happy or sad. But chords have more colours than happy and sad.')}
 {two(HERO6, '<div class="big3"><div><span>1</span><p>Start from <b>C E G</b>. The <b>E</b> (the 3rd) makes it major.</p></div><div><span>2</span><p>Slide the E up to the next letter, <b class="co">F</b>: <b>Csus4</b>.</p></div><div><span>3</span><p>Or down to the letter below, <b class="co">D</b>: <b>Csus2</b>. With no 3rd, the chord is neither major nor minor: it <b>hangs in the air</b>.</p></div></div>', '1.15fr 1fr')}
 {h3('Five colours, all on C')}
 {CCARDS}
@@ -537,7 +537,7 @@ HOLD = [('C', ('I', 'IV')), ('D', ('V',)), ('E', ('I',)), ('F', ('IV',)), ('G', 
 HCOL = {'I': '#e4572e', 'IV': '#26296b', 'V': '#3f8f6b'}
 HOLDMAP = ('<div class="hold3">' + ''.join(f'<div>{cakeman(l, (), 96, t).replace("fill=\"#26296b\"/><text x=\"80\" y=\"240\"", f"fill=\"{HCOL[t]}\"/><text x=\"80\" y=\"240\"")}</div>' for l, t in ((('C', 'E', 'G'), 'I'), (('F', 'A', 'C'), 'IV'), (('G', 'B', 'D'), 'V'))) + '</div>'
            + '<div class="hold7">' + ''.join(f'<div><b>{n}</b>' + ''.join(f'<span style="background:{HCOL[c]}">{c}</span>' for c in cs) + '</div>' for n, cs in HOLD) + '</div>')
-H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The melody is the singer; the chords are the band. To choose a chord for each bar, look at the melody’s main notes and pick the cake holding them.')}
+H11 = hpage(f"""{head('Part IV · Harmony · 11', 'Chords under a melody', 'The melody is the singer; the chords are the band. A good band plays chords that hold the singer’s main notes.')}
 {hero(HOLDMAP, 'Which cake holds the tune’s main notes?')}
 <p class="sm" style="text-align:center">Every note of C major lives in I, IV or V. C and G live in two: let your ear choose.</p>
 <div class="big3 h3x"><div><span>1</span><p>Look at the <b>main notes</b> of the bar: the long ones, and the ones on beats 1 and 3.</p></div><div><span>2</span><p>Find the cake that holds them: <b>I, IV or V</b>.</p></div><div><span>3</span><p>Play that chord in the left hand while the right hand plays the tune.</p></div></div>

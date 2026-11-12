@@ -105,7 +105,7 @@ F1 = fpage(f'''{head('Part VII · Shape and style · 1', 'Motifs and phrases', '
 
 # ---------- VII.2 Repetition and sequence ----------
 RS = [['<b>repetition</b>', 'the same notes again'], ['<b>sequence</b>', 'the same shape, starting higher or lower'], ['<b>imitation</b>', 'another hand or voice copies the idea'], ['<b>contrast</b>', 'something new: a different shape or rhythm']]
-F2 = fpage(f'''{head('Part VII · Shape and style · 2', 'Repetition and sequence', 'Composers make one idea go a long way. They say it again, say it again higher or lower, let another hand copy it, or say something completely new.')}
+F2 = fpage(f'''{head('Part VII · Shape and style · 2', 'Repetition and sequence', 'Composers make one idea go a long way. Learn the four ways they do it, and a new piece starts to look familiar.')}
 {hero('<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">' + ''.join(f'<div>{stairs(k)}<b style="font:700 15px AH,Arial;color:#26296b">{t}</b></div>' for k, t in (('rep', 'again'), ('seq', 'again, higher'), ('imit', 'copied below'), ('con', 'something new'))) + '</div>', 'Four ways to use one idea')}
 {tbl(['Name', 'What happens'], RS, ['30%', '70%'])}
 {two(ex('f_seq', 70, 'A rising sequence: C D E, D E F, E F G.'), ex('f_seqdown', 70, 'A falling sequence: each step one note lower.'))}
@@ -122,7 +122,7 @@ F2 = fpage(f'''{head('Part VII · Shape and style · 2', 'Repetition and sequenc
 
 # ---------- VII.3 Texture ----------
 TEX = [['<b>monophonic</b>', 'one line alone, or in octaves (unison)'], ['<b>homophonic</b>', 'a tune with chords underneath: melody and accompaniment'], ['<b>polyphonic</b> (contrapuntal)', 'two or more tunes at once, each its own'], ['<b>Alberti bass</b>', 'a broken chord rocking low–high–middle–high'], ['<b>block chords</b>', 'all the chord notes struck together']]
-F3 = fpage(f'''{head('Part VII · Shape and style · 3', 'Texture', 'Texture is how many lines sound at once, and how they fit together: one line alone, a tune with chords, or several tunes woven together like threads in cloth.')}
+F3 = fpage(f'''{head('Part VII · Shape and style · 3', 'Texture', 'Listen to a piece and ask: how many lines are sounding at once, and how do they fit together? That is its <b>texture</b>.')}
 {hero(hero_tex(), 'Thin or thick: count the threads')}
 {tbl(['Word', 'What you hear'], TEX, ['34%', '66%'])}
 {two(ex('f_homo', 92, 'Melody and block chords.'), ex('f_poly', 92, 'Polyphony: two tunes, each with its own rhythm.'))}
@@ -136,7 +136,7 @@ F3 = fpage(f'''{head('Part VII · Shape and style · 3', 'Texture', 'Texture is 
 
 # ---------- VII.4 Changing key ----------
 NEAR = [['<b>G major</b>', 'F♯ appears', 'the key a 5th up (one more sharp)'], ['<b>F major</b>', 'B♭ appears', 'the key a 4th up (one more flat)'], ['<b>A minor</b>', 'G♯ appears', 'the relative minor (same key signature)']]
-F4 = fpage(f'''{head('Part VII · Shape and style · 4', 'Changing key', 'Music can travel to a new key and come home again: a <b>modulation</b>. The signpost is a new sharp, flat or natural that keeps coming back, and a cadence that lands in the new key.')}
+F4 = fpage(f'''{head('Part VII · Shape and style · 4', 'Changing key', 'Music can travel to a new key, and it usually comes home before the end. The move itself is called a <b>modulation</b>. Learn to spot the signposts.')}
 {hero(hero_trip(), 'A trip away, and home again')}
 {h3('The nearest keys')}
 <p>A piece in C major usually visits the keys next door on the circle of fifths (p. {{{{S5}}}}): only one note changes.</p>
@@ -204,7 +204,7 @@ FT = fpage(f'''{head('Part VII · Shape and style · Tips', 'When a piece goes n
 # ---------- VIII.1 Fingering ----------
 from openart import pic_play as _pp
 def hand_pic(): return _pp(False).replace('#fffdf7', '#26296b').replace('#f4a9bb', '#5a5d8f').replace('style="width:100%;display:block"', 'style="width:100%;max-width:540px;display:block;margin:0 auto"')
-L1 = lpage(f'''{head('Part VIII · Playing and listening · 1', 'Fingering', 'Each finger has a number, the same in both hands: the thumb is 1, the little finger 5. Good fingering is planned, not guessed: choose it once, write it in, and use it every time.')}
+L1 = lpage(f'''{head('Part VIII · Playing and listening · 1', 'Fingering', 'Good fingering makes hard passages easy and keeps your hand relaxed. It is planned, not guessed, and the plan starts with a number for every finger.')}
 {hero(hand_pic(), 'Thumbs are 1 in both hands')}
 {h3('Five-finger position')}
 {two(ex('l_five', 74), '<p>Thumb on C, one finger on each key up to G: five notes without moving the hand. Many first pieces stay in one position.</p>')}

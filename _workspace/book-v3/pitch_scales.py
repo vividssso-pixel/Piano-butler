@@ -38,7 +38,7 @@ P29 = ppage(f"""{head('Part I · Pitch · 8', 'Major scales', 'A <b>scale</b> cl
 {foot('Minor scales p. {{S2}} · Keys and key signatures p. {{S3}}', 'Workbook Pitch 5 · Online: Scale finder, Library › Scales')}""", 29)
 
 # ---------- 2 Minor scales: the major on the same note, three notes lowered ----------
-P29b = ppage(f"""{head('Part I · Pitch · 9', 'Minor scales', 'Start from the major scale on the same key note and move three notes, the <b>3rd</b>, <b>6th</b> and <b>7th</b>, one key down. That is the <b>natural minor</b>: same home, darker colour.')}
+P29b = ppage(f"""{head('Part I · Pitch · 9', 'Minor scales', 'Play C major, then C minor: same home note, but the mood turns darker and more serious. Minor scales come in three versions, and all of them start from the major scale you already know.')}
 {hero(hero_cmin(), 'The same home note · three notes one key lower')}
 {rule('<b>Natural minor</b> = the major with 3, 6 and 7 lowered one key. <b>Harmonic minor</b> = the natural minor with 7 raised again. <b>Melodic minor</b> = going up, 6 and 7 raised; coming down, the natural minor.')}
 {h3('A minor in three forms')}
@@ -71,7 +71,7 @@ P30 = ppage(f"""{head('Part I · Pitch · 10', 'Keys and key signatures', 'Why w
 {youknow('Minuet in G', ykfig('yk_minuet2', ('n5',), 88), 'One sharp in the key signature: every F is <b class="co">F♯</b>, like the one just before the top G. One sharp, and the piece ends on G: <b>G major</b>.', 'Find every F in the piece and play it as F♯.')}
 {inaction('Which notes are flat?', qtag(px('ks_3f', 84)), ['<b>Count the flats.</b>', '<b>Name them in order:</b> the first flat is always B, then …', '<b>Which keys turn black?</b>'], 'Three flats, <b>B♭ E♭ A♭</b>: every B, E and A in the piece.')}
 {watch(['Writing a key signature in the wrong order: sharps always F C G D A E B.', 'Reading it once and forgetting it: glance at the key signature at the start of every line.'])}
-{thinkt('The Doorkeeper: at the door of every line he reads out the dress code, and it lasts all night. Only the Guest, an accidental, changes it, and only until the bar line.')}
+{thinkt('A dress code on a party invitation: written once at the top, it applies to every guest all night. Only an accidental, a word to one guest, overrules it, and only until the bar line.')}
 {game('Which comes next?', qitems(['sharps: F C G …', 'flats: B E …', 'the 1st flat', 'the 2nd sharp'], 4), 'Use the orders of sharps and flats.', '1 D · 2 A · 3 B♭ · 4 C♯.')}
 {try10(px('sharps', 60), 'Say the sharps in order.', '“Father Charles Goes Down And Ends Battle”: F C G D A E B. Then backwards for the flats: B E A D G C F.')}
 {foot('Major scales p. {{S1}} · Finding the key p. {{S4}} · The circle of fifths p. {{S5}}', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 31)
@@ -98,7 +98,7 @@ P31 = ppage(f"""{head('Part I · Pitch · 11', 'Finding the key', 'A key signatu
 {foot('Keys and key signatures p. {{S3}} · The circle of fifths p. {{S5}}', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 32)
 
 # ---------- 5 The circle of fifths ----------
-P32 = ppage(f"""{head('Part I · Pitch · 12', 'The circle of fifths', 'All the keys on one clock face. Go <b>right</b> round the circle and each key has <b>one more sharp</b>. Go <b>left</b> and each key has <b>one more flat</b>.')}
+P32 = ppage(f"""{head('Part I · Pitch · 12', 'The circle of fifths', 'Twelve major keys sit around one clock face, with C at twelve o’clock. Learn to read this clock and you can name any key signature in seconds.')}
 {hero(circle_hero(), 'Right: one more sharp · left: one more flat')}
 {two(h3('How to read the clock') + '<p><b>Outer ring:</b> the major keys. <b>Inner ring:</b> their relative minors. <b>Outside the circle:</b> how many sharps or flats.</p>', h3('Neighbours are close') + '<p>Keys side by side share all but one note, so music moves between them easily: from C major to G major or F major, or to the relative minor.</p>')}
 {rule('Each step right is a <b>5th up</b>: count the notes, C D E F G, and G is the next key round. That is why it is called the circle of <b>fifths</b>.')}
