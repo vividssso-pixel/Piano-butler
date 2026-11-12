@@ -10,11 +10,11 @@ KO={'B1':'자세와 손 모양','P1':'건반','P2':'오선과 음자리표','P3'
 'E1':'셈여림','E2':'터치: 부드럽게, 짧게, 강하게','E3':'빠르기말','E4':'페달','E5':'꾸밈음','S1':'장음계','S2':'단음계','S3':'조와 조표','S4':'조 찾기','S5':'오도권',
 'H1':'화음과 3화음','H2':'네 가지 3화음','H3':'조 안의 화음','H4':'자리바꿈','H5':'7화음','H6':'색깔 화음','H7':'탑: 9, 11, 13','H8':'슬래시 화음',
 'M1':'조 밖의 화음','M2':'마침꼴','M3':'선율 아래 화음','M4':'어디에나 있는 진행','F1':'동기와 프레이즈','F2':'반복과 모진행','F3':'짜임새','F4':'조바꿈','F5':'형식','F6':'시대별 양식',
-'L1':'운지','L2':'잘 연습하기','L3':'초견','L4':'듣기','L5':'연주하기'}
+'L1':'운지','L2':'잘 연습하기','L3':'초견','L4':'듣기','L5':'연주하기','G1':'화음 밖의 음'}
 PART={'B':('Before you play','연주 전에'),'P':('Part I · Pitch','Part I · 음높이'),'T':('Part II · Time','Part II · 시간'),'E':('Part III · Expression','Part III · 표현'),'S':('Part IV · Scales and keys','Part IV · 음계와 조'),
-'H':('Part V · Chords','Part V · 화음'),'M':('Part VI · Harmony in music','Part VI · 음악 속 화성'),'F':('Part VII · Shape and style','Part VII · 형식과 양식'),'L':('Part VIII · Playing and listening','Part VIII · 연주와 듣기')}
-WBF={'B':'Before you play','P':'Pitch','T':'Time','E':'Expression','S':'Scales and keys','H':'Chords and harmony','M':'Chords and harmony','F':'Shape and style','L':'Playing and listening'}
-WBN={'B':0,'P':1,'T':2,'E':3,'S':4,'H':5,'M':6,'F':7,'L':8}
+'H':('Part V · Chords','Part V · 화음'),'M':('Part VI · Harmony in music','Part VI · 음악 속 화성'),'F':('Part VII · Shape and style','Part VII · 형식과 양식'),'L':('Part VIII · Playing and listening','Part VIII · 연주와 듣기'),'G':('Part IX · Going further','Part IX · 더 나아가기')}
+WBF={'B':'Before you play','P':'Pitch','T':'Time','E':'Expression','S':'Scales and keys','H':'Chords and harmony','M':'Chords and harmony','F':'Shape and style','L':'Playing and listening','G':'Going further'}
+WBN={'B':0,'P':1,'T':2,'E':3,'S':4,'H':5,'M':6,'F':7,'L':8,'G':9}
 def wb(k):
     p,i=k[0],int(k[1:]); d='/mnt/user-data/outputs/books-latest/2 Workbook/'+WBF[p]
     pre=f'workbook-{WBN[p]}-{1 if p=="S" else i}-'
@@ -36,7 +36,7 @@ FLOORS=[('Beginner','B1 P1 L1 P2 T1 T2 E1',[]),
   ('S1','scales',3,'A major','A 장음계',[6]),('S2','minor-scales',4,'C minor','C 단음계',[3])]),
 ('Grade 4','T7 M2 M3 F3 F4',[('P8','intervals',8,'Above the tonic, in my keys','으뜸음 위 음정'),('H4','harmony-4',2,'First inversions: which chord?','첫째 자리바꿈: 어떤 화음?'),('S3','keys-4',1,'The Level 4 keys','4급의 조'),
   ('T3','note-values',9,'The double dot','겹점',[6])]),
-('Grade 5','F5 F6 M1 M4 L5',[('F4','keys-5',5,'Dominant, subdominant or relative?','딸림조, 버금딸림조, 나란한조?'),('S2','keys-5',2,'The melodic minor','가락 단음계'),('H4','harmony-5',2,'I, Ib or Ic?','I, Ib, Ic?'),
+('Grade 5','F5 F6 M1 M4 G1 L5',[('F4','keys-5',5,'Dominant, subdominant or relative?','딸림조, 버금딸림조, 나란한조?'),('S2','keys-5',2,'The melodic minor','가락 단음계'),('H4','harmony-5',2,'I, Ib or Ic?','I, Ib, Ic?'),
   ('T5','time-signatures',10,'Irregular time (Extra)','불규칙 박자 (Extra)',[6])]),
 ('Grade 6','H5 H8',[('M2','harmony-3',6,'Perfect or plagal cadence?','정격일까 변격일까?'),('H5','harmony-6',1,'V7, V7b, V7c or V7d?','V7의 자리바꿈'),('H2','chords',5,'Major or minor by ear','듣고 장·단 맞히기')]),
 ('Grade 7','H6',[('M2','harmony-4',3,'Which cadence? (with interrupted)','어떤 마침꼴? (거짓마침 포함)'),('T7','rhythm',9,'Swing, hemiola and polyrhythm','스윙, 헤미올라, 폴리리듬',[2,4,5]),('F5','form',7,'Read the road','곡의 지도 읽기'),('F6','styles',4,'Which style is it?','어떤 양식?')]),
