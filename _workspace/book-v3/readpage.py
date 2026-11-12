@@ -23,7 +23,7 @@ for p, name, k in PM.PARTS:
     for i in range(1, k + 1):
         key = f'{p}{i}'; a, n = PM.pages_of(key)
         CH.append({'k': key, 'part': part, 't': f'{i} · {CB.TITLES[key]}', 'pages': list(range(a, a + n))})
-    CH.append({'k': p + 'T', 'part': part, 't': TIPS[p + 'T'], 'pages': [PM.PAGE[p + 'T']]})
+    if PM.TIPS.get(p): CH.append({'k': p + 'T', 'part': part, 't': TIPS[p + 'T'], 'pages': [PM.PAGE[p + 'T']]})
 CH.append({'k': 'X', 'part': 'At the end', 't': 'Putting it together', 'pages': [PM.PAGE['X'], PM.PAGE['X'] + 1]})
 CH.append({'k': 'GL', 'part': 'At the end', 't': 'Glossary and index', 'pages': list(range(PM.PAGE['X'] + 2, LAST + 1))})
 # audio: clips.json per chapter; clip 1 sits on the chapter's first page, the last on its last page, the rest on page 2
@@ -207,6 +207,7 @@ for c in CH:
 # (chapter: [(drill id, drill name, level or 0)]); the workbook file is the chapter's own PDF from the Books page
 DRILL = {
     'B1': [('posture-hands', 'Posture & Hand Shape', 0)],
+    'G1': [('hb-nonchord', 'Notes outside the Chord', 0)],
     'P1': [('note-names', 'The Musical Alphabet', 1)], 'P2': [('whole-staff', 'Line and Space Names', 1)], 'P3': [('whole-staff', 'Find it on the keys', 7)],
     'P4': [('whole-staff', 'Landmark hop', 5), ('reading-steps', 'Steps & Skips', 2)], 'P5': [('ledger-lines', 'Ledger Lines', 3)], 'P6': [('accidentals', 'Accidentals', 1)],
     'P7': [('intervals', 'Intervals: count it', 1)], 'P8': [('intervals', 'Major or perfect?', 9)],
@@ -222,8 +223,8 @@ DRILL = {
     'F5': [('form', 'Binary or ternary?', 5)], 'F6': [('styles', 'Which period?', 3)],
     'L1': [('hand-positions', 'Hand Positions', 1)], 'L2': [('hb-practice', 'Practising Well', 0)], 'L3': [('reading-steps', 'Name the next note', 3)], 'L4': [('listen-write', 'Ear Training', 0)], 'L5': [('hb-performing', 'Performing', 0)],
 }
-_WBF = {'B': 'Before you play', 'P': 'Pitch', 'T': 'Time', 'E': 'Expression', 'S': 'Scales and keys', 'H': 'Chords and harmony', 'M': 'Chords and harmony', 'F': 'Shape and style', 'L': 'Playing and listening'}
-_WBN = {'B': 0, 'P': 1, 'T': 2, 'E': 3, 'S': 4, 'H': 5, 'M': 6, 'F': 7, 'L': 8}
+_WBF = {'B': 'Before you play', 'P': 'Pitch', 'T': 'Time', 'E': 'Expression', 'S': 'Scales and keys', 'H': 'Chords and harmony', 'M': 'Chords and harmony', 'F': 'Shape and style', 'L': 'Playing and listening', 'G': 'Going further'}
+_WBN = {'B': 0, 'P': 1, 'T': 2, 'E': 3, 'S': 4, 'H': 5, 'M': 6, 'F': 7, 'L': 8, 'G': 9}
 import urllib.parse as _up
 def _wb(key):
     p, i = key[0], int(key[1:]); d = '/mnt/user-data/outputs/books-latest/2 Workbook/' + _WBF[p]
@@ -247,7 +248,7 @@ HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name
  --display:'Playfair Display',Georgia,serif;--body:'Atkinson Hyperlegible',system-ui,sans-serif}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14153a;--panel:#1e2050;--ink:#eceefe;--soft:#b3b5dc;--line:#33366e;--accent:#ff7a52;--accentbg:#3a2620;--paper:#f7f6f1;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#14153a;--panel:#1e2050;--ink:#eceefe;--soft:#b3b5dc;--line:#33366e;--accent:#ff7a52;--accentbg:#3a2620;--paper:#f7f6f1;color-scheme:dark}
-html,body{margin:0} .embed .top,.embed .prac{display:none!important} .embed .desk{padding-top:4px}
+html,body{margin:0} #veil{position:absolute;inset:0;pointer-events:none} #veil .vl{position:absolute;background:rgba(251,250,246,.93);border-radius:3px;display:flex;align-items:center;justify-content:center;font:italic 700 12px Georgia,serif;color:#a3a5c6;letter-spacing:.04em} .embed .top,.embed .prac{display:none!important} .embed .desk{padding-top:4px}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;padding-top:env(safe-area-inset-top,0px)}
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
 .brand{font-family:var(--display);font-weight:800;font-size:20px;margin-right:auto}
@@ -295,7 +296,7 @@ audio{width:100%;margin-top:10px}
 </style></head><body>
 <header class="top"><div class="brand"><small>The Piano Butler Handbook</small>Read and listen</div><label class="sr" for="ch" style="position:absolute;left:-9999px">Chapter</label><select id="ch"></select></header>
 <main class="desk">
- <section class="reader"><a class="sheet" id="zoom" target="_blank" rel="noopener" title="Open the page full size"><div class="stage" id="stage"><img id="img" alt=""><div id="ov"></div></div><div id="lens"></div></a><div class="sub" id="sub"></div>
+ <section class="reader"><a class="sheet" id="zoom" target="_blank" rel="noopener" title="Open the page full size"><div class="stage" id="stage"><img id="img" alt=""><div id="veil"></div><div id="ov"></div></div><div id="lens"></div></a><div class="sub" id="sub"></div>
   <div class="nav"><button class="btn" id="prev">‹ Page</button><span class="pgno" id="pgno"></span><button class="btn" id="next">Page ›</button></div></section>
  <aside class="side" id="side"></aside>
 </main>
@@ -313,6 +314,27 @@ function showPage() {
   document.getElementById('pgno').textContent = `p. ${n} · ${pi + 1} of ${c.pages.length}`;
   document.getElementById('prev').disabled = ci === 0 && pi === 0; document.getElementById('next').disabled = ci === CH.length - 1 && pi === c.pages.length - 1;
   const nx = CH[ci + 1]; if (nx) { const im = new Image(); im.src = `pages/p${pad(nx.pages[0])}.webp`; }
+  drawVeil();
+}
+// her 11 Nov: in a house room that teaches one step, the parts of the page for later steps are veiled ("later"); the Library shows the whole page
+const ROWS = (new URLSearchParams(location.search).get('rows') || '').split(',').filter(Boolean);
+const ROWWORDS = ['semibreve', 'minims', 'crotchets', 'quavers'];
+function drawVeil() {
+  const v = document.getElementById('veil'); if (!v) return; v.innerHTML = '';
+  const c = CH[ci]; if (!c.slice) return; const pgn = c.pages[pi], R = REG[pgn]; if (!R) return;
+  const keep = new Set(); c.clips.forEach(k => (k.l || []).forEach(l => { if (l.cue && l.cue.p === pgn) keep.add(l.cue.r); (l.hits || []).forEach(h => { if (h[4]) keep.add(h[4]); }); }));
+  const box = (x, y, w, h) => `<div class="vl" style="left:${x * 100}%;top:${y * 100}%;width:${w * 100}%;height:${h * 100}%">later</div>`;
+  let o = '';
+  for (const [key, reg] of Object.entries(R)) {
+    if (key === 'kick' || key.startsWith('h:') || key.startsWith('kick')) continue;
+    const [x, y, w, h] = reg.b;
+    if (!keep.has(key)) { o += box(x - .004, y - .003, w + .008, h + .006); continue; }
+    if (!ROWS.length) continue;
+    const heads = reg.l.filter(L => ROWWORDS.some(wd => L[0].endsWith(wd))).sort((a, b) => a[1][1] - b[1][1]);
+    heads.forEach((L, i) => { const wd = ROWWORDS.find(w2 => L[0].endsWith(w2)); if (ROWS.includes(wd)) return;
+      const top = L[1][1] - L[1][3] * 0.9, bot = i + 1 < heads.length ? heads[i + 1][1][1] - heads[i + 1][1][3] * 0.9 : y + h; o += box(x - .004, top, w + .008, bot - top); });
+  }
+  v.innerHTML = o;
 }
 function site(p) { const local = location.protocol === 'file:' || /thepianobutler\.com$/.test(location.hostname); return (local ? '../../' : 'https://thepianobutler.com/') + p; }
 function drawSide() {
@@ -756,8 +778,8 @@ const SLICE = (new URLSearchParams(location.search).get('clips') || '').split(',
 if (SLICE.length && start >= 0 && CH[start].clips) {
   const c = CH[start], keep = SLICE.filter(n => n <= c.clips.length).map(n => c.clips[n - 1]);
   if (keep.length) {
-    const pg = new Set(); keep.forEach(k => { pg.add(k.p); (k.l || []).forEach(l => { if (l.cue && l.cue.p) pg.add(l.cue.p); }); });
-    c.part = c.part + ' · ' + (keep.length < c.clips.length ? 'this room’s part' : 'whole chapter'); c.clips = keep; c.pages = c.pages.filter(n => pg.has(n)).length ? c.pages.filter(n => pg.has(n)) : c.pages; c.slice = true;
+    const pg = new Set(); keep.forEach(k => { const cp = (k.l || []).filter(l => l.cue && l.cue.p).map(l => l.cue.p); if (cp.length) cp.forEach(x => pg.add(x)); else pg.add(k.p); });   // the pages the voice actually points at
+    c.part = c.part + ' · ' + (keep.length < c.clips.length ? 'this room’s part' : 'whole chapter'); c.clips = keep; c.pages = [...pg].sort((a, b) => a - b); c.slice = true;   // a slice may borrow a page from another chapter (the dotted minim, p. 56)
   }
 }
 go(start >= 0 ? start : 0);

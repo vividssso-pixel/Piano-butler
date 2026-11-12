@@ -9,10 +9,12 @@ TITLES = {'P1': 'The keyboard', 'P2': 'The staff and the clefs', 'P3': 'The staf
           'H1': 'Chords and triads', 'H2': 'Four kinds of triad', 'H3': 'Chords in a key', 'H4': 'Inversions', 'H5': 'Seventh chords', 'H6': 'Colour chords', 'H7': 'The tower: 9, 11, 13', 'H8': 'Slash chords',
           'M1': 'Chords from outside the key', 'M2': 'Cadences', 'M3': 'Chords under a melody', 'M4': 'Progressions everywhere',
           'F1': 'Motifs and phrases', 'F2': 'Repetition and sequence', 'F3': 'Texture', 'F4': 'Changing key', 'F5': 'Form', 'F6': 'Styles through time',
-          'L1': 'Fingering', 'L2': 'Practising well', 'L3': 'Sight-reading', 'L4': 'Listening', 'L5': 'Performing'}
-PARTS = [('P', 'Part I · Pitch'), ('T', 'Part II · Time'), ('E', 'Part III · Expression'), ('S', 'Part IV · Scales and keys'), ('H', 'Part V · Chords'), ('M', 'Part VI · Harmony in music'), ('F', 'Part VII · Shape and style'), ('L', 'Part VIII · Playing and listening')]
+          'L1': 'Fingering', 'L2': 'Practising well', 'L3': 'Sight-reading', 'L4': 'Listening', 'L5': 'Performing',
+          'G1': 'Notes outside the chord'}
+PARTS = [('P', 'Part I · Pitch'), ('T', 'Part II · Time'), ('E', 'Part III · Expression'), ('S', 'Part IV · Scales and keys'), ('H', 'Part V · Chords'), ('M', 'Part VI · Harmony in music'), ('F', 'Part VII · Shape and style'), ('L', 'Part VIII · Playing and listening'), ('G', 'Part IX · Going further')]
 # (question, right answer, wrong 1, wrong 2): options are shuffled below
 Q = {
+ 'G1': [('Over a C chord, the D in E D C is…', 'a passing note', 'an auxiliary note', 'a chord note'), ('C D C over a C chord: the D is…', 'an auxiliary note', 'a passing note', 'a suspension'), ('A note held over from the last chord, then falling by step, is…', 'a suspension', 'an anticipation', 'a passing note')],
  'P1': [('The white key just left of a group of two black keys is…', 'C', 'F', 'D'), ('The white key just left of a group of three black keys is…', 'F', 'C', 'G'), ('Moving to the right on the keyboard, the notes get…', 'higher', 'lower', 'louder')],
  'P2': [('The treble clef curls round the line for…', 'G', 'F', 'C'), ('The two dots of the bass clef hug the line for…', 'F', 'G', 'A'), ('How many lines does a staff have?', '5', '4', '6')],
  'P3': [('Moving up one line or space on the staff moves you…', 'one white key up', 'one black key up', 'two white keys up'), ('From a line to the next line up is…', 'a skip (a 3rd)', 'a step (a 2nd)', 'an octave'), ('Bass F (between the bass clef’s dots) and treble G (where the treble clef curls) are…', 'the same distance either side of Middle C', 'the same key', 'next-door keys')],
@@ -71,7 +73,7 @@ for part, pname in PARTS:
             opts = [right] + wrong; rnd.shuffle(opts)
             qs.append({'q': q, 'o': opts, 'a': opts.index(right)})
         BANK.append({'key': k, 'part': pname, 'title': TITLES[k], 'page': PM.PAGE[k], 'qs': qs})
-assert all(len(c['qs']) == 3 for c in BANK) and len(BANK) == 49
+assert all(len(c['qs']) == 3 for c in BANK) and len(BANK) == 50
 json.dump(BANK, open('/tmp/claude-0/pk/checkbank.json', 'w'), ensure_ascii=False, indent=0)
 from collections import Counter
 print('ok bank', len(BANK), 'chapters', Counter(q['a'] for c in BANK for q in c['qs']))

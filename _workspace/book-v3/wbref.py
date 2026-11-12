@@ -4,7 +4,7 @@
 import re, sys
 sys.path.insert(0, '/tmp/claude-0/pk'); import pagemap as PM
 H = '/mnt/user-data/outputs/house-rooms/'
-BOOK = {'P': 'Pitch', 'T': 'Time', 'E': 'Expression', 'S': 'Scales and keys', 'H': 'Chords and harmony', 'M': 'Chords and harmony', 'F': 'Shape and style', 'L': 'Playing and listening'}
+BOOK = {'P': 'Pitch', 'T': 'Time', 'E': 'Expression', 'S': 'Scales and keys', 'H': 'Chords and harmony', 'M': 'Chords and harmony', 'F': 'Shape and style', 'L': 'Playing and listening', 'G': 'Going further'}
 def wbpages(key):
     p, i = key[0], int(key[1:])
     if p == 'S': return str(i)                     # Scales: one page per chapter (1-5)
@@ -26,7 +26,7 @@ def fix(sec):
         return mm.group(1) + ref + (' · ' + rest if rest else '') + mm.group(3)
     return re.sub(r'(<span class="lab">Practise it</span>)(.*?)(</div>)', rep, sec, flags=re.S)
 n = 0
-for f in ('handbook-pitch', 'handbook-time2', 'handbook-expression', 'handbook-scales', 'handbook-harmony', 'handbook-harmony2', 'handbook-shape', 'handbook-play'):
+for f in ('handbook-pitch', 'handbook-time2', 'handbook-expression', 'handbook-scales', 'handbook-harmony', 'handbook-harmony2', 'handbook-shape', 'handbook-play', 'handbook-further'):
     s = open(H + f + '.html').read()
     parts = re.split(r'(?=<section )', s)
     out = ''.join(fix(x) for x in parts); n += out.count('Workbook p')

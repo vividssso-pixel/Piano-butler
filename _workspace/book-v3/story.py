@@ -536,13 +536,32 @@ NEW['T2'] = ('Notes and rests', [
   ('B', 'Only half of it, Clara. Music is made of two things: sounds and silences. Think of talking. A sentence needs words, and it needs little pauses too. Without the pauses it’s one long breathless rush.', c(53, 'lead')),
   ('P', 'Like my little brother telling a story.', c(53, 'lead')),
   ('B', 'Exactly like that. On paper, a sound is written as a note, and a silence is written as a rest. A rest is just as important as a note. It isn’t a break for you: it’s music you can’t hear, and you count it just as carefully.', c(53, 'lead'))]),
- ('Long and short notes', [
+ ('The crotchet: one beat', [
   ('P', 'So how do I know how long to hold a note? Do I just guess?', c(53, 'hero')),
-  ('B', 'No guessing required. Its shape tells you, like the size of a cup tells you how much juice it holds. Each note is half the one above it. A semibreve lasts four beats. It splits into two minims, two beats each. A minim splits into two crotchets, one beat each.', c(53, 'hero')),
-  ('P', 'Like cutting a cake in half, and in half again.', c(53, 'hero')),
-  ('B', 'Precisely, and nobody fights over the pieces. Listen to one bar of each. The beat keeps going; only the notes change.', c(53, 'hero')),
+  ('B', 'No guessing required. Its shape tells you, like the size of a cup tells you how much juice it holds. Let’s start with the beat you already feel. A filled-in note with a stem is a crotchet. It lasts one beat.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4 C4 C4 C4', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('B', 'And every note has a twin rest: a silence of exactly the same length. The crotchet rest is one beat of silence. It looks like a little lightning bolt.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4 R C4 R', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('P', 'Play, shh, play, shh. The shh still counts!', c(53, 'hero'))]),
+ ('The minim: two beats', [
+  ('B', 'Now hollow out the head. A white note with a stem is a minim. It lasts two beats: two crotchets joined together.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4*2 C4*2', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('B', 'Its rest is a little block sitting on the middle line, like a hat sitting on a head. Two beats of silence.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4*2 R R', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('P', 'A minim, then a hat. Got it.', c(53, 'hero'))]),
+ ('Three beats', [
+  ('B', 'Put a dot after a minim and it grows by half of itself: two beats, plus one more. A dotted minim lasts three beats.', c(56, 'hero')),
+  ('count', {'beats': 'X x x X x x', 'notes': 'C4*3 C4*3', 'say': '1 2 3 1 2 3'}, c(56, 'hero')),
+  ('P', 'One, two, three. Like a waltz!', c(56, 'hero')),
+  ('B', 'Exactly like a waltz. You’ll meet the dot properly later. For now, remember: a minim with a dot is three beats.', c(56, 'hero'))]),
+ ('The semibreve: four beats', [
+  ('B', 'And the longest of them all: the semibreve. A hollow oval with no stem at all. It lasts four beats, a whole bar of four-four.', c(53, 'hero')),
+  ('count', {'beats': 'X x M x', 'notes': 'C4*4', 'say': '1 2 3 4'}, c(53, 'hero')),
+  ('B', 'Its rest hangs from the fourth line, heavy, like a coat on a hook. Coat hangs, hat sits.', c(53, 'hero')),
+  ('P', 'Coat hangs, hat sits. I’ll never mix them up.', c(53, 'hero')),
+  ('B', 'Now see them together. Each note is half the one above it: one semibreve, two minims, four crotchets. Like cutting a cake in half, and in half again.', c(53, 'hero')),
   ('count', {'beats': 'X x M x X x M x X x M x', 'notes': 'C4*4 C4*2 C4*2 C4 C4 C4 C4', 'say': '1 2 3 4 1 2 3 4 1 2 3 4'}, c(53, 'hero')),
-  ('B', 'And here’s the other half of the secret: every note has a twin rest, a silence of exactly the same length.', c(53, 'secret'))]),
+  ('B', 'That is the secret: each note is half the one above it, and every note has a twin rest.', c(53, 'secret'))]),
  ('Quavers', [
   ('B', 'One more halving. A crotchet splits into two quavers, half a beat each: two to every beat.', c(53, 'hero')),
   ('count', {'beats': 'X/2 R/2 x/2 R/2 M/2 R/2 x/2 R/2', 'notes': 'C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2 C4/2', 'say': '1 & 2 & 3 & 4 &'}, c(53, 'hero')),
@@ -559,8 +578,7 @@ NEW['T2'] = ('Notes and rests', [
   ('count', {'beats': 'X x x X x x X x x', 'notes': 'C4 C4 C4 R*3 C4*2 C4', 'say': '1 2 3 1 2 3 1 2 3'}, c(53, 'box'))]),
  ('Every note has a twin rest', [
   ('B', 'Every note has a twin rest, the same length with no sound: semibreve, minim, crotchet, quaver, and the semiquaver, a quarter of a beat, which you’ll meet later.', c(54, 'svg')),
-  ('B', 'Two rests look like identical twins. The semibreve rest hangs from the fourth line, heavy, like a coat on a hook. The minim rest sits on the middle line, like a hat.', c(54, 'svg')),
-  ('P', 'Coat hangs, hat sits. I’ll never mix them up.', c(54, 'svg'))]),
+  ('P', 'Twins everywhere. Silent ones.', c(54, 'svg'))]),
  ('Pizzas', [
   ('B', 'Some books call the notes whole, half, quarter, eighth and sixteenth notes. Here is why.', c(54, 'pzbox')),
   ('B', 'Think of each beat as a pizza. A bar of four-four is four pizzas. The semibreve eats all four; a minim, two; a crotchet, one; a quaver, half a pizza. A rest is the same share, left on the plate.', c(54, 'pzbox')),
@@ -2278,3 +2296,40 @@ NEW['B1'] = ('Before you play', [
   ('B', 'After the scales. Four traps: wrists sinking below the keys, shoulders creeping up to your ears, flat fingers or a caved-in knuckle, and sitting so close your elbows are squashed. Now, Clara, you may start.', c(20, 'watch')),
   ('P', 'Finally! Bye, Butler!', c(20, 'watch'))])])
 CH['B1'] = NEW['B1']
+
+NEW['G1'] = ('Notes outside the chord', [
+ ('The secret', [
+  ('P', 'Butler, in my piece the left hand plays a C chord, but the tune plays a D. Is that a wrong note?', c(175, 'lead')),
+  ('B', 'Not wrong at all, Clara. Under a tune, the chord holds the main notes. The other notes are notes outside the chord: they lean on the chord for a moment, then step back into it.', c(175, 'lead')),
+  ('B', 'Here is the secret: a note outside the chord moves by step. Into the chord, out of it, or both.', c(175, 'secret')),
+  ('P', 'So they never jump?', c(175, 'secret')),
+  ('B', 'Almost never. Think of stepping stones in a stream. The chord is the bank. You step onto a stone for a moment, then land on the bank again.', c(175, 'secret'))]),
+ ('Five ways out and back', [
+  ('B', 'One, the passing note. E, D, C, over a C chord. The D steps between two chord notes.', c(175, 'hero')),
+  ('piano', 'E5 D5 C5*2', c(175, 'hero')),
+  ('B', 'Two, the auxiliary note. C, D, C. The D steps out and comes straight back.', c(175, 'hero')),
+  ('piano', 'C5 D5 C5*2', c(175, 'hero')),
+  ('P', 'Like popping next door and coming straight home.', c(175, 'hero')),
+  ('B', 'Three, the appoggiatura. The D lands right on the beat and leans, then sighs down to C. Its name comes from the Italian for “to lean”.', c(175, 'hero')),
+  ('piano', 'D5*2 C5*2', c(175, 'hero')),
+  ('B', 'Four, the suspension. Over an F chord the tune plays F. Then the chord changes to C, but the F is held over, and only then falls to E.', c(175, 'hero')),
+  ('piano', 'A4 F5*2 E5', c(175, 'hero')),
+  ('P', 'The F is late for the next chord.', c(175, 'hero')),
+  ('B', 'Late, and then it catches up. And five, the anticipation: the opposite. Over a G chord, the C arrives early, before its own chord.', c(175, 'hero')),
+  ('piano', 'B4 D5/2 C5/2 C5*2', c(175, 'hero')),
+  ('P', 'Late and early. Like me and my brother in the morning.', c(175, 'hero'))]),
+ ('Example: which notes are outside the chord?', [
+  ('B', 'Example. The chord is C: C, E and G. The tune: G, A, B, C, then E, D, C. Which notes are not C, E or G? Pause and try.', c(176, 'ex1')),
+  ('pause', 4, c(176, 'ex1')),
+  ('P', 'A and B! And the D in the second bar.', c(176, 'ex1', reveal=True)),
+  ('B', 'All three are passing notes. A and B climb from G up to C, and D walks from E down to C.', c(176, 'ex1', reveal=True)),
+  ('piano', 'G4 A4 B4 C5 | E5 D5 C5*2', c(176, 'ex1', reveal=True))]),
+ ('Game and Ode to Joy', [
+  ('B', 'Game: name each red note. Passing, auxiliary, appoggiatura or suspension? Pause and try.', c(176, 'game')),
+  ('pause', 5, c(176, 'game')),
+  ('P', 'Passing, auxiliary, appoggiatura, suspension!', c(176, 'game', reveal=True)),
+  ('B', 'And you know this one. Ode to Joy: E, E, F, G, over a C chord. The F slips between E and G: a passing note.', c(176, 'yk')),
+  ('piano', 'E4 E4 F4 G4 | G4 F4 E4 D4', c(176, 'yk')),
+  ('B', 'Two traps. A note outside the chord is not a mistake: it is the tune’s colour. And choose the chord for a bar by its main notes, not its passing notes. Until next time, Clara.', c(176, 'watch')),
+  ('P', 'Bye, Butler!', c(176, 'watch'))])])
+CH['G1'] = NEW['G1']
