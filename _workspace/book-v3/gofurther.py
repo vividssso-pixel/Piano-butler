@@ -19,7 +19,7 @@ G1 = gpage(f"""{head('Part IX · Going further · 1', 'Notes outside the chord',
 {tbl(['Name', 'How it moves', 'Beat', 'Also called'], [['<b>Passing note</b>', 'steps between two chord notes, going the same way', 'usually weak', '—'], ['<b>Auxiliary note</b>', 'steps away from a chord note and back to it', 'usually weak', 'neighbour note'], ['<b>Appoggiatura</b>', 'lands on the strong beat and leans, then steps into the chord', 'strong', 'from Italian <i>appoggiare</i>, to lean'], ['<b>Suspension</b>', 'held over from the last chord, then falls by step', 'strong', 'prepared, held, resolved'], ['<b>Anticipation</b>', 'a note of the next chord, sounded early', 'weak', '—']], ['24%', '42%', '14%', '20%'])}
 <!--SPLIT-->
 {youknow('Ode to Joy (Beethoven)', ykfig('g1_ode', ('n3',), 70), 'Bar 1 sits on C (C E G). The <b class="co">F</b> steps from E up to G: a <b>passing note</b>.', 'Play bar 1 with a C chord in the left hand and hear the F slip between E and G.')}
-{inaction('Which notes are outside the chord? The chord is C', qtag(nfig('g1_ex1', (), 66)), ['<b>The chord is C</b>: C, E and G.', '<b>Mark every note</b> that is not C, E or G.', '<b>How does each one move?</b>'], 'A and B: two passing notes, from G up to C. In bar 2, D passes from E down to C.')}
+{inaction('Which notes are outside the chord? The chord is C', qtag(nfig('g1_ex1', (), 66)), ['<b>The chord is C</b>: C, E and G.', '<b>Mark every note</b> that is not C, E or G.', '<b>How does each one move?</b>'], 'A and B: two passing notes from G up to C (B falls on beat 3, and still passes). In bar 2, D passes from E down to C.')}
 {game('Name it', '<div class="gm4" style="grid-template-columns:repeat(4,1fr)">' + ''.join(f'<div>{nfig(k, r, 46)}<b>{q}</b></div>' for k, r, q in (('g1_pass_q', ('n2',), '1'), ('g1_aux_q', ('n2',), '2'), ('g1_app_q', ('n1',), '3'), ('g1_sus_q', ('n3',), '4'))) + '</div>', 'Passing, auxiliary, appoggiatura or suspension? The chord is C (in 4: F, then C).', '1 passing · 2 auxiliary · 3 appoggiatura · 4 suspension')}
 {try10(nfig('g1_aux', ('n2',), 46), 'Play C D C, then C B C, over a C chord.', 'Out and straight back: two auxiliary notes.')}
 {thinkt('Stepping stones in a stream: the chord is the bank. Step onto a stone for a moment, then land on the bank again.')}
@@ -31,7 +31,7 @@ GOPEN = f"""<section class="pg part2"><div class="pframe"><div class="pk">Part I
 <div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{PM.PAGE[k]}</span></div>' for x, k in GTOC)}</div></div></section>"""
 css += """
 .nct5{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;width:100%} .nct5>.nc{grid-column:span 2} .nct5>.nc:nth-child(4){grid-column:2 / span 2} .nct5>.nc:nth-child(5){grid-column:4 / span 2} .nc{border:1.5px solid #e3e1ee;border-radius:8px;padding:8px 6px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;background:#fff}
-.nc>b{font-size:14px;color:#26296b} .nc i{font-size:11.5px;color:#6d6f9c;font-style:normal} .nc span{font-size:12.5px;line-height:1.3;color:#26296b} .nc figure{margin:2px 0}
+.nc>b{font-size:14px;color:#26296b} .nc i{font-size:11.5px;color:#6d6f9c;font-style:normal} .nc span{font-size:12.5px;line-height:1.3;color:#26296b} .nc figure{margin:2px 0} .gm4>div{justify-content:flex-end}
 """
 _secsG = [assemble('G1', G1)]
 html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}{MINCSS}{OPENCSS}</style></head><body>{GOPEN}{"".join(_secsG)}{_flowjs}</body></html>'

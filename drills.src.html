@@ -17414,14 +17414,14 @@ const HB_NCT_KIND = { pass: ['passing note', '경과음'], aux: ['auxiliary note
 const HB_NCT_CH = { C: ['C', 'E', 'G'], F: ['F', 'A', 'C'], G: ['G', 'B', 'D'] };
 const HB_LET = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const hbChordTxt = (c) => c + ' (' + HB_NCT_CH[c].join(' ') + ')';
-const hbMel = (ls) => () => { try { playMelody(ls.map(([l, dur]) => ({ d: 35 + HB_LET.indexOf(l) - (HB_LET.indexOf(l) >= 5 ? 7 : 0), dur })), 92); } catch (e) {} };
+const hbMel = (ls) => () => { try { let prev = null; playMelody(ls.map(([l, dur]) => { const i = HB_LET.indexOf(l); let d = prev === null ? 35 + i - (i >= 5 ? 7 : 0) : [i + 21, i + 28, i + 35, i + 42].reduce((a, b) => (Math.abs(b - prev) < Math.abs(a - prev) ? b : a)); prev = d; return { d, dur }; }), 92); } catch (e) {} };   // each note the nearest to the last: steps stay steps
 // [kind, chord(s), tune [[letter, beats]...], index of the note outside the chord, how it is shown]
 const HB_NCT_BANK = [
   ['pass', 'C', [['E', 1], ['D', 1], ['C', 2]], 1], ['pass', 'C', [['C', 1], ['D', 1], ['E', 2]], 1], ['pass', 'C', [['E', 1], ['F', 1], ['G', 2]], 1], ['pass', 'G', [['B', 1], ['C', 1], ['D', 2]], 1],
-  ['pass', 'F', [['A', 1], ['B', 1], ['C', 2]], 1], ['pass', 'G', [['D', 1], ['C', 1], ['B', 2]], 1],
+  ['pass', 'F', [['A', 1], ['G', 1], ['F', 2]], 1], ['pass', 'G', [['D', 1], ['C', 1], ['B', 2]], 1],
   ['aux', 'C', [['C', 1], ['D', 1], ['C', 2]], 1], ['aux', 'C', [['E', 1], ['F', 1], ['E', 2]], 1], ['aux', 'C', [['C', 1], ['B', 1], ['C', 2]], 1], ['aux', 'G', [['G', 1], ['A', 1], ['G', 2]], 1],
-  ['aux', 'F', [['A', 1], ['B', 1], ['A', 2]], 1], ['aux', 'F', [['F', 1], ['E', 1], ['F', 2]], 1],
-  ['app', 'C', [['D', 2], ['C', 2]], 0], ['app', 'G', [['C', 2], ['B', 2]], 0], ['app', 'F', [['B', 2], ['A', 2]], 0], ['app', 'C', [['F', 2], ['E', 2]], 0],
+  ['aux', 'F', [['C', 1], ['D', 1], ['C', 2]], 1], ['aux', 'F', [['F', 1], ['E', 1], ['F', 2]], 1],
+  ['app', 'C', [['D', 2], ['C', 2]], 0], ['app', 'G', [['C', 2], ['B', 2]], 0], ['app', 'F', [['G', 2], ['F', 2]], 0], ['app', 'C', [['F', 2], ['E', 2]], 0],
   ['sus', 'F|C', [['F', 2], ['F', 1], ['E', 1]], 1], ['sus', 'C|G', [['C', 2], ['C', 1], ['B', 1]], 1], ['sus', 'G|C', [['D', 2], ['D', 1], ['C', 1]], 1],
   ['ant', 'G|C', [['B', 1], ['C', 1], ['C', 2]], 1], ['ant', 'C|G', [['E', 1], ['D', 1], ['D', 2]], 1], ['ant', 'F|C', [['A', 1], ['G', 1], ['G', 2]], 1],
 ];
@@ -17434,7 +17434,8 @@ function hbNctShow(it) {
   else if (kind === 'app') line = notes[0] + t(' on the beat', ' 강박에서') + ' → ' + notes[1];
   else line = notes.join('  ');
   const chordLine = two ? t('Chords: ', '화음: ') + hbChordTxt(c1) + t(', then ', ', 다음 ') + hbChordTxt(c2) : t('Chord: ', '화음: ') + hbChordTxt(ch);
-  return { big: chordLine + '\n' + line, small: true, sound: hbMel(tune) };
+  const play = kind === 'sus' ? [[tune[0][0], tune[0][1] + tune[1][1]], tune[2]] : tune;   // the suspension is held, not struck again
+  return { big: chordLine + '\n' + line, small: true, sound: hbMel(play) };
 }
 function hbNctName() {
   const it = pick(HB_NCT_BANK), k = it[0];
