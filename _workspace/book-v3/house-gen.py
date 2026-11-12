@@ -71,13 +71,17 @@ for fname,new,rev in FLOORS:
             continue
         rooms.append(dict(id='hbr-'+k,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=('' if k[0]=='B' else n),pages=pg,wb=wb(k),dr=[[d,lv,lab] for d,lv,lab in D[k]],again=None,clips=SLICE.get(k)))
         ids.append('hbr-'+k)
+    # her 12 Nov ("단순하게"): a floor's revisits fold into ONE review room, a short list of parts (each: listen, then its drill)
+    parts=[]
     for rv in rev:
         k,d,lv,en,ko=rv[:5]; cl=rv[5] if len(rv)>5 else None
-        a,c=PM.pages_of(k); pg=f'{a}–{a+c-1}'
-        rid=f'hbr-{k}-{fname.replace(" ","").lower()}'
-        rooms.append(dict(id=rid,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=k[1:],pages=pg,wb=wb(k),dr=[[d,lv,en]],again=[en,ko],clips=cl))
+        a,c=PM.pages_of(k)
+        parts.append(dict(ch=k,en=en,ko=ko,chen=T[k],chko=KO[k],pages=f'{a}–{a+c-1}',clips=cl,dr=[d,lv,en]))
+    if parts:
+        rid=f'hbr-review-{fname.replace(" ","").lower()}'
+        rooms.append(dict(id=rid,ch=parts[0]['ch'],en='Review',ko='복습',part=('Review','복습'),num='',pages='',wb=None,dr=[],again=None,review=parts))
         ids.append(rid)
     floors.append(dict(ids=ids,en=[fname,FLOOR_TXT[fname][0]],ko=[fname,FLOOR_TXT[fname][1]]))
-assert len({r['ch'] for r in rooms if not r['again']})>=50, len({r['ch'] for r in rooms if not r['again']})
+assert len({r['ch'] for r in rooms if not r.get('review')})>=50, len({r['ch'] for r in rooms if not r['again']})
 open('/tmp/claude-0/house/data.js','w').write('const HB_ROOMS = '+json.dumps(rooms,ensure_ascii=False)+';\nconst HB_FLOORS = '+json.dumps(floors,ensure_ascii=False)+';\n')
 print(len(rooms),'rooms', [len(f['ids']) for f in floors])

@@ -56,8 +56,14 @@ def room_blocks(r):
         if not h: continue
         if r.get('rows') and 'semibreve' not in r['rows'] and key in ('lead', 'secret'): continue   # 'each note is half the one above' waits for the semibreve room
         if key == 'hero' and r.get('rows') and p == 53: h = rows_only(h, r['rows'].split(','))
-        out.append(h)
+        out.append((key, h))
     return out
+def learn_blocks(r):   # her 12 Nov ("단순하게"): one idea per room: its secret, its picture, one example, one Try it
+    bl = room_blocks(r); pick = []
+    for want in ('secret', 'hero', 'ex', 'try10'):
+        h = next((h for k, h in bl if (k.startswith('ex') and k[2:].isdigit() if want == 'ex' else k == want)), None)
+        if h and h not in pick: pick.append(h)
+    return pick
 
 # ---- practice sheets: Workbook exercises for whole chapters and slices, new sheets for the one-note steps ----
 G = lambda s, z=34: f'<span style="font-family:NM;font-size:{z}px;line-height:1;color:#26296b">{s}</span>'
@@ -105,19 +111,19 @@ def build(floor_i, name, line):
         r = ROOMS[rid]; title = r['en'] if not r.get('again') else r['en'] + ': ' + r['again'][0]
         toc.append((i, title))
         head = f'<div class="kick">{name} · Room {i}</div><h1>{title}</h1><p class="lead lvl">Handbook pp. {r["pages"]} · listen in the app: Room {i}</p>'
-        pr = practice(rid)   # the practice follows straight on, so a short room shares its pages
-        blocks = room_blocks(r) + ([f'<h3 class="lvpr">Practise</h3>'] + pr if pr else [])
-        out.append(chain(rid.replace('-', '_') + 'r', head, blocks, n, f'{name} · Room {i} · continued', 5)); n += 5
+        pr = practice(rid)[:3]   # one spread per room: Learn on the left, three exercises on the right
+        out.append(section(head + ''.join(learn_blocks(r)), n, 'L' + rid)); n += 1
+        out.append(section(f'<div class="kick">{name} · Room {i} · Practise</div><h1>Practise</h1>' + ''.join(pr), n, 'P' + rid)); n += 1
     cover = f'''<section class="pg part2"><div class="pframe"><div class="pk">The Piano Butler · Level book</div><div class="pt">{name}</div><div class="pdv"></div>
 <p class="pl">{line}</p><div class="pin"><div class="pih">The rooms</div>{"".join(f'<div class="tr"><span>{i} · {t}</span><span class="dots"></span><span></span></div>' for i, t in toc)}</div></div></section>'''
     extra = """.lvl{font-size:13px!important;color:#6d6f9c} .lvg{display:grid;gap:10px;margin:8px 0} .lvg>div{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #e3e1ee;border-radius:8px;padding:10px 4px}
 .lvt{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px} .lvt td,.lvt th{border-bottom:1px solid #e3e1ee;padding:8px 6px;text-align:left} .lvt th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6d6f9c}
 .lvdraw{height:120px;margin:8px 0;background:repeating-linear-gradient(#fff 0 18px,#26296b 18px 19px,#fff 19px 24px);background-size:100% 24px;border-radius:4px;opacity:.55}
 section.pg.lvempty{display:none} h3.lvpr{margin-top:18px;padding-top:10px;border-top:2px solid #26296b;font-size:20px}"""
-    prune = """<script>(async()=>{await new Promise(r=>{const t=setInterval(()=>{if(document.body.dataset.flowed){clearInterval(t);r()}},60)});
-document.querySelectorAll('section.pg[data-flow]').forEach(s=>{const b=s.querySelector('.body');if(b&&b.children.length<=1&&!/^A/.test(s.dataset.flow))s.remove();});
-let k=1;document.querySelectorAll('section.pg').forEach(s=>{const f=s.querySelector('.foot span');if(f)f.textContent=++k;});document.body.dataset.pruned='1';})();</script>"""
-    html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{FLOWJS}{prune}</body></html>'
+    prune = """<script>(async()=>{try{await document.fonts.ready}catch(e){}
+document.querySelectorAll('section.pg .body').forEach(b=>{const s=b.closest('section'),f=s.querySelector('.foot');if(!f)return;const lim=f.getBoundingClientRect().top-20,top=b.getBoundingClientRect().top;let m=0;[...b.children].forEach(c=>{const r=c.getBoundingClientRect();if(r.height)m=Math.max(m,r.bottom)});if(m>lim){b.style.zoom=Math.max(.6,(lim-top)/(m-top)).toFixed(3);}});
+document.body.dataset.pruned='1';})();</script>"""
+    html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{prune}</body></html>'
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower().replace(" ", "").replace("½", "half")}.html'
     open(fn, 'w').write(html); return fn
 if __name__ == '__main__':
