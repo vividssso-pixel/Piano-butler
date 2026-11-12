@@ -97,9 +97,21 @@ def _say1(who, text, it=False):
         v = 'im_nicola' if who in ('B', 'K', 'D', 'S') else 'if_sara'
         a, sr = K.create(text, voice=v, speed=0.95, lang='it'); a = np.asarray(a, dtype=np.float32)
         j = np.where(np.abs(a) > 0.01)[0]; return a[max(0, j[0] - 120):j[-1] + 600] if len(j) else a
-    v, sp = VOICE[who]; a, sr = K.create(text, voice=v, speed=sp, lang='en-gb'); a = np.asarray(a, dtype=np.float32)
+    v, sp = VOICE[who]; text = _sayas(text); ph = _phfix(text, K.tokenizer.phonemize(text, 'en-gb'))
+    a, sr = K.create(ph, voice=v, speed=sp, lang='en-gb', is_phonemes=True); a = np.asarray(a, dtype=np.float32)
     if who in SHIFT: a = lower(a, SHIFT[who])   # her 9 Nov: the Queen clearly high, the King clearly low
     return a
+# her 12 Nov: sound words the voice misread (shh spelled out as "S-H-H", Hmm as "hum", mi and ti as "my" and "tie").
+# Text fixes change only what is said; the printed line keeps its spelling. Phoneme fixes patch espeak's reading.
+SAYAS = [(r'\bDo re mi fa so la ti do\b', 'Doh, ray, me, fah, soh, lah, tee, doh'), (r'\bdo re mi\b', 'doh, ray, me'), (r'\bFrère\b', 'Frair')]
+def _sayas(t):
+    for a, b in SAYAS: t = re.sub(a, b, t, flags=re.I)
+    return t
+def _phfix(t, ph):
+    ph = re.sub(r'[ˌˈ]?ɛs[ˌˈ]?eɪtʃ([ˌˈ]?eɪtʃ)+', 'ʃːː', ph)                 # shh, shhh
+    if re.search(r'\bh+m+\b', t, re.I): ph = re.sub(r'\bhˈ?əm\b', 'hmːm', ph)  # Hmm, said with closed lips
+    if re.search(r'\bm{2,}\b', t, re.I): ph = re.sub(r'[ˌˈ]?ɛm([ˌˈ]?ɛm)+', 'mːː', ph)   # Mmm
+    return ph
 _AFOL = {'on','to','and','is','again','sharp','flat','up','down','in','above','below','under','over','or','with','then','four','five','three','one','two','natural','sits','hangs','sneezes'}
 def _fixA(t):   # her 11 Nov: the note A was swallowed as the article 'a'; say the letter as 'Eigh' (phonemes eɪ; 'Ay' came out as 'eye')
     def r(m):
