@@ -214,7 +214,7 @@ L1 = lpage(f'''{head('Part VIII · Playing and listening · 1', 'Fingering', 'Go
 {inact('Which finger plays the F?', qtagT(ex('l_fq', 72, red=('n4',))), ['<b>C D E</b> are 1 2 3.', '<b>The F:</b> finger 4, or the thumb tucked under?', '<b>Then</b> how do you reach the top C?'], 'The <b>thumb</b> passes under to F; then 2 3 4 5 reach the top C.')}
 {inact('Which finger plays G?', bigq('Right hand,<br>thumb on C'), ['<b>Thumb on C</b> is 1.', '<b>Count up</b> one finger per key: D, E, F, G.', '<b>So G</b> is…?'], 'Finger <b>5</b>: C D E F G is 1 2 3 4 5.')}
 {drill('Play C D E F G with each hand, saying the finger numbers: right 1 2 3 4 5 up, left 5 4 3 2 1 up. Then both hands together.')}
-<p class="sm"><b>Left hand, C major up:</b> 5 4 3 2 1, then 3 crosses over to A, then 2 1. <b>Down:</b> 1 2 3, thumb under to F, then 1 2 3 4 5.</p>
+<p class="sm"><b>Left hand, C major up:</b> 5 4 3 2 1, then 3 crosses over to A, then 2 1. <b>Down:</b> 1 2 3, thumb under to G, then 1 2 3 4 5.</p>
 {game('Name the finger', qitems(['thumb', 'index', 'middle', 'little'], 4), 'Give the finger number.', '1 one · 2 two · 3 three · 4 five.')}
 {try10(ex('l_five', 46), 'Five fingers, five keys.', 'Right hand on C D E F G. Play up and down, saying the finger numbers aloud. Then the left hand: 5 4 3 2 1 from C up.')}
 {watch(['Changing fingering every time you play: choose one, write it in, keep it.', 'Landing heavily on the thumb as it passes under: let it glide.'])}

@@ -155,7 +155,7 @@ def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (
         x0 = bars[b] + 22; w = (bars[b + 1] - bars[b] - 26) / 4; t = 0
         for n, k in notes:
             o += G.note(x0 + t * w, n, k, up=True); t += 2 if k == 'm' else 1
-    chords = [(0, 0, ['C3', 'E3', 'G3'], 'C', 'I', 4, ()), (1, 0, ['F2', 'A2', 'C3'], 'F', 'IV', 2, ()), (1, 2, ['E3', 'G3', 'C4'], 'C/E', 'Ib', 2, ()), (2, 0, ['F2', 'A2', 'C3'], 'Fm', 'iv', 2, ()), (2, 2, ['C3', 'E3', 'G3'], 'C', 'I', 2, ()), (3, 0, ['G2', 'C3', 'D3'], 'Gsus4', 'Vsus4', 1, ()), (3, 1, ['G2', 'B2', 'D3', 'F3'], 'G7', 'V⁷', 1, ()), (3, 2, ['C3', 'E3', 'G3'], 'C(add9)', 'I', 2, ('D4',))]
+    chords = [(0, 0, ['C3', 'E3', 'G3'], 'C', 'I', 4, ()), (1, 0, ['F2', 'A2', 'C3'], 'F', 'IV', 2, ()), (1, 2, ['E3', 'G3', 'C4'], 'C/E', 'Ib', 2, ()), (2, 0, ['F2', 'A2', 'C3'], 'Fm', 'iv', 2, ()), (2, 2, ['C3', 'E3', 'G3'], 'C', 'I', 2, ()), (3, 0, ['G2', 'C3', 'D3'], 'Gsus4', 'Vsus4', 1, ()), (3, 1, ['G2', 'B2', 'D3', 'F3'], 'G7', 'V⁷', 1, ()), (3, 2, ['C3', 'E3', 'G3'], 'Cadd9', 'I', 2, ('D4',))]
     pos = {}; yn = G.y1 + 30; yb = F.y1 + 26
     for b, beat, notes, name, num, dur, extra in chords:
         x = bars[b] + 22 + beat * (bars[b + 1] - bars[b] - 26) / 4 + 2; pos[name + str(b) + str(beat)] = x
@@ -165,7 +165,7 @@ def pic_harmony(mode='H'):   # her 6 Nov: one picture, two parts. 'H' = Chords (
         if dur == 1: o += f'<line x1="{x + F.sp * .55:.1f}" x2="{x + F.sp * .55:.1f}" y1="{F.y(notes[0]):.1f}" y2="{F.y(notes[-1]) - 3 * F.sp:.1f}" stroke="{OCR}" stroke-width="1.8"/>'
         o += lab(x, yn, dn, OCR, 12.5, fam='AH') + lab(x, yb, dnum, ORD if (num in ('V⁷', 'I') and b == 3) else OPK, 13, fam='AH')
     o += lab(104, yb, 'in C major:', OPK, 11, 'end', 'AH')
-    xC, xF, xCE, xFm, xC2, xGs, xG7, xC9 = [pos[k] for k in ('C00', 'F10', 'C/E12', 'Fm20', 'C22', 'Gsus430', 'G731', 'C(add9)32')]
+    xC, xF, xCE, xFm, xC2, xGs, xG7, xC9 = [pos[k] for k in ('C00', 'F10', 'C/E12', 'Fm20', 'C22', 'Gsus430', 'G731', 'Cadd932')]
     # above: the tune, and the chords named between the staves
     o += _c(11, bars[0] + 60, G.y('G4') - 40, bars[0] + 60, 26) + _l('M', bars[0] + 78, 31, 'the tune picks the chords', OPK, 15, 'start')
     o += _c('4·8', xCE, yn - 14, xCE + 26, 26) + _c(6, xGs, yn - 14, xGs - 10, 26) + _c(5, xG7, yn - 14, xG7 + 22, 26) + _c(7, xC9 + 8, F.y('D4') - 8, xC9 + 54, 26)

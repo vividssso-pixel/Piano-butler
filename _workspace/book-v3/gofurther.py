@@ -28,7 +28,7 @@ G1 = gpage(f"""{head('Part IX · Going further · 1', 'Notes outside the chord',
 GTOC = [('Notes outside the chord', 'G1'), ('Modes and other scales (coming)', 'G2'), ('Transposition (coming)', 'G3')]
 GOPEN = f"""<section class="pg part2"><div class="pframe"><div class="pk">Part IX · Beyond the levels</div><div class="pt">Going further</div><div class="pdv"></div>
 <p class="pl">The notes that decorate a tune, the scales older and newer than major and minor, and moving a whole piece into another key. Read them when your pieces ask for them.</p>
-<div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{PM.PAGE[k]}</span></div>' for x, k in GTOC)}</div></div></section>"""
+<div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{"" if "coming" in x else PM.PAGE[k]}</span></div>' for x, k in GTOC)}</div></div></section>"""
 css += """
 .nct5{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;width:100%} .nct5>.nc{grid-column:span 2} .nct5>.nc:nth-child(4){grid-column:2 / span 2} .nct5>.nc:nth-child(5){grid-column:4 / span 2} .nc{border:1.5px solid #e3e1ee;border-radius:8px;padding:8px 6px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;background:#fff}
 .nc>b{font-size:14px;color:#26296b} .nc i{font-size:11.5px;color:#6d6f9c;font-style:normal} .nc span{font-size:12.5px;line-height:1.3;color:#26296b} .nc figure{margin:2px 0} .gm4>div{justify-content:flex-end}

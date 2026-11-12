@@ -7,11 +7,11 @@ G = [  # (word, definition, chapter key)
  ('a tempo', 'back to the speed before', 'E3'), ('accelerando (accel.)', 'gradually faster', 'E3'), ('accent', 'a > over a note: start it more strongly', 'E2'),
  ('acciaccatura', 'a tiny note with a slash, crushed in as fast as possible', 'E5'), ('accidental', 'a sharp, flat or natural written before a note; it lasts until the bar line', 'P6'),
  ('Adagio', 'slow, at ease', 'E3'), ('Alberti bass', 'a broken chord in the left hand: low, high, middle, high (C G E G)', 'F3'), ('Allegro', 'fast and lively', 'E3'),
- ('anacrusis', 'an upbeat: notes before the first full bar', 'T6'), ('Andante', 'at a walking pace', 'E3'), ('appoggiatura', 'a tiny note without a slash; it leans, taking half the main note’s time', 'E5'),
+ ('anacrusis', 'an upbeat: notes before the first full bar', 'T6'), ('Andante', 'at a walking pace', 'E3'), ('appoggiatura', 'a tiny note without a slash; it leans, taking half the main note’s time. Also a note outside the chord that leans on the beat (p. {{G1}})', 'E5'),
  ('articulation', 'how notes are joined or separated: slurs, staccato, tenuto, accents', 'E2'), ('augmented triad', 'a triad with 3 + 3 keys between', 'H2'),
  ('Baroque', 'music of about 1600–1750: Bach, Handel', 'F6'), ('bar', 'a group of beats between two bar lines', 'T1'), ('bass clef', 'the F clef: its two dots hug the line for bass F', 'P2'),
  ('beam', 'a thick line joining quavers or semiquavers into a beat', 'T6'), ('beat', 'the steady pulse you count', 'T1'), ('binary form', 'two sections, A B', 'F5'),
- ('broken chord', 'the notes of a chord played one after another', 'M3'), ('cadence', 'the last two chords of a phrase: musical punctuation', 'M2'),
+ ('broken chord', 'the notes of a chord played one after another', 'H1'), ('cadence', 'the last two chords of a phrase: musical punctuation', 'M2'),
  ('cantabile', 'in a singing style', 'E2'), ('chord', 'three or more notes played together', 'H1'), ('circle of fifths', 'the keys in a circle: go right, one more sharp; go left, one more flat', 'S5'),
  ('Classical', 'music of about 1750–1820: Haydn, Mozart', 'F6'), ('clef', 'the sign at the start of the staff that names one line', 'P2'), ('coda', 'an ending section; jump to it at “To Coda”', 'T8'),
  ('compound time', 'each beat is a dotted note and divides into three (6/8, 9/8, 12/8)', 'T5'), ('crescendo (cresc.)', 'getting louder, little by little', 'E1'),
@@ -32,9 +32,9 @@ G = [  # (word, definition, chapter key)
  ('modulation', 'changing key during a piece', 'F4'), ('monophonic', 'one line alone', 'F3'), ('mordent', 'the note, its neighbour above (or below), the note', 'E5'),
  ('motif', 'a short idea of 2 to 6 notes that comes back', 'F1'), ('natural (♮)', 'cancels a sharp or flat', 'P6'), ('octave', 'from one note to the next of the same name: 11 keys between', 'P8'),
  ('ornament', 'a small sign for a quick group of notes around the main note', 'E5'), ('pedal (sustain)', 'the right pedal: notes keep ringing until you lift it', 'E4'),
- ('perfect cadence', 'V to I: a full stop', 'M2'), ('phrase', 'a musical sentence, often 4 bars', 'F1'), ('pianissimo (pp)', 'very soft', 'E1'), ('piano (p)', 'soft', 'E1'),
+ ('perfect cadence', 'V to I: a full stop', 'M2'), ('imperfect cadence', 'ending on V: a comma', 'M2'), ('interrupted cadence', 'V to vi: a surprise', 'M2'), ('phrase', 'a musical sentence, often 4 bars', 'F1'), ('pianissimo (pp)', 'very soft', 'E1'), ('piano (p)', 'soft', 'E1'),
  ('plagal cadence', 'IV to I: the “Amen”', 'M2'), ('polyphonic', 'two or more tunes at once', 'F3'), ('Presto', 'very fast', 'E3'), ('progression', 'a trip from chord to chord', 'M4'),
- ('pulse', 'the steady beat underneath the music', 'T1'), ('quaver', 'half a crotchet', 'T2'), ('rallentando (rall.)', 'gradually slower', 'E3'), ('relative minor', 'the minor key with the same key signature, a minor 3rd below', 'S2'),
+ ('pulse', 'the steady beat underneath the music', 'T1'), ('quaver', 'half a crotchet', 'T2'), ('rallentando (rall.)', 'gradually slower', 'E3'), ('relative minor', 'the minor key with the same key signature, a minor 3rd below', 'S3'),
  ('repeat sign', 'two dots and a double bar: play the bars again', 'T8'), ('rest', 'a silence of a set length', 'T2'), ('ritardando (rit.)', 'gradually slower', 'E3'),
  ('Romantic', 'music of about 1820–1900: Chopin, Schumann', 'F6'), ('rondo', 'A B A C A: the first idea keeps coming back', 'F5'), ('root', 'the note a chord is built on and named after', 'H1'),
  ('rubato', 'time stretched and given back, for expression', 'T7'), ('scale', 'the notes of a key in order, up or down', 'S1'), ('semibreve', 'a whole note: four crotchets', 'T2'),
@@ -47,7 +47,7 @@ G = [  # (word, definition, chapter key)
  ('texture', 'how many lines sound at once, and how they fit', 'F3'), ('theme and variations', 'one tune, changed each time it returns', 'F5'), ('tie', 'a curve joining two notes of the same pitch: one longer sound', 'T3'),
  ('time signature', 'top: how many beats; bottom: which note gets one beat', 'T4'), ('tone', 'two semitones: one key between', 'P1'), ('tonic', 'the 1st note of the scale: home', 'S1'),
  ('treble clef', 'the G clef: it curls round the line for treble G', 'P2'), ('triad', 'three notes stacked: play one, skip one, play one', 'H1'), ('trill', 'the note and its neighbour above, back and forth quickly', 'E5'),
- ('triplet', 'three notes in the time of two', 'T6'), ('turn', 'above, the note, below, the note', 'E5'), ('twelve-bar blues', 'I I I I · IV IV I I · V IV I I', 'M4'),
+ ('triplet', 'three notes in the time of two', 'T6'), ('turn', 'above, the note, below, the note', 'E5'), ('twelve-bar blues', 'I I I I · IV IV I I · V IV I I (or V in the last bar, to go round again)', 'M4'),
  ('una corda (u.c.)', 'the left (soft) pedal', 'E4'), ('upbeat', 'see anacrusis', 'T6')]
 G.sort(key=lambda x: x[0].lower().lstrip('(').replace('ö', 'o'))
 # ---------- index: where each word appears in the Handbook ----------
@@ -60,7 +60,7 @@ for f in FILES:
         if not m: continue
         keys = ' | '.join(_gr.sub(r'<[^>]+>', ' ', x) for x in _gr.findall(r'<(?:h1|h3|b|th|td)[^>]*>(.*?)</(?:h1|h3|b|th|td)>', sec, _gr.S))
         PAGES.append((int(m.group(1)), _gh.unescape(keys).lower()))
-AMBIG = {'key', 'rest', 'bar', 'beat', 'tone', 'root', 'form', 'turn', 'tie', 'dot', 'flat', 'sharp', 'natural', 'scale', 'pulse', 'tempo', 'chord', 'interval', 'phrase', 'texture', 'staff', 'clef', 'ornament', 'accent', 'legato', 'slur', 'triad', 'motif', 'sequence', 'imitation', 'cadence', 'progression', 'dynamics', 'rubato', 'swing', 'beam', 'octave', 'semitone', 'pedal'}
+AMBIG = {'piano', 'fine', 'key', 'rest', 'bar', 'beat', 'tone', 'root', 'form', 'turn', 'tie', 'dot', 'flat', 'sharp', 'natural', 'scale', 'pulse', 'tempo', 'chord', 'interval', 'phrase', 'texture', 'staff', 'clef', 'ornament', 'accent', 'legato', 'slur', 'triad', 'motif', 'sequence', 'imitation', 'cadence', 'progression', 'dynamics', 'rubato', 'swing', 'beam', 'octave', 'semitone', 'pedal'}
 def where(word, key):
     w = _gr.sub(r'\s*\(.*?\)', '', word).lower().strip()
     pat = _gr.compile(r'(?<![a-z])' + _gr.escape(w) + r'(?:s|es)?(?![a-z])')
@@ -68,12 +68,11 @@ def where(word, key):
     start = PM.PAGE[key]
     if w in AMBIG: pg = [p for p in pg if PM.PAGE[key[0] + 'O'] <= p <= PM.PAGE[key[0] + 'T']]   # common words: only within their own part
     pg = [p for p in pg if p != start]
-    out = [start] + pg
-    return sorted(set(out))[:5]
+    return [start] + sorted(set(pg))[:4]   # proofread 12 Nov: the page where it is explained always comes first
 EXTRA = [('arpeggio', 'H1'), ('block chords', 'F3'), ('borrowed chord', 'M1'), ('C clef', 'P2'), ('common time', 'T4'), ('cut common time', 'T4'), ('degree names', 'S1'),
-         ('first and second time bars', 'T8'), ('half pedal', 'E4'), ('harmonic minor', 'S2'), ('imperfect cadence', 'M2'), ('interrupted cadence', 'M2'), ('irregular time', 'T5'),
-         ('melodic minor', 'S2'), ('metronome', 'L2'), ('mood words', 'E2'), ('performing', 'L5'), ('phrase mark', 'E2'), ('power chord', 'H6'), ('practising', 'L2'),
-         ('Roman numerals', 'H3'), ('sonata form', 'F5'), ('sostenuto', 'E4'), ('strophic', 'F5'), ('sus chord', 'H6'), ('thumb under', 'L1'), ('two-note slur', 'E2'), ('verse and chorus', 'F5')]
+         ('first and second time bars', 'T8'), ('half pedal', 'E4'), ('harmonic minor', 'S2'), ('irregular time', 'T5'),
+         ('melodic minor', 'S2'), ('power chord', 'H6'), ('sonata form', 'F5'), ('strophic', 'F5'), ('sus chord', 'H6'), ('metronome', 'L2'), ('mood words', 'E2'), ('performing', 'L5'), ('phrase mark', 'E2'), ('practising', 'L2'),
+         ('Roman numerals', 'H3'), ('sostenuto', 'E4'), ('thumb under', 'L1'), ('two-note slur', 'E2'), ('verse and chorus', 'F5')]
 IDX = sorted([(w, where(w, k)) for w, d, k in G if not d.startswith('see ')] + [(w, where(w, k)) for w, k in EXTRA], key=lambda x: x[0].lower())
 # ---------- pages ----------
 def gpage(inner, n, end=False): return page(inner, n, 'GLOSSARY AND INDEX').replace('<section class="pg">', '<section class="pg" data-end="1">' if end else '<section class="pg">', 1)
