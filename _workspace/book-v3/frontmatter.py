@@ -68,7 +68,7 @@ P8 = fpage(head_c('How the pieces fit', 'The Handbook is the centre. Everything 
 def floor_block(f):
     rows = ''.join(f'<div class="flr"><span>{ROOMS[i]["en"] + (": " + ROOMS[i]["again"][0] if ROOMS[i].get("again") else "")}</span><i>{ROOMS[i]["pages"]}</i></div>' for i in f['ids'])
     return f'<div class="flv"><div class="flh"><b>{f["en"][0]}</b><span>{f["en"][1]}</span></div>{rows}</div>'
-P9 = fpage(head_c('The levels', 'The house in the app puts the chapters in the order you need them, one floor for each level. Here are the floors, with the Handbook pages for each room. In the chapters, “First met: Level 0” means the Beginner floor, “Level ½” Prelim, and “Level 1” to “Level 8” Grades 1 to 8.') + '<div class="flvs">' + ''.join(floor_block(f) for f in FLOORS[:3]) + '</div>', 9)
+P9 = fpage(head_c('The levels', 'The house in the app puts the chapters in the order you need them, one floor for each level. Here are the floors, with the Handbook pages for each room. The floors follow the usual exam grades: Beginner, Prelim, then Grade 1 to Grade 8.') + '<div class="flvs">' + ''.join(floor_block(f) for f in FLOORS[:3]) + '</div>', 9)
 P10 = fpage('<div class="kick fk2">The levels · continued</div><div class="flvs">' + ''.join(floor_block(f) for f in FLOORS[3:]) + '</div><p class="sm" style="margin-top:12px">A room marked with a second title, such as “a step further”, comes back to a chapter you have met before and goes one step deeper. The rest of the chapter can wait for its own level.</p>', 10)
 
 # 11 the cast

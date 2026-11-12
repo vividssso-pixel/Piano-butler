@@ -185,4 +185,4 @@ document.body.dataset.pruned='1';})();</script>"""
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower().replace(" ", "").replace("½", "half")}.html'
     open(fn, 'w').write(html); return fn
 if __name__ == '__main__':
-    print(build(0, 'Level 0', 'Ten rooms: sitting and hands, the keyboard, fingering, the staff, the beat, notes and rests one at a time, loud and soft. Read each room, listen to it in the app, then practise.'))
+    print(build(0, 'Beginner', 'Ten rooms: sitting and hands, the keyboard, fingering, the staff, the beat, notes and rests one at a time, loud and soft. Read each room, listen to it in the app, then practise.'))
