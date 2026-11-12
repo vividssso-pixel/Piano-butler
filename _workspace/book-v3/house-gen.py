@@ -40,7 +40,7 @@ FLOORS=[('Beginner','B1 P1 L1 P2 T1 T2 E1',[]),
   ('T5','time-signatures',10,'Irregular time (Extra)','불규칙 박자 (Extra)',[6])]),
 ('Grade 6','H5 H8',[('M2','harmony-3',6,'Perfect or plagal cadence?','정격일까 변격일까?'),('H5','harmony-6',1,'V7, V7b, V7c or V7d?','V7의 자리바꿈'),('H2','chords',5,'Major or minor by ear','듣고 장·단 맞히기')]),
 ('Grade 7','H6',[('M2','harmony-4',3,'Which cadence? (with interrupted)','어떤 마침꼴? (거짓마침 포함)'),('T7','rhythm',9,'Swing, hemiola and polyrhythm','스윙, 헤미올라, 폴리리듬',[2,4,5]),('F5','form',7,'Read the road','곡의 지도 읽기'),('F6','styles',4,'Which style is it?','어떤 양식?')]),
-('Grade 8','H7',[('M4','harmony-5',4,'Which chord comes before V?','V 앞에 오는 화음은?'),('H2','harmony-6',4,'Is it a related key?','가까운 조일까?'),('F6','styles',9,'Which style? (by ear)','어떤 양식? (듣고)'),('L4','listen-8',0,'Ear training for Level 8','8급 청음')]),
+('Grade 8','H7',[('M4','harmony-5',4,'Which chord comes before V?','V 앞에 오는 화음은?'),('H2','harmony-6',4,'Is it a related key?','가까운 조일까?'),('F6','styles',9,'Which style? (by ear)','어떤 양식? (듣고)')]),
 ]
 FLOOR_TXT={'Beginner':('Sitting and hands, the keyboard and the staff, beat and note values, loud and soft, and fingering.','자세와 손, 건반과 오선, 박과 음표 길이, 셈여림, 운지.'),
 'Prelim':('How to practise, reading the notes, how long a note lasts, time signatures, repeats, touch, major and minor scales, and your first chords.','연습법, 음 읽기, 음의 길이, 박자표, 도돌이표, 터치, 장음계와 단음계, 첫 화음.'),
@@ -56,6 +56,58 @@ FLOOR_TXT={'Beginner':('Sitting and hands, the keyboard and the staff, beat and 
 # chapter -> [(suffix, en, ko, clips, rows to show, drill, level, nv filter)]; the first entry renames the chapter's own room
 STEPS={'T2':[('', 'Notes: crotchet and minim', '음표: 4분음표와 2분음표', [1,2,3], 'crotchets,minims', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim'),   # her 12 Nov: two lengths a room ("2개씩 합쳐도")
              ('-s2', 'Notes: three beats and the semibreve', '음표: 세 박과 온음표', [4,5,9,10,11,14], 'crotchets,minims,semibreve', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim,dminim,semibreve,rsemibreve')]}
+
+# her 12 Nov ("aural도 있었는데 그 부분도 맞춰주고"): an Ear training room on every floor. Each part is one aural test of that
+# grade (AMEB Manual of Syllabuses 2026, Aural Test Requirements, in data_aural_ameb.js), in plain words, with the app's own
+# ear-training game for it (the old lessons' chapters ear-prep, listen-sing, listen-write, listen-23, listen-3 ... listen-8).
+# (title en, title ko, what happens in the exam en, ko, drill, level)
+EAR={
+'Beginner':[('Low, middle or high?','낮은 음, 가운데, 높은 음?','Before the exams: is the sound low, in the middle or high?','시험 전 준비: 소리가 낮은지, 가운데인지, 높은지 들어 봐요.','ear-prep',1),
+  ('Same rhythm or different?','같은 리듬? 다른 리듬?','Two rhythms: the same, or one small change?','두 리듬이 같은지, 조금 다른지 들어 봐요.','ear-prep',2),
+  ('Same tune or different?','같은 가락? 다른 가락?','Two little tunes: the same, or one note changed?','두 가락이 같은지, 한 음이 바뀌었는지 들어 봐요.','ear-prep',3),
+  ('Which way did it go?','어느 쪽으로 갔을까?','Three notes: going up, going down, or staying?','세 음이 올라가는지, 내려가는지, 그대로인지 들어 봐요.','ear-prep',4),
+  ('Find the note','음 찾기','Hear a note, then find it on the keys.','음을 듣고 건반에서 찾아요.','ear-prep',5)],
+'Prelim':[('Clap the beat','박 치기','The examiner plays in two- or three-beat time, slow, moderate or quick. You clap the beat, and keep going after the music stops.','시험관이 2박자나 3박자로 느리게, 보통으로, 빠르게 쳐요. 박에 맞춰 손뼉을 치고, 음악이 멈춘 뒤에도 계속 쳐요.','time-signatures',3),
+  ('Echo the rhythm','리듬 따라 하기','The examiner plays a simple two-bar rhythm. You clap, tap, hum or sing it back.','시험관이 쉬운 두 마디 리듬을 쳐요. 손뼉이나 허밍으로 그대로 따라 해요.','listen-sing',2),
+  ('Sing the tune','가락 따라 부르기','The examiner plays five or six notes, then again slowly. You sing or hum each note.','시험관이 다섯에서 여섯 음을 치고, 다시 천천히 쳐요. 한 음씩 따라 불러요.','listen-sing',3),
+  ('Higher or lower?','높을까, 낮을까?','The examiner plays two notes, one after the other, at least a 3rd apart. You say which is higher or lower.','시험관이 3도 넘게 떨어진 두 음을 차례로 쳐요. 어느 음이 더 높은지, 낮은지 말해요.','listen-sing',1)],
+'Grade 1':[('Find the home note','으뜸음 찾기','The examiner plays an unfinished phrase. You hum or sing the tonic, the home note.','시험관이 끝나지 않은 프레이즈를 쳐요. 으뜸음(집 음)을 허밍하거나 불러요.','listen-write',1),
+  ('Clap it back','리듬 치기','The examiner plays a passage twice, in two or three time. You tap or clap it.','시험관이 2박자나 3박자 악구를 두 번 쳐요. 그 리듬을 손뼉으로 쳐요.','listen-write',4),
+  ('Sing it back','따라 부르기','The examiner plays a short phrase twice. You hum or sing it: the tune and the rhythm together.','시험관이 짧은 프레이즈를 두 번 쳐요. 가락과 리듬을 함께 따라 불러요.','listen-write',3),
+  ('Warm-up: which rhythm?','준비 운동: 어떤 리듬?','Not in the exam: a game that gets you ready for clapping back.','시험에는 없어요. 리듬 치기를 준비하는 게임이에요.','listen-write',2)],
+'Grade 2':[('Clap it back','리듬 치기','The examiner plays a passage twice, in two or three time. You tap or clap it.','시험관이 2박자나 3박자 악구를 두 번 쳐요. 그 리듬을 손뼉으로 쳐요.','listen-23',2),
+  ('Sing it back','따라 부르기','The examiner plays a short phrase twice. You hum or sing it: the tune and the rhythm together.','시험관이 짧은 프레이즈를 두 번 쳐요. 가락과 리듬을 함께 따라 불러요.','listen-23',3),
+  ('Two notes together: sing one','두 음을 함께: 한 음 부르기','The examiner plays two notes together, a major 3rd or a perfect 5th apart. You hum or sing the higher or the lower one.','시험관이 장3도나 완전5도 떨어진 두 음을 함께 쳐요. 높은 음이나 낮은 음을 불러요.','listen-23',1)],
+'Grade 3':[('Clap it back, then two or three?','리듬 치고, 2박자? 3박자?','The examiner plays a passage twice. You clap it, then say whether it is in duple or triple time.','시험관이 악구를 두 번 쳐요. 리듬을 치고, 2박자인지 3박자인지 말해요.','listen-3',4),
+  ('Sing it back','따라 부르기','The examiner plays a short phrase twice. You hum or sing it: the tune and the rhythm together.','시험관이 짧은 프레이즈를 두 번 쳐요. 가락과 리듬을 함께 따라 불러요.','listen-3',5),
+  ('Any two notes together: sing one','아무 두 음: 한 음 부르기','The examiner plays any two notes together, within an octave of Middle C. You hum or sing the higher or the lower one.','시험관이 가온 다에서 한 옥타브 안의 두 음을 함께 쳐요. 높은 음이나 낮은 음을 불러요.','listen-3',1),
+  ('From the keynote: 2nd, 3rd, 4th or 5th?','으뜸음에서: 2도, 3도, 4도, 5도?','The examiner plays the keynote, then the 2nd, 3rd, 4th or 5th of the major scale. You sing it, then name it.','시험관이 으뜸음을 치고, 장음계의 2도, 3도, 4도, 5도 가운데 하나를 쳐요. 따라 부르고 이름을 말해요.','listen-3',2),
+  ('Warm-up: duple or triple?','준비 운동: 2박자? 3박자?','Part of the clapping test: is the music in two or in three?','리듬 치기 시험의 한 부분: 2박자인지 3박자인지 들어요.','listen-3',3)],
+'Grade 4':[('Clap it back, then two or three?','리듬 치고, 2박자? 3박자?','The examiner plays a passage twice. You clap it, then say whether it is in duple or triple time.','시험관이 악구를 두 번 쳐요. 리듬을 치고, 2박자인지 3박자인지 말해요.','listen-4',4),
+  ('From the keynote: name the interval','으뜸음에서: 음정 이름','The examiner plays the keynote, then any note of the major scale. You sing it, then name the interval.','시험관이 으뜸음을 치고, 장음계의 한 음을 쳐요. 따라 부르고 음정 이름을 말해요.','listen-4',1),
+  ('Two parts: sing the higher or the lower','두 성부: 높은 쪽이나 낮은 쪽','The examiner plays two intervals, one after the other. You sing the higher or the lower part from memory.','시험관이 음정 두 개를 이어서 쳐요. 높은 성부나 낮은 성부를 기억해서 불러요.','listen-4',2),
+  ('A triad: hum the middle note','3화음: 가운데 음','The examiner plays a major or minor triad, in root position or an inversion. You hum or sing the middle note.','시험관이 장3화음이나 단3화음을 기본 위치나 자리바꿈으로 쳐요. 가운데 음을 불러요.','listen-4',3),
+  ('All four, mixed, as in the exam','네 가지 섞어서, 시험처럼','The four tests in a row, as the examiner gives them.','시험처럼 네 가지를 이어서 해 봐요.','listen-4',5)],
+'Grade 5':[('Clap it back, then two or three?','리듬 치고, 2박자? 3박자?','The examiner plays a passage twice. You clap it, then say whether it is in duple or triple time.','시험관이 악구를 두 번 쳐요. 리듬을 치고, 2박자인지 3박자인지 말해요.','listen-5',4),
+  ('Any keynote: name the interval','아무 으뜸음에서: 음정 이름','The examiner plays a keynote, then any note of the major scale. You sing it, then name the interval.','시험관이 으뜸음을 치고, 장음계의 한 음을 쳐요. 따라 부르고 음정 이름을 말해요.','listen-5',1),
+  ('Three intervals: sing one part','음정 세 개: 한 성부 부르기','The examiner plays three intervals slowly, one after the other. You sing the higher or the lower part from memory.','시험관이 음정 세 개를 천천히 이어서 쳐요. 높은 성부나 낮은 성부를 기억해서 불러요.','listen-5',2),
+  ('A triad: sing all three notes','3화음: 세 음 모두 부르기','The examiner plays a major or minor triad, in root position or an inversion. You sing all three notes, going up or down as asked.','시험관이 장3화음이나 단3화음을 쳐요. 세 음을 올라가거나 내려가며 모두 불러요.','listen-5',3),
+  ('All four, mixed, as in the exam','네 가지 섞어서, 시험처럼','The four tests in a row, as the examiner gives them.','시험처럼 네 가지를 이어서 해 봐요.','listen-5',5)],
+'Grade 6':[('Major or harmonic minor: name the interval','장음계나 화성단음계: 음정 이름','The examiner plays a keynote, then any note of the major or harmonic minor scale. You sing it, then name the interval.','시험관이 으뜸음을 치고, 장음계나 화성단음계의 한 음을 쳐요. 따라 부르고 음정 이름을 말해요.','listen-6',1),
+  ('A major triad: which position?','장3화음: 어느 자리?','The examiner plays a major triad, in root position or an inversion. You say which position it is in.','시험관이 장3화음을 기본 위치나 자리바꿈으로 쳐요. 어느 자리인지 말해요.','listen-6',2),
+  ('Four intervals: sing one part','음정 네 개: 한 성부 부르기','The examiner plays four intervals, one after the other. You sing the higher or the lower part from memory.','시험관이 음정 네 개를 이어서 쳐요. 높은 성부나 낮은 성부를 기억해서 불러요.','listen-6',3),
+  ('Perfect or plagal?','정격? 변격?','The examiner sounds the tonic chord, then plays a short piece in a major key. You name the perfect and plagal cadences as they come.','시험관이 으뜸화음을 들려준 뒤 장조의 짧은 곡을 쳐요. 정격마침과 변격마침을 알아맞혀요.','listen-6',4),
+  ('All four, mixed, as in the exam','네 가지 섞어서, 시험처럼','The four tests in a row, as the examiner gives them.','시험처럼 네 가지를 이어서 해 봐요.','listen-6',5)],
+'Grade 7':[('Major or minor, and which position?','장? 단? 그리고 어느 자리?','The examiner plays a major or minor triad, in root position or an inversion. You say which kind it is, and its position.','시험관이 장3화음이나 단3화음을 쳐요. 종류와 자리를 말해요.','listen-7',1),
+  ('Perfect, plagal or interrupted?','정격, 변격, 거짓마침?','The examiner sounds the tonic chord, then plays a short piece in a major key. You name the perfect, plagal and interrupted cadences as they come.','시험관이 으뜸화음을 들려준 뒤 장조의 짧은 곡을 쳐요. 정격, 변격, 거짓마침을 알아맞혀요.','listen-7',2),
+  ('Remember a two-bar phrase','두 마디 프레이즈 외우기','You have about a minute, away from the piano, to memorise a printed two-bar phrase. Then you play or sing it from memory.','피아노에서 떨어져 약 1분 동안 악보의 두 마디 프레이즈를 외워요. 그다음 외워서 치거나 불러요.','listen-7',3),
+  ('Six notes: sing one part','여섯 음: 한 성부 부르기','The examiner plays a two-part phrase of up to six notes, slowly. You sing the higher or the lower part from memory.','시험관이 여섯 음 이내의 2성부 프레이즈를 천천히 쳐요. 높은 성부나 낮은 성부를 기억해서 불러요.','listen-7',4),
+  ('All four, mixed, as in the exam','네 가지 섞어서, 시험처럼','The four tests in a row, as the examiner gives them.','시험처럼 네 가지를 이어서 해 봐요.','listen-7',5)],
+'Grade 8':[('Major, minor or diminished, and which position?','장, 단, 감? 그리고 어느 자리?','The examiner plays a major or minor triad in any position, or a diminished triad in root position. You name the kind, and the position of a major or minor triad.','시험관이 장·단3화음을 아무 자리로, 또는 감3화음을 기본 위치로 쳐요. 종류를 말하고, 장·단3화음은 자리도 말해요.','listen-8',1),
+  ('Which of the four cadences?','네 가지 마침꼴 가운데?','The examiner sounds the tonic chord, then plays a short piece in a major key. You name any of the four cadences as they come.','시험관이 으뜸화음을 들려준 뒤 장조의 짧은 곡을 쳐요. 네 가지 마침꼴을 알아맞혀요.','listen-8',2),
+  ('Remember a three- or four-bar phrase','서너 마디 프레이즈 외우기','You have about a minute and a half, away from the piano, to memorise a printed phrase of three or four bars. Then you play or sing it from memory.','피아노에서 떨어져 약 1분 30초 동안 서너 마디 프레이즈를 외워요. 그다음 외워서 치거나 불러요.','listen-8',3),
+  ('The lower part, with passing notes','지나가는 음이 있는 아래 성부','The examiner plays a two-part phrase with a few passing notes. You hum, sing or play the lower part from memory.','시험관이 지나가는 음이 조금 있는 2성부 프레이즈를 쳐요. 아래 성부를 기억해서 부르거나 쳐요.','listen-8',4),
+  ('All four, mixed, as in the exam','네 가지 섞어서, 시험처럼','The four tests in a row, as the examiner gives them.','시험처럼 네 가지를 이어서 해 봐요.','listen-8',5)]}
 rooms=[]; floors=[]
 for fname,new,rev in FLOORS:
     ids=[]
@@ -69,6 +121,9 @@ for fname,new,rev in FLOORS:
             continue
         rooms.append(dict(id='hbr-'+k,ch=k,en=T[k],ko=KO[k],part=PART[k[0]],num=('' if k[0]=='B' else n),pages=pg,wb=wb(k),dr=[[d,lv,lab] for d,lv,lab in D[k]],again=None,clips=SLICE.get(k)))
         ids.append('hbr-'+k)
+    rooms.append(dict(id='hbr-ear-'+fname.lower().replace(' ',''),ch='EAR',en='Ear training',ko='청음',part=('Ear training','청음'),num='',pages='',wb=None,dr=[],again=None,
+        ear=[dict(en=a,ko=b,exam=c,examko=d,dr=[e,f,a]) for a,b,c,d,e,f in EAR[fname]]))
+    ids.append('hbr-ear-'+fname.lower().replace(' ',''))
     # her 12 Nov ("단순하게"): a floor's revisits fold into ONE review room, a short list of parts (each: listen, then its drill)
     parts=[]
     for rv in rev:
@@ -80,6 +135,6 @@ for fname,new,rev in FLOORS:
         rooms.append(dict(id=rid,ch=parts[0]['ch'],en='Review',ko='복습',part=('Review','복습'),num='',pages='',wb=None,dr=[],again=None,review=parts))
         ids.append(rid)
     floors.append(dict(ids=ids,en=[fname,FLOOR_TXT[fname][0]],ko=[fname,FLOOR_TXT[fname][1]]))
-assert len({r['ch'] for r in rooms if not r.get('review')})>=50, len({r['ch'] for r in rooms if not r['again']})
+assert len({r['ch'] for r in rooms if not r.get('review') and not r.get('ear')})>=50, len({r['ch'] for r in rooms if not r['again']})
 open('/tmp/claude-0/house/data.js','w').write('const HB_ROOMS = '+json.dumps(rooms,ensure_ascii=False)+';\nconst HB_FLOORS = '+json.dumps(floors,ensure_ascii=False)+';\n')
 print(len(rooms),'rooms', [len(f['ids']) for f in floors])
