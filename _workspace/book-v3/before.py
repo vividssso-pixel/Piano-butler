@@ -90,7 +90,7 @@ _G = [secret_box('The whole chapter in one sentence. It sits at the top of every
 GUIDE = f"""<section class="pg" data-flow="AGD"><div class="top"><span>THE PIANO BUTLER HANDBOOK</span><span>BEFORE YOU PLAY</span></div><div class="rule"></div><div class="body">
 <div class="kick">Before you play</div><h1>How to read this book</h1><p class="lead">Every chapter walks the same path: one big idea, a picture of it, then ways to see it, play it and check it. Each box has its own job, so once you know the boxes you can find your way around any page.</p>
 <div class="gpath">{''.join(f'<div><span>{i + 1}</span>{t}</div>' for i, t in enumerate(_PATH))}</div>
-<p class="sm" style="margin:-6px 0 10px">The picture and the main lesson come next; these are the boxes around them. Some pages also have <b>You know this</b>, <b>Think of it</b> or <b>Extra</b>.</p><div class="g2x">{''.join(f'<div>{x}</div>' for x in _G)}</div>
+<p class="sm" style="margin:-6px 0 10px">The picture and the main lesson come next; these are the boxes around them. Some pages also have <b>You know this</b>, <b>Think of it</b>, <b>Extra</b>, <b>How to</b>, <b>The rule</b> or a <b>Tip</b>.</p><div class="g2x">{''.join(f'<div>{x}</div>' for x in _G)}</div>
 {foot('Other pages on the same idea, with their page numbers', 'Matching Workbook pages, and drills in the app')}
 <p class="sm" style="margin-top:10px">Use the book in any order: start with the chapter your piece needs. Every chapter can also be heard in the app, in <b>Read &amp; listen</b>.</p>
 </div><div class="foot"><span>17</span></div></section>"""

@@ -377,7 +377,7 @@ P37 = page(f'''{head('Part II · Time · 2', 'Notes and rests', 'Music is made o
 {PZBOX}
 {inact('Fill a bar of 4/4: what goes in the last seat?', train([[('n', 2, 'm'), ('n', 1, 'c'), ('q', 1, '')]], '4/4'), ['<b>How many seats</b> does the minim take?', '<b>And the crotchet?</b>', '<b>How many seats are left</b> for a silence, and which rest fills one seat?'], '2 + 1 = 3, one seat left: a <b>crotchet rest</b>. The bar is full.')}
 {youknow('Twinkle, Twinkle, Little Star', ykfig('yk_twk', ('n7',), 84), 'Six <b class="co">crotchets</b>, then a <b class="co">minim</b> at the end of the line: one beat, one beat … and two beats to breathe.')}
-{foot('Pulse and the bar p. {{T1}} · How long is a note? p. {{T3}}', 'Workbook Level 0 · Note values · Online: Library › Notes')}''', 37).replace('<svg viewBox="0 0 300 90"', '<svg viewBox="0 0 300 90" class="rst"', 1)
+{foot('Pulse, tempo and the bar p. {{T1}} · How long is a note? p. {{T3}}', 'Workbook Level 0 · Note values · Online: Library › Notes')}''', 37).replace('<svg viewBox="0 0 300 90"', '<svg viewBox="0 0 300 90" class="rst"', 1)
 
 def _tri(i, n, g):   # cell i of n: tint by which half of the bar, divider weight by how big a split it marks
     f = i / n; bg = '#f6f4f8' if n == 1 else '#fdeee8' if f < 0.5 else '#eef0f8'
@@ -401,10 +401,10 @@ P38 = page(f'''{head('Part II · Time · 3', 'How long is a note?', 'Sometimes a
 {inact('Which is longer: a dotted minim or a minim tied to a quaver?', '<div style="display:flex;gap:18px;align-items:center;justify-content:center">' + ''.join(pzc(*p) for p in ((1, 1, '#e98a6c'), (1, 1, '#e98a6c'), (1, 1, '#f6c9b8'))) + '<span style="font-weight:700">vs</span>' + ''.join(pzc(*p) for p in ((1, 1, '#e98a6c'), (1, 1, '#e98a6c'), (2, 1, '#e98a6c'))) + '</div>', ['<b>Dotted minim:</b> add half of 2. How many pizzas?', '<b>Minim tied to a quaver:</b> add the two.', '<b>Compare</b> the totals.'], '3 against 2½: the <b>dotted minim</b> is longer, by half a beat.')}
 <!--SPLIT-->
 <div class="xlate">{h3('Tie or slur?')}{two(pvx('tieA', 100, '<b>Tie</b>: the same pitch. Play once and hold: G for 4 beats, then E for 4.'), pvx('slurA', 100, '<b>Slur</b>: different pitches. Play every note, smoothly joined (legato).'))}</div>
-{watch(['Putting the dot on the wrong note: a dot adds half of <b>its own</b> note.', 'Tying two different pitches: that curve is a slur, not a tie.', 'Two dots: <b>after</b> the head adds length; <b>above or below</b> it means staccato.'])}
+{watch(['Putting the dot on the wrong note: a dot adds half of <b>its own</b> note.', 'Tying two different pitches: that curve is a slur, not a tie.', 'Two kinds of dot: one <b>after</b> the head adds length; one <b>above or below</b> it means staccato.'])}
 {game('How many beats?', '<div class="gm4" style="grid-template-columns:repeat(3,1fr)">' + ''.join(f'<div>{f}<b>{n}</b></div>' for n, f in (('1', gcell('n', 'dm', 46)), ('2', gcell('n', 'dc', 46)), ('3', '<span style="display:inline-flex;align-items:center;gap:2px;white-space:nowrap">' + gin('n', 'm', 40) + '<span style="font-size:22px;line-height:1">‿</span>' + gin('n', 'c', 40) + '</span>'))) + '</div>', 'With a crotchet as one beat: how long does each one last?', '1 three (2 + 1) · 2 one and a half (1 + ½) · 3 three (2 tied to 1).')}
 {try10(gcell('n', 'dm', 60), 'Clap once, hold for three.', 'Say “1 2 3” as you hold: a dotted minim. Then a dotted crotchet and quaver: “1 (& 2) &”.')}
-{foot('Time signatures p. {{T4}} · Rhythm p. {{T6}}', 'Workbook Level 0 · Note values · Online: Library')}''', 38)
+{foot('Time signatures p. {{T4}} · Rhythm: groups and upbeats p. {{T6}}', 'Workbook Level 0 · Note values · Online: Library')}''', 38)
 
 bottom = [['2', gcell('n', 'm', 34), 'minim', 'Level 3'], ['4', gcell('n', 'c', 34), 'crotchet', 'Level 0'], ['8', gcell('n', 'q', 34), 'quaver', 'Level 1'], ['16', gcell('n', 'sq', 34), 'semiquaver', lv('')]]
 simple = [[ts(2, 4), '2 crotchets', 'Level 0'], [ts(3, 4), '3 crotchets', 'Level 0'], [f'<span class="tsrow">{ts(4, 4)}{gsym("𝄴", 26)}</span>', '4 crotchets (the C sign: common time)', 'Level 0'], [f'<span class="tsrow">{ts(2, 2)}{gsym("𝄵", 30)}</span>', '2 minims (the cut C: cut common time)', 'Level 3'], [ts(3, 2), '3 minims', 'Level 3'], [ts(4, 2), '4 minims', lv('')], [ts(3, 8), '3 quavers', 'Level 3']]
@@ -422,7 +422,7 @@ P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers, li
 <div class="xlate">{h3('Changing time signature')}{fig_tschange()}<p class="sm">A new time signature can appear right after a bar line; it holds until the next one. It is written only once, not on every line.</p></div>
 {youknow('Minuet (from the Notebook for Anna Magdalena Bach)', ykfig('yk_min3', ('n1','n6'), 84), 'Every bar holds <b class="co">three crotchet beats</b>: 1 2 3, 1 2 3, the step of the dance. That is 3/4.', 'Count 1 2 3 aloud while someone plays it.')}
 {watch(['Reading the bottom number as a count: it names the note that gets one beat.', 'Mixing up 3/4 and 6/8: both hold six quavers, grouped differently (p. {{T5}}).'])}
-{foot('Pulse and the bar p. {{T1}} · Compound time p. {{T5}}', 'Workbook Level 0 · Time signatures · Online: Library › Time signatures')}''', 39)
+{foot('Pulse, tempo and the bar p. {{T1}} · Compound time p. {{T5}}', 'Workbook Level 0 · Time signatures · Online: Library › Time signatures')}''', 39)
 
 compound = [[ts(6, 8), '2 dotted crotchets', 'Level 1'], [ts(9, 8), '3 dotted crotchets', 'Level 3'], [ts(12, 8), '4 dotted crotchets', 'Level 3'], [ts(6, 4), '2 dotted minims', 'Level 4']]
 irreg = [[ts(5, 4), '5 crotchets: 3 + 2 or 2 + 3', 'Level 5'], [ts(7, 4), '7 crotchets: 4 + 3 or 3 + 4', lv('')], [ts(5, 8), '5 quavers: 3 + 2 or 2 + 3', lv('')], [ts(7, 8), '7 quavers: 2 + 2 + 3 or 3 + 2 + 2', lv('')]]
@@ -463,10 +463,10 @@ P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Now the fu
 <!--SPLIT-->
 <div class="xlate">{h3('Hemiola <span class="lvl2">Level 4</span>')}<p>Two bars of 3/4 felt as three bars of two: three minims across the bar line. Common at the ends of phrases in Baroque dances.</p>{inact('Two bars of 3, or one big bar?', qtagT(vx('hemi', 110), 560), ['<b>Count as written:</b> “1 2 3, 1 2 3”.', '<b>Look at the notes:</b> how many beats does each minim last?', '<b>Feel each minim</b> as one big beat. How many big beats?'], 'Three minims of two beats: the six beats are felt as <b>three big ones</b>. That is a hemiola.')}</div>
 <div class="xlate">{extra('Polyrhythm and rubato', two('<p><b>Polyrhythm</b> (Level 7): two rhythms at once.</p>' + vx('poly', 72, 'Three against two: a triplet above, two crotchets below, starting together.'),
-     '<p><b>Rubato</b>: Time is stretched and then given back, for expression: the music leans into a phrase and catches up after it. The pulse always returns. Marked <i>rubato</i>, or simply part of the style in much music from the 1800s.</p>') + fig_rubato())}</div>
+     '<p><b>Rubato</b>: time is stretched and then given back, for expression: the music leans into a phrase and catches up after it. The pulse always returns. Marked <i>rubato</i>, or simply part of the style in much music from the 1800s.</p>') + fig_rubato())}</div>
 {howto('Feel off-beat rhythm', ['<b>Tap a steady beat</b> with your foot.', '<b>Clap only between the taps</b>, on the “&amp;”.', '<b>If the foot starts to follow the hands,</b> slow down.'])}
 {watch(['Rushing the short notes after a long one: keep counting inside the long note.', 'Swinging the crotchets: only the quaver pairs swing.'])}
-{foot('Rhythm: groups and upbeats p. {{T6}} · Words for how to play: Expression (later)', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 42)
+{foot('Rhythm: groups and upbeats p. {{T6}} · Speed words p. {{E3}}', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 42)
 
 css = f'''
 @page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margin:0;background:#e9e4d8;font-family:'AH',Arial,sans-serif;color:{N}}}

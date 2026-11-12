@@ -181,7 +181,7 @@ E1 = epage(f'''{head('Part III · Expression · 1', 'Loud and soft', 'A voice ca
 {youknow('Haydn’s “Surprise” Symphony', ex('y_surprise', 70, red=('n1',)), 'The tune tiptoes along softly, <i>p</i>, then comes again even softer. Just as everyone relaxes, the whole orchestra crashes in with one <b class="co">ff</b> chord: the surprise that gave the symphony its name.', 'Hum it very softly, then clap once, as loud as you can.')}
 {thinkt('Dynamics are a volume knob with six clicks. Turn it with the weight of your arm, not by hitting harder.')}
 {watch(['Playing everything <i>mf</i>: each sign is a different step.', 'Speeding up in a crescendo: louder is not faster.'])}
-{foot('Touch p. {{E2}} · Pulse and tempo p. {{T1}}', 'Online: Library › Dynamics')}''', 72)
+{foot('Touch p. {{E2}} · Pulse, tempo and the bar p. {{T1}}', 'Online: Library › Dynamics')}''', 72)
 
 # ---------- 2 · Touch ----------
 MARKS = [['<span style="font-size:26px;color:#26296b">⌒</span>', '<b>slur</b> (<i>legato</i>)', 'join the notes smoothly, no gap'], ['<span style="font-size:30px;color:#26296b;line-height:.5">•</span>', '<b>staccato</b>', 'short and detached: let go early'],
@@ -200,7 +200,7 @@ E2 = epage(f'''{head('Part III · Expression · 2', 'Touch: smooth, short, stron
 {howto('Practise touch', ['<b>Play one bar</b> of a piece three ways: all legato, all staccato, then as written.', '<b>Listen:</b> can someone else hear which way was which?'])}
 {thinkt('Legato is walking: one foot leaves the ground as the other lands. Staccato is hopping on hot sand.')}
 {watch(['Making staccato loud: short is not the same as strong.', 'Lifting in the middle of a slur: keep every note joined until the curve ends.'])}
-{foot('Loud and soft p. {{E1}} · Tie or slur? p. {{T3+1}}', 'Online: Library › Articulation')}''', 75)
+{foot('Loud and soft p. {{E1}} · Tie or slur? p. {{T3+2}}', 'Online: Library › Articulation')}''', 75)
 
 # ---------- 3 · Speed words ----------
 TEMPI = [['<b>Largo</b>', 'very slow and broad', '40–60'], ['<b>Lento</b>', 'slow', '45–60'], ['<b>Adagio</b>', 'slow, at ease', '60–76'], ['<b>Andante</b>', 'at a walking pace', '76–108'], ['<b>Moderato</b>', 'at a moderate speed', '108–120'],
@@ -221,7 +221,7 @@ E3 = epage(f'''{head('Part III · Expression · 3', 'Speed words', 'How fast is 
 {youknow('Twinkle, Twinkle, Little Star', ex('y_tw_rit', 66, red=('n7',)), 'Players often slow down into the last “are”: a <b class="co">rit.</b>, then a fermata on the final C. The ending feels like coming home.', 'Sing the last line twice: once in time, once with a rit.')}
 {thinkt('A rit. is a car braking gently at the lights; a tempo is driving off again at the same speed as before.')}
 {watch(['Taking Andante as slow: it is a walking pace.', 'Slowing down all at once at rit.: slow little by little.', 'Forgetting a tempo: after a rit., the first speed comes back exactly.'])}
-{foot('Pulse and tempo p. {{T1}} · Rubato p. {{T7+1}}', 'Online: Metronome')}''', 78)
+{foot('Pulse, tempo and the bar p. {{T1}} · Rubato p. {{T7+2}}', 'Online: Metronome')}''', 78)
 
 # ---------- 4 · The pedals ----------
 OTHER = [['<b>left</b>', 'soft pedal: <i>una corda</i>, written <i>u.c.</i>', 'a softer, gentler sound; lift it at <i>t.c.</i> (<i>tre corde</i>)'], ['<b>middle</b>', '<i>sostenuto</i> ' + lv(''), 'holds only the notes already down (on many uprights: a practice mute)'], ['<b>right</b>', 'sustain (damper) pedal: <i>Ped.</i>', 'every note keeps ringing until you lift it']]
@@ -261,7 +261,7 @@ E5 = epage(f'''{head('Part III · Expression · 5', 'Ornaments', 'Ornaments are 
 {thinkt('Ornaments are like accessories: a necklace or a hair clip makes you look lovely, but you get dressed first. Learn the plain notes in time, then add the ornament.')}
 {howto('Practise an ornament', ['<b>Play the main notes</b> alone first, in time; then <b>add the ornament slowly</b>, as written-out notes.', '<b>Speed it up</b> bit by bit, keeping the main note on the beat.'])}
 {watch(['Starting a trill, mordent or turn before the beat: it begins on the beat. (Only the crushed acciaccatura slips in just before.)'])}
-{foot('The keyboard p. {{P1}} · Sharps and flats p. {{P6}}', 'Online: Library › Ornaments')}''', 84)
+{foot('The keyboard p. {{P1}} · Sharps, flats and naturals p. {{P6}}', 'Online: Library › Ornaments')}''', 84)
 
 # ---------- Tips ----------
 ET = epage(f'''{head('Part III · Expression · Tips', 'When your playing sounds flat', 'Every note can be right and the music still sound flat. The fix is almost always one sign you read but did not play. Find what you notice, then check that one thing.')}

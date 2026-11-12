@@ -10,7 +10,7 @@ if '--pages' in sys.argv:   # re-render the page images from the merged PDF (pdf
     subprocess.run(['pdftoppm', '-jpeg', '-jpegopt', 'quality=72', '-scale-to-x', '1000', '-scale-to-y', '-1', '/mnt/user-data/outputs/books/handbook-draft.pdf', tmp + '/pg'], check=True)
     from PIL import Image
     for f in sorted(glob.glob(tmp + '/pg-*.jpg')):
-        n = int(os.path.basename(f)[3:6]) + 16; Image.open(f).save(f'{OUT}/pages/p{n:03d}.webp', 'WEBP', quality=70, method=5)   # her 11 Nov: Before you play (pp. 18-20) now opens the merged draft
+        n = int(os.path.basename(f)[3:6]); Image.open(f).save(f'{OUT}/pages/p{n:03d}.webp', 'WEBP', quality=70, method=5)   # her 12 Nov: the draft now starts at p. 1 (front matter pp. 1-16)
 else:
     for f in glob.glob('/tmp/claude-0/read/pages/*.webp'): shutil.copy(f, OUT + '/pages/')
 LAST = max(int(os.path.basename(f)[1:4]) for f in glob.glob(OUT + '/pages/*.webp'))
@@ -236,7 +236,14 @@ def _wb(key):
 for c in CH:
     if c['k'] in DRILL: c['nx'] = {'wb': _wb(c['k']), 'dr': DRILL[c['k']]}
 
-shutil.copy('/tmp/claude-0/pk/read_warm.js', OUT + '/warm.js')   # her 11 Nov: the warm-up drawings for the lens
+shutil.copy('/tmp/claude-0/pk/read_warm.js', OUT + '/warm.js')
+def _penlib():   # her 12 Nov: the app's own pen drawings (stool, elbows, hand), taken from drills.src.html each build so they never drift
+    s = open('/tmp/claude-0/dr/drills.src.html').read().split('\n'); f = lambda pre: next(i for i, l in enumerate(s) if l.startswith(pre))
+    a, b = f("const PEN_N = '#26296b'"), f("if (typeof module !== 'undefined' && module.exports) module.exports = { penPlace")
+    c, d, h1, h2 = f('const penWho ='), f('const penLimbPair ='), f('const HAND_POSES = {'), f('const HAND_LENS =')
+    pe = next(l for l in s if l.startswith('const pEase ='))
+    return "const t = (en) => en; const LANG = 'en';\n" + pe + '\n' + '\n'.join(s[a:b] + s[c:d + 1] + s[h1:h2]) + '\nwindow.PEN_FING = ' + json.dumps({k: v.replace('<svg ', '<svg style="width:100%;height:auto;display:block" ', 1) for k, v in json.load(open('/tmp/claude-0/pk/posture_svgs.json')).items() if k.startswith('3:')}) + ';\n' + open('/tmp/claude-0/pk/read_penui.js').read()
+open(OUT + '/pen.js', 'w').write(_penlib())   # her 11 Nov: the warm-up drawings for the lens
 DATA = json.dumps(CH, ensure_ascii=False)
 REGD = json.dumps(REG, ensure_ascii=False)
 HTML = r'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex">
@@ -269,6 +276,7 @@ select{font:inherit;font-size:15px;color:var(--ink);background:var(--panel);bord
 .prac{margin-top:12px;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px} .prac .ph{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)} .prac a{display:block;font-weight:700;font-size:14.5px;color:var(--ink);text-decoration:none;border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--bg)} .prac a b{display:block;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)} .prac a span{display:block} .prac a.ndr{border-color:var(--accent)} .prac a.ndr b{color:var(--accent)} .prac a:hover{border-color:var(--accent)} .prac .nhint{margin:2px 0 0;font-size:12.5px;color:var(--soft)}
 #lens:not(:empty){position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(246,245,240,.82);z-index:3;pointer-events:none}   /* her 9 Nov: one place to look - the lens in the middle, the page faded behind */
 .lens{position:relative;width:90%;background:#fff;border:4px solid var(--accent);border-radius:22px;box-shadow:0 10px 30px rgba(20,22,60,.28);padding:6px 10px 2px;animation:lz .35s ease;z-index:3;pointer-events:none} .seek{margin:8px 0 10px} .seek .sr{display:flex;align-items:center;gap:8px} .seek input{flex:1;accent-color:#e4572e} .seek #tm{font:600 12px var(--body);color:#5a5d8f;min-width:76px;text-align:right} .seek .sb{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px} .seek .sb .btn{font-size:12px;padding:4px 8px} .lens .lh{display:flex;align-items:center;gap:6px;font:700 clamp(10px,1.6vw,14px) var(--body);letter-spacing:.12em;text-transform:uppercase;color:#e4572e} .lens svg{display:block;width:100%;height:auto}
+#lens .penl{pointer-events:auto;max-width:620px;max-height:96%;overflow:auto} .penw{padding:4px 2px 8px} .penw .pdraw{max-width:470px;margin:0 auto;background:#faf6ec;border-radius:12px;padding:4px} .penw .pfront{max-width:300px} .penw .pfing{max-width:240px} .penw .pdraw svg{width:100%;height:auto;display:block} .pchips{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 6px} .pch{font:600 12.5px var(--body);border:1.5px solid #d9d7e8;background:#fff;color:#26296b;border-radius:14px;padding:3px 9px;cursor:pointer} .pch.on{background:#26296b;color:#fff;border-color:#26296b} .pch .px{color:#e4572e} .psl{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;margin:6px 0} .psl label{display:flex;flex-direction:column;font:700 12px var(--body);color:#26296b} .psl input{accent-color:#e4572e;width:100%} .pck{display:flex;flex-direction:column;gap:3px;font:13px/1.35 var(--body);color:#26296b} .pck>div{background:#faf6ec;border-radius:7px;padding:4px 8px} .pck .ok b{color:#2e8a6e} .pck .no b{color:#c8361b} .pck span{color:#6d6f9c}
 #lens .fold{opacity:.55;animation:fold 1.8s ease-in-out .5s forwards} #lens .meet{animation:meet .5s ease 2.3s forwards}
 @keyframes fold{from{transform:scaleY(1)}to{transform:scaleY(-1)}} @keyframes meet{to{opacity:1}}
 @keyframes lz{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
@@ -409,6 +417,7 @@ function drawLens(L, t) {
   if (L.k === 'glasses') return drawGlasses();
   if (L.k === 'restack') return drawRestack();
   if (L.k.indexOf('warm-') === 0) return drawWarm(L.k.slice(5));
+  if (L.k.indexOf('pen-') === 0) return drawPen(L.k.slice(4));
   const [name, subt, clef, items] = LENSD[L.k]; const n = items.length;
   const cnt = L.at.length ? L.at.filter(v => v <= t).length : n; const shown = L.full ? n : cnt, cur = cnt - 1;
   const key = L.k + shown + ':' + cur; if (lensEl.dataset.k === key) return; lensEl.dataset.k = key;
@@ -638,6 +647,14 @@ function drawLinesAnim() {   // lines 1-5 rise from the bottom, then spaces 1-4
   for (let k = 0; k < 4; k++) { const d = 2.7 + k * .45, y = Y(2 * k + 1);
     g += `<g opacity="0"><animate attributeName="opacity" from="0" to="1" begin="${d}s" dur=".25s" fill="freeze"/><rect x="122" y="${y - SP / 2 + 3}" width="396" height="${SP - 6}" fill="${ACC}" opacity=".14"/><text x="532" y="${y + 6}" font-size="17" font-weight="700" fill="${ACC}" ${F}>space ${k + 1}</text></g>`; }
   lensShell(key, '♪ Five lines, four spaces: from the bottom', `<svg viewBox="0 0 640 ${Y(0) + 26}" role="img" aria-label="Lines 1 to 5 and spaces 1 to 4, counted from the bottom">${g}</svg>`);
+}
+function drawPen(spec) {   // her 12 Nov: the app's moving posture and hand drawings; the voice sets the pose, the reader can press or drag
+  if (!window.PEN) { if (!window.__penLoading) { window.__penLoading = 1; const sc = document.createElement('script'); sc.src = 'pen.js'; document.head.appendChild(sc); } return; }
+  const [kind, target] = spec.split(':'), key = 'pen-' + kind;
+  if (lensEl.dataset.k !== key || !lensEl.querySelector('.penw')) { lensEl.dataset.k = key; lensEl.dataset.p = '';
+    lensShell(key, '♪ ' + ({ sit: 'Set up the stool · press or drag', front: 'Elbows, from the front · drag', hand: 'The hand from the side · press a shape', fing: 'Finger numbers · press a number' })[kind], '<div class="penw"></div>');
+    lensEl.querySelector('.lens').classList.add('penl'); PEN.mount(kind, lensEl.querySelector('.penw')); }
+  if (lensEl.dataset.p !== target) { lensEl.dataset.p = target; PEN.go(kind, target); }
 }
 function drawWarm(id) {   // her 11 Nov: the app's warm-up drawings, moving while the Butler explains them (frames in warm.js, loaded once)
   if (!window.WARM) { if (!window.__warmLoading) { window.__warmLoading = 1; const sc = document.createElement('script'); sc.src = 'warm.js'; document.head.appendChild(sc); } return; }
