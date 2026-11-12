@@ -70,6 +70,9 @@ def learn_blocks(r):   # her 12 Nov ("단순하게"): one idea per room: its sec
     for want in ('secret', 'hero', 'ex', 'try10'):
         h = next((h for k, h in bl if (k.startswith('ex') and k[2:].isdigit() if want == 'ex' else k == want)), None)
         if h: got[want] = h
+    if o.get('hero_p'):
+        h = dict(keyed(o['hero_p'])).get('hero')
+        if h: got['hero'] = rows_only(h, r['rows'].split(',')) if r.get('rows') else h
     if 'secret' in o: got['secret'] = secret_l(o['secret'])
     if 'ex' in o: got['ex'] = inact_l(*o['ex'])
     if 'try' in o: got['try10'] = try_l(*o['try'])
@@ -105,18 +108,13 @@ LEARN = {
  'hbr-T1': {'secret': 'The beat is steady, like a heartbeat. Bar lines group the beats, and beat 1 of every bar is the strongest.',
             'sub': [('rest: still count', 'silent beat: still count'), ('nest still count', 'silent beat')],
             'ex': ('Feel the beat before you play', dots([3, 3]), ['<b>Set a metronome</b> to 96: 96 beats a minute.', '<b>Listen first:</b> let one bar go by, counting 1 2 3 in your head.', '<b>Step in</b> on the next beat 1, like stepping onto a moving escalator.'], 'The first note lands <b>on the beat</b>, not a guess.')},
- 'hbr-T2': {'secret': 'A <b>crotchet</b> lasts one beat. Its rest, the <b>crotchet rest</b>, is one beat of silence: count it, but do not play.',
-            'ex': ('Count this bar', G(CR + '  ' + CR + '  ' + RC + '  ' + CR, 50), ['<b>Play</b> on each crotchet.', '<b>Shh</b> on the rest, but keep counting.', '<b>Count</b> 1 2 3 4 all the way through.'], 'Play, play, shh, play: <b>four beats</b>, one each.'),
-            'try': (G(CR + ' ' + RC, 54), 'Clap and shh.', 'Clap four crotchets, counting 1 2 3 4. Clap again, but on 3 open your hands and stay silent: a rest.')},
- 'hbr-T2-s2': {'secret': 'A <b>minim</b> lasts two beats: play on one count and hold through the next. Its rest sits on the middle line, like a hat.',
-            'ex': ('How many beats in this bar?', G(MI + '  ' + CR + '  ' + CR, 50), ['<b>Minim:</b> 2 beats.', '<b>Crotchet, crotchet:</b> 1 + 1.', '<b>Add them up.</b>'], '2 + 1 + 1 = <b>4 beats</b>: a full bar.'),
-            'try': (G(MI, 58), 'Press and hold.', 'Play C as a minim: press on 1, hold through 2. Do it four times, counting out loud.')},
- 'hbr-T2-s3': {'secret': 'A dot after a note adds half its length again: a minim (2 beats) with a dot lasts <b>3 beats</b>.',
-            'ex': ('Which note fills a bar of three?', G(DM + '   ' + MI + '   ' + CR, 50), ['<b>Count</b> 1 2 3 for the bar.', '<b>Minim:</b> 2. <b>Crotchet:</b> 1.', '<b>Dotted minim:</b> 2 + 1.'], 'The <b>dotted minim</b>: 3 beats, the whole bar.'),
-            'try': (G(DM, 58), 'Waltz on one note.', 'Play a dotted minim on C: press on 1, hold through 2 and 3. Sway on beat 1, like a waltz.')},
- 'hbr-T2-s4': {'secret': 'A <b>semibreve</b> lasts four beats: a whole bar of four. Its rest hangs from the fourth line, like a coat.',
-            'ex': ('How many crotchets make a semibreve?', G(SB + '  =  ' + CR + ' ' + CR + ' ' + CR + ' ' + CR, 46), ['<b>Semibreve:</b> 4 beats.', '<b>Crotchet:</b> 1 beat.', '<b>Count</b> how many ones make four.'], '<b>Four</b> crotchets, or two minims.'),
-            'try': (G(SB, 58), 'Hold to the very end.', 'Press C and hold for 1 2 3 4. Listen until the sound has had all four beats, then lift.')},
+ 'hbr-T2': {'secret': 'A <b>crotchet</b> lasts one beat; a <b>minim</b> lasts two: play on one count and hold through the next. Each has a rest just as long: count it, but do not play.',
+            'ex': ('How many beats in this bar?', G(MI + '  ' + CR + '  ' + RC, 50), ['<b>Minim:</b> 2 beats.', '<b>Crotchet:</b> 1. <b>Crotchet rest:</b> 1, silent.', '<b>Add them up.</b>'], '2 + 1 + 1 = <b>4 beats</b>: a full bar, with one beat of silence.'),
+            'try': (G(CR + ' ' + MI, 54), 'Clap, then press and hold.', 'Clap four crotchets, counting 1 2 3 4. Then play C as a minim: press on 1, hold through 2. Do it twice to fill the bar.')},   # her 12 Nov: two lengths a room
+ 'hbr-T2-s2': {'secret': 'A dot adds half: a <b>dotted minim</b> lasts three beats. A <b>semibreve</b> lasts four, a whole bar of four; its rest hangs from the fourth line, like a coat.',
+            'hero_p': 53,
+            'ex': ('Which note fills the bar?', G(DM + '    ' + SB, 50), ['<b>A bar of three:</b> count 1 2 3.', '<b>A bar of four:</b> count 1 2 3 4.', '<b>Dotted minim</b> 2 + 1; <b>semibreve</b> 4.'], 'Three beats: the <b>dotted minim</b>. Four beats: the <b>semibreve</b>.'),
+            'try': (G(DM + ' ' + SB, 54), 'Hold for three, then four.', 'Press C and hold for 1 2 3, swaying like a waltz. Then press again and hold for all four beats, listening to the very end.')},
  'hbr-E1': {'secret': 'Dynamics tell you how loud to play: <b><i>p</i></b> is soft, <b><i>f</i></b> is loud. The weight of your arm makes the change, not the speed.',
             'ex': ('Which is louder: mp or mf?', '<div style="font-family:serif;font-style:italic;font-weight:700;font-size:40px;color:#26296b">mp · mf</div>', ['<b>m</b> means <i>mezzo</i>: half.', '<b>p</b> soft, <b>f</b> loud.', '<b>Half loud</b> beats half soft.'], '<b><i>mf</i></b>, half loud, is louder than <i>mp</i>, half soft.')},
 }
@@ -143,6 +141,10 @@ STEP = {
                ex(2, 'Coat or hat?', 'The semibreve rest hangs like a coat; the minim rest sits like a hat. Write coat or hat.', grid([(RSS, DONE('coat')), (RMS, LINE), (RSS, LINE), (RMS, LINE)], 4)),
                ex(3, 'Four beats', 'Each bar must add up to four beats. Write the missing note.', '<table class="lvt"><tr><td>' + G(MI) + ' + ' + G(CR) + ' + ?</td><td>' + DONE('crotchet') + '</td></tr><tr><td>' + G(DM) + ' + ?</td><td>' + LINE + '</td></tr><tr><td>? (one note)</td><td>' + LINE + '</td></tr></table>', 2)],
 }
+_S = STEP   # her 12 Nov: the four note steps fold into two rooms
+STEP = {**{k: v for k, v in _S.items() if not k.startswith('hbr-T2')},
+        'hbr-T2': [_S['hbr-T2-s2'][0], _S['hbr-T2-s2'][1], _S['hbr-T2'][1]],
+        'hbr-T2-s2': [_S['hbr-T2-s4'][0], _S['hbr-T2-s3'][1], _S['hbr-T2-s4'][1]]}
 WB = {   # room -> (workbook, handbook page of the Learn/Use page, exercise titles)
  'hbr-B1': [('workbook-before', 18, ['Finger numbers', 'Too low, too high, or right?', 'The 30-second check'])],   # review 12 Nov: 'Which hand is round?' is the Learn page's example
  'hbr-P1': [('workbook-pitch', 22, ['Twos and threes', 'Name the keys', 'Round and round'])],
@@ -185,4 +187,4 @@ document.body.dataset.pruned='1';})();</script>"""
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower().replace(" ", "").replace("½", "half")}.html'
     open(fn, 'w').write(html); return fn
 if __name__ == '__main__':
-    print(build(0, 'Beginner', 'Ten rooms: sitting and hands, the keyboard, fingering, the staff, the beat, notes and rests one at a time, loud and soft. Read each room, listen to it in the app, then practise.'))
+    print(build(0, 'Beginner', 'Eight rooms: sitting and hands, the keyboard, fingering, the staff, the beat, notes and rests one at a time, loud and soft. Read each room, listen to it in the app, then practise.'))

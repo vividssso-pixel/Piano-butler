@@ -54,10 +54,8 @@ FLOOR_TXT={'Beginner':('Sitting and hands, the keyboard and the staff, beat and 
 'Grade 8':('Tall chords: 9, 11, 13 (Extra), and every earlier chapter a step further.','높은 화음 9·11·13(Extra), 그리고 앞의 챕터들 한 걸음 더.')}
 # her 11 Nov: notes and rests one at a time on Level 0, crotchet first, the three-beat note included.
 # chapter -> [(suffix, en, ko, clips, rows to show, drill, level, nv filter)]; the first entry renames the chapter's own room
-STEPS={'T2':[('', 'Notes: the crotchet', '음표: 4분음표', [1,2], 'crotchets', 'note-values', 2, 'nv=crotchet,rcrotchet'),
-             ('-s2', 'Notes: the minim', '음표: 2분음표', [3], 'crotchets,minims', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim'),
-             ('-s3', 'Notes: three beats', '음표: 세 박', [4], '', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim,dminim'),
-             ('-s4', 'Notes: the semibreve', '음표: 온음표', [5,9,10,11,14], 'crotchets,minims,semibreve', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim,dminim,semibreve,rsemibreve')]}
+STEPS={'T2':[('', 'Notes: crotchet and minim', '음표: 4분음표와 2분음표', [1,2,3], 'crotchets,minims', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim'),   # her 12 Nov: two lengths a room ("2개씩 합쳐도")
+             ('-s2', 'Notes: three beats and the semibreve', '음표: 세 박과 온음표', [4,5,9,10,11,14], 'crotchets,minims,semibreve', 'note-values', 2, 'nv=crotchet,rcrotchet,minim,rminim,dminim,semibreve,rsemibreve')]}
 rooms=[]; floors=[]
 for fname,new,rev in FLOORS:
     ids=[]
