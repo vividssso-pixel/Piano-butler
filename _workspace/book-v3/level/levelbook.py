@@ -18,7 +18,7 @@ CH, _ = json.JSONDecoder().raw_decode(_s[_s.index('const CH = ') + 11:]); CH = {
 FLOWJS = (lambda t: t[t.index('<script>'):t.index('</script>', t.index('Each topic fills')) + 9])(open('/mnt/user-data/outputs/house-rooms/handbook-time2.html').read())
 import re as _r2
 def _nofont(c): return _r2.sub(r'@font-face\{[^}]*\}', '', c)
-CSS = B['css']['handbook-time2'] + '\n' + '\n'.join(_nofont(B['css'][f]) for f in ('workbook-time2', 'workbook-before', 'workbook-pitch', 'workbook-play', 'workbook-expression', 'handbook-before', 'handbook-pitch', 'handbook-expression', 'handbook-play'))   # the Handbook's own rules last
+CSS = B['css']['handbook-time2'] + '\n' + '\n'.join(_nofont(B['css'][f]) for f in ('workbook-time2', 'workbook-before', 'workbook-pitch', 'workbook-play', 'workbook-expression', 'workbook-scales', 'workbook-harmony', 'handbook-before', 'handbook-pitch', 'handbook-expression', 'handbook-scales', 'handbook-harmony', 'handbook-play'))   # the Handbook's own rules last
 
 def keyed(page):   # number repeated keys on a page the way Read & listen does (xlate, xlate2 ...)
     seen, out = {}, []
@@ -77,6 +77,7 @@ def learn_blocks(r):   # her 12 Nov ("단순하게"): one idea per room: its sec
     if 'ex' in o: got['ex'] = inact_l(*o['ex'])
     if 'try' in o: got['try10'] = try_l(*o['try'])
     for a, b_ in o.get('sub', []): got = {k: v.replace(a, b_) for k, v in got.items()}
+    if got.get('ex'): got['ex'] = re.sub(r'(<div class="bh">Example) \d+', r'\1', got['ex'], count=1)
     pick = []
     for want in ('secret', 'hero', 'ex', 'try10'):
         if got.get(want) and got[want] not in pick: pick.append(got[want])
@@ -115,6 +116,7 @@ LEARN = {
             'hero_p': 53,
             'ex': ('Which note fills the bar?', G(DM + '    ' + SB, 50), ['<b>A bar of three:</b> count 1 2 3.', '<b>A bar of four:</b> count 1 2 3 4.', '<b>Dotted minim</b> 2 + 1; <b>semibreve</b> 4.'], 'Three beats: the <b>dotted minim</b>. Four beats: the <b>semibreve</b>.'),
             'try': (G(DM + ' ' + SB, 54), 'Hold for three, then four.', 'Press C and hold for 1 2 3, swaying like a waltz. Then press again and hold for all four beats, listening to the very end.')},
+ 'hbr-T8': {'secret': 'Two dots facing back mean: go back and play it again. A first-time bar is played once; the second time through, you skip it and play the second-time bar.'},
  'hbr-E1': {'secret': 'Dynamics tell you how loud to play: <b><i>p</i></b> is soft, <b><i>f</i></b> is loud. The weight of your arm makes the change, not the speed.',
             'ex': ('Which is louder: mp or mf?', '<div style="font-family:serif;font-style:italic;font-weight:700;font-size:40px;color:#26296b">mp · mf</div>', ['<b>m</b> means <i>mezzo</i>: half.', '<b>p</b> soft, <b>f</b> loud.', '<b>Half loud</b> beats half soft.'], '<b><i>mf</i></b>, half loud, is louder than <i>mp</i>, half soft.')},
 }
@@ -142,6 +144,9 @@ STEP = {
                ex(3, 'Four beats', 'Each bar must add up to four beats. Write the missing note.', '<table class="lvt"><tr><td>' + G(MI) + ' + ' + G(CR) + ' + ?</td><td>' + DONE('crotchet') + '</td></tr><tr><td>' + G(DM) + ' + ?</td><td>' + LINE + '</td></tr><tr><td>? (one note)</td><td>' + LINE + '</td></tr></table>', 2)],
 }
 _S = STEP   # her 12 Nov: the four note steps fold into two rooms
+_S['hbr-T8'] = [ex(1, 'Write the order', 'Each letter is one bar. Write the letters in the order you play them. The first is done.', tbl_l(['The music', 'You play'], [['A &nbsp; B :|', DONE('A B A B')], ['|: A &nbsp; B :| &nbsp; C', LINE], ['A &nbsp; |: B &nbsp; C :|', LINE], ['|: A :| &nbsp; |: B :|', LINE]])),
+                 ex(2, 'First and second time', 'The bar marked 1 is played the first time only; the second time you skip it and play the bar marked 2. Write the order. The first is done.', tbl_l(['The music', 'You play'], [['|: A &nbsp; [1. B :| &nbsp; [2. C', DONE('A B A C')], ['|: A &nbsp; B &nbsp; [1. C :| &nbsp; [2. D', LINE], ['|: A &nbsp; [1. B :| &nbsp; [2. C &nbsp; D', LINE]]), 2),
+                 ex(3, 'True or false?', 'Circle T or F.', tbl_l(['', ''], [['With no start sign, a repeat goes back to the very beginning.', 'T &nbsp; F'], ['A repeat sign means: play the bars between the signs three times.', 'T &nbsp; F'], ['The second time through, you skip the first-time bar.', 'T &nbsp; F'], ['Two dots beside a double bar line make a repeat sign.', 'T &nbsp; F']]))]
 STEP = {**{k: v for k, v in _S.items() if not k.startswith('hbr-T2')},
         'hbr-T2': [_S['hbr-T2-s2'][0], _S['hbr-T2-s2'][1], _S['hbr-T2'][1]],
         'hbr-T2-s2': [_S['hbr-T2-s4'][0], _S['hbr-T2-s3'][1], _S['hbr-T2-s4'][1]]}
@@ -153,8 +158,29 @@ WB = {   # room -> (workbook, handbook page of the Learn/Use page, exercise titl
  'hbr-T1': [('workbook-time2', 50, ['Count it', 'Add the bar lines', 'Clap and count'])],
  'hbr-E1': [('workbook-expression', 76, ['Say it', 'Play it'])],
 }
+WBFILE = {'B': 'workbook-before', 'P': 'workbook-pitch', 'T': 'workbook-time2', 'E': 'workbook-expression', 'S': 'workbook-scales', 'H': 'workbook-harmony', 'L': 'workbook-play'}
+def wb_auto(r):   # the chapter's Workbook pages in order: every exercise of its Learn page, then its Use page
+    f = WBFILE.get(r['ch'][0]); a, b_ = (int(x) for x in (r['pages'].split('–') + [r['pages']])[:2]); out = []
+    for k in sorted(B['wb'], key=lambda k: int(k.rsplit('|', 1)[1])):
+        m = re.search(r'P\.\W*(\d+)\|', k)
+        if k.startswith(f + '|') and m and a <= int(m.group(1)) <= b_: out += [x['html'] for x in B['wb'][k] if x['key'].startswith('ex')]
+    return out
+# her 13 Nov: the Prelim book. The exercises of each room, chosen so that nothing asks for an idea of a later level
+# (compound time, the melodic minor, D.C. and D.S. belong to higher floors). 'Title#2' = the second exercise of that name.
+WBPICK = {'hbr-T3': ['Note sums', 'Clap and count', 'In your music'], 'hbr-T4': ['Add the bar lines', 'Book every seat'],
+          'hbr-S2': ['Which notes move?', 'Build it'], 'hbr-S1': ['Fix the scale', 'The major pattern'], 'hbr-E2': ['Which notes are short?', 'Slur or tie?', 'Play it']}
+def wb_pick(r, titles):
+    f = WBFILE.get(r['ch'][0]); a, b_ = (int(x) for x in (r['pages'].split('–') + [r['pages']])[:2]); allx = []
+    for k in sorted(B['wb'], key=lambda k: int(k.rsplit('|', 1)[1])):
+        m = re.search(r'P\.\W*(\d+)\|', k)
+        if k.startswith(f + '|') and m and a <= int(m.group(1)) <= b_: allx += [(x['title'].strip(), x['html']) for x in B['wb'][k] if x['key'].startswith('ex')]
+    out = []
+    for t in titles:
+        nm, _, nth = t.partition('#'); hits = [h for tt, h in allx if tt == nm]
+        if hits: out.append(hits[min(len(hits), int(nth or 1)) - 1])
+    return out
 def practice(rid):
-    wb = [h for f, p, t in WB.get(rid, []) for h in wb_ex(f, p, t)]
+    wb = [h for f, p, t in WB.get(rid, []) for h in wb_ex(f, p, t)] if rid in WB else wb_pick(ROOMS[rid], WBPICK[rid]) if rid in WBPICK else (wb_auto(ROOMS[rid]) if rid not in STEP else [])
     if rid in STEP: xs = [x if x is not None else (wb[i] if i < len(wb) else None) for i, x in enumerate(STEP[rid])]; xs = [x for x in xs if x]
     else: xs = wb
     return [re.sub(r'<span class="en">\d+</span>', f'<span class="en">{i + 1}</span>', h, count=1) for i, h in enumerate(xs)]
@@ -171,10 +197,39 @@ def ear_spread(r, name, i, n):
     tb = f'<table class="lvt lvear"><tr><th></th><th>{"Game" if pre else "Test"}</th><th>{"What you listen for" if pre else "In the exam"}</th></tr>{rows}</table>'
     tr = try_l(G('𝄞', 54), 'Sing before you play.', 'Before you play a note, sing it. Then play it and listen: were you right?')
     note = '' if pre else '<p class="sm" style="margin-top:8px">Based on the aural tests of the AMEB 2026 syllabus. Check the current syllabus with your teacher before an exam.</p>'
-    home = EAR_HOME.get(name) or [(p['en'], 'Your teacher or a grown-up plays the part of the examiner. ' + p['exam']) for p in r['ear'][:3]]
+    home = EAR_HOME.get(name) or [(p['en'], 'Your teacher or a grown-up plays the part of the examiner. ' + p['exam']) for p in r['ear']]
     tick = '<div class="tk5">' + '<span></span>' * 5 + '</div>'
     pr = ''.join(ex(k + 1, a, b_, tick, 1) for k, (a, b_) in enumerate(home))
     return head + sec + tb + tr + note, f'<div class="kick">{name} · Room {i} · Practise</div><h1>Practise</h1><p class="lead lvl">Away from the screen, with a grown-up or your teacher. Tick a circle each time.</p>' + pr
+def review_spread(r, name, i):
+    url = 'https://thepianobutler.com/drills.html?drill=' + r['id']
+    head = f'<div class="lvhead"><div><div class="kick">{name} · Room {i}</div><h1>Review: a step further</h1><p class="lead lvl">Short parts of chapters from the level before, one step further</p></div><a class="lvqr" href="{url}">{qr(url)}<span>Scan to open</span></a></div>'
+    rows = ''.join(f'<tr><td><b>{k + 1}</b></td><td><b>{p["en"]}</b></td><td>{p["chen"]}</td><td>pp. {p["pages"]}</td></tr>' for k, p in enumerate(r['review']))
+    tb = f'<table class="lvt lvear"><tr><th></th><th>The step further</th><th>Chapter</th><th>Handbook</th></tr>{rows}</table>'
+    left = head + secret_l('Go back to go forward: each part adds one step to a room you have already finished.') + tb + try_l(G('𝄞', 54), 'One part a day.', 'Listen to the part in the app, then play its drill. Five minutes is enough.')
+    tick = '<div class="tk5">' + '<span></span>' * 3 + '</div>'
+    right = f'<div class="kick">{name} · Room {i} · Practise</div><h1>Practise</h1><p class="lead lvl">For each part: listen, play its drill, then tick. Three ticks and it is yours.</p>' + ''.join(ex(k + 1, p['en'], f'{p["chen"]}, Handbook pp. {p["pages"]}.', tick, 1) for k, p in enumerate(r['review']))
+    return left, right
+# her 13 Nov ("6. 응"): an exam corner in each Level book, from the first exam level up. Facts from the AMEB 2026 syllabus
+# (data_technical_ameb.js, data_aural_ameb.js, Manual of Syllabuses: sight-reading applies to Grades 1-8; general knowledge
+# asks about the notes, rests, signs, terms and key of the pieces played). Scales are listed in general terms only (her 13 Nov).
+EXAM = {'Prelim': dict(near='Preliminary',
+    tech=['Scales, hands separately, one octave: <b>C major</b> and <b>G major</b>; <b>A minor</b> and <b>E minor</b>, natural and harmonic.', 'Two short technical exercises, chosen with your teacher.'],
+    know=['the names of the <b>notes</b> and <b>rests</b> in your pieces, and how long each lasts', 'every <b>sign</b> and <b>word</b> printed in your pieces: what it means', 'the <b>key</b> of each piece, and its <b>time signature</b>'],
+    sight='There is no sight-reading test at this level. It starts at Grade 1.')}
+def exam_spread(name, toc, earn):
+    E = EXAM[name]
+    head = f'<div class="kick">{name} · The exam corner</div><h1>If you take an exam</h1><p class="lead lvl">This level is about the standard of a {E["near"]} exam.</p>'
+    box = lambda t, body: f'<div class="lvx"><b>{t}</b>{body}</div>'
+    ul = lambda xs: '<ul>' + ''.join(f'<li>{x}</li>' for x in xs) + '</ul>'
+    left = head + secret_l('An exam asks: can you play your pieces and your scales, hear what is played, and say what is on your page?') \
+        + box('Pieces', '<p>Chosen with your teacher. Everything in this book is there to help you read and shape them.</p>') + box('Technical work', ul(E['tech'])) \
+        + box('Aural tests', f'<p>The listening tests are Room {earn} of this book: one game for each test.</p>') + box('General knowledge', '<p>The examiner points at your music and asks about:</p>' + ul(E['know'])) + box('Sight-reading', f'<p>{E["sight"]}</p>') \
+        + '<p class="sm" style="margin-top:8px">Based on the AMEB 2026 syllabus. Syllabuses change: check the current one with your teacher before you enter.</p>'
+    tick = '<span class="fbx"></span>'
+    rows = ''.join(f'<tr><td>{tick}</td><td>{x}</td></tr>' for x in ['I can play each piece from start to finish without stopping.', 'I can say the key and the time signature of each piece.', 'I can name every sign and word on my pages.', 'I can play each scale slowly, evenly, with the right fingers.', 'I have played all the ear games in Room ' + str(earn) + ' this week.', 'I have played my pieces for someone at home.', 'I know how to walk in, sit, set the stool and breathe out before I play.'])
+    right = f'<div class="kick">{name} · The exam corner</div><h1>Four weeks to go</h1><p class="lead lvl">Tick a box when it is true. Go through the list again each week.</p><table class="lvt lvck">{rows}</table>' + try_l(G('𝄞', 54), 'Play it for someone.', 'Each week, play one piece for a person at home, as if it were the exam: walk in, bow, play, bow.')
+    return left, right
 def section(inner, n, flow): return f'<section class="pg" data-flow="{flow}"><div class="top"><span>THE PIANO BUTLER · LEVEL BOOK</span><span>{RIGHT}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
 def chain(key, head, blocks, n0, cont='continued', pages=4):
     first = section(head + ''.join(blocks), n0, 'A' + key)
@@ -186,15 +241,20 @@ def build(floor_i, name, line):
     for i, rid in enumerate(ids, 1):
         r = ROOMS[rid]; title = r['en'] if not r.get('again') else r['en'] + ': ' + r['again'][0]
         toc.append((i, title))
+        if r.get('review'):
+            a, b_ = review_spread(r, name, i); out += [section(a, n, 'L' + rid), section(b_, n + 1, 'P' + rid)]; n += 2; continue
         if r.get('ear'):   # her 12 Nov: the floor's Ear training room, matched to that level's aural tests
             a, b_ = ear_spread(r, name, i, n); out += [section(a, n, 'L' + rid), section(b_, n + 1, 'P' + rid)]; n += 2; continue
         head = f'<div class="lvhead"><div><div class="kick">{name} · Room {i}</div><h1>{title}</h1><p class="lead lvl">More in the Handbook, pp. {r["pages"]}</p></div><a class="lvqr" href="{listen_url(r)}">{qr(listen_url(r))}<span>Scan to listen</span></a></div>'
         pr = practice(rid)[:3]   # one spread per room: Learn on the left, three exercises on the right
         out.append(section(head + ''.join(learn_blocks(r)), n, 'L' + rid)); n += 1
         out.append(section(f'<div class="kick">{name} · Room {i} · Practise</div><h1>Practise</h1>' + ''.join(pr), n, 'P' + rid)); n += 1
+    if name in EXAM:
+        earn = next((k for k, t_ in toc if t_ == 'Ear training'), '')
+        a, b_ = exam_spread(name, toc, earn); out += [section(a, n, 'LX'), section(b_, n + 1, 'PX')]; n += 2; toc.append(('', 'The exam corner'))
     cover = f'''<section class="pg part2"><div class="pframe"><div class="pk">The Piano Butler · Level book</div><div class="pt">{name}</div><div class="pdv"></div>
-<p class="pl">{line}</p><div class="pin"><div class="pih">The rooms</div>{"".join(f'<div class="tr"><span>{i} · {t}</span><span class="dots"></span><span></span></div>' for i, t in toc)}</div></div></section>'''
-    extra = """.lvl{font-size:13px!important;color:#6d6f9c} .lvear td{font-size:14px;vertical-align:top} .lvear td:first-child{color:#e4572e;width:22px} .lvear td:nth-child(2){width:34%} .lvg>div{white-space:nowrap} .bds{display:flex;align-items:center;gap:7px;flex-wrap:nowrap} .bd{width:16px;height:16px;border-radius:50%;background:#26296b} .bd.b1{width:24px;height:24px;background:#e4572e} .bds .bl{width:2.5px;height:34px;background:#26296b;margin:0 6px} .bds .bl.gh{background:none;border-left:1.5px dashed #c9c7dc;width:0} .k5{display:flex;gap:3px} .k5>div{width:34px;height:74px;border:1.5px solid #26296b;border-radius:0 0 5px 5px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:5px 0 4px;background:#fff} .k5 b{color:#e4572e;font-size:16px} .k5 span{font-size:12px;color:#6d6f9c} .tk5{display:flex;gap:10px;justify-content:flex-end} .tk5 span{width:26px;height:26px;border:1.5px solid #c9c7dc;border-radius:50%} .lvhead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px} .lvqr{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;flex:none} .lvqr .qrs{width:64px;height:64px} .lvqr span{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e4572e} .lvg{display:grid;gap:10px;margin:8px 0} .lvg>div{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #e3e1ee;border-radius:8px;padding:10px 4px}
+<p class="pl">{line}</p><div class="pin"><div class="pih">The rooms</div>{"".join(f'<div class="tr"><span>{str(i) + " · " if i else ""}{t}</span><span class="dots"></span><span></span></div>' for i, t in toc)}</div></div></section>'''
+    extra = """.lvl{font-size:13px!important;color:#6d6f9c} .lvx{border-left:3px solid #e4572e;padding:3px 0 3px 12px;margin:9px 0;font-size:14px} .lvx>b{color:#26296b;font-size:15px} .lvx p{margin:2px 0} .lvx ul{margin:2px 0 0;padding-left:18px} .lvx li{margin:1px 0} .lvck td{font-size:15px;padding:9px 6px} .lvck td:first-child{width:30px} .fbx{display:inline-block;width:18px;height:18px;border:1.5px solid #c9c7dc;border-radius:4px} .lvear td{font-size:14px;vertical-align:top} .lvear td:first-child{color:#e4572e;width:22px} .lvear td:nth-child(2){width:34%} .lvg>div{white-space:nowrap} .bds{display:flex;align-items:center;gap:7px;flex-wrap:nowrap} .bd{width:16px;height:16px;border-radius:50%;background:#26296b} .bd.b1{width:24px;height:24px;background:#e4572e} .bds .bl{width:2.5px;height:34px;background:#26296b;margin:0 6px} .bds .bl.gh{background:none;border-left:1.5px dashed #c9c7dc;width:0} .k5{display:flex;gap:3px} .k5>div{width:34px;height:74px;border:1.5px solid #26296b;border-radius:0 0 5px 5px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:5px 0 4px;background:#fff} .k5 b{color:#e4572e;font-size:16px} .k5 span{font-size:12px;color:#6d6f9c} .tk5{display:flex;gap:10px;justify-content:flex-end} .tk5 span{width:26px;height:26px;border:1.5px solid #c9c7dc;border-radius:50%} .lvhead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px} .lvqr{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;flex:none} .lvqr .qrs{width:64px;height:64px} .lvqr span{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e4572e} .lvg{display:grid;gap:10px;margin:8px 0} .lvg>div{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #e3e1ee;border-radius:8px;padding:10px 4px}
 .lvt{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px} .lvt td,.lvt th{border-bottom:1px solid #e3e1ee;padding:8px 6px;text-align:left} .lvt th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6d6f9c}
 .lvdraw{height:120px;margin:8px 0;background:repeating-linear-gradient(#fff 0 18px,#26296b 18px 19px,#fff 19px 24px);background-size:100% 24px;border-radius:4px;opacity:.55}
 section.pg.lvempty{display:none} h3.lvpr{margin-top:18px;padding-top:10px;border-top:2px solid #26296b;font-size:20px}"""
@@ -206,3 +266,4 @@ document.body.dataset.pruned='1';})();</script>"""
     open(fn, 'w').write(html); return fn
 if __name__ == '__main__':
     print(build(0, 'Beginner', 'Nine rooms: sitting and hands, the keyboard, fingering, the staff, the beat, notes and rests, loud and soft, and games for your ears. Read each room, listen to it in the app, then practise.'))
+    print(build(1, 'Prelim', 'Twelve rooms: how to practise, reading the notes, how long a note lasts, time signatures, repeats, touch, major and minor scales, your first chords, ear training and a review. Then the exam corner.'))
