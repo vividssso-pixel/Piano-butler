@@ -42,10 +42,15 @@ def beats(groups, rest=None):   # big beat dots in bars; rest = index of a silen
 def dyn(items):   # dynamics as growing bars
     return '<div style="display:flex;align-items:flex-end;justify-content:center;gap:22px">' + ''.join(f'<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:74px;height:{h}px;background:{C};opacity:{o};border-radius:6px 6px 0 0"></span><i style="font-family:\'Playfair Display\',serif;font-weight:900;font-size:44px;color:{N};line-height:1">{s}</i><span style="font-size:17px;color:{N}">{w}</span></div>' for s, w, h, o in items) + '</div>'
 
+# her 13 Nov ("체스가 깔끔하다"): every page of a Level book sits in a double-rule frame on the books' chequered floor,
+# with the page number on a plaque. The hidden .foot marks the bottom of the frame for the shrink-to-fit pass.
+def section(inner, n, flow):
+    return f'<section class="pg cx" data-flow="{flow}"><div class="fr"><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></div><div class="floor"></div><div class="plq">{n}</div></section>'
 def story(name, i, title, k, n, pic, text, piano, rid=None, first=False):
     r = ROOMS[rid] if rid else None
     q = f'<a class="lvqr" href="{listen_url(r)}">{qr(listen_url(r))}<span>Scan to listen</span></a>' if first and r and r.get('ch') != 'EAR' else ''
-    hd = f'<div class="lvhead"><div><div class="kick">{name} · Room {i} · {k} of {n}</div><h1>{title}</h1></div>{q}</div>' if first else f'<div class="kick fk2">{name} · Room {i} · {title} · {k} of {n}</div>'
+    hd = (f'<div class="lvhead"><div><div class="cxk">Room {i} <i>◆</i> {k} of {n}</div><h1>{title}</h1></div>{q}</div>' if first
+          else f'<div class="cxk cxc">Room {i} <i>◆</i> {title} <i>◆</i> {k} of {n}</div>')
     return f'{hd}<div class="stpic"><div class="stin">{pic}</div></div><div class="sttx">{text}</div><div class="stpn"><span>At the piano</span>{piano}</div>'
 ROOMSTORY = {
  'hbr-B1': ('Sitting and hands', [
@@ -92,10 +97,15 @@ def build_story(floor_i, name, line):
     cover = f'''<section class="pg part2"><div class="pframe"><div class="pk">The Piano Butler · Level book</div><div class="pt">{name}</div><div class="pdv"></div>
 <p class="pl">{line}</p><div class="pin"><div class="pih">The rooms</div>{"".join(f'<div class="tr"><span>{i} · {t}</span><span class="dots"></span><span></span></div>' for i, t in toc)}</div></div></section>'''
     extra = EXTRA_CSS + """
-.stpic{height:520px;margin:14px 0 24px;background:#faf8f3;border-radius:16px;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
+section.pg.cx{padding:36px} .cx .fr{position:relative;border:3px double #26296b;height:927px;box-sizing:border-box;padding:22px 34px 0} .cx .fr>.foot{position:absolute;left:0;right:0;bottom:2px;height:1px;visibility:hidden}
+.cx .floor{position:absolute;left:36px;right:36px;bottom:36px;height:112px;background:conic-gradient(#26296b 25%,#fff 0 50%,#26296b 0 75%,#fff 0) 0 0/56px 56px;border:3px solid #26296b;box-sizing:border-box}
+.cx .plq{position:absolute;bottom:66px;left:50%;transform:translateX(-50%);background:#fff;border:3px double #26296b;padding:6px 22px;font-family:'Playfair Display',PF,serif;font-weight:900;font-size:22px;color:#26296b}
+.cxk{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:17px;color:#26296b} .cxk i{font-style:normal;color:#e4572e;font-size:11px;margin:0 7px;vertical-align:middle} .cxc{text-align:center;font-size:19px;padding-bottom:10px;border-bottom:1.5px solid #26296b}
+.cx .lvhead{border-bottom:1.5px solid #26296b;padding-bottom:6px} .cx .lvhead h1{margin:2px 0 0} .cx .kick{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:17px;letter-spacing:0;text-transform:none;color:#26296b}
+.stpic{height:440px;margin:0 0 20px;border-bottom:1.5px solid #26296b;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
 .stpic svg{display:block;max-width:none}
-.sttx{font-size:27px;line-height:1.45;color:#26296b} .sttx p{margin:0 0 16px;font-size:27px!important;line-height:1.45!important} .sttx b{color:#e4572e}
-.stpn{margin-top:22px;border-top:2px solid #26296b;padding-top:14px;font-size:21px!important;line-height:1.45;color:#26296b} .stpn span{display:block;font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e4572e;margin-bottom:3px}
+.sttx{font-size:27px;line-height:1.45;color:#26296b} .sttx p{margin:0 0 14px;font-size:26px!important;line-height:1.42!important} .sttx b{color:#e4572e}
+.stpn{margin-top:22px;border:1.5px solid #26296b;border-radius:4px;padding:14px 16px 12px;font-size:21px!important;line-height:1.4;color:#26296b;position:relative} .stpn span{position:absolute;top:-10px;left:14px;background:#fff;padding:0 8px;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e4572e}
 .k5big>div{width:86px!important;height:190px!important} .k5big b{font-size:40px!important} .k5big span{font-size:26px!important}
 """
     fit = """<script>(async()=>{try{await document.fonts.ready}catch(e){}
