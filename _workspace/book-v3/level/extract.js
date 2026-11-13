@@ -3,7 +3,7 @@ const { chromium } = require('playwright'); const fs = require('fs');
 (async () => {
   const b = await chromium.launch(); const out = { hb: {}, wb: {}, css: {} };
   const H = '/mnt/user-data/outputs/house-rooms/';
-  for (const [kind, f] of [['hb','handbook-before'],['hb','handbook-pitch'],['hb','handbook-time2'],['hb','handbook-expression'],['hb','handbook-play'],['wb','workbook-before'],['wb','workbook-pitch'],['wb','workbook-time2'],['wb','workbook-expression'],['wb','workbook-play']]) {
+  for (const [kind, f] of [['hb','handbook-before'],['hb','handbook-pitch'],['hb','handbook-time2'],['hb','handbook-expression'],['hb','handbook-scales'],['hb','handbook-harmony'],['hb','handbook-play'],['wb','workbook-before'],['wb','workbook-pitch'],['wb','workbook-time2'],['wb','workbook-expression'],['wb','workbook-scales'],['wb','workbook-harmony'],['wb','workbook-play']]) {
     const p = await b.newPage({ viewport: { width: 820, height: 1160 } });
     await p.goto('file://' + H + f + '.html'); await p.waitForTimeout(1800);
     const r = await p.evaluate((kind) => {
