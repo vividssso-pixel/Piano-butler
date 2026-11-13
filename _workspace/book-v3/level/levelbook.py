@@ -159,6 +159,22 @@ def practice(rid):
     else: xs = wb
     return [re.sub(r'<span class="en">\d+</span>', f'<span class="en">{i + 1}</span>', h, count=1) for i, h in enumerate(xs)]
 
+EAR_HOME = {   # away-from-the-screen games, with a grown-up or a teacher
+ 'Beginner': [('Floor, tummy or sky?', 'A grown-up plays one key: very low, in the middle, or very high. Eyes closed! Point to the floor, your tummy or the sky.'),
+              ('Copy-cat clap', 'A grown-up claps four beats. Clap it back exactly. Then swap: you clap, they copy. Was it the same?'),
+              ('Stairs up, stairs down', 'A grown-up plays three keys next to each other, going up or going down. Show the way with your hand, then sing it.')]}
+def ear_spread(r, name, i, n):
+    pre = name == 'Beginner'; url = 'https://thepianobutler.com/drills.html?drill=' + r['id']
+    head = f'<div class="lvhead"><div><div class="kick">{name} · Room {i}</div><h1>Ear training</h1><p class="lead lvl">{"Listening games before the exams" if pre else "The listening tests of this level"}</p></div><a class="lvqr" href="{url}">{qr(url)}<span>Scan to play</span></a></div>'
+    sec = secret_l('Listen first, then play. Good ears make good fingers.' if pre else 'Sing it out loud. If you can sing it, you can hear it; if you can hear it, you can play it.')
+    rows = ''.join(f'<tr><td><b>{k + 1}</b></td><td><b>{p["en"]}</b></td><td>{p["exam"].replace("Before the exams: ", "").capitalize() if pre else p["exam"]}</td></tr>' for k, p in enumerate(r['ear']))
+    tb = f'<table class="lvt lvear"><tr><th></th><th>{"Game" if pre else "Test"}</th><th>{"What you listen for" if pre else "In the exam"}</th></tr>{rows}</table>'
+    tr = try_l(G('𝄞', 54), 'Sing before you play.', 'Before you play a note, sing it. Then play it and listen: were you right?')
+    note = '' if pre else '<p class="sm" style="margin-top:8px">Based on the aural tests of the AMEB 2026 syllabus. Check the current syllabus with your teacher before an exam.</p>'
+    home = EAR_HOME.get(name) or [(p['en'], 'Your teacher or a grown-up plays the part of the examiner. ' + p['exam']) for p in r['ear'][:3]]
+    tick = '<div class="tk5">' + '<span></span>' * 5 + '</div>'
+    pr = ''.join(ex(k + 1, a, b_, tick, 1) for k, (a, b_) in enumerate(home))
+    return head + sec + tb + tr + note, f'<div class="kick">{name} · Room {i} · Practise</div><h1>Practise</h1><p class="lead lvl">Away from the screen, with a grown-up or your teacher. Tick a circle each time.</p>' + pr
 def section(inner, n, flow): return f'<section class="pg" data-flow="{flow}"><div class="top"><span>THE PIANO BUTLER · LEVEL BOOK</span><span>{RIGHT}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
 def chain(key, head, blocks, n0, cont='continued', pages=4):
     first = section(head + ''.join(blocks), n0, 'A' + key)
@@ -170,13 +186,15 @@ def build(floor_i, name, line):
     for i, rid in enumerate(ids, 1):
         r = ROOMS[rid]; title = r['en'] if not r.get('again') else r['en'] + ': ' + r['again'][0]
         toc.append((i, title))
+        if r.get('ear'):   # her 12 Nov: the floor's Ear training room, matched to that level's aural tests
+            a, b_ = ear_spread(r, name, i, n); out += [section(a, n, 'L' + rid), section(b_, n + 1, 'P' + rid)]; n += 2; continue
         head = f'<div class="lvhead"><div><div class="kick">{name} · Room {i}</div><h1>{title}</h1><p class="lead lvl">More in the Handbook, pp. {r["pages"]}</p></div><a class="lvqr" href="{listen_url(r)}">{qr(listen_url(r))}<span>Scan to listen</span></a></div>'
         pr = practice(rid)[:3]   # one spread per room: Learn on the left, three exercises on the right
         out.append(section(head + ''.join(learn_blocks(r)), n, 'L' + rid)); n += 1
         out.append(section(f'<div class="kick">{name} · Room {i} · Practise</div><h1>Practise</h1>' + ''.join(pr), n, 'P' + rid)); n += 1
     cover = f'''<section class="pg part2"><div class="pframe"><div class="pk">The Piano Butler · Level book</div><div class="pt">{name}</div><div class="pdv"></div>
 <p class="pl">{line}</p><div class="pin"><div class="pih">The rooms</div>{"".join(f'<div class="tr"><span>{i} · {t}</span><span class="dots"></span><span></span></div>' for i, t in toc)}</div></div></section>'''
-    extra = """.lvl{font-size:13px!important;color:#6d6f9c} .lvg>div{white-space:nowrap} .bds{display:flex;align-items:center;gap:7px;flex-wrap:nowrap} .bd{width:16px;height:16px;border-radius:50%;background:#26296b} .bd.b1{width:24px;height:24px;background:#e4572e} .bds .bl{width:2.5px;height:34px;background:#26296b;margin:0 6px} .bds .bl.gh{background:none;border-left:1.5px dashed #c9c7dc;width:0} .k5{display:flex;gap:3px} .k5>div{width:34px;height:74px;border:1.5px solid #26296b;border-radius:0 0 5px 5px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:5px 0 4px;background:#fff} .k5 b{color:#e4572e;font-size:16px} .k5 span{font-size:12px;color:#6d6f9c} .tk5{display:flex;gap:10px;justify-content:flex-end} .tk5 span{width:26px;height:26px;border:1.5px solid #c9c7dc;border-radius:50%} .lvhead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px} .lvqr{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;flex:none} .lvqr .qrs{width:64px;height:64px} .lvqr span{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e4572e} .lvg{display:grid;gap:10px;margin:8px 0} .lvg>div{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #e3e1ee;border-radius:8px;padding:10px 4px}
+    extra = """.lvl{font-size:13px!important;color:#6d6f9c} .lvear td{font-size:14px;vertical-align:top} .lvear td:first-child{color:#e4572e;width:22px} .lvear td:nth-child(2){width:34%} .lvg>div{white-space:nowrap} .bds{display:flex;align-items:center;gap:7px;flex-wrap:nowrap} .bd{width:16px;height:16px;border-radius:50%;background:#26296b} .bd.b1{width:24px;height:24px;background:#e4572e} .bds .bl{width:2.5px;height:34px;background:#26296b;margin:0 6px} .bds .bl.gh{background:none;border-left:1.5px dashed #c9c7dc;width:0} .k5{display:flex;gap:3px} .k5>div{width:34px;height:74px;border:1.5px solid #26296b;border-radius:0 0 5px 5px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:5px 0 4px;background:#fff} .k5 b{color:#e4572e;font-size:16px} .k5 span{font-size:12px;color:#6d6f9c} .tk5{display:flex;gap:10px;justify-content:flex-end} .tk5 span{width:26px;height:26px;border:1.5px solid #c9c7dc;border-radius:50%} .lvhead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px} .lvqr{display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;flex:none} .lvqr .qrs{width:64px;height:64px} .lvqr span{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e4572e} .lvg{display:grid;gap:10px;margin:8px 0} .lvg>div{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #e3e1ee;border-radius:8px;padding:10px 4px}
 .lvt{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px} .lvt td,.lvt th{border-bottom:1px solid #e3e1ee;padding:8px 6px;text-align:left} .lvt th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6d6f9c}
 .lvdraw{height:120px;margin:8px 0;background:repeating-linear-gradient(#fff 0 18px,#26296b 18px 19px,#fff 19px 24px);background-size:100% 24px;border-radius:4px;opacity:.55}
 section.pg.lvempty{display:none} h3.lvpr{margin-top:18px;padding-top:10px;border-top:2px solid #26296b;font-size:20px}"""
@@ -187,4 +205,4 @@ document.body.dataset.pruned='1';})();</script>"""
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower().replace(" ", "").replace("½", "half")}.html'
     open(fn, 'w').write(html); return fn
 if __name__ == '__main__':
-    print(build(0, 'Beginner', 'Eight rooms: sitting and hands, the keyboard, fingering, the staff, the beat, notes and rests one at a time, loud and soft. Read each room, listen to it in the app, then practise.'))
+    print(build(0, 'Beginner', 'Nine rooms: sitting and hands, the keyboard, fingering, the staff, the beat, notes and rests, loud and soft, and games for your ears. Read each room, listen to it in the app, then practise.'))
