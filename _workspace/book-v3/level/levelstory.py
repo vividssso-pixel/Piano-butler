@@ -94,39 +94,6 @@ def story(name, i, title, k, n, pic, text, piano, rid=None, first=False):
     hd = (f'<div class="lvhead"><div><div class="cxk">Room {i} <i>◆</i> {k} of {n}</div><h1>{title}</h1></div>{q}</div>' if first
           else f'<div class="cxk cxc">Room {i} <i>◆</i> {title} <i>◆</i> {k} of {n}</div>')
     return f'{hd}<div class="stpic"><div class="stin">{pic}</div></div><div class="sttx">{text}</div><div class="stpn"><span>At the piano</span>{piano}</div>'
-ROOMSTORY = {
- 'hbr-B1': ('Sitting and hands', [
-   (app('1:Just right', 460), '<p><b>Sit tall</b> on the front half of the stool, with both <b>feet flat</b> on the floor.</p><p>Your arms float out in front, <b>level with the keys</b>, like a table top.</p>', 'Sit down. Lift your shoulders up to your ears, then let them drop.'),
-   (app('2:The good shape'), '<p>Hold a small ball in your hand. That <b>round shape</b> is your playing hand.</p><p>Your knuckles stand up like a <b>bridge</b>, and you play on your <b>fingertips</b>.</p>', 'Hold a ball or an orange. Put your hand on the keys without changing its shape.'),
-   (row((app('2:flat fingers', 250), '✗ flat', True), (app('2:knuckles collapsed', 250), '✗ fallen in', True), (app('2:The good shape', 250), '✓ round', False), gap=10), '<p>A <b>flat</b> hand is fast asleep. A bridge that has <b>fallen in</b> cannot carry anything.</p><p>The <b>round</b> hand can play all day.</p>', 'Make the flat hand, then the fallen bridge, then the round hand. Feel the difference.')]),
- 'hbr-P1': ('The keyboard', [
-   (kb(15, 600, 170), '<p>Look at the black keys. They come in <b>twos</b> and <b>threes</b>, again and again, all the way along.</p><p>Find the pattern once and you can never get lost.</p>', 'Touch every group of two black keys, from the left end to the right end. Then every group of three.'),
-   (f'<svg viewBox="0 0 640 250" style="width:640px"><g transform="translate(20 60)">{kb(15, 600, 150)[kb(15, 600, 150).index(">") + 1:-6]}</g>{bear(70, 30, 1.7)}{bird(585, 30, 1.6)}<text x="70" y="246" text-anchor="middle" font-size="22" font-weight="700" fill="{N}" font-family="Atkinson Hyperlegible,sans-serif">low</text><text x="585" y="246" text-anchor="middle" font-size="22" font-weight="700" fill="{N}" font-family="Atkinson Hyperlegible,sans-serif">high</text></svg>', '<p><b>Left is low</b>, like a big grumpy bear. <b>Right is high</b>, like a little bird.</p><p>Go to the right and every key sounds a little higher.</p>', 'Play the lowest key you can reach, then the highest. Bear, then bird.'),
-   (kb(7, 560, 190, labels=True, mark={0, 1, 2}), '<p>Every white key has a letter. Beside the <b>two</b> black keys live <b>C, D, E</b>. Beside the <b>three</b> live <b>F, G, A, B</b>.</p><p>After B comes C again: seven letters, round and round.</p>', 'Find a group of two black keys. Play the three white keys around it and say C, D, E.')]),
- 'hbr-L1': ('Finger numbers', [
-   (hb(163, 'hero'), '<p>Every finger has a <b>number</b>. The <b>thumb is 1</b>, then 2, 3, 4, and the little finger is <b>5</b>.</p><p>It is the same in both hands: thumbs are always 1.</p>', 'Hold up both hands. Wiggle finger 1, then 2, 3, 4, 5, saying the numbers.'),
-   (fivekeys(), '<p>Find any <b>C</b>: the white key just left of two black keys. Put your right thumb on it. Now <b>C D E F G</b> are fingers <b>1 2 3 4 5</b>.</p><p>In the left hand the little finger starts: C D E F G are <b>5 4 3 2 1</b>.</p>', 'Right thumb on C. Play C D E F G and back, saying the finger numbers. Then the left hand, starting with finger 5.')]),
- 'hbr-P2': ('The staff and the clefs', [
-   (staff5([(150, 2, 'on a line'), (330, 3, 'in a space')]), '<p>Music is written on <b>five lines</b>, called the <b>staff</b>.</p><p>A note can sit <b>on a line</b>. Or it can sit <b>in a space</b>. Higher up means higher on the piano.</p>', 'Count the lines from the bottom: 1, 2, 3, 4, 5. Then count the four spaces.'),
-   (hb(27, 'hero'), '<p>A <b>clef</b> at the start says which notes the lines stand for.</p><p>The <b>treble clef</b> is the Queen of the high notes: her curl wraps round the line for <b>G</b>. The <b>bass clef</b> is the King of the low notes: his two dots hug the line for <b>F</b>.</p>', 'Play any high key with your right hand: the Queen’s side. Then any low key with your left: the King’s side.')]),
- 'hbr-T1': ('The beat', [
-   (beats([4, 4]), '<p>Music has a steady <b>beat</b>, like a heartbeat. It never speeds up and never stops.</p><p>We count the beats: 1, 2, 3, 4, and round again.</p>', 'Put a hand on your heart. Tap that steady beat on your knee and count 1 2 3 4.'),
-   (beats([3, 3, 3], rest=4), '<p><b>Bar lines</b> put the beats into groups called <b>bars</b>. <b>Beat 1</b> of every bar is the strongest.</p><p>Sometimes a beat is <b>silent</b>. You still count it.</p>', 'Clap three in a bar: STRONG, weak, weak. Then leave out one clap, but keep counting.')]),
- 'hbr-T2': ('Notes: crotchet and minim', [
-   (row((big(CR), '1', False), (big(CR), '2', False), (big(CR), '3', False), (big(CR), '4', False)), '<p>This is a <b>crotchet</b>. It lasts <b>one beat</b>.</p><p>Four crotchets fill a bar of four: play, play, play, play.</p>', 'Play C four times, one for each beat, counting 1 2 3 4.'),
-   (row((big(MI), '1 – 2', False), (big(MI), '3 – 4', False), gap=120), '<p>This is a <b>minim</b>. Its head is empty, and it lasts <b>two beats</b>.</p><p>Play on the first beat and <b>hold</b> through the second.</p>', 'Play C as a minim: press on 1, hold through 2. Then again on 3, holding through 4.'),
-   (row((big(CR), 'play', False), (big(RC), 'shh', True), (big(CR), 'play', False), (big(RC), 'shh', True)), '<p>Silence has signs too, called <b>rests</b>. A <b>crotchet rest</b> is one beat of silence.</p><p>You count a rest just like a note. You just do not play.</p>', 'Play, shh, play, shh: C on beats 1 and 3, silence on 2 and 4. Keep counting.')]),
- 'hbr-T2-s2': ('Notes: dotted minim and semibreve', [
-   (row((big(MI), '2 beats', False), (big('+', 70), '', False), (f'<span style="display:inline-block;width:26px;height:26px;border-radius:50%;background:{C};margin-bottom:26px"></span>', 'a dot', True), (big('=', 70), '', False), (big(DM), '3 beats', False), gap=26), '<p>A <b>dot</b> after a minim adds one more beat.</p><p>Two beats and one more: a <b>dotted minim</b> lasts <b>three beats</b>.</p>', 'Play C and hold for 1 2 3. Play beat 1 a little stronger.'),
-   (row((big(SB), '1 – 2 – 3 – 4', False)), '<p>This is a <b>semibreve</b>: an empty head and no stem. It lasts <b>four beats</b>, a whole bar of four.</p><p>Press once, and listen until the sound has had all four beats.</p>', 'Play C and hold for 1 2 3 4. Lift exactly when the next bar begins.'),
-   (family(), '<p>Now you know the family. Each note is <b>half</b> of the one above it.</p><p>One semibreve is as long as two minims, or four crotchets.</p>', 'Play four crotchets on C. Then one semibreve, held for all four beats. The same length!')]),
- 'hbr-E1': ('Loud and soft', [
-   (dyn([('p', 'soft', 70, .45), ('f', 'loud', 190, 1)]), '<p>Music can be <b>soft</b> or <b>loud</b>. The signs are Italian: <b><i>p</i></b> for <i>piano</i>, soft, and <b><i>f</i></b> for <i>forte</i>, loud.</p><p>To play louder, let your arm feel heavy. Do not hit the key.</p>', 'Play C softly, like a secret. Then play it loudly, like calling across a field.'),
-   (dyn([('p', 'soft', 60, .4), ('mp', 'quite soft', 105, .6), ('mf', 'quite loud', 150, .8), ('f', 'loud', 200, 1)]), '<p>Between soft and loud come two more signs. The <b><i>m</i></b> is for <i>mezzo</i>, which means <b>half</b> or <b>medium</b>: <b><i>mp</i></b> is quite soft, <b><i>mf</i></b> is quite loud.</p><p>Soft does not mean slow, and loud does not mean fast. The beat stays the same.</p>', 'Play C four times: p, mp, mf, f. Four steps, the same speed.')]),
-}
-
-# ---------- the Prelim book (her 13 Nov: written new; examples in the exam keys C and G major, A and E minor) ----------
-QV = '𝅘𝅥𝅮'; DC = '𝅘𝅥.'
 F_ = 'font-family="Atkinson Hyperlegible,sans-serif"'
 def st(notes, clef='t', w=560, names=True, led=True):   # a staff with a clef; notes = [(step, label)], step 0 = bottom line
     t, g = 46, 24; y = lambda k: t + 4 * g - k * g / 2; n = len(notes); x0 = 150; dx = (w - x0 - 50) / max(1, n - 1) if n > 1 else 0
@@ -139,8 +106,61 @@ def st(notes, clef='t', w=560, names=True, led=True):   # a staff with a clef; n
         o += f'<ellipse cx="{x}" cy="{y(k)}" rx="15" ry="11" transform="rotate(-20 {x} {y(k)})" fill="{C}"/>'
         if names and lab: o += f'<text x="{x}" y="{t + 4 * g + 84}" text-anchor="middle" font-size="26" font-weight="700" fill="{N}" {F_}>{lab}</text>'
     return o + '</svg>'
+def disc(part=1, z=40, div=1):   # her 14 Nov: one circle = one beat. part: the piece shown (1, .5, .25); div: dashed cuts in a whole circle (2 = two quavers joined, 4 = four semiquavers)
+    import math
+    cuts = ''.join(f'<line x1="20" y1="20" x2="{20 + 18 * math.sin(2 * math.pi * k / div):.1f}" y2="{20 - 18 * math.cos(2 * math.pi * k / div):.1f}" stroke="#fff" stroke-width="2.2" stroke-dasharray="3 2.5"/>' for k in range(div)) if div > 1 else ''
+    if div == 2: cuts = '<line x1="20" y1="2" x2="20" y2="38" stroke="#fff" stroke-width="2.2" stroke-dasharray="3 2.5"/>'
+    if part == 1: body = f'<circle cx="20" cy="20" r="18" fill="{C}"/>{cuts}'
+    else:
+        a = 2 * math.pi * part; x, y = 20 + 18 * math.sin(a), 20 - 18 * math.cos(a)
+        body = f'<circle cx="20" cy="20" r="17.2" fill="none" stroke="#b9b8d0" stroke-width="1.5" stroke-dasharray="3 3"/><path d="M20 20 L20 2 A18 18 0 {1 if part > .5 else 0} 1 {x:.1f} {y:.1f} Z" fill="{C}"/>'
+    return f'<svg viewBox="0 0 40 40" style="width:{z}px;height:{z}px">{body}</svg>'
+def apple(part=1, z=40): return disc(part, z)
+def apples(n, z=34, div=1):   # n beats as circles: 4, 3, 2, 1, 1.5, .5, .25
+    full = int(n); rest = n - full
+    return '<span style="display:inline-flex;gap:4px;align-items:center;justify-content:center">' + disc(1, z, div) * full + (disc(rest, z) if rest else '') + '</span>'
+def emptyc(z=34): return f'<svg viewBox="0 0 40 40" style="width:{z}px;height:{z}px"><circle cx="20" cy="20" r="17.2" fill="none" stroke="#9a9cc0" stroke-width="2" stroke-dasharray="4 3"/></svg>'
+def cnt(circles, words): return f'<span style="display:flex;flex-direction:column;align-items:center;gap:6px">{circles}<span>{words}</span></span>'
+ART = json.load(open('/tmp/claude-0/lvl/pb-art.json'))
+def art(k, h): return ART[k].replace('<svg ', f'<svg style="display:block;height:{h}px;width:auto" preserveAspectRatio="xMidYMid meet" ', 1)
+def clefs2():   # the two clefs, each with the line it names
+    one = lambda clef, k, nm, who, line: f'<div style="display:flex;flex-direction:column;align-items:center;gap:4px">{st([(k, nm)], clef, 300)}<b style="font-size:24px;color:{N}">{who}</b><span style="font-size:18px;color:#6d6f9c">{line}</span></div>'
+    return '<div style="display:flex;gap:36px;justify-content:center">' + one('t', 2, 'G', 'Treble clef', 'the Queen · her curl holds the G line') + one('b', 6, 'F', 'Bass clef', 'the King · his dots hug the F line') + '</div>'
+ROOMSTORY = {
+ 'hbr-B1': ('Sitting and hands', [
+   (app('1:Just right', 460), '<p><b>Sit tall</b> on the front half of the stool, with both <b>feet flat</b> on the floor.</p><p>Your arms float out in front, <b>level with the keys</b>, like a table top.</p>', 'Sit down. Lift your shoulders up to your ears, then let them drop.'),
+   (app('2:The good shape'), '<p>Hold a small ball in your hand. That <b>round shape</b> is your playing hand.</p><p>Your knuckles stand up like a <b>bridge</b>, and you play on your <b>fingertips</b>.</p>', 'Hold a ball or an orange. Put your hand on the keys without changing its shape.'),
+   ('<div style="display:flex;flex-direction:column;gap:4px">' + ''.join(f'<div style="display:flex;align-items:center;gap:24px"><div style="width:430px">' + ART[k_].replace('<svg ', '<svg style="display:block;width:100%;height:auto" preserveAspectRatio="xMidYMid meet" ', 1) + f'</div><b style="font-size:28px;white-space:nowrap;color:{C if bad else N}">{lab}</b></div>' for k_, lab, bad in (('hand-flat', '✗ flat', True), ('hand-cave', '✗ fallen in', True), ('hand-good', '✓ round', False))) + '</div>', '<p>A <b>flat</b> hand is fast asleep. A bridge that has <b>fallen in</b> cannot carry anything.</p><p>The <b>round</b> hand can play all day.</p>', 'Make the flat hand, then the fallen bridge, then the round hand. Feel the difference.')]),
+ 'hbr-P1': ('The keyboard', [
+   (kb(15, 600, 170), '<p>Look at the black keys. They come in <b>twos</b> and <b>threes</b>, again and again, all the way along.</p><p>Find the pattern once and you can never get lost.</p>', 'Touch every group of two black keys, from the left end to the right end. Then every group of three.'),
+   (f'<svg viewBox="0 0 640 250" style="width:640px"><g transform="translate(20 60)">{kb(15, 600, 150)[kb(15, 600, 150).index(">") + 1:-6]}</g>{bear(70, 30, 1.7)}{bird(585, 30, 1.6)}<text x="70" y="246" text-anchor="middle" font-size="22" font-weight="700" fill="{N}" font-family="Atkinson Hyperlegible,sans-serif">low</text><text x="585" y="246" text-anchor="middle" font-size="22" font-weight="700" fill="{N}" font-family="Atkinson Hyperlegible,sans-serif">high</text></svg>', '<p><b>Left is low</b>, like a big grumpy bear. <b>Right is high</b>, like a little bird.</p><p>Go to the right and every key sounds a little higher.</p>', 'Play the lowest key you can reach, then the highest. Bear, then bird.'),
+   (kb(7, 560, 190, labels=True, mark={0, 1, 2}), '<p>Every white key has a letter. Beside the <b>two</b> black keys live <b>C, D, E</b>. Beside the <b>three</b> live <b>F, G, A, B</b>.</p><p>After B comes C again: seven letters, round and round.</p>', 'Find a group of two black keys. Play the three white keys around it and say C, D, E.')]),
+ 'hbr-L1': ('Finger numbers', [
+   (f'<div style="display:flex;gap:50px;justify-content:center;align-items:flex-end">{art("hand-L", 300)}{art("hand-R", 300)}</div>', '<p>Every finger has a <b>number</b>. The <b>thumb is 1</b>, then 2, 3, 4, and the little finger is <b>5</b>.</p><p>It is the same in both hands: thumbs are always 1.</p>', 'Hold up both hands. Wiggle finger 1, then 2, 3, 4, 5, saying the numbers.'),
+   (fivekeys(), '<p>Find any <b>C</b>: the white key just left of two black keys. Put your right thumb on it. Now <b>C D E F G</b> are fingers <b>1 2 3 4 5</b>.</p><p>In the left hand the little finger starts: C D E F G are <b>5 4 3 2 1</b>.</p>', 'Right thumb on C. Play C D E F G and back, saying the finger numbers. Then the left hand, starting with finger 5.')]),
+ 'hbr-P2': ('The staff and the clefs', [
+   (staff5([(150, 2, 'on a line'), (330, 3, 'in a space')]), '<p>Music is written on <b>five lines</b>, called the <b>staff</b>.</p><p>A note can sit <b>on a line</b>. Or it can sit <b>in a space</b>. Higher up means higher on the piano.</p>', 'Count the lines from the bottom: 1, 2, 3, 4, 5. Then count the four spaces.'),
+   (clefs2(), '<p>A <b>clef</b> at the start says which notes the lines stand for.</p><p>The <b>treble clef</b> is the Queen of the high notes: her curl wraps round the line for <b>G</b>. The <b>bass clef</b> is the King of the low notes: his two dots hug the line for <b>F</b>.</p>', 'Play any high key with your right hand: the Queen’s side. Then any low key with your left: the King’s side.')]),
+ 'hbr-T1': ('The beat', [
+   (beats([4, 4]), '<p>Music has a steady <b>beat</b>, like a heartbeat. It never speeds up and never stops.</p><p>We count the beats: 1, 2, 3, 4, and round again.</p>', 'Put a hand on your heart. Tap that steady beat on your knee and count 1 2 3 4.'),
+   (beats([3, 3, 3], rest=4), '<p><b>Bar lines</b> put the beats into groups called <b>bars</b>. <b>Beat 1</b> of every bar is the strongest.</p><p>Sometimes a beat is <b>silent</b>. You still count it.</p>', 'Clap three in a bar: STRONG, weak, weak. Then leave out one clap, but keep counting.')]),
+ 'hbr-T2': ('Notes: crotchet and minim', [
+   (row(*[(big(CR), cnt(apples(1, 34), str(q)), False) for q in (1, 2, 3, 4)]), '<p>This is a <b>crotchet</b>. It lasts <b>one beat</b>. One circle under a note means one beat.</p><p>Four crotchets fill a bar of four: play, play, play, play.</p>', 'Play C four times, one for each beat, counting 1 2 3 4.'),
+   (row((big(MI), cnt(apples(2, 34), '1 – 2'), False), (big(MI), cnt(apples(2, 34), '3 – 4'), False), gap=120), '<p>This is a <b>minim</b>. Its head is empty, and it lasts <b>two beats</b>.</p><p>Play on the first beat and <b>hold</b> through the second.</p>', 'Play C as a minim: press on 1, hold through 2. Then again on 3, holding through 4.'),
+   (row((big(CR), cnt(apples(1, 34), 'play'), False), (big(RC), cnt(emptyc(34), 'shh'), True), (big(CR), cnt(apples(1, 34), 'play'), False), (big(RC), cnt(emptyc(34), 'shh'), True)), '<p>Silence has signs too, called <b>rests</b>. A <b>crotchet rest</b> is one beat of silence.</p><p>You count a rest just like a note. You just do not play.</p>', 'Play, shh, play, shh: C on beats 1 and 3, silence on 2 and 4. Keep counting.')]),
+ 'hbr-T2-s2': ('Notes: dotted minim and semibreve', [
+   (row((big(MI), cnt(apples(2, 30), '2 beats'), False), (big('+', 70), '', False), (f'<span style="display:inline-block;width:26px;height:26px;border-radius:50%;background:{N};margin-bottom:26px"></span>', cnt(apples(1, 30), 'a dot'), True), (big('=', 70), '', False), (big(DM), cnt(apples(3, 30), '3 beats'), False), gap=26), '<p>A <b>dot</b> after a minim adds one more beat.</p><p>Two beats and one more: a <b>dotted minim</b> lasts <b>three beats</b>.</p>', 'Play C and hold for 1 2 3. Play beat 1 a little stronger.'),
+   (row((big(SB), cnt(apples(4, 36), '1 – 2 – 3 – 4'), False)), '<p>This is a <b>semibreve</b>: an empty head and no stem. It lasts <b>four beats</b>, a whole bar of four.</p><p>Press once, and listen until the sound has had all four beats.</p>', 'Play C and hold for 1 2 3 4. Lift exactly when the next bar begins.'),
+   (family(), '<p>Now you know the family. Each note is <b>half</b> of the one above it.</p><p>One semibreve is as long as two minims, or four crotchets.</p>', 'Play four crotchets on C. Then one semibreve, held for all four beats. The same length!')]),
+ 'hbr-E1': ('Loud and soft', [
+   (dyn([('p', 'soft', 70, .45), ('f', 'loud', 190, 1)]), '<p>Music can be <b>soft</b> or <b>loud</b>. The signs are Italian: <b><i>p</i></b> for <i>piano</i>, soft, and <b><i>f</i></b> for <i>forte</i>, loud.</p><p>To play louder, let your arm feel heavy. Do not hit the key.</p>', 'Play C softly, like a secret. Then play it loudly, like calling across a field.'),
+   (dyn([('p', 'soft', 60, .4), ('mp', 'quite soft', 105, .6), ('mf', 'quite loud', 150, .8), ('f', 'loud', 200, 1)]), '<p>Between soft and loud come two more signs. The <b><i>m</i></b> is for <i>mezzo</i>, which means <b>half</b> or <b>medium</b>: <b><i>mp</i></b> is quite soft, <b><i>mf</i></b> is quite loud.</p><p>Soft does not mean slow, and loud does not mean fast. The beat stays the same.</p>', 'Play C four times: p, mp, mf, f. Four steps, the same speed.')]),
+}
+
+# ---------- the Prelim book (her 13 Nov: written new; examples in the exam keys C and G major, A and E minor) ----------
+QV = '𝅘𝅥𝅮'; DC = '𝅘𝅥.'
 def grand():   # the two staves with Middle C on its own little line between them
-    g = 22; w = 520; o = f'<svg viewBox="0 0 {w} 330" style="width:{w}px">'
+    g = 22; w = 520; o = f'<svg viewBox="-26 0 {w + 26} 330" style="width:{w + 26}px"><path d="M2 30 C-16 30 -2 150 -20 159 C-2 168 -16 288 2 288" fill="none" stroke="{N}" stroke-width="4" stroke-linecap="round"/>'
     for top in (30, 200): o += ''.join(f'<line x1="10" x2="{w - 10}" y1="{top + i * g}" y2="{top + i * g}" stroke="{N}" stroke-width="2.2"/>' for i in range(5))
     o += f'<line x1="10" x2="10" y1="30" y2="{200 + 4 * g}" stroke="{N}" stroke-width="3"/><text x="22" y="{30 + 4 * g - g * .95}" font-family="NM" font-size="{g * 4.05}" fill="{N}">𝄞</text><text x="22" y="{200 + 4 * g - g * 1.05}" font-family="NM" font-size="{g * 3.9}" fill="{N}">𝄢</text>'
     o += f'<line x1="236" x2="292" y1="159" y2="159" stroke="{N}" stroke-width="2.4"/><ellipse cx="264" cy="159" rx="15" ry="11" transform="rotate(-20 264 159)" fill="{C}"/><text x="310" y="167" font-size="24" font-weight="700" fill="{C}" {F_}>Middle C</text>'
@@ -166,19 +186,6 @@ def ksig(k, w=250):   # a treble staff with k sharps after the clef (0 or 1: F s
 def tie():   # two notes of the same pitch joined by a curve
     return f'<svg viewBox="0 0 420 230" style="width:420px"><text x="70" y="150" font-family="NM" font-size="150" fill="{N}">{MI}</text><text x="250" y="150" font-family="NM" font-size="150" fill="{N}">{CR}</text><path d="M96 168 Q200 214 300 168" fill="none" stroke="{C}" stroke-width="6" stroke-linecap="round"/><text x="200" y="226" text-anchor="middle" font-size="24" font-weight="700" fill="{C}" {F_}>2 + 1 = 3 beats</text></svg>'
 SQ = '𝅘𝅥𝅯'
-def disc(part=1, z=40, div=1):   # her 14 Nov: one circle = one beat. part: the piece shown (1, .5, .25); div: dashed cuts in a whole circle (2 = two quavers joined, 4 = four semiquavers)
-    import math
-    cuts = ''.join(f'<line x1="20" y1="20" x2="{20 + 18 * math.sin(2 * math.pi * k / div):.1f}" y2="{20 - 18 * math.cos(2 * math.pi * k / div):.1f}" stroke="#fff" stroke-width="2.2" stroke-dasharray="3 2.5"/>' for k in range(div)) if div > 1 else ''
-    if div == 2: cuts = '<line x1="20" y1="2" x2="20" y2="38" stroke="#fff" stroke-width="2.2" stroke-dasharray="3 2.5"/>'
-    if part == 1: body = f'<circle cx="20" cy="20" r="18" fill="{C}"/>{cuts}'
-    else:
-        a = 2 * math.pi * part; x, y = 20 + 18 * math.sin(a), 20 - 18 * math.cos(a)
-        body = f'<circle cx="20" cy="20" r="17.2" fill="none" stroke="#b9b8d0" stroke-width="1.5" stroke-dasharray="3 3"/><path d="M20 20 L20 2 A18 18 0 {1 if part > .5 else 0} 1 {x:.1f} {y:.1f} Z" fill="{C}"/>'
-    return f'<svg viewBox="0 0 40 40" style="width:{z}px;height:{z}px">{body}</svg>'
-def apple(part=1, z=40): return disc(part, z)
-def apples(n, z=34, div=1):   # n beats as circles: 4, 3, 2, 1, 1.5, .5, .25
-    full = int(n); rest = n - full
-    return '<span style="display:inline-flex;gap:4px;align-items:center;justify-content:center">' + disc(1, z, div) * full + (disc(rest, z) if rest else '') + '</span>'
 def bq(n=2, h=150, col=None, beams=1):   # n quavers joined by a beam (her 14 Nov: one has a tail, two or more are beamed); beams=2 for semiquavers
     col = col or N; sp = 70 if beams == 1 else 56; w = 60 + (n - 1) * sp
     heads = ''.join(f'<ellipse cx="{24 + i * sp}" cy="118" rx="19" ry="13.5" transform="rotate(-22 {24 + i * sp} 118)" fill="{col}"/><rect x="{39 + i * sp}" y="16" width="5" height="100" fill="{col}"/>' for i in range(n))
@@ -294,7 +301,7 @@ section.pg.cx{padding:40px 50px 36px} .prbig{zoom:1.38;margin-top:14px} .prbig f
 .cx .lbbot{position:absolute;left:50px;right:50px;bottom:38px} .cx .plq{position:absolute;bottom:33px;left:50%;transform:translateX(-50%);background:#fff;color:#26296b;border:1.6px solid #26296b;min-width:44px;height:34px;line-height:34px;text-align:center;font-family:'Playfair Display',PF,serif;font-weight:900;font-size:17px;box-sizing:border-box}
 .cx .lvqr .qrs{width:76px!important;height:76px!important} .cx .lvqr{gap:2px} .cx .kk{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e;margin-bottom:2px} .cx h1.lbh{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:42px;line-height:1.08;color:#26296b;margin:0 0 12px}
 .cx .lvhead{display:flex;justify-content:space-between;align-items:flex-start;border:0;padding:0} .cx .kick{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e}
-.stpic{position:relative;height:400px;margin:0 0 16px;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
+.stpic{position:relative;height:470px;margin:0 0 16px;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
 .stpic svg{display:block;max-width:none}
 .bub{display:flex;gap:14px;align-items:center;margin:0 0 16px} .bub .bf{flex:none} .bub .bt{position:relative;flex:1;background:#fff;border:2px solid #26296b;border-radius:18px;padding:14px 20px;color:#26296b} .bub .bt p{margin:0;font-size:25px!important;line-height:1.4!important} .bub .bt b{color:#e4572e}
 .bub .bt:before{content:'';position:absolute;left:-11px;top:50%;margin-top:-9px;border:9px solid transparent;border-right-color:#26296b;border-left:0}
@@ -317,7 +324,7 @@ document.body.dataset.pruned='1';})();</script>"""
         if not (t and n_): return o
         o = o.replace(t.group(0), '', 1).replace(n_.group(0), '', 1)
         return re.sub(r'<div class="lbtop">.*?</div>', f'<div class="sth"><span class="stt">{t.group(1)}</span><span class="stn">{n_.group(1)}</span></div>', o, count=1, flags=re.S)
-    out = [re.sub(r'<div class="stpn"><span>At the piano</span>(.*?)</div>', lambda m: f'<div class="try"><div class="tt">Try it at the piano</div><div class="li"><span class="nb">1</span><span class="tx">{m.group(1)}</span><span class="ck"></span></div></div>', o, flags=re.S) for o in out]
+    out = [re.sub(r'<div class="stpn"><span>At the piano</span>(.*?)</div>', lambda m: f'<div class="try"><div class="tt">{"Try it at the piano" if re.search(r"[Pp]lay|piano|key|thumb", m.group(1)) else "Try it"}</div><div class="li"><span class="nb">1</span><span class="tx">{m.group(1)}</span><span class="ck"></span></div></div>', o, flags=re.S) for o in out]
     out = [re.sub(r'<div class="sttx">(<p>.*?</p>)', lambda m: f'<div class="bub"><div class="bf">{RABBIT}</div><div class="bt">{m.group(1)}</div></div><div class="sttx">', o, count=1, flags=re.S) for o in out]
     out = [o.replace('· Step 1 of 1</div>', '· Listen</div>') for o in out]
     html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{fit}</body></html>'
