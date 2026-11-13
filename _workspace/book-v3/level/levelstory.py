@@ -364,17 +364,17 @@ ROOMSTORY.update({
 def scene_loud(wake=True):
     up = (f'<path d="M420 150 Q470 184 520 150" fill="#fff" stroke="{N}" stroke-width="3"/>' + bird(470, 128, 3)
           + (''.join(f'<text x="{520 + i * 22}" y="{90 - i * 22}" font-size="{26 + i * 6}" font-weight="700" fill="#9a9cc0" font-family="Playfair Display,serif">z</text>' for i in range(3)) if not wake else
-             f'<text x="535" y="84" font-size="44" font-weight="900" fill="{C}" font-family="Playfair Display,serif">!</text><text x="560" y="70" font-size="34" font-weight="900" fill="{C}" font-family="Playfair Display,serif">!</text>'))
+             f'<text x="540" y="96" font-size="30" font-style="italic" fill="#6d6f9c" font-family="Playfair Display,serif">awake</text>'))
     k = kb(7, 230, 70); kbody = k[k.index('>') + 1:-6]
-    noise = (f'<text x="380" y="262" font-size="46" font-weight="900" fill="{C}" font-family="Playfair Display,serif" transform="rotate(-6 380 262)">BOOM!</text>'
+    noise = (f'<text x="420" y="262" font-size="56" font-style="italic" font-weight="900" fill="{C}" font-family="Playfair Display,serif">f</text>'
              + ''.join(f'<path d="M{520 + i * 18} 330 q14 -16 0 -32" fill="none" stroke="{C}" stroke-width="4" stroke-linecap="round"/>' for i in range(3))) if wake else (
              f'<text x="420" y="262" font-size="40" font-style="italic" font-weight="900" fill="{N}" font-family="Playfair Display,serif">p</text>'
              + f'<path d="M452 256 q10 -10 0 -20" fill="none" stroke="#9a9cc0" stroke-width="3" stroke-linecap="round"/>')
     return (f'<svg viewBox="0 0 640 380" style="width:640px"><rect x="10" y="10" width="620" height="360" fill="#fff" stroke="{N}" stroke-width="3"/>'
-            f'<rect x="10" y="194" width="620" height="10" fill="{N}"/><text x="30" y="44" font-size="16" letter-spacing="3" font-weight="700" fill="#6d6f9c" {F_}>UPSTAIRS</text><text x="30" y="232" font-size="16" letter-spacing="3" font-weight="700" fill="#6d6f9c" {F_}>THE MUSIC ROOM</text>'
-            f'{up}<g transform="translate(270 284)">{kbody}</g>{bear(160, 290, 3.6)}{noise}<rect x="10" y="354" width="620" height="16" fill="{N}"/></svg>')
-ROOMOPEN = {'hbr-E1': (scene_loud(True), '<p><b>Bear</b> plays every note as <b>loud</b> as he can. Upstairs, <b>Bird</b> is trying to sleep.</p><p>Bear does not know that music can be soft too. Can you help him?</p>', 'Play C as loudly as Bear. Then so softly that Bird would not wake up.')}
-ROOMEND = {'hbr-E1': (scene_loud(False), '<p>Now Bear knows the signs. When Bird is asleep, he plays <b><i>p</i></b>. When Bird wakes up and wants to dance, he plays <b><i>f</i></b>.</p><p>And in between, <b><i>mp</i></b> and <b><i>mf</i></b>, one step at a time.</p>', 'Play a tune you know twice: once for sleeping Bird, once for dancing Bird.')}
+            f'<rect x="10" y="194" width="620" height="10" fill="{N}"/><text x="30" y="44" font-size="16" letter-spacing="3" font-weight="700" fill="#6d6f9c" {F_}>THE FIRST FLOOR</text><text x="30" y="232" font-size="16" letter-spacing="3" font-weight="700" fill="#6d6f9c" {F_}>THE MUSIC ROOM</text>'
+            f'{up}<g transform="translate(270 284)">{kbody}</g>{bear(160, 290, 3.6)}{noise}<rect x="10" y="354" width="620" height="16" fill="{N}"/></svg>' + f'<div style="text-align:center;font-family:Playfair Display,serif;font-style:italic;font-size:19px;color:#6d6f9c;margin-top:8px">{"Plate VIII. Mr Bear at the piano, at full strength." if wake else "Plate VIII, continued. The same piano, a different hand."}</div>')
+ROOMOPEN = {'hbr-E1': (scene_loud(True), '<p>Mr <b>Bear</b> plays every note at <b>full strength</b>. On the floor above, Miss <b>Bird</b> has given up on sleep.</p><p>He is not wrong to play loudly. He has simply never been told that the piano can also <b>whisper</b>.</p>', 'Play one C as Mr Bear would. Then one so quiet that the floor above would not notice.')}
+ROOMEND = {'hbr-E1': (scene_loud(False), '<p>Mr Bear now plays <b><i>p</i></b> after ten, and saves his <b><i>f</i></b> for the moments that need it. Loud means more when soft came first.</p><p>Haydn knew this. In his <i>Surprise</i> Symphony a quiet tune is suddenly broken by one loud chord. The story goes that he wrote it to wake up the audience.</p>', 'Play a tune you know softly. Then play it again with just one loud note somewhere. Where does the surprise work best?')}
 def build_story(floor_i, name, line):
     global RIGHT; RIGHT = name.upper()
     out = []; toc = []; n = 2
