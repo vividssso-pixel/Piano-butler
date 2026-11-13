@@ -40,12 +40,13 @@ def beats(groups, rest=None):   # big beat dots in bars; rest = index of a silen
         if gi < len(groups) - 1: out += f'<span style="width:4px;height:74px;background:{N};margin:0 10px;align-self:flex-start"></span>'
     return f'<div style="display:flex;align-items:flex-start;justify-content:center">{out}</div>'
 def dyn(items):   # dynamics as growing bars
-    return '<div style="display:flex;align-items:flex-end;justify-content:center;gap:22px">' + ''.join(f'<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:74px;height:{h}px;background:{C};opacity:{o};border-radius:6px 6px 0 0"></span><i style="font-family:\'Playfair Display\',serif;font-weight:900;font-size:44px;color:{N};line-height:1">{s}</i><span style="font-size:17px;color:{N}">{w}</span></div>' for s, w, h, o in items) + '</div>'
+    return '<div style="display:flex;align-items:flex-end;justify-content:center;gap:22px">' + ''.join(f'<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:74px;height:{h}px;background:{C};opacity:{o};border-radius:6px 6px 0 0"></span><i style="font-family:\'Playfair Display\',serif;font-weight:900;font-size:44px;color:{N};line-height:1">{s}</i><span style="font-size:17px;color:{N};min-height:22px;line-height:22px">{w or "&nbsp;"}</span></div>' for s, w, h, o in items) + '</div>'
 
 # her 13 Nov ("체스가 깔끔하다"): every page of a Level book sits in a double-rule frame on the books' chequered floor,
 # with the page number on a plaque. The hidden .foot marks the bottom of the frame for the shrink-to-fit pass.
 def section(inner, n, flow):
-    return f'<section class="pg cx" data-flow="{flow}"><div class="fr"><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></div><div class="floor"></div><div class="plq">{n}</div></section>'
+    # her 14 Nov ("예전 레슨북 디자인 그대로"): the Lesson Book page: caps running head over a double rule, coral kicker, Playfair title, picture in a double-rule frame, navy page square
+    return f'<section class="pg cx" data-flow="{flow}"><div class="lbtop"><span>The Piano Butler · Level book</span><span>{RIGHT}</span></div><div class="fr"><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></div><div class="plq">{n}</div></section>'
 def fivekeys():   # C to G with their black keys and the right-hand finger numbers
     k = kb(5, 520, 190, labels=True); body = k[k.index('>') + 1:-6]
     nums = ''.join(f'<text x="{i * 104 + 52}" y="46" text-anchor="middle" font-size="46" font-weight="700" fill="{C}" font-family="Atkinson Hyperlegible,sans-serif">{i + 1}</text>' for i in range(5))
@@ -66,8 +67,8 @@ PRACT = {
  'hbr-T2': lambda: [ex(1, 'One beat or two?', 'Write 1 or 2 under each. The first is done.', grid([(G(MI), DONE('2')), (G(CR), BOX), (G(RC), BOX), (G(MI), BOX), (G(CR), BOX)], 5)), STEP['hbr-T2'][1]],
  'hbr-T2-s2': lambda: [ex(1, 'Name and beats', 'Fill in the table. The first row is done.', '<table class="lvt"><tr><th>Note</th><th>Name</th><th>Beats</th></tr>' + ''.join(f'<tr><td>{G(n)}</td><td>{a}</td><td>{b_}</td></tr>' for n, a, b_ in ((SB, DONE('semibreve'), DONE('4')), (MI, LINE, BOX), (CR, LINE, BOX), (DM, LINE, BOX))) + '</table>'),
                        ex(2, 'Three in a bar', 'Each bar has three beats. Count 1 2 3 and play each bar. Write how many notes it has. The first is done.', grid([(G(DM), DONE('1')), (G(MI + ' ' + CR), BOX), (G(CR + ' ' + CR + ' ' + CR), BOX)], 3), 2)],
- 'hbr-E1': lambda: [ex(1, 'What does it mean?', 'Write soft, loud, very soft or very loud. The first is done.', tbl_l(['Sign', 'Means'], [['<i><b>p</b></i>', DONE('soft')], ['<i><b>f</b></i>', LINE], ['<i><b>pp</b></i>', LINE], ['<i><b>ff</b></i>', LINE]])),
-                    ex(2, 'Play it', 'Play C four times: pp, p, f, ff. Four steps, the same speed. Tick a circle each day.', tick5)],
+ 'hbr-E1': lambda: [ex(1, 'What does it mean?', 'Write soft, loud, quite soft or quite loud. The first is done.', tbl_l(['Sign', 'Means'], [['<i><b>p</b></i>', DONE('soft')], ['<i><b>f</b></i>', LINE], ['<i><b>mp</b></i>', LINE], ['<i><b>mf</b></i>', LINE]])),
+                    ex(2, 'Play it', 'Play C four times: p, mp, mf, f. Four steps, the same speed. Tick a circle each day.', tick5)],
 }
 def practise_for(rid):
     xs = PRACT[rid]() if rid in PRACT else practice(rid)[:2]
@@ -79,7 +80,7 @@ def ear_story(r, name, i, n):
     pre = name == 'Beginner'; ec = EARCARDS if pre else [(str(k + 1), p_['en']) for k, p_ in enumerate(r['ear'])]
     cards = '<div style="display:grid;grid-template-columns:repeat(' + ('3' if len(ec) > 4 else '2') + ',200px);gap:16px;justify-content:center">' + ''.join(f'<div style="border:2px solid {N};border-radius:10px;padding:26px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center"><span style="width:58px;height:58px;border-radius:50%;background:{C};color:#fff;font-weight:700;font-size:30px;display:flex;align-items:center;justify-content:center">{a}</span><b style="font-size:22px;color:{N};line-height:1.25">{b_}</b></div>' for a, b_ in ec) + '</div>'
     hd = f'<div class="lvhead"><div><div class="cxk">Room {i} <i>◆</i> 1 of 1</div><h1>Ear training</h1></div><a class="lvqr" href="{url}">{qr(url)}<span>Scan to play</span></a></div>'
-    left = f'{hd}<div class="stpic"><div class="stin">{cards}</div></div><div class="sttx"><p><b>Listen first, then play.</b> Good ears make good fingers.</p><p>' + ('Five listening games are waiting in the app. Scan the code and play one each day.' if pre else 'These are the listening tests of this level. Each has a game in the app: scan the code and play one each day.') + '</p></div><div class="stpn"><span>At the piano</span>Before you play a note, sing it. Then play it and listen: were you right?</div>'
+    left = f'{hd}<div class="stpic"><div class="stin">{cards}</div></div><div class="sttx"><p><b>Listen first, then play.</b> Good ears make good fingers.</p><p>' + ('Five listening games are waiting in the app. Scan the code and play one each day.' if pre else 'Four listening games belong to this level. Each one is in the app: scan the code and play one each day.') + '</p></div><div class="stpn"><span>At the piano</span>Before you play a note, sing it. Then play it and listen: were you right?</div>'
     home = EARHOME.get(name) or [('Floor, tummy or sky?', 'A grown-up plays one key: very low, in the middle, or very high. Eyes closed! Point to the floor, your tummy or the sky.'), ('Copy-cat clap', 'A grown-up claps a short pattern. Clap it back exactly. Then swap: you clap, they copy.')]
     right = f'<div class="cxk cxc">Room {i} <i>◆</i> Ear training <i>◆</i> Practise</div><div class="prbig">' + ''.join(ex(k + 1, a, b_, tick5, 1) for k, (a, b_) in enumerate(home)) + '</div>'
     return left, right
@@ -117,7 +118,7 @@ ROOMSTORY = {
    (family(), '<p>Now you know the family. Each note is <b>half</b> of the one above it.</p><p>One semibreve is as long as two minims, or four crotchets.</p>', 'Play four crotchets on C. Then one semibreve, held for all four beats. The same length!')]),
  'hbr-E1': ('Loud and soft', [
    (dyn([('p', 'soft', 70, .45), ('f', 'loud', 190, 1)]), '<p>Music can be <b>soft</b> or <b>loud</b>. The signs are Italian: <b><i>p</i></b> for <i>piano</i>, soft, and <b><i>f</i></b> for <i>forte</i>, loud.</p><p>To play louder, let your arm feel heavy. Do not hit the key.</p>', 'Play C softly, like a secret. Then play it loudly, like calling across a field.'),
-   (dyn([('pp', 'very soft', 40, .3), ('p', 'soft', 80, .45), ('f', 'loud', 160, .8), ('ff', 'very loud', 210, 1)]), '<p>Two letters mean <b>very</b>: <b><i>pp</i></b> is very soft, <b><i>ff</i></b> is very loud.</p><p>Soft does not mean slow, and loud does not mean fast. The beat stays the same.</p>', 'Play C four times: pp, p, f, ff. Four steps, the same speed.')]),
+   (dyn([('p', 'soft', 60, .4), ('mp', 'quite soft', 105, .6), ('mf', 'quite loud', 150, .8), ('f', 'loud', 200, 1)]), '<p>In between come two more. The <b><i>m</i></b> is for <i>mezzo</i>, which means <b>half</b> or <b>medium</b>: <b><i>mp</i></b> is quite soft, <b><i>mf</i></b> is quite loud.</p><p>Soft does not mean slow, and loud does not mean fast. The beat stays the same.</p>', 'Play C four times: p, mp, mf, f. Four steps, the same speed.')]),
 }
 
 # ---------- the Prelim book (her 13 Nov: written new; examples in the exam keys C and G major, A and E minor) ----------
@@ -156,8 +157,30 @@ def tsig(a, b_): return f'<span style="display:inline-flex;flex-direction:column
 def tsrow(a, b_, n): return f'<div style="display:flex;align-items:center;gap:30px;margin:6px 0">{tsig(a, b_)}{beats([n])}</div>'
 def tie():   # two notes of the same pitch joined by a curve
     return f'<svg viewBox="0 0 420 230" style="width:420px"><text x="70" y="150" font-family="NM" font-size="150" fill="{N}">{MI}</text><text x="250" y="150" font-family="NM" font-size="150" fill="{N}">{CR}</text><path d="M96 168 Q200 214 300 168" fill="none" stroke="{C}" stroke-width="6" stroke-linecap="round"/><text x="200" y="226" text-anchor="middle" font-size="24" font-weight="700" fill="{C}" {F_}>2 + 1 = 3 beats</text></svg>'
-def slur():
-    return f'<svg viewBox="0 0 520 220" style="width:520px">' + ''.join(f'<text x="{60 + i * 120}" y="{176 - i * 14}" font-family="NM" font-size="130" fill="{N}">{CR}</text>' for i in range(4)) + f'<path d="M80 60 Q270 -30 470 22" fill="none" stroke="{C}" stroke-width="6" stroke-linecap="round"/></svg>'
+SQ = '𝅘𝅥𝅯'
+def disc(part=1, z=40, div=1):   # her 14 Nov: one circle = one beat. part: the piece shown (1, .5, .25); div: dashed cuts in a whole circle (2 = two quavers joined, 4 = four semiquavers)
+    import math
+    cuts = ''.join(f'<line x1="20" y1="20" x2="{20 + 18 * math.sin(2 * math.pi * k / div):.1f}" y2="{20 - 18 * math.cos(2 * math.pi * k / div):.1f}" stroke="#fff" stroke-width="2.2" stroke-dasharray="3 2.5"/>' for k in range(div)) if div > 1 else ''
+    if div == 2: cuts = '<line x1="20" y1="2" x2="20" y2="38" stroke="#fff" stroke-width="2.2" stroke-dasharray="3 2.5"/>'
+    if part == 1: body = f'<circle cx="20" cy="20" r="18" fill="{C}"/>{cuts}'
+    else:
+        a = 2 * math.pi * part; x, y = 20 + 18 * math.sin(a), 20 - 18 * math.cos(a)
+        body = f'<circle cx="20" cy="20" r="17.2" fill="none" stroke="#b9b8d0" stroke-width="1.5" stroke-dasharray="3 3"/><path d="M20 20 L20 2 A18 18 0 {1 if part > .5 else 0} 1 {x:.1f} {y:.1f} Z" fill="{C}"/>'
+    return f'<svg viewBox="0 0 40 40" style="width:{z}px;height:{z}px">{body}</svg>'
+def apple(part=1, z=40): return disc(part, z)
+def apples(n, z=34, div=1):   # n beats as circles: 4, 3, 2, 1, 1.5, .5, .25
+    full = int(n); rest = n - full
+    return '<span style="display:inline-flex;gap:4px;align-items:center;justify-content:center">' + disc(1, z, div) * full + (disc(rest, z) if rest else '') + '</span>'
+def bq(n=2, h=150, col=None, beams=1):   # n quavers joined by a beam (her 14 Nov: one has a tail, two or more are beamed); beams=2 for semiquavers
+    col = col or N; sp = 70 if beams == 1 else 56; w = 60 + (n - 1) * sp
+    heads = ''.join(f'<ellipse cx="{24 + i * sp}" cy="118" rx="19" ry="13.5" transform="rotate(-22 {24 + i * sp} 118)" fill="{col}"/><rect x="{39 + i * sp}" y="16" width="5" height="100" fill="{col}"/>' for i in range(n))
+    bm = ''.join(f'<rect x="39" y="{12 + k * 20}" width="{(n - 1) * sp + 5}" height="12" fill="{col}"/>' for k in range(beams))
+    return f'<svg viewBox="0 0 {w} 136" style="height:{h}px;width:{h * w / 136:.0f}px;vertical-align:bottom">{heads}{bm}</svg>'
+def hairpin(open_right=True, w=300):
+    a, b_ = (10, 290) if open_right else (290, 10)
+    return f'<svg viewBox="0 0 300 90" style="width:{w}px"><path d="M{b_} 12 L{a} 45 L{b_} 78" fill="none" stroke="{C}" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+def slur():   # her 14 Nov: the slur sits on the head side of the notes
+    return f'<svg viewBox="0 0 520 250" style="width:520px">' + ''.join(f'<text x="{60 + i * 120}" y="{176 - i * 14}" font-family="NM" font-size="130" fill="{N}">{CR}</text>' for i in range(4)) + f'<path d="M70 208 Q270 262 448 164" fill="none" stroke="{C}" stroke-width="6" stroke-linecap="round"/></svg>'
 RPT = '<span style="font-family:Atkinson Hyperlegible,sans-serif;font-size:34px">:</span>‖'
 NTH = lambda k: f'<small style="position:absolute;top:-34px;left:-3px;right:8px;height:22px;border-top:3px solid {C};border-left:3px solid {C};padding:0 8px;font-size:19px;line-height:22px;text-align:left;font-family:Atkinson Hyperlegible,sans-serif">{k}.</small>'
 def touch():   # legato, staccato, accent as sound bars: how long each of four notes sounds
@@ -180,18 +203,22 @@ ROOMSTORY.update({
    (st([(1, 'F'), (3, 'A'), (5, 'C'), (7, 'E')]), '<p>The four <b>spaces</b> of the treble staff spell a word: <b>F A C E</b>.</p><p>Lines and spaces take turns, so the notes go F, G, A, B, C, D, E.</p>', 'Play F A C E going up. Then play F G A and say which is a space and which is a line.'),
    (st([(0, 'G'), (2, 'B'), (4, 'D'), (6, 'F'), (8, 'A')], clef='b'), '<p>The bass staff is different. Its <b>lines</b> are <b>G B D F A</b>: <b>G</b>reat <b>B</b>ig <b>D</b>ragons <b>F</b>ly <b>A</b>way.</p><p>Its spaces are <b>A C E G</b>: <b>A</b>ll <b>C</b>ows <b>E</b>at <b>G</b>rass.</p>', 'With your left hand, play G B D F A going up from the second G below Middle C, saying the sentence.')]),
  'hbr-T3': ('How long is a note?', [
-   (row((big(QV), '1', False), (big(QV), 'and', True), (big('=', 70), '', False), (big(CR), '1 beat', False), gap=40), '<p>A <b>quaver</b> has a tail. It lasts <b>half a beat</b>, so two quavers fit into one crotchet beat.</p><p>We count them: <b>1 and 2 and</b>.</p>', 'Play C in crotchets, counting 1 2 3 4. Then in quavers, counting 1 and 2 and 3 and 4 and.'),
-   (row((big(DC), '1 – 2 –', False), (big(QV), 'and', True), gap=70), '<p>A <b>dotted crotchet</b> lasts one and a half beats. A quaver usually follows it to finish the second beat.</p><p>Long, then short: <b>1 – 2 and</b>.</p>', 'Play C long, then D short, counting 1, 2 AND. The D comes on the “and”.'),
+   (row((big(SB, 96), apples(4, 26), False), (big(DM, 96), apples(3, 26), False), (big(MI, 96), apples(2, 26), False), (big(CR, 96), apples(1, 26), False), gap=44), '<p>One circle is <b>one beat</b>. A <b>crotchet</b> is one circle. A <b>minim</b> is two, a <b>dotted minim</b> three and a <b>semibreve</b> four.</p><p>Now come the notes shorter than one beat: pieces of the circle.</p>', 'Play C as a semibreve, a dotted minim, a minim and a crotchet, counting the beats out loud: 1 2 3 4.'),
+   (row((big(QV), apples(.5, 44), False), (bq(2, 150), apples(1, 44, div=2), True), (big('=', 70), '', False), (big(CR), apples(1, 44), False), gap=40), '<p>Cut the circle in half. A <b>quaver</b> is <b>half a beat</b>, and on its own it has a <b>tail</b>.</p><p>Put two halves together and you have one whole beat: two quavers joined by a <b>beam</b>. We count them <b>1 and</b>.</p>', 'Play C in crotchets, counting 1 2 3 4. Then in quavers, counting 1 and 2 and 3 and 4 and.'),
+   (row((big(SQ), apples(.25, 44), False), (bq(4, 150, beams=2), apples(1, 44, div=4), True), (big('=', 70), '', False), (big(CR), apples(1, 44), False), gap=36), '<p>Cut each half again. A <b>semiquaver</b> is a <b>quarter of a beat</b>, and on its own it has <b>two tails</b>.</p><p>Put four quarters together and you have one whole beat: four semiquavers joined by <b>two beams</b>. Say <b>wa-ter-me-lon</b>.</p>', 'Clap four beats. Then tap four semiquavers on every beat, saying wa-ter-me-lon.'),
+   (row((big(MI, 110), apples(2, 30), False), (big('+', 60), '', False), (big(CR, 110), apples(1, 30), False), (big('=', 60), '', False), (big(DM, 110), apples(3, 30), True), gap=26), '<p>A <b>dot after a note</b> makes it longer: it adds <b>half</b> of the note again.</p><p>A minim is 2 beats. Half of 2 is 1. So a dotted minim is 2 + 1 = <b>3 beats</b>.</p>', 'Play C as a minim, counting 1 2. Then as a dotted minim, counting 1 2 3.'),
+   (row((big(DC), apples(1.5, 38), False), (big(QV), apples(.5, 38), True), gap=70), '<p>The same dot works on a crotchet: 1 + ½. A <b>dotted crotchet</b> is <b>one beat and a half</b>.</p><p>A quaver usually follows it to finish the second beat. Long, then short: <b>1 – 2 and</b>.</p>', 'Play C long, then D short, counting 1, 2 AND. The D comes on the “and”.'),
    (tie(), '<p>A <b>tie</b> is a curved line joining two notes of the <b>same</b> pitch. Play the first one and <b>hold</b> through the second.</p><p>A minim tied to a crotchet lasts three beats.</p>', 'Play C and hold it for 1 2 3. You have played two notes with one press.'),
    (row((big(RC), '1 beat', False), (big(RM), '2 beats', False), (big(RS), '4 beats', False), gap=80), '<p>A <b>rest</b> is a beat of <b>silence</b>. You count it just like a note, but you do not play.</p><p>The crotchet rest lasts 1 beat. The minim rest sits on a line for 2. The semibreve rest hangs under a line for 4.</p>', 'Play C, C, then lift your hand for one beat, then C: 1, 2, (rest), 4. Keep counting through the silence.')]),
  'hbr-T4': ('Time signatures', [
    (f'<div style="display:flex;align-items:center;gap:36px">{tsig(4, 4)}{beats([4])}</div>', '<p>The two numbers at the start are the <b>time signature</b>.</p><p>The <b>top number</b> says how many beats are in every bar. The bottom 4 says each beat is a crotchet.</p>', 'Clap four beats in a bar, the first one stronger: ONE two three four.'),
-   (f'<div>{tsrow(2, 4, 2)}{tsrow(3, 4, 3)}{tsrow(4, 4, 4)}</div>', '<p><b>Two</b> in a bar marches: left, right. <b>Three</b> in a bar swings round, like a waltz. <b>Four</b> in a bar walks.</p><p>Beat 1 is always the strongest.</p>', 'Clap each one: ONE two · ONE two three · ONE two three four. Which does your piece use?')]),
+   (f'<div>{tsrow(2, 4, 2)}{tsrow(3, 4, 3)}{tsrow(4, 4, 4)}</div>', '<p><b>Two</b> in a bar marches: left, right. <b>Three</b> in a bar swings round, like a waltz. <b>Four</b> in a bar walks.</p><p>Beat 1 is always the strongest.</p>', 'Clap each one: ONE two · ONE two three · ONE two three four. Which does your piece use?'),
+   (cards([('1', 'Andante<br><span style="font-weight:400;font-size:17px">at a walk</span>'), ('2', 'Moderato<br><span style="font-weight:400;font-size:17px">not slow, not fast</span>'), ('3', 'Allegro<br><span style="font-weight:400;font-size:17px">quick and lively</span>')]), '<p>A word above the first bar tells you <b>how fast</b> the beat goes. The words are Italian.</p><p><b>Andante</b> is a walking speed. <b>Moderato</b> is in the middle. <b>Allegro</b> is quick and lively.</p>', 'Clap four beats Andante, then Moderato, then Allegro. Find the speed word at the top of your piece.')]),
  'hbr-T8': ('Repeats', [
    (boxes(['A', 'B &nbsp;' + RPT], red={1}), '<p>Two dots beside a double bar line make a <b>repeat sign</b>. It means: <b>go back and play it again</b>.</p><p>So this music is played A B, then A B once more.</p>', 'Find a repeat sign in your book. Play up to it, then go back to the start and play it again.'),
    (boxes(['A', NTH(1) + 'B &nbsp;' + RPT, NTH(2) + 'C'], red={1, 2}), '<p>Sometimes the ending changes. The bar marked <b>1</b> is played the first time only.</p><p>The second time, <b>skip it</b> and jump to the bar marked <b>2</b>: A B, then A C.</p>', 'Say the order out loud for this picture: A, B, back, A, C. Then look for a first-time bar in your music.')]),
  'hbr-E2': ('Touch: smooth and short', [
-   (touch(), '<p>The same notes can be played in different ways. <b>Legato</b> means smooth and joined. <b>Staccato</b>, a dot above or below the note, means short.</p><p>An <b>accent</b> (&gt;) means that note is stronger.</p>', 'Play C D E F G smoothly, each finger passing the sound to the next. Then play it staccato, like hot keys.'),
+   (touch(), '<p>The same notes can be played in different ways. <b>Legato</b> means smooth and joined. <b>Staccato</b>, a dot above or below the note head, means short. (A dot <i>after</i> a note makes it longer.)</p><p>An <b>accent</b> (&gt;) means that note is stronger.</p>', 'Play C D E F G smoothly, each finger passing the sound to the next. Then play it staccato, like hot keys.'),
    (slur(), '<p>A curved line over <b>different</b> notes is a <b>slur</b>. Play them smoothly, in one breath, and lift gently at the end.</p><p>A tie joins the same note; a slur joins different ones.</p>', 'Play C D E F as one slur: sink into the C, float off the F.')]),
  'hbr-S1': ('Major scales', [
    (kbm(8, 0, white={i: str(i + 1) for i in range(8)}), '<p>A <b>scale</b> is a ladder of eight notes. Play the white keys from C to the next C and you have <b>C major</b>.</p><p>Notes <b>3–4</b> and <b>7–8</b> are close together, with no black key between. Every other pair has a black key between.</p>', 'Play C major going up with one finger, saying the numbers 1 to 8. Listen for the two close steps. (Fingering comes in step 3.)'),
@@ -211,7 +238,7 @@ PRACT.update({
  'hbr-P3': lambda: wb_pick(ROOMS['hbr-P3'], ['Which key?', 'Count from Middle C']),
  'hbr-P4': lambda: wb_pick(ROOMS['hbr-P4'], ['The letters on the staff', 'Treble clef notes']),
  'hbr-T3': lambda: [ex(1, 'How many beats?', 'Write the beats. A quaver is ½. The first is done.', grid([(G(CR), DONE('1')), (G(QV), BOX), (G(DC), BOX), (G(MI), BOX), (G(DM), BOX)], 5)),
-                    ex(2, 'Add them up', 'Write the total number of beats. The first is done.', tbl_l(['Notes', 'Beats'], [[G(QV + ' ' + QV, 40), DONE('1')], [G(DC + ' ' + QV, 40), BOX], [G(MI, 40) + ' <span style="font-size:22px;color:#e4572e">‿</span> ' + G(CR, 40) + ' <span class="sm">(tied)</span>', BOX], [G(CR + ' ' + RC + ' ' + MI, 40), BOX]]), 2)],
+                    ex(2, 'Add them up', 'Write the total number of beats. The first is done.', tbl_l(['Notes', 'Beats'], [[bq(2, 46), DONE('1')], [bq(4, 46, beams=2), BOX], [G(DC + ' ' + QV, 40), BOX], [G(MI, 40) + ' <span style="font-size:22px;color:#e4572e">‿</span> ' + G(CR, 40) + ' <span class="sm">(tied)</span>', BOX], [G(CR + ' ' + RC + ' ' + MI, 40), BOX]]), 2)],
  'hbr-T4': lambda: [ex(1, 'How many beats in a bar?', 'Write the top number that fits. The first is done.', tbl_l(['One bar', 'Beats'], [[G(CR + ' ' + CR + ' ' + CR, 40), DONE('3')], [G(MI + ' ' + MI, 40), BOX], [G(CR + ' ' + CR, 40), BOX], [G(DM, 40), BOX], [G(MI + ' ' + CR + ' ' + CR, 40), BOX]])),
                     ex(2, 'Two, three or four?', 'Clap each one with a strong beat 1. Write 2, 3 or 4.', tbl_l(['It feels like…', 'Beats in a bar'], [['LEFT right, LEFT right', BOX], ['ONE two three, ONE two three', BOX], ['ONE two three four', BOX]]), 2)],
  'hbr-T8': lambda: [ex(1, 'Write the order', 'Each letter is one bar. At a repeat sign, go back to the start once. Write the letters in the order you play them. The first is done.', tbl_l(['The music', 'You play'], [['A &nbsp; B &nbsp;' + RPT, DONE('A B A B')], ['A &nbsp;' + RPT + '&nbsp; B', LINE], ['A &nbsp; B &nbsp; C &nbsp;' + RPT, LINE], ['A &nbsp; B &nbsp;' + RPT + '&nbsp; C', LINE]]))] + [x.replace('|: ', '').replace(':|', RPT) for x in STEP['hbr-T8'][1:2]],
@@ -223,10 +250,19 @@ PRACT.update({
  'hbr-H1': lambda: [ex(1, 'Build the triad', 'Play one, skip one, play one, skip one, play one. Write the three notes. The first is done.', tbl_l(['On', 'The triad'], [['C', DONE('C E G')], ['G', LINE], ['A', LINE], ['E', LINE]])),
                     ex(2, 'Major or minor?', 'Play each triad and listen: bright or dark? Circle one. The first is done.', tbl_l(['Triad', ''], [['C E G', '<span style="border:2px solid #e4572e;border-radius:12px;padding:0 6px;color:#e4572e">major</span> &nbsp;·&nbsp; minor'], ['A C E', 'major &nbsp;·&nbsp; minor'], ['G B D', 'major &nbsp;·&nbsp; minor'], ['E G B', 'major &nbsp;·&nbsp; minor']]), 2)],
 })
+ROOMSTORY['x-dyn'] = ('Loud and soft', [
+   (dyn([('p', 'soft', 60, .4), ('mp', 'quite soft', 105, .6), ('mf', 'quite loud', 150, .8), ('f', 'loud', 200, 1)]), '<p>Four signs tell you how loud to play. <b><i>p</i></b> is <i>piano</i>, soft. <b><i>f</i></b> is <i>forte</i>, loud.</p><p><i>Mezzo</i> means medium: <b><i>mp</i></b>, mezzo piano, is quite soft and <b><i>mf</i></b>, mezzo forte, is quite loud.</p>', 'Play C four times: p, mp, mf, f. Four steps, the same speed.'),
+   (dyn([('pp', 'very soft', 40, .3), ('p', '', 75, .45), ('mp', '', 110, .6), ('mf', '', 145, .75), ('f', '', 180, .9), ('ff', 'very loud', 215, 1)]), '<p>Two letters mean <b>very</b>: <b><i>pp</i></b> is very soft, <b><i>ff</i></b> is very loud.</p><p>That makes six steps, from a whisper to a shout.</p>', 'Play C six times, one step louder each time. Then come back down the steps.'),
+   (f'<div style="display:flex;gap:70px;justify-content:center">' + ''.join(f'<div style="display:flex;flex-direction:column;align-items:center;gap:14px">{hairpin(o, 250)}<b style="font-size:24px;color:{N}">{w_}</b><span style="font-size:18px;color:#6d6f9c">{t_}</span></div>' for o, w_, t_ in ((True, 'crescendo', 'getting louder'), (False, 'diminuendo', 'getting softer'))) + '</div>', '<p>A sign that <b>opens</b> means get louder little by little: <b>crescendo</b>. A sign that <b>closes</b> means get softer: <b>diminuendo</b>.</p><p>The wide end is the loud end.</p>', 'Play C D E F G getting louder, then G F E D C getting softer.')])
+PRACT['x-dyn'] = lambda: [ex(1, 'What does it mean?', 'Write the meaning. The first is done.', tbl_l(['Sign', 'Means'], [['<i><b>mp</b></i>', DONE('quite soft')], ['<i><b>mf</b></i>', LINE], ['<i><b>pp</b></i>', LINE], ['<i><b>ff</b></i>', LINE]])),
+                          ex(2, 'Softest to loudest', 'Write the six signs in order, from the softest to the loudest. The first is done.', '<p style="font-size:17px"><i><b class="done2">pp</b></i> &nbsp; ' + (BOX + ' &nbsp; ') * 5 + '</p><p class="how" style="margin-top:10px">f &nbsp;·&nbsp; mp &nbsp;·&nbsp; ff &nbsp;·&nbsp; p &nbsp;·&nbsp; mf</p>', 2)]
+ROOMS['x-dyn'] = dict(ROOMS['hbr-E1'], id='x-dyn')
 def build_story(floor_i, name, line):
     global RIGHT; RIGHT = name.upper()
     out = []; toc = []; n = 2
-    for i, rid in enumerate(FLOORS[floor_i]['ids'], 1):
+    ids = [x for x in FLOORS[floor_i]['ids'] if not ROOMS[x].get('review')]   # her 14 Nov: no review room, the basics are taught in rooms of their own
+    if name == 'Prelim': ids.insert(1, 'x-dyn')
+    for i, rid in enumerate(ids, 1):
         r = ROOMS[rid]
         if r.get('ear'):
             toc.append((i, 'Ear training')); a, b_ = ear_story(r, name, i, n); out += [section(a, n, 'L' + rid), section(b_, n + 1, 'P' + rid)]; n += 2; continue
@@ -237,32 +273,39 @@ def build_story(floor_i, name, line):
             out.append(section(story(name, i, title, k, len(steps), pic, text, piano, rid, k == 1), n, f'S{k}{rid}')); n += 1
         pr = practise_for(rid)   # her 13 Nov: big and simple, two exercises a page
         out.append(section(f'<div class="cxk cxc">Room {i} <i>◆</i> {title} <i>◆</i> Practise</div><div class="prbig">' + ''.join(pr) + '</div>', n, 'P' + rid)); n += 1
-    if name in EXAM:
+    if 0 and name in EXAM:   # her 14 Nov: comparable to the exam level, but nothing exam-only in the book
         earn = next((k for k, t_ in toc if t_ == 'Ear training'), '')
         a, b_ = exam_spread(name, toc, earn); out += [section('<div class="rvbig xl">' + a + '</div>', n, 'LX'), section('<div class="rvbig">' + b_ + '</div>', n + 1, 'PX')]; n += 2; toc.append(('', 'The exam corner'))
     cover = f'''<section class="pg part2"><div class="pframe"><div class="pk">The Piano Butler · Level book</div><div class="pt">{name}</div><div class="pdv"></div>
 <p class="pl">{line}</p><div class="pin"><div class="pih">The rooms</div>{"".join(f'<div class="tr"><span>{str(i) + " · " if i else ""}{t}</span><span class="dots"></span><span></span></div>' for i, t in toc)}</div></div></section>'''
     extra = EXTRA_CSS + """
-section.pg.cx{padding:36px} .prbig{zoom:1.38;margin-top:10px} .rvbig{zoom:1.55} .rvbig.xl{zoom:1.42} .rvbig .tk5{margin-top:8px} .prbig .sent .ab{min-width:74px} .prbig .sent .ab.hasdone{padding:0 6px} .prbig figure svg{zoom:1.5} .prbig .ex2{margin-bottom:18px} .cx .fr{position:relative;border:3px double #26296b;height:927px;box-sizing:border-box;padding:22px 34px 0} .cx .fr>.foot{position:absolute;left:0;right:0;bottom:2px;height:1px;visibility:hidden}
-.cx .floor{position:absolute;left:36px;right:36px;bottom:36px;height:112px;background:conic-gradient(#26296b 25%,#fff 0 50%,#26296b 0 75%,#fff 0) 0 0/56px 56px;border:3px solid #26296b;box-sizing:border-box}
-.cx .plq{position:absolute;bottom:66px;left:50%;transform:translateX(-50%);background:#fff;border:3px double #26296b;padding:6px 22px;font-family:'Playfair Display',PF,serif;font-weight:900;font-size:22px;color:#26296b}
-.cxk{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:17px;color:#26296b} .cxk i{font-style:normal;color:#e4572e;font-size:11px;margin:0 7px;vertical-align:middle} .cxc{text-align:center;font-size:19px;padding-bottom:10px;border-bottom:1.5px solid #26296b}
-.cx .lvhead{border-bottom:1.5px solid #26296b;padding-bottom:6px} .cx .lvhead h1{margin:2px 0 0} .cx .kick{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:17px;letter-spacing:0;text-transform:none;color:#26296b}
-.stpic{height:440px;margin:0 0 20px;border-bottom:1.5px solid #26296b;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
+section.pg.cx{padding:40px 50px 36px} .prbig{zoom:1.38;margin-top:14px} .prbig figure.vx svg{max-height:120px!important} .rvbig{zoom:1.55} .rvbig.xl{zoom:1.42} .rvbig .tk5{margin-top:8px} .prbig .sent .ab{min-width:74px} .prbig .sent .ab.hasdone{padding:0 6px} .prbig .ex2{margin-bottom:18px}
+.cx .lbtop{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#6d6f9c;padding-bottom:7px;border-bottom:4px double #26296b}
+.cx .fr{position:relative;height:962px;box-sizing:border-box;padding:22px 0 0} .cx .fr>.foot{position:absolute;left:0;right:0;bottom:2px;height:1px;visibility:hidden}
+.cx .plq{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);background:#26296b;color:#fff;min-width:30px;height:30px;line-height:30px;text-align:center;font-family:'Playfair Display',PF,serif;font-weight:700;font-size:14px}
+.cx .kk{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e;margin-bottom:4px} .cx h1.lbh{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:34px;line-height:1.15;color:#26296b;margin:0 0 14px}
+.cx .lvhead{display:flex;justify-content:space-between;align-items:flex-start;border:0;padding:0} .cx .kick{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e}
+.stpic{position:relative;height:430px;margin:0 0 22px;border:1.5px solid #26296b;box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 5.5px #26296b;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
+.stpic::before{content:'';position:absolute;left:14px;right:14px;top:14px;height:9px;border-top:1.5px solid #26296b;background:repeating-linear-gradient(90deg,#26296b 0 9px,transparent 9px 18px) 0 3px/100% 6px no-repeat}
+.stpic::after{content:'';position:absolute;left:14px;right:14px;bottom:14px;height:24px;border-top:1.5px solid #26296b;background:conic-gradient(#26296b 25%,#fff 0 50%,#26296b 0 75%,#fff 0) 0 0/24px 24px}
 .stpic svg{display:block;max-width:none}
 .sttx{font-size:27px;line-height:1.45;color:#26296b} .sttx p{margin:0 0 14px;font-size:26px!important;line-height:1.42!important} .sttx b{color:#e4572e}
-.stpn{margin-top:22px;border:1.5px solid #26296b;border-radius:4px;padding:14px 16px 12px;font-size:21px!important;line-height:1.4;color:#26296b;position:relative} .stpn span{position:absolute;top:-10px;left:14px;background:#fff;padding:0 8px;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#e4572e}
+.stpn{position:relative;margin-top:20px;padding:44px 46px 14px 40px;border-bottom:1px solid #cfcfe2;font-size:21px!important;line-height:1.4;color:#26296b} .stpn span{position:absolute;top:4px;left:0;font-family:'Playfair Display',PF,serif;font-style:italic;font-weight:700;font-size:21px;color:#26296b}
+.stpn::before{content:'';position:absolute;left:0;top:48px;width:22px;height:22px;background:#26296b} .stpn::after{content:'';position:absolute;right:4px;top:48px;width:20px;height:20px;border:1.5px solid #26296b;border-radius:50%}
 .k5big>div{width:86px!important;height:190px!important} .k5big b{font-size:40px!important} .k5big span{font-size:26px!important}
 """
     fit = """<script>(async()=>{try{await document.fonts.ready}catch(e){}
-document.querySelectorAll('.stpic').forEach(b=>{const i=b.querySelector('.stin');if(!i)return;const W=b.clientWidth-48,H=b.clientHeight-40,w=i.offsetWidth,h=i.offsetHeight;if(!w||!h)return;const s=Math.min(W/w,H/h,2.4);i.style.transform='scale('+s.toFixed(3)+')';});
+document.querySelectorAll('.stpic').forEach(b=>{const i=b.querySelector('.stin');if(!i)return;const W=b.clientWidth-70,H=b.clientHeight-110,w=i.offsetWidth,h=i.offsetHeight;if(!w||!h)return;const s=Math.min(W/w,H/h,2.4);i.style.transform='scale('+s.toFixed(3)+')';});
 document.querySelectorAll('section.pg .body').forEach(b=>{const s=b.closest('section'),f=s.querySelector('.foot');if(!f)return;const lim=f.getBoundingClientRect().top-20,top=b.getBoundingClientRect().top;let m=0;[...b.children].forEach(c=>{const r=c.getBoundingClientRect();if(r.height)m=Math.max(m,r.bottom)});if(m>lim){b.style.zoom=Math.max(.6,(lim-top)/(m-top)).toFixed(3);}});
 document.body.dataset.pruned='1';})();</script>"""
     for _a, _b in [(' Start from G.', ''), ('notes have dots.', 'notes have a staccato dot.'), ('faster to fix a slip', 'play faster after a slip'), ('walk in, bow, play, bow.', 'walk in, sit, breathe out, play.')]: out = [o.replace(_a, _b) for o in out]
     out = [o.replace('Try it · 10 seconds', 'Try it') if 'rvbig' in o else o for o in out]
+    out = [o.replace('M1576,1057 C2341,396 5000,316 5564,787 C4981,376 2363,455 1576,1057', 'M1420,1560 C2500,1940 4600,1770 5420,1330 C4600,1700 2500,1870 1420,1560') for o in out]
+    out = [re.sub(r'<div class="cxk cxc">Room (\d+) <i>◆</i> (.*?) <i>◆</i> (\d+ of \d+|Practise)</div>', lambda m: f'<div class="kk">Room {m.group(1)} · ' + ('Practise' if m.group(3) == 'Practise' else 'Step ' + m.group(3)) + f'</div><h1 class="lbh">{m.group(2)}</h1>', o) for o in out]
+    out = [re.sub(r'<div class="cxk">Room (\d+) <i>◆</i> (\d+ of \d+)</div><h1>', lambda m: f'<div class="kk">Room {m.group(1)} · Step {m.group(2)}</div><h1 class="lbh">', o) for o in out]
     html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{fit}</body></html>'
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower()}.html'
     open(fn, 'w').write(html); return fn
 if __name__ == '__main__':
     print(build_story(0, 'Beginner', 'Read it like a storybook: one step on each page, a big picture, a few words, and one thing to try at the piano. After each room, a page to practise.'))
-    print(build_story(1, 'Prelim', 'One step on each page: a big picture, a few words, and one thing to try at the piano. After each room, a page to practise. At the end, the exam corner.'))
+    print(build_story(1, 'Prelim', 'One step on each page: a big picture, a few words, and one thing to try at the piano. After each room, a page to practise. The last room trains your ears.'))
