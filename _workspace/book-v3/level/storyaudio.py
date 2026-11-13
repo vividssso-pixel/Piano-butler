@@ -13,7 +13,7 @@ CUE = {'hbr-B1': 'C4 E4 G4 C5', 'hbr-P1': 'C2*2 C6*2', 'hbr-L1': 'C4 D4 E4 F4 G4
        'hbr-T2-s2': 'C4*4', 'hbr-E1': '[ff C4 E4 G4] [pp C4 E4 G4]', 'hbr-ear-beginner': 'G4 E5', 'hbr-L2': 'C4 D4 E4 F4 G4', 'x-dyn': '[pp C4 E4 G4] [p C4 E4 G4] [ff C4 E4 G4]',
        'hbr-P3': 'C4*2', 'hbr-P4': 'E4 G4 B4 D5 F5', 'hbr-T3': 'C4 C4/2 C4/2 C4/4 C4/4 C4/4 C4/4', 'hbr-T4': 'C4 E4 G4 C4 E4 G4', 'hbr-T8': 'C4 C4 G4 G4 A4 A4 G4*2',
        'hbr-E2': 'C4 D4 E4 F4 G4', 'hbr-S1': 'G4 A4 B4 C5 D5 E5 F#5 G5', 'hbr-S2': 'A3 B3 C4 D4 E4 F4 G4 A4', 'hbr-H1': 'C4 E4 G4 [C4 E4 G4]', 'hbr-ear-prelim': 'C5 E5 G5'}
-NAMES = [('King', 'K'), ('Queen', 'Q'), ('Doorkeeper', 'D'), ('Stationmaster', 'S'), ('Butler', 'B')]
+NAMES = [('Clara', 'P'), ('King', 'K'), ('Queen', 'Q'), ('Doorkeeper', 'D'), ('Stationmaster', 'S'), ('Butler', 'B')]
 def plain(h): return re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', re.sub(r'<i>(col piano e forte|forte|piano)</i>', r'⟨\1⟩', h)).replace('&nbsp;', ' ')).strip()
 def voiced(text):   # the storyteller narrates; a quote is spoken only when a speaker is named next to it ("says the King")
     out = []; pos = 0

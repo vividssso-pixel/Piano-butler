@@ -16,7 +16,7 @@ o.append(f'<rect width="1280" height="600" fill="{T}"/>')
 o.append('<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="#e2e2ef"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>')
 o.append(f'<rect width="1280" height="16" fill="{N}"/><rect y="16" width="1280" height="2" fill="#fff"/>' + ''.join(f'<rect x="{6 + k * 16}" y="24" width="8" height="8" fill="{N}"/>' for k in range(80)) + f'<rect y="38" width="1280" height="2" fill="{N}"/>')
 # window with night sky and curtains
-o.append(f'<g id="win" class="deco"><rect x="70" y="110" width="220" height="320" fill="{N}"/><circle cx="220" cy="180" r="26" fill="#fff"/><circle cx="232" cy="172" r="24" fill="{N}"/>'
+o.append(f'<g id="win" class="deco" transform="translate(48 118) scale(.7)"><rect x="70" y="110" width="220" height="320" fill="{N}"/><circle cx="220" cy="180" r="26" fill="#fff"/><circle cx="232" cy="172" r="24" fill="{N}"/>'
          + ''.join(f'<circle cx="{x}" cy="{y}" r="2.2" fill="#fff" class="star"/>' for x, y in ((110, 150), (150, 230), (250, 260), (120, 330), (200, 300), (260, 380), (95, 400)))
          + f'<rect x="70" y="110" width="220" height="320" fill="none" stroke="#fff" stroke-width="10"/><line x1="180" x2="180" y1="110" y2="430" stroke="#fff" stroke-width="7"/><line x1="70" x2="290" y1="270" y2="270" stroke="#fff" stroke-width="7"/>'
          + f'<rect x="70" y="110" width="220" height="320" fill="none" stroke="{N}" stroke-width="3"/>'
@@ -36,9 +36,10 @@ o.append(f'<rect y="600" width="1280" height="120" fill="#fff"/>' + ''.join(f'<r
 # audience: the Queen and the King on chairs
 def chair(x): return f'<path d="M{x - 40} 600 L{x - 34} 520 L{x + 34} 520 L{x + 40} 600" fill="none" stroke="{N}" stroke-width="4"/><path d="M{x - 30} 520 L{x - 26} 420 Q{x} 404 {x + 26} 420 L{x + 30} 520" fill="#fff" stroke="{N}" stroke-width="4"/><rect x="{x - 46}" y="512" width="92" height="12" rx="4" fill="{N}"/>'
 o.append(chair(340) + chair(450))
-o.append(f'<g id="queen" transform="translate(340 514) scale(1.85)">{P["VIC_QUEEN"]}</g><g id="king" transform="translate(450 514) scale(1.75)">{P["VIC_KING"]}</g>')
+o.append(f'<g id="queen" transform="translate(340 514) scale(2.1)">{P["VIC_QUEEN"]}</g><g id="king" transform="translate(450 514) scale(1.95)">{P["VIC_KING"]}</g>')
 # the piano
 keys = ''.join(f'<rect x="{606 + k * 18}" y="472" width="18" height="40" fill="#fff" stroke="{N}" stroke-width="1.5"/>' for k in range(14)) + ''.join(f'<rect x="{606 + k * 18 + 12}" y="472" width="11" height="24" fill="{N}"/>' for k in range(13) if k % 7 not in (2, 6))
+o.append('<g transform="translate(-95 0)">')
 o.append(f'<g id="piano"><rect x="590" y="300" width="290" height="176" rx="6" fill="{N}"/><rect x="580" y="290" width="310" height="16" rx="4" fill="{N}"/><rect x="616" y="320" width="238" height="120" rx="4" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>'
          + f'<path d="M640 360 q40 -30 80 0 q40 30 80 0" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>{keys}<rect x="596" y="512" width="278" height="20" fill="{N}"/><rect x="606" y="532" width="16" height="68" fill="{N}"/><rect x="848" y="532" width="16" height="68" fill="{N}"/>'
          + ''.join(f'<rect x="{x - 3}" y="262" width="6" height="28" fill="#fff" stroke="{N}" stroke-width="2"/><rect x="{x - 10}" y="286" width="20" height="5" fill="{N}"/><path id="pf{k}" d="M{x} 246 q6 9 0 14 q-6 -5 0 -14 z" fill="{C}"/>' for k, x in enumerate((612, 858))) + '</g>')
@@ -55,17 +56,18 @@ o.append(f'<defs><pattern id="hcl" width="7" height="7" patternUnits="userSpaceO
          + f'<path d="M726 404 q9 -8 18 0" fill="none" stroke="#fff" stroke-width="2" stroke-opacity=".5" stroke-linecap="round"/>'
          + f'<path d="M722 398 l-12 -8 l2 16 z M748 398 l12 -8 l-2 16 z" fill="{PK}" stroke="{N}" stroke-width="2" stroke-linejoin="round"/><circle cx="735" cy="398" r="5" fill="{PK}" stroke="{N}" stroke-width="2"/>'
          + '</g>')
+o.append('</g>')
 # the Butler with the tea tray
-o.append(f'<g id="butler" transform="translate(1030 395) scale(1.0)">{RAB}</g>')
-o.append(f'<g id="tray"><rect x="906" y="600" width="0" height="0"/><rect x="902" y="488" width="104" height="10" rx="3" fill="{N}"/><rect x="912" y="498" width="8" height="102" fill="{N}"/><rect x="988" y="498" width="8" height="102" fill="{N}"/><rect x="996" y="9999" width="120" height="8" rx="3" fill="{N}"/>' + ''.join(f'<g class="cup" id="cup{k}"><path d="M{912 + k * 32} 466 h24 v12 a12 12 0 0 1 -24 0 Z" fill="#fff" stroke="{N}" stroke-width="2.5"/><path d="M{936 + k * 32} 470 a5 5 0 0 1 0 10" fill="none" stroke="{N}" stroke-width="2.5"/><rect x="{908 + k * 32}" y="484" width="32" height="4" rx="2" fill="{N}"/></g>' for k in range(3)) + '</g>')
+o.append(f'<g id="butler" transform="translate(925 305) scale(1.42)">{RAB}</g>')
+o.append(f'<g id="tray" transform="translate(-100 0)"><rect x="906" y="600" width="0" height="0"/><rect x="902" y="488" width="104" height="10" rx="3" fill="{N}"/><rect x="912" y="498" width="8" height="102" fill="{N}"/><rect x="988" y="498" width="8" height="102" fill="{N}"/><rect x="996" y="9999" width="120" height="8" rx="3" fill="{N}"/>' + ''.join(f'<g class="cup" id="cup{k}"><path d="M{912 + k * 32} 466 h24 v12 a12 12 0 0 1 -24 0 Z" fill="#fff" stroke="{N}" stroke-width="2.5"/><path d="M{936 + k * 32} 470 a5 5 0 0 1 0 10" fill="none" stroke="{N}" stroke-width="2.5"/><rect x="{908 + k * 32}" y="484" width="32" height="4" rx="2" fill="{N}"/></g>' for k in range(3)) + '</g>')
 # sound: the dynamic sign and the notes
-o.append(f'<text id="dyn" x="735" y="210" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-weight="900" font-size="120" fill="{C}" opacity="0">f</text><text id="dynw" x="735" y="250" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="22" letter-spacing="3" fill="{C}" opacity="0"></text>')
+o.append(f'<text id="dyn" x="866" y="226" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-weight="900" font-size="120" fill="{C}" opacity="0">f</text><text id="dynw" x="866" y="262" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="22" letter-spacing="3" fill="{C}" opacity="0"></text>')
 o.append(''.join(f'<g id="nt{k}" opacity="0"><ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)" fill="{N}"/><rect x="8" y="-44" width="3.5" height="44" fill="{N}"/></g>' for k in range(10)))
 o.append(f'<rect id="warm" width="1280" height="720" fill="#ffcf9e" opacity="0" pointer-events="none"/>')
 o.append(f'<rect id="dim" width="1280" height="720" fill="{N}" opacity="0" pointer-events="none"/>')
 # the door at the right, and its light
-o.append(f'<g><rect x="1196" y="300" width="80" height="300" fill="{N}"/><rect id="glow" x="1204" y="310" width="64" height="290" fill="#ffd9a8" opacity="0"/>'
-         + f'<g id="leaf" transform="translate(1204 0)"><rect x="0" y="310" width="64" height="290" fill="#fff" stroke="{N}" stroke-width="3"/><rect x="9" y="324" width="46" height="110" fill="none" stroke="{N}" stroke-width="2"/><rect x="9" y="452" width="46" height="130" fill="none" stroke="{N}" stroke-width="2"/><circle cx="52" cy="452" r="4.5" fill="{C}"/></g></g>')
+o.append(f'<g><rect x="1166" y="250" width="110" height="350" fill="{N}"/><rect id="glow" x="1176" y="260" width="90" height="340" fill="#ffd9a8" opacity="0"/>'
+         + f'<g id="leaf" transform="translate(1176 0)"><rect x="0" y="260" width="90" height="340" fill="#fff" stroke="{N}" stroke-width="3"/><rect x="12" y="276" width="66" height="130" fill="none" stroke="{N}" stroke-width="2"/><rect x="12" y="424" width="66" height="156" fill="none" stroke="{N}" stroke-width="2"/><circle cx="74" cy="430" r="5" fill="{C}"/></g></g>')
 # a single note that floats out of the door at the very end
 o.append(f'<g id="lone" opacity="0"><ellipse cx="0" cy="0" rx="12" ry="9" transform="rotate(-20)" fill="#ffd9a8"/><rect x="9" y="-46" width="4" height="46" fill="#ffd9a8"/></g>')
 SVG = '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(o) + '</svg>'
@@ -74,7 +76,7 @@ JS = r'''
 const TL = __TL__;
 const ph = (t, a, b) => Math.max(0, Math.min(1, (t - a) / (b - a)));
 const S = id => document.getElementById(id);
-const CR = { clara: [560, 254.6, 2.2], queen: [340, 514, 1.85], king: [450, 514, 1.75] };
+const CR = { clara: [560, 254.6, 2.2], queen: [340, 514, 2.1], king: [450, 514, 1.95] };
 const L0 = TL.lines, F = (re) => L0.find(l => l.text && re.test(l.text)), PI = L0.filter(l => l.who === 'piano');
 const K = { intro: L0[0].t0, rattle: F(/cups ring/).t0, ask: F(/Now the same piece/).t0, ch1: PI[0].t0, ch2: PI[0].t0 + 2.9, melody: PI[1].t0, tryA: F(/^Now, at the piano/).t0,
   end: F(/^And here is how it ended/).t0, again: F(/^So Clara plays it again/).t0, cristo: F(/Cristofori/).t0, tease: F(/^Behind the next door/).t0, door: F(/^After the evening/).t0, lone: PI[PI.length - 1].t0, dur: TL.dur };
@@ -108,7 +110,7 @@ function setT(t) {
   const n = loud ? 10 : soft ? 4 : 0, rate = loud ? .9 : .22;
   for (let k = 0; k < 10; k++) { const g = S('nt' + k);
     if (k >= n) { g.setAttribute('opacity', 0); continue; }
-    const p = (t * rate + k / n) % 1, x = 610 + (k * 53) % 250 + 16 * Math.sin(t * 2 + k), y = 290 - p * (loud ? 220 : 150);
+    const p = (t * rate + k / n) % 1, x = 515 + (k * 53) % 250 + 16 * Math.sin(t * 2 + k), y = 290 - p * (loud ? 220 : 150);
     g.setAttribute('transform', `translate(${x} ${y}) rotate(${loud ? 25 * Math.sin(t * 6 + k) : 8 * Math.sin(t + k)})`); g.setAttribute('opacity', (1 - p) * (loud ? 1 : .7)); }
   S('warm').setAttribute('opacity', (t >= K.again && t < K.tease) ? .16 * Math.min(1, ph(t, K.again, K.again + 2)) : (t >= K.ch2 && t < K.tryA) ? .1 : 0);
   // the portrait becomes Cristofori's plate while his story is told
@@ -117,9 +119,9 @@ function setT(t) {
   // behind the next door: the room dims, the door opens, a light, one note floats out
   S('dim').setAttribute('opacity', tease ? .5 * ph(t, K.tease, K.tease + 1.7) : 0);
   const op = tease ? ph(t, K.door, K.door + 3.5) : 0;
-  S('leaf').setAttribute('transform', `translate(1204 0) scale(${1 - .72 * op} 1)`); S('glow').setAttribute('opacity', op * .95);
+  S('leaf').setAttribute('transform', `translate(1176 0) scale(${1 - .72 * op} 1)`); S('glow').setAttribute('opacity', op * .95);
   const lo = S('lone'), q = ph(t, K.lone - 1.5, K.dur);
-  lo.setAttribute('opacity', t >= K.lone - 1.5 ? Math.sin(Math.PI * q) : 0); lo.setAttribute('transform', `translate(${1236 - 290 * q} ${430 - 120 * q + 18 * Math.sin(q * 9)})`);
+  lo.setAttribute('opacity', t >= K.lone - 1.5 ? Math.sin(Math.PI * q) : 0); lo.setAttribute('transform', `translate(${1221 - 300 * q} ${430 - 120 * q + 18 * Math.sin(q * 9)})`);
   // the line being spoken
   const sub = document.getElementById('sub'); if (sub) { const l = L.find(l => l.text && t >= l.t0 && t < l.t1 + .25); sub.textContent = l ? l.text.replace(/[⟨⟩]/g, '') : ''; sub.style.opacity = l ? 1 : 0; }
   const ttl = document.getElementById('ttl'); if (ttl) ttl.style.opacity = t < K.intro - .4 ? 1 : Math.max(0, 1 - (t - K.intro + .4) / .6);

@@ -456,8 +456,10 @@ STORY = {
              '<p>On Thursday the house holds its <b>music evening</b>. Clara plays her first piece with every note at full strength: <b><i>forte</i></b>, loud and strong.</p><p>The music marches round the room like a parade. The cups ring on their saucers, the Queen sits up very straight, and the King taps his foot. The Butler sets down the tray. “Splendid,” he says. “Now the same piece, <i>piano</i>.”</p>', 'Play C forte, like the start of a parade: a heavy arm, a full sound. Then play it piano, like a secret.'),
             (ILLU(open('/tmp/claude-0/anim/still50.svg').read(), 'The same piece, piano.'),
              '<p>So Clara plays it again, <b><i>piano</i></b>: soft, her fingers close to the keys, her arms light. The room changes. The candles seem to stand still, and the Queen and the King lean <b>forward</b> to listen.</p><p>Forte made the piece a parade. Piano made it a secret, told to one person. The same notes can tell <b>two different stories</b>: that is what loud and soft are for.</p><p>The instrument is named after this. Around 1700 in Florence, <b>Bartolomeo Cristofori</b> built a keyboard that could play both: a harpsichord <i>col piano e forte</i>, with soft and loud. We still call it the piano.</p>', 'Play a tune you know twice: once forte, once piano. Which story does each one tell?')),
- 'hbr-ear-beginner': ((scene(p_door(130) + p_piano(380) + who('clara', 280), 'Someone is playing in the next room. Clara has to guess.'),
-             '<p>Someone is playing in the next room, and the door is shut. Clara presses her ear to it.</p><p>High or low? The same tune as before, or a new one? Here she cannot see the keys. She can only <b>listen</b>.</p>', 'Close your eyes. Ask someone to play two notes. Was the second one higher or lower?'), None),
+ 'hbr-ear-beginner': ((ILLU(open('/tmp/claude-0/anim/s9a.svg').read(), 'Someone is playing behind the door.'),
+             '<p>Someone is playing in the next room, and the door is shut. Clara presses her ear to it.</p><p>High or low? The same tune as before, or a new one? Here she cannot see the keys. She can only <b>listen</b>.</p>', 'Close your eyes. Ask someone to play two notes. Was the second one higher or lower?'),
+            (ILLU(open('/tmp/claude-0/anim/s9b.svg').read(), 'The player behind the door.'),
+             '<p>When the playing stops, Clara opens the door. There sits the <b>Butler</b> at the old practice piano, one finger still on a key.</p><p>“High, then low,” says Clara. “And the same tune twice.” The Butler writes one word in his book: <i>Correct</i>. Good pianists listen first. The ear tells the fingers where to go.</p>', 'Face the wall. Ask someone to play a high note or a low one. Say which, then turn round and check.')),
  # ----- Prelim -----
  'hbr-L2': ((scene(p_piano(260) + ''.join(mark(160 + k * 22, 120 + (k % 3) * 8, '×', 24, C, False) for k in range(9)) + who('clara', 200) + butler(520, 150), 'Bar seven, the twentieth time.'),
              '<p>Clara plays her piece from the beginning, twenty times. Each time, she stumbles in exactly the same place: bar seven.</p><p>“You have practised the mistake beautifully,” says the Butler. “Twenty times.”</p>', 'Find the bar in your piece that always goes wrong. Play only that bar, slowly, three times.'),
@@ -543,7 +545,9 @@ def build_story(floor_i, name, line):
         if r.get('ear'):
             toc.append((i, 'Ear training'))
             if rid in ROOMOPEN: pic, text, piano = ROOMOPEN[rid]; out.append(section(story(name, i, 'Ear training', 0, 1, pic, text, piano, None, True, tale=rid).replace('◆</i> 0 of 1', '◆</i> STORYOPEN of 1'), n, 'S0' + rid)); n += 1
-            a, b_ = ear_story(r, name, i, n); out += [section(a, n, 'L' + rid)]; n += 1; continue   # her 14 Nov: the practise part is not for the Level books
+            a, b_ = ear_story(r, name, i, n); out += [section(a, n, 'L' + rid)]; n += 1
+            if rid in ROOMEND: pic, text, piano = ROOMEND[rid]; out.append(section(story(name, i, 'Ear training', 1, 1, pic, text, piano, None, False).replace('◆</i> 1 of 1', '◆</i> STORYEND of 1'), n, 'SE' + rid)); n += 1
+            continue   # her 14 Nov: the practise part is not for the Level books
         if r.get('review'):
             toc.append((i, 'Review')); a, b_ = review_spread(r, name, i); out += [section('<div class="rvbig">' + a + '</div>', n, 'L' + rid), section('<div class="rvbig">' + b_ + '</div>', n + 1, 'P' + rid)]; n += 2; continue
         title, steps = ROOMSTORY[rid]; toc.append((i, title))
