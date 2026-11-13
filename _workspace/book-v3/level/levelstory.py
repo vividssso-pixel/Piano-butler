@@ -44,9 +44,12 @@ def dyn(items):   # dynamics as growing bars
 
 # her 13 Nov ("체스가 깔끔하다"): every page of a Level book sits in a double-rule frame on the books' chequered floor,
 # with the page number on a plaque. The hidden .foot marks the bottom of the frame for the shrink-to-fit pass.
+DENT = '<svg class="dent" viewBox="0 0 694 16" preserveAspectRatio="none"><rect x="0" y="0" width="694" height="1.6" fill="#26296b"/><rect x="0" y="14.4" width="694" height="1.6" fill="#26296b"/>' + ''.join(f'<rect x="{4 + k * 12.02:.2f}" y="5" width="6" height="6" fill="#26296b"/>' for k in range(58)) + '</svg>'   # drawn squares, not a CSS pattern: patterns came out pink in Preview
+RABBIT = json.load(open('/tmp/claude-0/lvl/pb-art.json'))['rabbit-head'].replace('<svg ', '<svg style="display:block;height:62px" preserveAspectRatio="xMidYMid meet" ', 1)
 def section(inner, n, flow):
-    # her 14 Nov ("예전 레슨북 디자인 그대로"): the Lesson Book page: caps running head over a double rule, coral kicker, Playfair title, picture in a double-rule frame, navy page square
-    return f'<section class="pg cx" data-flow="{flow}"><div class="lbtop"><span>The Piano Butler · Level book</span><span>{RIGHT}</span></div><div class="fr"><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></div><div class="plq">{n}</div></section>'
+    # her 14 Nov ("예전 레슨북 디자인 그대로", then the dentil line "이 라인이랑 섞어서 있었다"): the Lesson Book page of 2 Nov (book1.py): caps running head,
+    # a band of small squares between two rules above and below, coral kicker, big Playfair title, the rabbit's bubble, "Try it at the piano", navy page square
+    return f'<section class="pg cx" data-flow="{flow}"><div class="lbtop"><span>The Piano Butler · Level book</span><span>{RIGHT}</span></div>{DENT}<div class="fr"><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></div><div class="lbbot">{DENT}</div><div class="plq">{n}</div></section>'
 def fivekeys():   # C to G with their black keys and the right-hand finger numbers
     k = kb(5, 520, 190, labels=True); body = k[k.index('>') + 1:-6]
     nums = ''.join(f'<text x="{i * 104 + 52}" y="46" text-anchor="middle" font-size="46" font-weight="700" fill="{C}" font-family="Atkinson Hyperlegible,sans-serif">{i + 1}</text>' for i in range(5))
@@ -280,22 +283,22 @@ def build_story(floor_i, name, line):
 <p class="pl">{line}</p><div class="pin"><div class="pih">The rooms</div>{"".join(f'<div class="tr"><span>{str(i) + " · " if i else ""}{t}</span><span class="dots"></span><span></span></div>' for i, t in toc)}</div></div></section>'''
     extra = EXTRA_CSS + """
 section.pg.cx{padding:40px 50px 36px} .prbig{zoom:1.38;margin-top:14px} .prbig figure.vx svg{max-height:120px!important} .rvbig{zoom:1.55} .rvbig.xl{zoom:1.42} .rvbig .tk5{margin-top:8px} .prbig .sent .ab{min-width:74px} .prbig .sent .ab.hasdone{padding:0 6px} .prbig .ex2{margin-bottom:18px}
-.cx .lbtop{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#6d6f9c;padding-bottom:7px;border-bottom:4px double #26296b}
-.cx .fr{position:relative;height:962px;box-sizing:border-box;padding:22px 0 0} .cx .fr>.foot{position:absolute;left:0;right:0;bottom:2px;height:1px;visibility:hidden}
-.cx .plq{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);background:#26296b;color:#fff;min-width:30px;height:30px;line-height:30px;text-align:center;font-family:'Playfair Display',PF,serif;font-weight:700;font-size:14px}
-.cx .kk{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e;margin-bottom:4px} .cx h1.lbh{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:34px;line-height:1.15;color:#26296b;margin:0 0 14px}
+.cx .lbtop{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#6d6f9c;padding-bottom:7px} .cx svg.dent{display:block;width:100%;height:16px}
+.cx .fr{position:relative;height:938px;box-sizing:border-box;padding:18px 0 0} .cx .fr>.foot{position:absolute;left:0;right:0;bottom:2px;height:1px;visibility:hidden}
+.cx .lbbot{position:absolute;left:50px;right:50px;bottom:44px} .cx .plq{position:absolute;bottom:37px;left:50%;transform:translateX(-50%);background:#26296b;color:#fff;min-width:30px;height:30px;line-height:30px;text-align:center;font-family:'Playfair Display',PF,serif;font-weight:700;font-size:14px;box-shadow:0 0 0 6px #fff}
+.cx .kk{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e;margin-bottom:2px} .cx h1.lbh{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:42px;line-height:1.08;color:#26296b;margin:0 0 12px}
 .cx .lvhead{display:flex;justify-content:space-between;align-items:flex-start;border:0;padding:0} .cx .kick{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e}
-.stpic{position:relative;height:430px;margin:0 0 22px;border:1.5px solid #26296b;box-shadow:inset 0 0 0 4px #fff,inset 0 0 0 5.5px #26296b;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
-.stpic::before{content:'';position:absolute;left:14px;right:14px;top:14px;height:9px;border-top:1.5px solid #26296b;background:repeating-linear-gradient(90deg,#26296b 0 9px,transparent 9px 18px) 0 3px/100% 6px no-repeat}
-.stpic::after{content:'';position:absolute;left:14px;right:14px;bottom:14px;height:24px;border-top:1.5px solid #26296b;background:conic-gradient(#26296b 25%,#fff 0 50%,#26296b 0 75%,#fff 0) 0 0/24px 24px}
+.stpic{position:relative;height:400px;margin:0 0 16px;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
 .stpic svg{display:block;max-width:none}
-.sttx{font-size:27px;line-height:1.45;color:#26296b} .sttx p{margin:0 0 14px;font-size:26px!important;line-height:1.42!important} .sttx b{color:#e4572e}
-.stpn{position:relative;margin-top:20px;padding:44px 46px 14px 40px;border-bottom:1px solid #cfcfe2;font-size:21px!important;line-height:1.4;color:#26296b} .stpn span{position:absolute;top:4px;left:0;font-family:'Playfair Display',PF,serif;font-style:italic;font-weight:700;font-size:21px;color:#26296b}
-.stpn::before{content:'';position:absolute;left:0;top:48px;width:22px;height:22px;background:#26296b} .stpn::after{content:'';position:absolute;right:4px;top:48px;width:20px;height:20px;border:1.5px solid #26296b;border-radius:50%}
+.bub{display:flex;gap:14px;align-items:center;margin:0 0 16px} .bub .bf{flex:none} .bub .bt{position:relative;flex:1;background:#fff;border:2px solid #26296b;border-radius:18px;padding:14px 20px;color:#26296b} .bub .bt p{margin:0;font-size:25px!important;line-height:1.4!important} .bub .bt b{color:#e4572e}
+.bub .bt:before{content:'';position:absolute;left:-11px;top:50%;margin-top:-9px;border:9px solid transparent;border-right-color:#26296b;border-left:0}
+.sttx{font-size:24px;line-height:1.45;color:#26296b} .sttx p{margin:0 0 12px;font-size:25px!important;line-height:1.42!important} .sttx b{color:#e4572e}
+.try{margin-top:16px;background:#fff;border:2px solid #26296b;border-radius:16px;padding:12px 18px 14px;color:#26296b} .try .tt{font-family:'Playfair Display',PF,serif;font-size:21px;font-weight:700;margin-bottom:6px} .try .li{display:flex;gap:14px;align-items:center;font-size:20px;line-height:1.38}
+.try .nb{flex:none;width:28px;height:28px;background:#26296b;color:#fff;text-align:center;line-height:28px;font-family:'Playfair Display',PF,serif;font-weight:700;font-size:15px} .try .tx{flex:1;font-size:21px!important;line-height:1.38!important} .try .nb{font-size:15px!important} .try .tt{font-size:22px!important} .try .ck{flex:none;width:24px;height:24px;border:2px solid #c9cbe0;border-radius:50%}
 .k5big>div{width:86px!important;height:190px!important} .k5big b{font-size:40px!important} .k5big span{font-size:26px!important}
 """
     fit = """<script>(async()=>{try{await document.fonts.ready}catch(e){}
-document.querySelectorAll('.stpic').forEach(b=>{const i=b.querySelector('.stin');if(!i)return;const W=b.clientWidth-70,H=b.clientHeight-110,w=i.offsetWidth,h=i.offsetHeight;if(!w||!h)return;const s=Math.min(W/w,H/h,2.4);i.style.transform='scale('+s.toFixed(3)+')';});
+document.querySelectorAll('.stpic').forEach(b=>{const i=b.querySelector('.stin');if(!i)return;const W=b.clientWidth-40,H=b.clientHeight-24,w=i.offsetWidth,h=i.offsetHeight;if(!w||!h)return;const s=Math.min(W/w,H/h,2.4);i.style.transform='scale('+s.toFixed(3)+')';});
 document.querySelectorAll('section.pg .body').forEach(b=>{const s=b.closest('section'),f=s.querySelector('.foot');if(!f)return;const lim=f.getBoundingClientRect().top-20,top=b.getBoundingClientRect().top;let m=0;[...b.children].forEach(c=>{const r=c.getBoundingClientRect();if(r.height)m=Math.max(m,r.bottom)});if(m>lim){b.style.zoom=Math.max(.6,(lim-top)/(m-top)).toFixed(3);}});
 document.body.dataset.pruned='1';})();</script>"""
     for _a, _b in [(' Start from G.', ''), ('notes have dots.', 'notes have a staccato dot.'), ('faster to fix a slip', 'play faster after a slip'), ('walk in, bow, play, bow.', 'walk in, sit, breathe out, play.')]: out = [o.replace(_a, _b) for o in out]
@@ -303,6 +306,13 @@ document.body.dataset.pruned='1';})();</script>"""
     out = [o.replace('M1576,1057 C2341,396 5000,316 5564,787 C4981,376 2363,455 1576,1057', 'M1420,1560 C2500,1940 4600,1770 5420,1330 C4600,1700 2500,1870 1420,1560') for o in out]
     out = [re.sub(r'<div class="cxk cxc">Room (\d+) <i>◆</i> (.*?) <i>◆</i> (\d+ of \d+|Practise)</div>', lambda m: f'<div class="kk">Room {m.group(1)} · ' + ('Practise' if m.group(3) == 'Practise' else 'Step ' + m.group(3)) + f'</div><h1 class="lbh">{m.group(2)}</h1>', o) for o in out]
     out = [re.sub(r'<div class="cxk">Room (\d+) <i>◆</i> (\d+ of \d+)</div><h1>', lambda m: f'<div class="kk">Room {m.group(1)} · Step {m.group(2)}</div><h1 class="lbh">', o) for o in out]
+    def _staffhead(o):   # her 14 Nov (picture of a five-line header): the room title sits on a staff across the top, the page number in coral at its right end
+        t = re.search(r'<h1 class="lbh">(.*?)</h1>', o, flags=re.S); n_ = re.search(r'<div class="plq">(\d+)</div>', o)
+        if not (t and n_): return o
+        o = o.replace(t.group(0), '', 1).replace(n_.group(0), '', 1)
+        return re.sub(r'<div class="lbtop">.*?</div>', f'<div class="sth"><span class="stt">{t.group(1)}</span><span class="stn">{n_.group(1)}</span></div>', o, count=1, flags=re.S)
+    out = [re.sub(r'<div class="stpn"><span>At the piano</span>(.*?)</div>', lambda m: f'<div class="try"><div class="tt">Try it at the piano</div><div class="li"><span class="nb">1</span><span class="tx">{m.group(1)}</span><span class="ck"></span></div></div>', o, flags=re.S) for o in out]
+    out = [re.sub(r'<div class="sttx">(<p>.*?</p>)', lambda m: f'<div class="bub"><div class="bf">{RABBIT}</div><div class="bt">{m.group(1)}</div></div><div class="sttx">', o, count=1, flags=re.S) for o in out]
     html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{fit}</body></html>'
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower()}.html'
     open(fn, 'w').write(html); return fn
