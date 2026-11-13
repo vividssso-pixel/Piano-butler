@@ -281,7 +281,8 @@ def build_story(floor_i, name, line):
     extra = EXTRA_CSS + """
 section.pg.cx{padding:40px 50px 36px} .prbig{zoom:1.38;margin-top:14px} .prbig figure.vx svg{max-height:120px!important} .rvbig{zoom:1.55} .rvbig.xl{zoom:1.42} .rvbig .tk5{margin-top:8px} .prbig .sent .ab{min-width:74px} .prbig .sent .ab.hasdone{padding:0 6px} .prbig .ex2{margin-bottom:18px}
 .cx .lbtop{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#6d6f9c;padding-bottom:7px;border-bottom:4px double #26296b}
-.cx .fr{position:relative;height:962px;box-sizing:border-box;padding:22px 0 0} .cx .fr>.foot{position:absolute;left:0;right:0;bottom:2px;height:1px;visibility:hidden}
+.cx .sth{position:relative;height:44px;margin-bottom:6px;background:repeating-linear-gradient(#26296b 0 2.5px,transparent 2.5px 10.375px)} .cx .sth .stt{position:absolute;left:24px;top:-3px;height:50px;line-height:50px;background:#fff;padding:0 12px;font-family:'Playfair Display',PF,serif;font-weight:900;font-size:33px;letter-spacing:.02em;text-transform:uppercase;color:#26296b;white-space:nowrap} .cx .sth .stn{position:absolute;right:28px;top:4px;height:36px;line-height:36px;background:#fff;padding:0 14px;font-weight:700;font-size:22px;color:#e4572e}
+.cx .fr{position:relative;height:972px;box-sizing:border-box;padding:22px 0 0} .cx .fr>.foot{position:absolute;left:0;right:0;bottom:2px;height:1px;visibility:hidden}
 .cx .plq{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);background:#26296b;color:#fff;min-width:30px;height:30px;line-height:30px;text-align:center;font-family:'Playfair Display',PF,serif;font-weight:700;font-size:14px}
 .cx .kk{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e;margin-bottom:4px} .cx h1.lbh{font-family:'Playfair Display',PF,serif;font-weight:700;font-size:34px;line-height:1.15;color:#26296b;margin:0 0 14px}
 .cx .lvhead{display:flex;justify-content:space-between;align-items:flex-start;border:0;padding:0} .cx .kick{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e}
@@ -303,6 +304,12 @@ document.body.dataset.pruned='1';})();</script>"""
     out = [o.replace('M1576,1057 C2341,396 5000,316 5564,787 C4981,376 2363,455 1576,1057', 'M1420,1560 C2500,1940 4600,1770 5420,1330 C4600,1700 2500,1870 1420,1560') for o in out]
     out = [re.sub(r'<div class="cxk cxc">Room (\d+) <i>◆</i> (.*?) <i>◆</i> (\d+ of \d+|Practise)</div>', lambda m: f'<div class="kk">Room {m.group(1)} · ' + ('Practise' if m.group(3) == 'Practise' else 'Step ' + m.group(3)) + f'</div><h1 class="lbh">{m.group(2)}</h1>', o) for o in out]
     out = [re.sub(r'<div class="cxk">Room (\d+) <i>◆</i> (\d+ of \d+)</div><h1>', lambda m: f'<div class="kk">Room {m.group(1)} · Step {m.group(2)}</div><h1 class="lbh">', o) for o in out]
+    def _staffhead(o):   # her 14 Nov (picture of a five-line header): the room title sits on a staff across the top, the page number in coral at its right end
+        t = re.search(r'<h1 class="lbh">(.*?)</h1>', o, flags=re.S); n_ = re.search(r'<div class="plq">(\d+)</div>', o)
+        if not (t and n_): return o
+        o = o.replace(t.group(0), '', 1).replace(n_.group(0), '', 1)
+        return re.sub(r'<div class="lbtop">.*?</div>', f'<div class="sth"><span class="stt">{t.group(1)}</span><span class="stn">{n_.group(1)}</span></div>', o, count=1, flags=re.S)
+    out = [_staffhead(o) for o in out]
     html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{fit}</body></html>'
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower()}.html'
     open(fn, 'w').write(html); return fn
