@@ -88,12 +88,16 @@ def ear_story(r, name, i, n):
     home = EARHOME.get(name) or [('Floor, tummy or sky?', 'A grown-up plays one key: very low, in the middle, or very high. Eyes closed! Point to the floor, your tummy or the sky.'), ('Copy-cat clap', 'A grown-up claps a short pattern. Clap it back exactly. Then swap: you clap, they copy.')]
     right = f'<div class="cxk cxc">Room {i} <i>◆</i> Ear training <i>◆</i> Practise</div><div class="prbig">' + ''.join(ex(k + 1, a, b_, tick5, 1) for k, (a, b_) in enumerate(home)) + '</div>'
     return left, right
-def story(name, i, title, k, n, pic, text, piano, rid=None, first=False):
+STORY_URL = 'https://thepianobutler.com/books/read/stories/{}.mp3'   # her 14 Nov: the story pages come with their own audio
+def story(name, i, title, k, n, pic, text, piano, rid=None, first=False, tale=None):
     r = ROOMS[rid] if rid else None
     q = f'<a class="lvqr" href="{listen_url(r)}">{qr(listen_url(r))}<span>Scan to listen</span></a>' if first and r and r.get('ch') != 'EAR' else ''
+    if tale: u = STORY_URL.format(tale); q = f'<a class="lvqr" href="{u}">{qr(u)}<span>Hear the story</span></a>'
     hd = (f'<div class="lvhead"><div><div class="cxk">Room {i} <i>◆</i> {k} of {n}</div><h1>{title}</h1></div>{q}</div>' if first
           else f'<div class="cxk cxc">Room {i} <i>◆</i> {title} <i>◆</i> {k} of {n}</div>')
-    return f'{hd}<div class="stpic"><div class="stin">{pic}</div></div><div class="sttx">{text}</div><div class="stpn"><span>At the piano</span>{piano}</div>'
+    tz = ''
+    if '<p class="tease">' in text: text, tz = text.split('<p class="tease">', 1); tz = '<div class="sttx"><p class="tease">' + tz + '</div>'   # the hook to the next room closes the page, after the try box
+    return f'{hd}<div class="stpic"><div class="stin">{pic}</div></div><div class="sttx">{text}</div><div class="stpn"><span>At the piano</span>{piano}</div>{tz}'
 F_ = 'font-family="Atkinson Hyperlegible,sans-serif"'
 def st(notes, clef='t', w=560, names=True, led=True):   # a staff with a clef; notes = [(step, label)], step 0 = bottom line
     t, g = 46, 24; y = lambda k: t + 4 * g - k * g / 2; n = len(notes); x0 = 150; dx = (w - x0 - 50) / max(1, n - 1) if n > 1 else 0
@@ -373,8 +377,162 @@ def scene_loud(wake=True):
     return (f'<svg viewBox="0 0 640 380" style="width:640px"><rect x="10" y="10" width="620" height="360" fill="#fff" stroke="{N}" stroke-width="3"/>'
             f'<rect x="10" y="194" width="620" height="10" fill="{N}"/><text x="30" y="44" font-size="16" letter-spacing="3" font-weight="700" fill="#6d6f9c" {F_}>THE FIRST FLOOR</text><text x="30" y="232" font-size="16" letter-spacing="3" font-weight="700" fill="#6d6f9c" {F_}>THE MUSIC ROOM</text>'
             f'{up}<g transform="translate(270 284)">{kbody}</g>{bear(160, 290, 3.6)}{noise}<rect x="10" y="354" width="620" height="16" fill="{N}"/></svg>' + f'<div style="text-align:center;font-family:Playfair Display,serif;font-style:italic;font-size:19px;color:#6d6f9c;margin-top:8px">{"Plate VIII. Mr Bear at the piano, at full strength." if wake else "Plate VIII, continued. The same piano, a different hand."}</div>')
-ROOMOPEN = {'hbr-E1': (scene_loud(True), '<p>Mr <b>Bear</b> plays every note at <b>full strength</b>. On the floor above, Miss <b>Bird</b> has given up on sleep.</p><p>He is not wrong to play loudly. He has simply never been told that the piano can also <b>whisper</b>.</p>', 'Play one C as Mr Bear would. Then one so quiet that the floor above would not notice.')}
-ROOMEND = {'hbr-E1': (scene_loud(False), '<p>Mr Bear now plays <b><i>p</i></b> after ten, and saves his <b><i>f</i></b> for the moments that need it. Loud means more when soft came first.</p><p>Haydn knew this. In his <i>Surprise</i> Symphony a quiet tune is suddenly broken by one loud chord. The story goes that he wrote it to wake up the audience.</p>', 'Play a tune you know softly. Then play it again with just one loud note somewhere. Where does the surprise work best?')}
+
+# ---------- the stories (her 14 Nov: "보류 풀고 이야기 써줘", tone B, "이상한 나라의 앨리스 느낌") ----------
+# Clara is the student who lives in the house; each room opens with a scene and closes with how it ended. The residents:
+# the Butler, the Queen (treble clef), the King (bass clef), the Doorkeeper (key signature), the Guest (accidentals),
+# the Stationmaster (time signature). Endings carry a true story from music history where one fits ("the story goes" for legends).
+PC = json.load(open('/tmp/claude-0/lvl/pieces.json'))
+CAST = {'clara': PC['VIC_PAWN'], 'queen': PC['VIC_QUEEN'], 'king': PC['VIC_KING'], 'door': PC['rook'], 'guest': PC['knight'], 'station': PC['bishop']}
+BUTLER = open('/tmp/claude-0/lvl/cameo.svg').read()
+BUTLER_IN = BUTLER[BUTLER.index('>') + 1:BUTLER.rindex('</svg>')]
+def who(k, x, s=1.5, y=306): return f'<g transform="translate({x} {y}) scale({s})">{CAST[k]}</g>'
+def butler(x, y=150, s=0.62): return f'<g transform="translate({x} {y}) scale({s}) translate(-100 -128)">{BUTLER_IN}</g>'
+def p_piano(x, y=232, n=7, w=210, h=70): k = kb(n, w, h); return f'<g transform="translate({x} {y})">{k[k.index(">") + 1:-6]}</g>'
+def p_clock(x, y, r=34, hh=(0, 90)):
+    import math
+    hands = ''.join(f'<line x1="{x}" y1="{y}" x2="{x + L * math.sin(math.radians(a)):.1f}" y2="{y - L * math.cos(math.radians(a)):.1f}" stroke="{N}" stroke-width="{wd}" stroke-linecap="round"/>' for a, L, wd in ((hh[0], r * .5, 4), (hh[1], r * .75, 3)))
+    ticks = ''.join(f'<circle cx="{x + r * .82 * math.sin(math.radians(a)):.1f}" cy="{y - r * .82 * math.cos(math.radians(a)):.1f}" r="2.2" fill="{N}"/>' for a in range(0, 360, 30))
+    return f'<circle cx="{x}" cy="{y}" r="{r}" fill="#fff" stroke="{N}" stroke-width="3"/>{ticks}{hands}<circle cx="{x}" cy="{y}" r="3.5" fill="{C}"/>'
+def p_staff(x, y, w, gap=10, clef=None):
+    o = ''.join(f'<line x1="{x}" x2="{x + w}" y1="{y + i * gap}" y2="{y + i * gap}" stroke="{N}" stroke-width="1.8"/>' for i in range(5))
+    if clef: o += f'<text x="{x + 4}" y="{y + 4 * gap - (gap * .95 if clef == "t" else gap * 1.05)}" font-family="NM" font-size="{gap * (4.05 if clef == "t" else 3.9)}" fill="{N}">{"𝄞" if clef == "t" else "𝄢"}</text>'
+    return o
+def p_cake(x, y, r=40, cuts=4):
+    import math
+    return f'<ellipse cx="{x}" cy="{y + 10}" rx="{r + 12}" ry="10" fill="#fff" stroke="{N}" stroke-width="2.5"/><circle cx="{x}" cy="{y}" r="{r}" fill="{C}"/>' + ''.join(f'<line x1="{x}" y1="{y}" x2="{x + r * math.sin(2 * math.pi * k / cuts):.1f}" y2="{y - r * math.cos(2 * math.pi * k / cuts):.1f}" stroke="#fff" stroke-width="3" stroke-dasharray="5 4"/>' for k in range(cuts))
+def p_carriage(x, y, seats=3, w=200):
+    sp = w / (seats + 1)
+    return f'<rect x="{x}" y="{y}" width="{w}" height="56" rx="6" fill="#fff" stroke="{N}" stroke-width="3"/><circle cx="{x + 30}" cy="{y + 62}" r="10" fill="{N}"/><circle cx="{x + w - 30}" cy="{y + 62}" r="10" fill="{N}"/>' + ''.join(f'<circle cx="{x + sp * (k + 1):.0f}" cy="{y + 28}" r="12" fill="{C if k == 0 else N}"/>' for k in range(seats))
+def p_door(x, y=150, w=70, h=150): return f'<path d="M{x} {y + h} L{x} {y + w / 2} A{w / 2} {w / 2} 0 0 1 {x + w} {y + w / 2} L{x + w} {y + h}" fill="#fff" stroke="{N}" stroke-width="3"/><circle cx="{x + w - 14}" cy="{y + h * .62}" r="4" fill="{C}"/>'
+def p_cups(x, y, rattle=False):
+    o = ''.join(f'<path d="M{x + k * 46} {y} h30 v14 a15 15 0 0 1 -30 0 Z" fill="#fff" stroke="{N}" stroke-width="2.5"/><path d="M{x + k * 46 + 30} {y + 5} a6 6 0 0 1 0 12" fill="none" stroke="{N}" stroke-width="2.5"/>' for k in range(3))
+    if rattle: o += ''.join(f'<path d="M{x + k * 46 - 6} {y - 6} l-6 -6 M{x + k * 46 + 36} {y - 6} l6 -6" stroke="{C}" stroke-width="3" stroke-linecap="round"/>' for k in range(3))
+    return o
+def mark(x, y, t, z=44, col=None, it=True): return f'<text x="{x}" y="{y}" text-anchor="middle" font-size="{z}" {"font-style=\"italic\" " if it else ""}font-weight="900" fill="{col or C}" font-family="Playfair Display,serif">{t}</text>'
+def label(x, y, t): return f'<text x="{x}" y="{y}" text-anchor="middle" font-size="15" letter-spacing="2" font-weight="700" fill="#6d6f9c" {F_}>{t}</text>'
+def scene(inner, cap):
+    dent = ''.join(f'<rect x="{22 + k * 12}" y="18" width="6" height="6" fill="{N}"/>' for k in range(50))
+    floor = ''.join(f'<rect x="{12 + c * 22.4:.1f}" y="{306 + r * 22}" width="22.4" height="22" fill="{N}"/>' for r in range(2) for c in range(27) if (r + c) % 2 == 0)
+    return (f'<svg viewBox="0 0 628 370" style="width:628px"><rect x="10" y="10" width="608" height="352" fill="#fff" stroke="{N}" stroke-width="3"/><line x1="10" x2="618" y1="30" y2="30" stroke="{N}" stroke-width="1.6"/>{dent}'
+            f'<line x1="10" x2="618" y1="250" y2="250" stroke="{N}" stroke-width="1.2" stroke-opacity=".5"/><rect x="10" y="306" width="608" height="44" fill="#fff"/>{floor}<line x1="10" x2="618" y1="306" y2="306" stroke="{N}" stroke-width="2"/>{inner}</svg>'
+            f'<div style="text-align:center;font-family:Playfair Display,serif;font-style:italic;font-size:19px;color:#6d6f9c;margin-top:8px">Plate {{PLATE}}. {cap}</div>')
+def dateplate(year, place, inner, cap):
+    return scene(f'<text x="314" y="112" text-anchor="middle" font-size="64" font-weight="900" fill="{N}" font-family="Playfair Display,serif">{year}</text><text x="314" y="146" text-anchor="middle" font-size="22" font-style="italic" fill="{C}" font-family="Playfair Display,serif">{place}</text>{inner}', cap)
+
+# her 14 Nov ("응" to an illustrated, moving sample): a full room illustration, the same drawing as the film
+def ILLU(svg, cap): return svg.replace('<svg ', '<svg style="width:680px;height:auto;display:block" ', 1) + f'<div style="text-align:center;font-family:Playfair Display,serif;font-style:italic;font-size:19px;color:#6d6f9c;margin-top:8px">Plate {{PLATE}}. {cap}</div>'
+STORY = {
+ # ----- Beginner -----
+ 'hbr-B1': ((scene(p_piano(380) + f'<rect x="300" y="262" width="74" height="12" fill="{N}"/><rect x="306" y="274" width="6" height="32" fill="{N}"/><rect x="362" y="274" width="6" height="32" fill="{N}"/>' + who('clara', 200) + butler(520, 150), 'Clara arrives. The Butler has already seen to the stool.'),
+             '<p>Clara has come to live in a tall house full of music. Before she may play a single note, the <b>Butler</b> asks her to sit down.</p><p>“A pianist,” he says, “begins with the chair.”</p>', 'Sit on a chair as if it were the piano stool. Where are your feet? Where do your arms want to be?'),
+            (dateplate('1828', 'Leipzig', p_piano(330, 238, 7, 180, 60) + who('clara', 260, 1.2), 'Another Clara, aged nine, playing in public for the first time.'),
+             '<p>Nearly two hundred years ago another girl called <b>Clara</b>, Clara Wieck, played in public for the first time, at the Gewandhaus concert hall in Leipzig. She was nine years old.</p><p>She grew up to be one of the great pianists of her time, Clara Schumann. She, too, had to start at the beginning.</p>', 'Sit at the piano and check three things before you play: feet flat, back tall, arms level with the keys.')),
+ 'hbr-P1': ((scene(p_piano(100, 232, 15, 430, 70) + ''.join(mark(150 + k * 70, 210, t, 22, N, False) for k, t in enumerate(['1', '13', '25', '37', '?'])) + who('clara', 560, 1.3), 'Clara loses count somewhere after forty.'),
+             '<p>Clara tries to count the keys. She loses count somewhere after forty, and starts again, and loses count again.</p><p>“There are eighty-eight,” says the Butler, “but nobody finds a key by counting.”</p>', 'Look at the black keys without playing. What do you notice about how they are grouped?'),
+            (dateplate('1785', 'Vienna', p_piano(220, 238, 9, 190, 60), 'Mozart’s piano was a good deal smaller.'),
+             '<p><b>Mozart’s</b> piano had only about five octaves. The eighty-eight keys you see came almost a hundred years later.</p><p>Yet the black keys were already in their twos and threes. The pattern is older than the piano.</p>', 'Find the lowest group of three black keys and the highest. How many groups of three are between them?')),
+ 'hbr-L1': ((scene(''.join(f'<rect x="{130 + k * 80}" y="96" width="44" height="60" rx="6" fill="#fff" stroke="{N}" stroke-width="2.5"/><text x="{152 + k * 80}" y="138" text-anchor="middle" font-size="30" font-weight="900" fill="{C}" font-family="Playfair Display,serif">{k + 1}</text>' for k in range(5)) + label(314, 186, 'THE BELL BOARD') + who('clara', 230) + butler(470, 236, .5), 'The bell board in the servants’ hall, numbered 1 to 5.'),
+             '<p>In the servants’ hall there is a board of bells, numbered one to five. When a bell rings, everyone knows exactly who is wanted.</p><p>Clara’s fingers, the Butler explains, work the same way.</p>', 'Hold up both hands. Ask someone to call a number, and wiggle that finger on both hands.'),
+            (dateplate('1800s', 'London', ''.join(mark(220 + k * 48, 230, t, 36, C if k == 0 else N, False) for k, t in enumerate(['+', '1', '2', '3', '4'])), 'The English way: a cross for the thumb.'),
+             '<p>Fingers were not always numbered this way. In old English music the thumb was marked with a <b>cross</b>, and the fingers were 1, 2, 3, 4.</p><p>The way you learn, thumb as 1, won in the end.</p>', 'Play C D E F G with your right hand, saying the numbers. Then say them the old English way: cross, 1, 2, 3, 4.')),
+ 'hbr-P2': ((scene(p_staff(160, 90, 300, 12, 't') + p_staff(160, 176, 300, 12, 'b') + who('queen', 110, 1.3) + who('king', 520, 1.3), 'The Queen and the King, each with a floor of their own.'),
+             '<p>Two people own the lines in this house. The <b>Queen</b> rules the high floor, the <b>King</b> the low one.</p><p>Each has a sign at the start of the floor, and they are very particular about it.</p>', 'Play a high note and say “the Queen’s floor”. Play a low note and say “the King’s floor”.'),
+            (dateplate('c. 1025', 'Arezzo, Italy', p_staff(200, 196, 230, 12) + f'<circle cx="250" cy="226" r="6" fill="{C}"/><circle cx="300" cy="214" r="6" fill="{C}"/><circle cx="350" cy="208" r="6" fill="{C}"/>', 'A monk, a few lines, and a better memory.'),
+             '<p>About a thousand years ago a monk called <b>Guido</b> wanted his singers to learn songs faster. He arranged lines a third apart, and put each note on a line or in a space.</p><p>Clefs began as plain letters written at the start of a line: F and C at first, G a little later. Over the years the letters curled into the signs you see today.</p>', 'Draw the letter G and then a treble clef next to it. Can you find the G hiding inside the clef? Then try F and the bass clef.')),
+ 'hbr-T1': ((scene(p_clock(314, 120, 52, (0, 0)) + who('clara', 200) + butler(470, 236, .5), 'The hall clock, which has never once been late.'),
+             '<p>In the hall stands a clock that has never been late, not once. Tick, tick, tick: never faster, never slower.</p><p>“Music has a clock inside it too,” says the Butler. “We call it the <b>beat</b>.”</p>', 'Listen to a clock or your own heartbeat. Tap along on your knee without stopping.'),
+            (dateplate('1817', 'Vienna', p_clock(314, 224, 40, (0, 330)), 'Mr Beethoven’s first metronome marks.'),
+             '<p>A man named <b>Maelzel</b> sold a ticking machine to keep the beat: the <b>metronome</b>. (A Dutchman called Winkel had built it first, but Maelzel’s name was on the box.) <b>Beethoven</b> was one of the first composers to write its numbers on his music.</p><p>The clock in the hall would have approved.</p>', 'Clap a steady beat while someone counts to twenty. Did you stay with them all the way?')),
+ 'hbr-T2': ((scene(p_clock(160, 110, 34) + mark(330, 170, CR, 110, N, False).replace('Playfair Display,serif', 'NM') + mark(440, 170, MI, 110, N, False).replace('Playfair Display,serif', 'NM') + who('clara', 560, 1.2), 'A quick note and a slow one, meeting in the hall.'),
+             '<p>Two notes meet in the hall. One is gone in a single tick. The other <b>waits</b>, and waits, for two.</p><p>Clara wonders why the slow one is called a <b>minim</b>, which sounds rather small.</p>', 'Play a note for one beat, then one for two beats. Which one feels longer?'),
+            (dateplate('1300s', 'Paris', mark(314, 240, 'minima', 40, C), '“Minima”, the smallest, which is no longer true.'),
+             '<p>Seven hundred years ago the <b>minim</b> was one of the <b>shortest</b> notes there was. Its name comes from the Latin <i>minima</i>, the smallest.</p><p>Over the centuries composers kept inventing shorter notes, the old ones grew slower and slower, and the name stayed behind. Now the minim is one of the long ones.</p>', 'Play four crotchets and then two minims on C. Which of them would once have been the quick notes?')),
+ 'hbr-T2-s2': ((scene(p_clock(314, 112, 44, (120, 0)) + who('clara', 200) + butler(470, 236, .5), 'The clock strikes four. Clara is still holding the same note.'),
+             '<p>The clock strikes four, and Clara is still holding her note. She has pressed only once.</p><p>“That,” says the Butler, “is a note that takes up the whole bar.”</p>', 'Press one key and hold it while you count four slow beats. Did the sound last?'),
+            (dateplate('1200s', 'Paris', mark(250, 240, 'breve', 38, N) + mark(380, 240, 'semibreve', 38, C), 'Half of something that used to be short.'),
+             '<p><b>Semibreve</b> means “half a breve”, and <i>breve</i> means short. The breve used to be a short note.</p><p>Like the minim, it grew longer over the years. Today the breve is so long that you hardly ever see it.</p>', 'Play a semibreve on C and count 1 2 3 4. Imagine a note twice as long: that is a breve.')),
+ 'hbr-E1': ((ILLU(open('/tmp/claude-0/anim/still15.svg').read(), 'The music evening, at full strength.'),
+             '<p>On Thursday the house holds its <b>music evening</b>. Clara plays her first piece with every note at full strength: <b><i>forte</i></b>, loud and strong.</p><p>The cups rattle on their saucers, and the Queen leans back in her chair. The Butler sets down the tray. “Again, please,” he says. “This time, <i>piano</i>.” Clara has never heard the word used like that.</p>', 'Play one C as Clara did: forte, with a heavy arm. Then one piano: so soft that the cups would not move.'),
+            (ILLU(open('/tmp/claude-0/anim/still50.svg').read(), 'The same piece, piano. Everyone leans in.'),
+             '<p>So Clara plays it again, <b><i>piano</i></b>: soft, her fingers close to the keys. The cups go still. And the Queen, who had leaned back, leans <b>forward</b> to listen.</p><p>Soft does not make music smaller. It makes people come closer.</p><p>The instrument is named after this. Around 1700 in Florence, <b>Bartolomeo Cristofori</b> built a keyboard that could play both: a harpsichord <i>col piano e forte</i>, with soft and loud. We still call it the piano.</p>', 'Play a tune twice: forte, then piano. Ask someone to listen and watch: do they lean back, or lean in?')),
+ 'hbr-ear-beginner': ((scene(p_door(130) + p_piano(380) + who('clara', 280), 'Someone is playing in the next room. Clara has to guess.'),
+             '<p>Someone is playing in the next room, and the door is shut. Clara presses her ear to it.</p><p>High or low? The same tune as before, or a new one? Here she cannot see the keys. She can only <b>listen</b>.</p>', 'Close your eyes. Ask someone to play two notes. Was the second one higher or lower?'), None),
+ # ----- Prelim -----
+ 'hbr-L2': ((scene(p_piano(260) + ''.join(mark(160 + k * 22, 120 + (k % 3) * 8, '×', 24, C, False) for k in range(9)) + who('clara', 200) + butler(520, 150), 'Bar seven, the twentieth time.'),
+             '<p>Clara plays her piece from the beginning, twenty times. Each time, she stumbles in exactly the same place: bar seven.</p><p>“You have practised the mistake beautifully,” says the Butler. “Twenty times.”</p>', 'Find the bar in your piece that always goes wrong. Play only that bar, slowly, three times.'),
+            (scene(p_piano(260) + mark(320, 190, '7', 48, C, False) + who('clara', 200) + butler(520, 150), 'Bar seven, slowly, alone, three times in a row.'),
+             '<p>Now Clara starts with bar seven. Slowly, alone, three times right. Then the bar before it, then the bar after.</p><p>By Thursday, nobody can tell which bar was ever the difficult one.</p>', 'Join your difficult bar to the bars on either side. Play all three slowly, then a little faster.')),
+ 'x-dyn': ((scene(p_piano(250) + who('clara', 200) + butler(520, 150) + mark(360, 170, 'pp', 40, N) + mark(420, 120, 'ff', 52), 'The music evening, now with six levels.'),
+             '<p>Since last Thursday Clara has learned <b>soft</b> and <b>loud</b>. Now the Butler hands her four new signs: one softer, one louder, and two for the middle.</p><p>“A good butler has more than one way of saying no,” he says. “A good pianist has more than one way of saying loud.”</p>', 'Play C six times, from the quietest to the loudest. Make each one a little louder than the one before.'),
+            (dateplate('1792', 'London', mark(240, 236, 'pp', 40, N) + mark(310, 236, 'pp', 40, N) + mark(380, 236, 'pp', 40, N) + mark(470, 244, 'ff', 60, C), 'A very quiet tune, and then one chord.'),
+             '<p><b>Haydn</b> wrote a symphony in which a quiet tune goes along politely, very softly, and then one sudden chord comes crashing in.</p><p>The story goes that he wanted to wake up the audience. It has been called the <i>Surprise</i> Symphony ever since.</p>', 'Play a tune softly, and put one loud note in somewhere. Where does the surprise work best?')),
+ 'hbr-P3': ((scene(p_staff(150, 70, 330, 11, 't') + p_staff(150, 160, 330, 11, 'b') + f'<line x1="290" x2="330" y1="137" y2="137" stroke="{N}" stroke-width="2"/><circle cx="310" cy="137" r="7" fill="{C}"/>' + who('queen', 100, 1.2) + who('king', 540, 1.2), 'Middle C, on the landing between two floors.'),
+             '<p>Between the Queen’s floor and the King’s floor there is a small <b>landing</b>. One note lives there, on a little line of its own.</p><p>Both of them claim it. It is called <b>Middle C</b>, and it belongs to both.</p>', 'Find Middle C. Play it with your right thumb, then with your left thumb.'),
+            (scene(p_piano(210, 232, 7, 210) + who('queen', 120, 1.2) + who('king', 510, 1.2) + who('clara', 316, 1.1, 230), 'The Queen and the King, agreeing for once.'),
+             '<p>In the end the Queen and the King agree. Middle C will be shared, and whoever needs it may use it.</p><p>It is the only thing in the house they have ever agreed on.</p>', 'Play C D E F G with your right hand from Middle C, then C B A G F with your left. Both start on the same key.')),
+ 'hbr-P4': ((scene(p_staff(150, 110, 330, 14, 't') + ''.join(f'<circle cx="{250 + k * 50}" cy="{166 - k * 14}" r="8" fill="{C}"/>' for k in range(5)) + who('queen', 100, 1.3) + who('clara', 540), 'The Queen’s sentence, written on her five lines.'),
+             '<p>The Queen has a sentence for her five lines, and she expects everyone to know it: <b>E</b>very <b>G</b>ood <b>B</b>oy <b>D</b>eserves <b>F</b>un.</p><p>Clara suspects the Queen made it up herself.</p>', 'Say the Queen’s sentence and point to the five lines of the treble staff, from the bottom up.'),
+            (scene(p_staff(150, 110, 330, 14, 'b') + ''.join(f'<circle cx="{250 + k * 50}" cy="{166 - k * 14}" r="8" fill="{C}"/>' for k in range(5)) + who('king', 100, 1.3) + who('clara', 540), 'The King’s sentence, which involves dragons.'),
+             '<p>Not to be outdone, the King has a sentence of his own: <b>G</b>reat <b>B</b>ig <b>D</b>ragons <b>F</b>ly <b>A</b>way.</p><p>Clara now knows both. She has decided not to ask which of them came first.</p>', 'Say the King’s sentence and point to the five lines of the bass staff. Then make up your own sentence.')),
+ 'hbr-T3': ((scene(p_cake(314, 150, 50, 0) + who('clara', 180) + butler(480, 236, .5), 'Tea is served. There is one cake.'),
+             '<p>At tea there is one round cake, and the Butler has a knife. One cake is <b>one beat</b>.</p><p>“Cut it in two,” he says, “and you have two halves of a beat. Cut it in four...” Clara sees where this is going.</p>', 'Clap four slow beats. Then clap twice on every beat. Then four times. Keep the beat the same.'),
+            (scene(p_cake(220, 150, 42, 2) + p_cake(410, 150, 42, 4) + who('clara', 120) + butler(540, 236, .5), 'Two halves, four quarters, still one cake.'),
+             '<p>Two halves or four quarters: it is still the same cake, and still the <b>same beat</b>. Only the slices change.</p><p>Clara notices the Butler took a quarter. Nobody says anything.</p>', 'Play C in crotchets, then quavers, then semiquavers, while someone taps a steady beat.')),
+ 'hbr-T4': ((scene(p_carriage(150, 110, 3, 180) + p_carriage(340, 110, 3, 180) + f'<line x1="140" x2="540" y1="184" y2="184" stroke="{N}" stroke-width="3"/>' + p_carriage(150, 214, 4, 180) + p_carriage(340, 214, 4, 180) + f'<line x1="140" x2="540" y1="288" y2="288" stroke="{N}" stroke-width="3"/>' + who('station', 80, 1.3), 'Two trains: three seats to a carriage, and four.'),
+             '<p>At the end of the garden is a small station, and the <b>Stationmaster</b> is very strict. Every carriage must have the same number of seats.</p><p>Before a piece begins he shows two numbers. The top one says how many seats are in each carriage.</p>', 'Clap three seats in each carriage: ONE two three, ONE two three. Then four.'),
+            (dateplate('1867', 'Vienna', p_carriage(220, 200, 3, 190), 'Three seats to a carriage, all the way down the Danube.'),
+             '<p>In Vienna, <b>Johann Strauss II</b> wrote waltzes with three beats in every bar. The most famous is <i>The Blue Danube</i>, first heard in 1867.</p><p>Before long the whole world was dancing to it: one two three, one two three. The Stationmaster, for once, had no complaints.</p>', 'Play or hum a waltz and sway on beat 1: ONE two three. Then march a two: LEFT right.')),
+ 'hbr-T8': ((scene(p_door(150) + p_door(410) + who('clara', 316), 'The same door, again.'),
+             '<p>Clara walks down a corridor, turns a corner and finds herself at the <b>same door</b> as before. She is quite sure she did not turn round.</p><p>“That,” says the Butler, “is a repeat sign. It is supposed to happen.”</p>', 'Play a short tune twice, without stopping in between. Did it feel like the same door?'),
+            (dateplate('1781', 'Vienna', mark(314, 240, '★ ★ ★', 40, C, False), 'One small tune, twelve different doors.'),
+             '<p><b>Mozart</b> took a little French tune, the one you know as <i>Twinkle, Twinkle, Little Star</i>, and played it again and again, each time a little different.</p><p>He wrote twelve variations on it. The tune comes back each time, but never through quite the same door.</p>', 'Play the start of Twinkle, Twinkle. Then play it again, one change: louder, shorter, or higher.')),
+ 'hbr-E2': ((scene(f'<path d="M190 120 q60 -40 110 10" fill="none" stroke="{C}" stroke-width="5" stroke-linecap="round"/>' + p_cups(300, 160) + ''.join(f'<rect x="{430 + k * 30}" y="{120 + k * 14}" width="14" height="14" fill="{N}"/>' for k in range(4)) + butler(150, 236, .5), 'Tea poured in one stream; sugar dropped one lump at a time.'),
+             '<p>The Butler pours the tea in one <b>smooth</b> stream, from the first cup to the last, without a drip in between.</p><p>Then he drops in the sugar: one lump, two lumps, three. <b>Short</b>, and separate, and very precise.</p>', 'Play five notes like the tea, smooth and joined. Then like the sugar, short and separate.'),
+            (scene(p_piano(240) + who('clara', 180) + butler(520, 150) + mark(330, 180, 'legato', 30, N) + mark(390, 120, 'staccato', 30, C), 'Tea and sugar, both at the piano.'),
+             '<p>Now Clara has names for both. Tea is <b>legato</b>. Sugar is <b>staccato</b>.</p><p>She finds that her pieces use both, often in the same line. The Butler, for the record, takes two lumps.</p>', 'Find a place in your piece that is legato and a place that is staccato. Play each one the way the Butler would serve it.')),
+ 'hbr-S1': ((scene(p_door(270) + who('door', 200) + who('guest', 440), 'The Guest arrives in a hat with a sharp on it.'),
+             '<p>A <b>Guest</b> arrives at the door wearing a hat with a <b>sharp</b> on it. He wishes to visit G major.</p><p>The <b>Doorkeeper</b> looks at his list. “In G major,” he says, “every F wears that hat. All the way through.”</p>', 'Play F, then F sharp. Then play G major and listen for the F sharp near the top.'),
+            (scene(p_door(270) + who('door', 200) + f'<rect x="340" y="140" width="110" height="80" fill="#fff" stroke="{N}" stroke-width="2.5"/>' + mark(395, 196, '♯', 54, C, False), 'The Doorkeeper’s list, which has one line on it.'),
+             '<p>So the Doorkeeper writes it on his list, once, at the start of every line of music: one sharp, on F.</p><p>That list is the <b>key signature</b>. It saves writing the hat on every single F.</p><p>The Guest is a little put out. In G major an F sharp is no surprise at all, so he must save his hat for notes that are not on the list.</p>', 'Open a piece. Is there a list after the clef? How many sharps does it have?')),
+ 'hbr-S2': ((scene(p_door(130) + p_door(410) + who('door', 300, 1.3), 'The Doorkeeper, at the door of the darker rooms.'),
+             '<p>At the far end of the house there is a set of rooms with the curtains half drawn. They use the same white keys as C major, except that a guest in a sharp hat, G sharp, often calls on the way up. But here, <b>A</b> is home.</p><p>“Same furniture,” says the Doorkeeper. “Different light.”</p>', 'Play C major, then the white keys from A to A. What changes in the mood?'),
+            (dateplate('1875', 'Norway', p_door(280, 180, 60, 120), 'The Hall of the Mountain King, in B minor.'),
+             '<p>In Norway, <b>Grieg</b> wrote music for a story about a hall deep inside a mountain, ruled by a troll king. It is called <i>In the Hall of the Mountain King</i>.</p><p>It is in B minor. It starts quietly, creeps closer, and gets faster and louder until the very end.</p>', 'Play A minor up and down, slowly and softly. Then quicker and louder, as if the trolls were coming.')),
+ 'hbr-H1': ((scene(p_piano(210) + ''.join(f'<circle cx="{232 + k * 60}" cy="208" r="12" fill="{C}"/>' for k in range(3)) + who('clara', 150) + butler(520, 150), 'Three notes at once: play one, skip one.'),
+             '<p>The Butler places three of Clara’s fingers on the keys: one, skip one, one, skip one, one. “Now,” he says, “all together.”</p><p>Three notes sound as one. It is the first <b>chord</b> Clara has ever played.</p>', 'Play C, E and G one at a time. Then all three together. Which sounds fuller?'),
+            (dateplate('1722', 'Köthen', p_piano(220, 238, 8, 190, 60), 'A prelude made of chords, one note at a time.'),
+             '<p><b>Johann Sebastian Bach</b> wrote a famous prelude in C major almost entirely out of chords, played one note at a time, like these.</p><p>Musicians have played it for three hundred years. It begins with the very chord you just played.</p>', 'Play C E G, one note at a time, going up. Then do the same with G B D and A C E.')),
+ 'hbr-ear-prelim': ((dateplate('1770', 'Rome', p_door(280, 180, 60, 120), 'A boy of fourteen, listening very carefully.'),
+             '<p>The story goes that in Rome, the young <b>Mozart</b>, aged fourteen, heard Allegri’s <i>Miserere</i> sung in the Pope’s chapel, a long piece nobody was allowed to copy.</p><p>He went home and wrote the whole thing down from memory, then went back a second time to check.</p>', 'Ask someone to play three notes. Sing them back. Then play them yourself to check.'), None),
+}
+# her 14 Nov ("다음이 궁금한 이야기로, 자꾸 더 듣고 싶고 보고 싶게"): every story ends on a line that opens the next door
+TEASE = {
+ 'hbr-B1': 'That night, from the empty music room, Clara heard a single note. When she looked, all eighty-eight keys lay perfectly still. Which one had it been?',
+ 'hbr-P1': 'Upstairs, a row of bells began to ring, one after another. Each bell had a number, and one of them was calling for Clara.',
+ 'hbr-L1': 'Then the Butler handed her the key to the next floor. “Mind the Queen,” he said. “And whatever you do, do not sit in the King’s chair.”',
+ 'hbr-P2': 'Downstairs, the great clock in the hall stopped. For the first time in a hundred years, the house went quiet.',
+ 'hbr-T1': 'When the clock started again, two strangers were waiting in the hall. One was in a terrible hurry. The other refused to move.',
+ 'hbr-T2': 'And someone had left a single dot on the stairs. The Butler picked it up very carefully, as if it might go off.',
+ 'hbr-T2-s2': 'On Thursday there would be the music evening. Clara had her piece ready. Nobody had told her how loud to play it.',
+ 'hbr-E1': 'After the evening, someone began to play behind a closed door. Clara could not see who. She would have to listen.',
+ 'hbr-ear-beginner': 'At the top of the stairs Clara found a door she had never noticed. On it, in gold letters: PRELIM. Inside, someone was practising the same bar, again and again.',
+ 'hbr-L2': 'On Thursday the Butler set out two extra chairs, one at each end of the music room. “Guests,” he said. “One is very quiet. The other is not.”',
+ 'x-dyn': 'Later, Clara found the Queen and the King arguing on the landing. Both of them were pointing at the same small note.',
+ 'hbr-P3': 'The Queen announced that anyone who wished to read her floor must first learn her sentence. The King said he had one too, and that his was better.',
+ 'hbr-P4': 'At tea the Butler brought in one round cake and a very sharp knife. “Today,” he said, “we learn to count it.”',
+ 'hbr-T3': 'Then a whistle blew at the bottom of the garden. Clara had not known the house had a station.',
+ 'hbr-T4': 'Walking back from the station, Clara took the long corridor. She turned one corner, then another, and found the same door. Again.',
+ 'hbr-T8': 'In the kitchen the Butler was pouring tea. Clara noticed he poured it in two different ways, and never once mixed them up.',
+ 'hbr-E2': 'That evening the doorbell rang. On the step stood a Guest in a tall hat, and on the hat was a sign Clara had never seen.',
+ 'hbr-S1': 'The Doorkeeper had one more list, much older than the first. It belonged to the rooms at the far end of the house, where the curtains are always half drawn.',
+ 'hbr-S2': 'From the darker rooms, three notes came floating out at once. Somehow they sounded like one.',
+ 'hbr-H1': 'That night the house grew very quiet, and Clara found she could hear things she had never noticed before.',
+ 'hbr-ear-prelim': 'Upstairs, the next floor was waiting: GRADE 1. Behind its first door, something was humming, somewhere above the top line of the staff.',
+}
+TZ = lambda k: f'<p class="tease"><span>Behind the next door</span>{TEASE[k]}</p>' if k in TEASE else ''
+ROOMOPEN = {k: (v[0][0], v[0][1] + ('' if v[1] else TZ(k)), v[0][2]) for k, v in STORY.items()}
+ROOMEND = {k: (v[1][0], v[1][1] + TZ(k), v[1][2]) for k, v in STORY.items() if v[1]}
 def build_story(floor_i, name, line):
     global RIGHT; RIGHT = name.upper()
     out = []; toc = []; n = 2
@@ -383,15 +541,17 @@ def build_story(floor_i, name, line):
     for i, rid in enumerate(ids, 1):
         r = ROOMS[rid]
         if r.get('ear'):
-            toc.append((i, 'Ear training')); a, b_ = ear_story(r, name, i, n); out += [section(a, n, 'L' + rid)]; n += 1; continue   # her 14 Nov: the practise part is not for the Level books
+            toc.append((i, 'Ear training'))
+            if rid in ROOMOPEN: pic, text, piano = ROOMOPEN[rid]; out.append(section(story(name, i, 'Ear training', 0, 1, pic, text, piano, None, True, tale=rid).replace('◆</i> 0 of 1', '◆</i> STORYOPEN of 1'), n, 'S0' + rid)); n += 1
+            a, b_ = ear_story(r, name, i, n); out += [section(a, n, 'L' + rid)]; n += 1; continue   # her 14 Nov: the practise part is not for the Level books
         if r.get('review'):
             toc.append((i, 'Review')); a, b_ = review_spread(r, name, i); out += [section('<div class="rvbig">' + a + '</div>', n, 'L' + rid), section('<div class="rvbig">' + b_ + '</div>', n + 1, 'P' + rid)]; n += 2; continue
         title, steps = ROOMSTORY[rid]; toc.append((i, title))
         if rid in ROOMOPEN:   # the story scene opens the room and carries its QR code
-            pic, text, piano = ROOMOPEN[rid]; out.append(section(story(name, i, title, 0, len(steps), pic, text, piano, rid, True).replace('◆</i> 0 of ', '◆</i> STORYOPEN of '), n, f'S0{rid}')); n += 1
+            pic, text, piano = ROOMOPEN[rid]; out.append(section(story(name, i, title, 0, len(steps), pic, text, piano, None, True, tale=rid).replace('◆</i> 0 of ', '◆</i> STORYOPEN of '), n, f'S0{rid}')); n += 1
         if rid in ROOMEND: steps = steps + [ROOMEND[rid]]
         for k, (pic, text, piano) in enumerate(steps, 1):
-            out.append(section(story(name, i, title, k, len(steps), pic, text, piano, rid, k == 1 and rid not in ROOMOPEN).replace(f'◆</i> {k} of {len(steps)}', '◆</i> STORYEND of 1') if rid in ROOMEND and k == len(steps) else story(name, i, title, k, len(steps) - (rid in ROOMEND), pic, text, piano, rid, k == 1 and rid not in ROOMOPEN), n, f'S{k}{rid}')); n += 1
+            out.append(section(story(name, i, title, k, len(steps), pic, text, piano, rid, k == 1).replace(f'◆</i> {k} of {len(steps)}', '◆</i> STORYEND of 1') if rid in ROOMEND and k == len(steps) else story(name, i, title, k, len(steps) - (rid in ROOMEND), pic, text, piano, rid, k == 1), n, f'S{k}{rid}')); n += 1
         continue   # her 14 Nov: no Practise pages here (they belong elsewhere)
         pr = practise_for(rid)
         out.append(section(f'<div class="cxk cxc">Room {i} <i>◆</i> {title} <i>◆</i> Practise</div><div class="prbig">' + ''.join(pr) + '</div>', n, 'P' + rid)); n += 1
@@ -409,6 +569,7 @@ section.pg.cx{padding:40px 50px 36px} .prbig{zoom:1.38;margin-top:14px} .prbig f
 .cx .lvhead{display:flex;justify-content:space-between;align-items:flex-start;border:0;padding:0} .cx .kick{font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e}
 .stpic{position:relative;height:470px;margin:0 0 16px;display:flex;align-items:center;justify-content:center;overflow:hidden} .stpic>.stin{display:block;width:max-content;max-width:680px;flex:none;transform-origin:center center} .stpic .hero{margin:0!important;border:0!important;background:none!important;width:640px} .stpic .hcap{display:none}
 .stpic svg{display:block;max-width:none}
+.sttx p.tease{margin:22px 0 0;padding-top:10px;border-top:1.5px solid #e4572e;font-family:'Playfair Display',PF,serif;font-style:italic;font-size:22px!important;line-height:1.4!important;color:#26296b} .sttx p.tease span{display:block;font-family:'Atkinson Hyperlegible',sans-serif;font-style:normal;font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#e4572e;margin-bottom:2px}
 .bub{display:flex;gap:14px;align-items:center;margin:0 0 16px} .bub .bf{flex:none} .bub .bt{position:relative;flex:1;background:#fff;border:2px solid #26296b;border-radius:18px;padding:14px 20px;color:#26296b} .bub .bt p{margin:0;font-size:25px!important;line-height:1.4!important} .bub .bt b{color:#e4572e}
 .bub .bt:before{content:'';position:absolute;left:-11px;top:50%;margin-top:-9px;border:9px solid transparent;border-right-color:#26296b;border-left:0}
 .sttx{font-size:24px;line-height:1.45;color:#26296b} .sttx p{margin:0 0 12px;font-size:25px!important;line-height:1.42!important} .sttx b{color:#e4572e}
@@ -435,6 +596,7 @@ document.body.dataset.pruned='1';})();</script>"""
     out = [re.sub(r'<div class="stpn"><span>At the piano</span>(.*?)</div>', lambda m: f'<div class="try"><div class="tt">{"Try it at the piano" if re.search(r"[Pp]lay|piano|key|thumb", m.group(1)) else "Try it"}</div><div class="li"><span class="nb">1</span><span class="tx">{m.group(1)}</span><span class="ck"></span></div></div>', o, flags=re.S) for o in out]
     out = [re.sub(r'<div class="sttx">(<p>.*?</p>)', lambda m: f'<div class="bub"><div class="bf">{RABBIT}</div><div class="bt">{m.group(1)}</div></div><div class="sttx">', o, count=1, flags=re.S) for o in out]
     out = [o.replace('· Step 1 of 1</div>', '· Listen</div>') for o in out]
+    out = [re.sub(r'(Room (\d+) .*?)Plate \{PLATE\}', lambda m: m.group(1) + 'Plate ' + ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII'][int(m.group(2))], o, flags=re.S) for o in out]
     out = [re.sub(r'· Step STORYOPEN of \d+', '· The story', re.sub(r'· Step STORYEND of 1', '· How it ended', o)) for o in out]
     html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{fit}</body></html>'
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower()}.html'
