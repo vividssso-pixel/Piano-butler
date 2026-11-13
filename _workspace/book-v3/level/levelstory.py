@@ -359,6 +359,22 @@ ROOMSTORY.update({
    (st([(-2, 'C'), (-1, 'D'), (0, 'E'), (-1, 'D'), (0, 'E'), (1, 'F'), (0, 'E'), (1, 'F'), (2, 'G')]), '<p>A <b>motif</b> is a short idea, just a few notes. It comes back again and again, like a word in a story.</p><p>Here C D E comes back one step higher, and then again. A motif moved up or down like this is a <b>sequence</b>.</p>', 'Play C D E, then D E F, then E F G. You have played one motif three times.'),
    (phrases(), '<p>A <b>phrase</b> is a musical sentence, often four bars long. At its end, the music takes a <b>breath</b>. A long curve over it is a <b>phrase mark</b>.</p><p>Two phrases often go together: the first asks a <b>question</b>, ending away from home; the second <b>answers</b>, ending on the home note.</p>', 'Play four bars of your piece and lift your hand gently at the end, like a breath. Then play the next four bars: the answer.')]),
 })
+
+# her 14 Nov ("응" to a story scene that opens each room, sample first): the room opens with a scene in the house, and closes with how it ended
+def scene_loud(wake=True):
+    up = (f'<path d="M420 150 Q470 184 520 150" fill="#fff" stroke="{N}" stroke-width="3"/>' + bird(470, 128, 3)
+          + (''.join(f'<text x="{520 + i * 22}" y="{90 - i * 22}" font-size="{26 + i * 6}" font-weight="700" fill="#9a9cc0" font-family="Playfair Display,serif">z</text>' for i in range(3)) if not wake else
+             f'<text x="540" y="96" font-size="30" font-style="italic" fill="#6d6f9c" font-family="Playfair Display,serif">awake</text>'))
+    k = kb(7, 230, 70); kbody = k[k.index('>') + 1:-6]
+    noise = (f'<text x="420" y="262" font-size="56" font-style="italic" font-weight="900" fill="{C}" font-family="Playfair Display,serif">f</text>'
+             + ''.join(f'<path d="M{520 + i * 18} 330 q14 -16 0 -32" fill="none" stroke="{C}" stroke-width="4" stroke-linecap="round"/>' for i in range(3))) if wake else (
+             f'<text x="420" y="262" font-size="40" font-style="italic" font-weight="900" fill="{N}" font-family="Playfair Display,serif">p</text>'
+             + f'<path d="M452 256 q10 -10 0 -20" fill="none" stroke="#9a9cc0" stroke-width="3" stroke-linecap="round"/>')
+    return (f'<svg viewBox="0 0 640 380" style="width:640px"><rect x="10" y="10" width="620" height="360" fill="#fff" stroke="{N}" stroke-width="3"/>'
+            f'<rect x="10" y="194" width="620" height="10" fill="{N}"/><text x="30" y="44" font-size="16" letter-spacing="3" font-weight="700" fill="#6d6f9c" {F_}>THE FIRST FLOOR</text><text x="30" y="232" font-size="16" letter-spacing="3" font-weight="700" fill="#6d6f9c" {F_}>THE MUSIC ROOM</text>'
+            f'{up}<g transform="translate(270 284)">{kbody}</g>{bear(160, 290, 3.6)}{noise}<rect x="10" y="354" width="620" height="16" fill="{N}"/></svg>' + f'<div style="text-align:center;font-family:Playfair Display,serif;font-style:italic;font-size:19px;color:#6d6f9c;margin-top:8px">{"Plate VIII. Mr Bear at the piano, at full strength." if wake else "Plate VIII, continued. The same piano, a different hand."}</div>')
+ROOMOPEN = {'hbr-E1': (scene_loud(True), '<p>Mr <b>Bear</b> plays every note at <b>full strength</b>. On the floor above, Miss <b>Bird</b> has given up on sleep.</p><p>He is not wrong to play loudly. He has simply never been told that the piano can also <b>whisper</b>.</p>', 'Play one C as Mr Bear would. Then one so quiet that the floor above would not notice.')}
+ROOMEND = {'hbr-E1': (scene_loud(False), '<p>Mr Bear now plays <b><i>p</i></b> after ten, and saves his <b><i>f</i></b> for the moments that need it. Loud means more when soft came first.</p><p>Haydn knew this. In his <i>Surprise</i> Symphony a quiet tune is suddenly broken by one loud chord. The story goes that he wrote it to wake up the audience.</p>', 'Play a tune you know softly. Then play it again with just one loud note somewhere. Where does the surprise work best?')}
 def build_story(floor_i, name, line):
     global RIGHT; RIGHT = name.upper()
     out = []; toc = []; n = 2
@@ -371,8 +387,11 @@ def build_story(floor_i, name, line):
         if r.get('review'):
             toc.append((i, 'Review')); a, b_ = review_spread(r, name, i); out += [section('<div class="rvbig">' + a + '</div>', n, 'L' + rid), section('<div class="rvbig">' + b_ + '</div>', n + 1, 'P' + rid)]; n += 2; continue
         title, steps = ROOMSTORY[rid]; toc.append((i, title))
+        if rid in ROOMOPEN:   # the story scene opens the room and carries its QR code
+            pic, text, piano = ROOMOPEN[rid]; out.append(section(story(name, i, title, 0, len(steps), pic, text, piano, rid, True).replace('◆</i> 0 of ', '◆</i> STORYOPEN of '), n, f'S0{rid}')); n += 1
+        if rid in ROOMEND: steps = steps + [ROOMEND[rid]]
         for k, (pic, text, piano) in enumerate(steps, 1):
-            out.append(section(story(name, i, title, k, len(steps), pic, text, piano, rid, k == 1), n, f'S{k}{rid}')); n += 1
+            out.append(section(story(name, i, title, k, len(steps), pic, text, piano, rid, k == 1 and rid not in ROOMOPEN).replace(f'◆</i> {k} of {len(steps)}', '◆</i> STORYEND of 1') if rid in ROOMEND and k == len(steps) else story(name, i, title, k, len(steps) - (rid in ROOMEND), pic, text, piano, rid, k == 1 and rid not in ROOMOPEN), n, f'S{k}{rid}')); n += 1
         continue   # her 14 Nov: no Practise pages here (they belong elsewhere)
         pr = practise_for(rid)
         out.append(section(f'<div class="cxk cxc">Room {i} <i>◆</i> {title} <i>◆</i> Practise</div><div class="prbig">' + ''.join(pr) + '</div>', n, 'P' + rid)); n += 1
@@ -404,6 +423,8 @@ document.body.dataset.pruned='1';})();</script>"""
     for _a, _b in [(' Start from G.', ''), ('notes have dots.', 'notes have a staccato dot.'), ('faster to fix a slip', 'play faster after a slip'), ('walk in, bow, play, bow.', 'walk in, sit, breathe out, play.')]: out = [o.replace(_a, _b) for o in out]
     out = [o.replace('Try it · 10 seconds', 'Try it') if 'rvbig' in o else o for o in out]
     out = [o.replace('M1576,1057 C2341,396 5000,316 5564,787 C4981,376 2363,455 1576,1057', 'M1420,1560 C2500,1940 4600,1770 5420,1330 C4600,1700 2500,1870 1420,1560') for o in out]
+    out = [re.sub(r'<div class="cxk">Room (\d+) <i>◆</i> STORYOPEN of \d+</div><h1>', r'<div class="kk">Room \1 · The story</div><h1 class="lbh">', o) for o in out]
+    out = [re.sub(r'<div class="cxk cxc">Room (\d+) <i>◆</i> (.*?) <i>◆</i> STORYEND of 1</div>', r'<div class="kk">Room \1 · How it ended</div><h1 class="lbh">\2</h1>', o) for o in out]
     out = [re.sub(r'<div class="cxk cxc">Room (\d+) <i>◆</i> (.*?) <i>◆</i> (\d+ of \d+|Practise)</div>', lambda m: f'<div class="kk">Room {m.group(1)} · ' + ('Practise' if m.group(3) == 'Practise' else 'Step ' + m.group(3)) + f'</div><h1 class="lbh">{m.group(2)}</h1>', o) for o in out]
     out = [re.sub(r'<div class="cxk">Room (\d+) <i>◆</i> (\d+ of \d+)</div><h1>', lambda m: f'<div class="kk">Room {m.group(1)} · Step {m.group(2)}</div><h1 class="lbh">', o) for o in out]
     def _staffhead(o):   # her 14 Nov (picture of a five-line header): the room title sits on a staff across the top, the page number in coral at its right end
@@ -414,6 +435,7 @@ document.body.dataset.pruned='1';})();</script>"""
     out = [re.sub(r'<div class="stpn"><span>At the piano</span>(.*?)</div>', lambda m: f'<div class="try"><div class="tt">{"Try it at the piano" if re.search(r"[Pp]lay|piano|key|thumb", m.group(1)) else "Try it"}</div><div class="li"><span class="nb">1</span><span class="tx">{m.group(1)}</span><span class="ck"></span></div></div>', o, flags=re.S) for o in out]
     out = [re.sub(r'<div class="sttx">(<p>.*?</p>)', lambda m: f'<div class="bub"><div class="bf">{RABBIT}</div><div class="bt">{m.group(1)}</div></div><div class="sttx">', o, count=1, flags=re.S) for o in out]
     out = [o.replace('· Step 1 of 1</div>', '· Listen</div>') for o in out]
+    out = [re.sub(r'· Step STORYOPEN of \d+', '· The story', re.sub(r'· Step STORYEND of 1', '· How it ended', o)) for o in out]
     html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{fit}</body></html>'
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower()}.html'
     open(fn, 'w').write(html); return fn
