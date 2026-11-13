@@ -35,7 +35,7 @@ def build(it):
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 <script type="application/ld+json">{json.dumps(ld)}</script>
 <style>
-:root{{--cream:#faf6ec;--paper:#fffefa;--navy:#26296b;--navy-soft:#4a4d86;--muted:#6d6f9c;--line:#e8e1d0;--coral:#e4572e;--cut:#8a6a2c}}
+:root{{--cream:#ffffff;--paper:#fffefa;--navy:#26296b;--navy-soft:#4a4d86;--muted:#6d6f9c;--line:#cfcfe2;--coral:#e4572e;--cut:#8a6a2c}}
 *{{box-sizing:border-box}} body{{margin:0;background:var(--cream);color:var(--navy);font-family:Inter,-apple-system,'Segoe UI',sans-serif;line-height:1.55}}
 a{{color:inherit}} a:focus-visible{{outline:2px solid var(--coral);outline-offset:3px;border-radius:6px}}
 .wrap{{max-width:1040px;margin:0 auto;padding:24px 20px 64px}}

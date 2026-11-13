@@ -7,7 +7,7 @@ page = r'''<title>Where Do I Start?</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Playfair+Display:wght@700;800&display=swap">
 <style>
 /* Layout: one column, a book-like card per chapter; the map of all 49 chapters is the home screen */
-:root{--bg:#fbfaf6;--card:#ffffff;--ink:#26296b;--soft:#5a5d8f;--line:#e3e1ee;--accent:#e4572e;--good:#2f7d4a;--goodbg:#e3f1e6;--mid:#a56a00;--midbg:#fdf1d6;--badbg:#fde3d8;
+:root{--bg:#fbfaf6;--card:#ffffff;--ink:#26296b;--soft:#5a5d8f;--line:#e3e1ee;--accent:#e4572e;--good:#2f7d4a;--goodbg:#e3f1e6;--mid:#a56a00;--midbg:#eeeef6;--badbg:#fde3d8;
  --display:'Playfair Display',Georgia,serif;--body:'Atkinson Hyperlegible',system-ui,sans-serif}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15163a;--card:#1e2050;--ink:#eceefe;--soft:#b3b5dc;--line:#33366e;--accent:#ff7a52;--good:#7fd39a;--goodbg:#1f3b2c;--mid:#f0c060;--midbg:#3b3018;--badbg:#45261e;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#15163a;--card:#1e2050;--ink:#eceefe;--soft:#b3b5dc;--line:#33366e;--accent:#ff7a52;--good:#7fd39a;--goodbg:#1f3b2c;--mid:#f0c060;--midbg:#3b3018;--badbg:#45261e;color-scheme:dark}
