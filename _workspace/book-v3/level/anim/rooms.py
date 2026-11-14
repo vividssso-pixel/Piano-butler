@@ -5,7 +5,8 @@ R = {}
 # 1 Sitting and hands: the Butler raises the stool, Clara sits, the key level appears; ending: Leipzig, 1828
 import re as _re
 SIT = json.load(open('/tmp/claude-0/pk/posture_svgs.json'))['1:Just right']
-SIT = _re.sub(r'<text[^>]*>key level</text>', '', SIT); SIT = _re.sub(r'<line[^>]*stroke-dasharray="4 4"[^>]*>(</line>)?', '', SIT); SIT = inner(SIT)
+SIT = _re.sub(r'<text[^>]*>key level</text>', '', SIT); SIT = _re.sub(r'<line[^>]*stroke-dasharray="4 4"[^>]*>(</line>)?', '', SIT); SIT = inner(SIT).replace('cy="156.0"', 'cy="159.0"')
+SIT = _re.sub(r'<line x1="6.0" y1="162.0"[^>]*>(</line>)?', '', SIT)
 def _drop(svg, tag):
     i = svg.index(tag); d = 0; k = i
     for m in _re.finditer(r'<g\b|</g>', svg[i:]):
@@ -14,13 +15,13 @@ def _drop(svg, tag):
 NOGIRL = _re.sub(r'<circle[^>]*>(</circle>)?', '', _drop(SIT, '<g data-who="girl">'))
 # her 14 Nov: the first posture picture must be a side view: Clara comes in through the door and we see her at the piano from the side
 R['hbr-B1'] = dict(n=1, title='Sitting and hands', sub='The chair comes first', at=('K.quote+3', 'K.endBody+4'),
-  parts=[wall(chand=False, style='stripe'), floor(), sign('B'), plate(1010, 200, bigtext(-2, 44, '𝄞', 132), '1828', 'Leipzig', 'Clara Wieck, aged nine'),
-         f'<g id="side" opacity="0"><g transform="translate(470 152.8) scale(2.6)">{SIT}</g></g>',
-         f'<g id="emptyp"><g transform="translate(470 152.8) scale(2.6)">' + NOGIRL + '</g></g>',
+  parts=[wall(chand=False, style='stripe', cat='B'), floor(), sign('B'), plate(1010, 200, bigtext(-2, 44, '𝄞', 132), '1828', 'Leipzig', 'Clara Wieck, aged nine'),
+         f'<g id="side" opacity="0"><g transform="translate(470 178.8) scale(2.6)">{SIT}</g></g>',
+         f'<g id="emptyp"><g transform="translate(470 178.8) scale(2.6)">' + NOGIRL + '</g></g>',
          clara_stand(1100, 'cst'),
-         f'<g id="kl" opacity="0"><line x1="380" x2="800" y1="402" y2="402" stroke="{C}" stroke-width="4" stroke-dasharray="12 10"/><text x="380" y="390" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="24" fill="{C}">key level</text></g>',
-         ''.join(f'<g id="tip{k}" opacity="0"><circle cx="{x}" cy="{y}" r="{r}" fill="none" stroke="{C}" stroke-width="5"/><text x="{tx}" y="{ty}" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="24" fill="{C}">{k + 1}. {lab}</text></g>' for k, (x, y, r, tx, ty, lab) in enumerate(((618, 452, 40, 560, 530, 'front half'), (752, 562, 34, 900, 570, 'feet flat'), (680, 330, 56, 760, 250, 'back tall'), (780, 400, 34, 900, 360, 'arms level')))),
-         butler(330), door(), notes(), dim(), lone()],
+         f'<g id="kl" opacity="0"><line x1="520" x2="800" y1="428" y2="428" stroke="{C}" stroke-width="4" stroke-dasharray="12 10"/><text x="520" y="416" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="24" fill="{C}">key level</text></g>',
+         ''.join(f'<g id="tip{k}" opacity="0"><circle cx="{x}" cy="{y}" r="{r}" fill="none" stroke="{C}" stroke-width="5"/><text x="{tx}" y="{ty}" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="24" fill="{C}">{k + 1}. {lab}</text></g>' for k, (x, y, r, tx, ty, lab) in enumerate(((618, 478, 40, 560, 556, 'front half'), (752, 588, 30, 900, 586, 'feet flat'), (680, 356, 56, 760, 276, 'back tall'), (780, 426, 34, 900, 386, 'arms level')))),
+         butler(240), door(), notes(), dim(), lone()],
   js=r'''
   const SH = F(/one thing at a time/) || {t0: 1e9, t1: 1e9}; const step = t >= SH.t0 + 2 && t < K.end ? Math.min(3, Math.floor((t - SH.t0 - 2) / ((SH.t1 - SH.t0 - 2) / 4))) : -1;
   for (let k = 0; k < 4; k++) S('tip' + k).setAttribute('opacity', step === k ? 1 : (step > k ? .35 : 0));
@@ -33,6 +34,15 @@ R['hbr-B1'] = dict(n=1, title='Sitting and hands', sub='The chair comes first', 
   S('kl').setAttribute('opacity', step === 3 || (t >= K.cue && t < K.end) ? 1 : 0);
   notesFX(t, (t >= K.cue && t < K.cue + 4) || (t >= K.endBody && t < K.tease) ? 6 : 0, 760, 200, 300, 180, .5);''')
 # 2 The keyboard: counting the keys, losing count; then the twos and threes light up; ending: Mozart's smaller piano
+def kb5(y=380, h=130):   # Mozart's keyboard: five octaves, F to F, 35 white keys at the same size as the 88
+    n, kw = 36, 1188 / 52; x0 = 640 - n * kw / 2; o = ''
+    for k in range(n): o += f'<rect x="{x0 + k * kw:.1f}" y="{y}" width="{kw:.1f}" height="{h}" fill="#fff" stroke="{N}" stroke-width="1.4"/>'
+    for k in range(n - 1):
+        L = (k + 3) % 7
+        if L in (2, 6): continue
+        o += f'<rect x="{x0 + (k + 1) * kw - 7:.1f}" y="{y}" width="14" height="{h * .62:.0f}" fill="{N}"/>'
+    w = n * kw
+    return f'<g id="kbd5" opacity="0"><rect x="{x0 - 14:.0f}" y="{y - 22}" width="{w + 28:.0f}" height="22" rx="4" fill="{N}"/>{o}<rect x="{x0 - 14:.0f}" y="{y + h}" width="{w + 28:.0f}" height="20" rx="4" fill="{N}"/><rect x="{x0 + 20:.0f}" y="{y + h + 20}" width="14" height="{600 - y - h - 20}" fill="{N}"/><rect x="{x0 + w - 34:.0f}" y="{y + h + 20}" width="14" height="{600 - y - h - 20}" fill="{N}"/><text x="640" y="350" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="22" letter-spacing="3" fill="{C}">MOZART’S PIANO · ABOUT FIVE OCTAVES</text></g>'
 def longkb(x0=46, y=380, h=130):   # all 88 keys: 52 white keys from A0 to C8, 36 black keys in twos and threes
     n, kw = 52, 1188 / 52; o = ''
     for k in range(n): o += f'<rect id="wk{k}" x="{x0 + k * kw:.1f}" y="{y}" width="{kw:.1f}" height="{h}" fill="#fff" stroke="{N}" stroke-width="1.4"/>'
@@ -44,8 +54,8 @@ def longkb(x0=46, y=380, h=130):   # all 88 keys: 52 white keys from A0 to C8, 3
     w = n * kw
     return f'<g id="kbd"><rect x="{x0 - 14}" y="{y - 22}" width="{w + 28:.0f}" height="22" rx="4" fill="{N}"/>{o}<rect x="{x0 - 14}" y="{y + h}" width="{w + 28:.0f}" height="20" rx="4" fill="{N}"/><rect x="{x0 + 20}" y="{y + h + 20}" width="14" height="{600 - y - h - 20}" fill="{N}"/><rect x="{x0 + w - 34:.0f}" y="{y + h + 20}" width="14" height="{600 - y - h - 20}" fill="{N}"/></g>'
 R['hbr-P1'] = dict(n=2, title='The keyboard', sub='Eighty-eight keys', at=('K.quote+3', 'K.endBody+5'),
-  parts=[wall(chand=False, win=False, style='dots'), floor(), landing(), sign('P'), plate(640, 134, bigtext(0, 30, '88', 64, font='Playfair Display,serif', extra='font-weight="900"'), '1785', 'Vienna', 'about five octaves'), longkb(),
-         bigtext(330, 300, '', 64, 'cnt', 'Playfair Display,serif', C, 'font-weight="900"'), f'<g transform="translate(0 70)">{clara_stand(330, "clara")}</g>', f'<g transform="translate(0 90)">{butler(980, 1.0)}</g>', dim(), lone()],
+  parts=[wall(chand=False, win=False, style='dots', cat='P'), floor(), landing(), sign('P'), plate(640, 146, bigtext(0, 30, '88', 64, font='Playfair Display,serif', extra='font-weight="900"'), '1785', 'Vienna', 'about five octaves'), longkb(), kb5(),
+         bigtext(330, 300, '', 64, 'cnt', 'Playfair Display,serif', C, 'font-weight="900"'), f'<g transform="translate(0 70)">{clara_stand(330, "clara")}</g>', butler(1090, 1.62), dim(), lone()],
   js=r'''
   // counting: the numbers climb, then lose their way
   const c = S('cnt'); if (t >= K.intro && t < K.quote) { const p = (t - K.intro) / (K.quote - K.intro); const v = Math.floor(p * 58); c.textContent = v < 44 ? String(v + 1) : v < 48 ? '…?' : String(v - 40);
@@ -58,7 +68,7 @@ R['hbr-P1'] = dict(n=2, title='The keyboard', sub='Eighty-eight keys', at=('K.qu
   for (let k = 0; k < 52; k++) S('wk' + k).setAttribute('fill', (t >= K.cue && t < K.cue + 1.3 && k === 2) || (t >= K.cue + 1.3 && t < K.cue + 2.6 && k === 51) ? '#ffd9a8' : '#fff');
   // Mozart's piano: the keyboard shrinks to about five octaves, then grows back
   const sh = t >= K.endBody && t < K.tease ? (t < K.endBody + 6 ? ph(t, K.endBody, K.endBody + 1.5) : 1 - ph(t, K.endBody + 6, K.endBody + 7.5)) : 0;
-  S('kbd').setAttribute('transform', `translate(${640 * sh * .31} 0) scale(${1 - .31 * sh} 1)`);''')
+  S('kbd').setAttribute('opacity', 1 - sh); S('kbd5').setAttribute('opacity', sh);''')
 # 3 Finger numbers: the bell board in the servants' hall; then the two hands
 def bells():
     o = f'<g id="board"><rect x="400" y="120" width="480" height="210" rx="10" fill="#fff" stroke="{N}" stroke-width="5"/><text x="640" y="160" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="18" letter-spacing="4" fill="#6d6f9c">THE BELL BOARD</text>'
@@ -67,7 +77,7 @@ def bells():
         o += f'<g id="bell{k}"><line x1="{x}" y1="180" x2="{x}" y2="200" stroke="{N}" stroke-width="3"/><path d="M{x - 22} 248 Q{x - 20} 202 {x} 200 Q{x + 20} 202 {x + 22} 248 Z" fill="{C}"/><circle cx="{x}" cy="254" r="6" fill="{N}"/></g><text id="bn{k}" x="{x}" y="304" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="32" fill="{N}">{k + 1}</text>'
     return o + '</g>'
 R['hbr-L1'] = dict(n=3, title='Finger numbers', sub='The bell board', at=('K.intro+6', 'K.endBody+9'),
-  parts=[wall(chand=False, style='stripe'), floor(), sign('L'), plate(1010, 200, bigtext(0, 30, '1–5', 46, font='Playfair Display,serif', extra='font-weight="900"'), '1800s', 'London', '+ 1 2 3 4'), bells(),
+  parts=[wall(chand=False, style='stripe', cat='L'), floor(), sign('L'), plate(1010, 200, bigtext(0, 30, '1–5', 46, font='Playfair Display,serif', extra='font-weight="900"'), '1800s', 'London', '+ 1 2 3 4'), bells(),
          f'<g id="hands" opacity="0"><g transform="translate(330 70) scale(2.3)">{inner(ART["hand-L"])}</g><g transform="translate(660 70) scale(2.3)">{inner(ART["hand-R"])}</g></g>',
          bigtext(640, 312, '', 64, 'bign', 'Playfair Display,serif', C, 'font-weight="900"'), clara_stand(640, 'clara', 'both'), butler(900), door(), dim(), lone()],
   js=r'''
@@ -81,12 +91,12 @@ R['hbr-L1'] = dict(n=3, title='Finger numbers', sub='The bell board', at=('K.int
 # 4 The staff and the clefs: the Queen's floor and the King's floor
 def grand():
     o = ''.join(f'<line x1="300" x2="940" y1="{120 + i * 16}" y2="{130 + i * 16}" stroke="{N}" stroke-width="3"/>' for i in range(5)) + ''.join(f'<line x1="300" x2="940" y1="{300 + i * 16}" y2="{300 + i * 16}" stroke="{N}" stroke-width="3"/>' for i in range(5))
-    o += f'<line x1="300" x2="300" y1="120" y2="364" stroke="{N}" stroke-width="4"/>' + bigtext(336, 196, '𝄞', 104, 'tclef') + bigtext(336, 352, '𝄢', 66, 'bclef')
+    o += f'<line x1="300" x2="300" y1="120" y2="364" stroke="{N}" stroke-width="4"/>' + bigtext(336, 168.8, '𝄞', 64.8, 'tclef') + bigtext(336, 347.2, '𝄢', 62.4, 'bclef')
     o += f'<ellipse id="hiN" cx="640" cy="136" rx="16" ry="12" transform="rotate(-20 640 136)" fill="{C}" opacity="0"/><ellipse id="loN" cx="640" cy="348" rx="16" ry="12" transform="rotate(-20 640 348)" fill="{C}" opacity="0"/>'
     o += f'<g id="letters" opacity="0">' + bigtext(262, 200, 'G', 64, 'lg', 'Playfair Display,serif', C, 'font-weight="900"') + bigtext(262, 356, 'F', 64, 'lf', 'Playfair Display,serif', C, 'font-weight="900"') + '</g>'
     return f'<g id="gs">{o}</g>'
 R['hbr-P2'] = dict(n=4, title='The staff and the clefs', sub='Two floors', at=('K.intro+4', 'K.endBody+6'),
-  parts=[wall(chand=False, win=False, style='dots'), floor(), sign('P'), f'<rect y="232" width="1280" height="30" fill="#fff"/>' + ''.join(f'<rect x="{c * 30}" y="{232 + r * 15}" width="30" height="15" fill="{N}"/>' for r in range(2) for c in range(43) if (r + c) % 2 == 0) + f'<rect y="228" width="1280" height="4" fill="{N}"/><rect y="262" width="1280" height="4" fill="{N}"/>' + ''.join(f'<rect x="{1000 + k * 30}" y="{600 - (k + 1) * 34}" width="{280 - k * 30}" height="34" fill="#fff" stroke="{N}" stroke-width="3"/>' for k in range(10)) + bigtext(190, 112, 'THE QUEEN’S FLOOR', 16, font='Atkinson Hyperlegible,sans-serif', fill='#6d6f9c', extra='font-weight="700" letter-spacing="3"') + bigtext(190, 300, 'THE KING’S FLOOR', 16, font='Atkinson Hyperlegible,sans-serif', fill='#6d6f9c', extra='font-weight="700" letter-spacing="3"'), plate(1080, 130, bigtext(0, 26, '𝄞𝄢', 70), 'c. 1025', 'Arezzo', 'Guido’s lines'), grand(), piece('VIC_QUEEN', 190, 1.3, 228, 'queen'), piece('VIC_KING', 190, 1.25, 410, 'king'),
+  parts=[wall(chand=False, win=False, style='dots', cat='P'), floor(), sign('P'), f'<rect y="232" width="1280" height="30" fill="#fff"/>' + ''.join(f'<rect x="{c * 30}" y="{232 + r * 15}" width="30" height="15" fill="{N}"/>' for r in range(2) for c in range(43) if (r + c) % 2 == 0) + f'<rect y="228" width="1280" height="4" fill="{N}"/><rect y="262" width="1280" height="4" fill="{N}"/>' + ''.join(f'<rect x="{1000 + k * 30}" y="{600 - (k + 1) * 34}" width="{280 - k * 30}" height="34" fill="#fff" stroke="{N}" stroke-width="3"/>' for k in range(10)) + bigtext(190, 112, 'THE QUEEN’S FLOOR', 16, font='Atkinson Hyperlegible,sans-serif', fill='#6d6f9c', extra='font-weight="700" letter-spacing="3"') + bigtext(190, 300, 'THE KING’S FLOOR', 16, font='Atkinson Hyperlegible,sans-serif', fill='#6d6f9c', extra='font-weight="700" letter-spacing="3"'), plate(1080, 146, bigtext(0, 26, '𝄞𝄢', 70), 'c. 1025', 'Arezzo', 'Guido’s lines'), grand(), piece('VIC_QUEEN', 190, 1.3, 228, 'queen'), piece('VIC_KING', 190, 1.25, 410, 'king'),
          clara_stand(640, 'clara'), butler(820), dim(), lone()],
   js=r'''
   // the Queen and the King each claim a floor
@@ -101,7 +111,7 @@ R['hbr-P2'] = dict(n=4, title='The staff and the clefs', sub='Two floors', at=('
 def beatrow(): return '<g id="row">' + ''.join(f'<circle id="bt{k}" cx="{470 + k * 50}" cy="96" r="{20 if k % 4 == 0 else 14}" fill="#fff" stroke="{N}" stroke-width="3"/>' for k in range(8)) + f'<line x1="{470 + 3.5 * 50}" x2="{470 + 3.5 * 50}" y1="70" y2="122" stroke="{N}" stroke-width="4"/></g>'
 def metronome(x=880): return f'<g id="metro" opacity="0"><path d="M{x - 50} 600 L{x - 22} 420 L{x + 22} 420 L{x + 50} 600 Z" fill="#fff" stroke="{N}" stroke-width="4"/><g id="marm"><line x1="{x}" y1="580" x2="{x}" y2="430" stroke="{N}" stroke-width="4"/><rect x="{x - 9}" y="470" width="18" height="16" fill="{C}"/></g></g>'
 R['hbr-T1'] = dict(n=5, title='The beat', sub='The clock in the hall', at=('K.intro+5', 'K.endBody+3'),
-  parts=[wall(chand=False, win=False, style='panel'), floor(), sign('T'), plate(1010, 210, bigtext(0, 26, '♩♩♩♩', 40), '1817', 'Vienna', 'the first metronome marks'), beatrow(), clock(700, 150), clara_stand(470, 'clara'), metronome(880), butler(930), fanlight_door(1150), dim(), lone()],
+  parts=[wall(chand=False, win=False, style='panel', cat='T'), floor(), sign('T'), plate(1010, 210, bigtext(0, 26, '♩♩♩♩', 40), '1817', 'Vienna', 'metronome marks'), beatrow(), clock(700, 150), clara_stand(470, 'clara'), metronome(880), butler(930), fanlight_door(1150), dim(), lone()],
   js=r'''
   const per = (t >= K.cue && t < K.cue + 5) ? .62 : 1.0, ph0 = t / per, sw = Math.sin(Math.PI * ph0);
   const pd = S('clockpd'); pd.setAttribute('transform', `rotate(${6 * sw} 700 262)`);
@@ -112,7 +122,7 @@ R['hbr-T1'] = dict(n=5, title='The beat', sub='The clock in the hall', at=('K.in
   S('marm').setAttribute('transform', `rotate(${me ? 22 * Math.sin(Math.PI * t / .75) : 0} 880 580)`); S('butler').setAttribute('opacity', me ? 0 : 1);''')
 # 6 Crotchet and minim: one note gone in a tick, one that waits for two
 R['hbr-T2'] = dict(n=6, title='Notes: crotchet and minim', sub='Two notes in the hall', at=('K.intro+5', 'K.endBody+4'),
-  parts=[wall(win=False, chand=False, style='panel'), floor(), sign('T'), fanlight_door(1150), plate(640, 160, bigtext(-2, 40, MI, 110), '1300s', 'Paris', 'minima: the smallest'), clock(330, 200, 'ck'),
+  parts=[wall(win=False, chand=False, style='panel', cat='T'), floor(), sign('T'), fanlight_door(1150), plate(640, 160, bigtext(-2, 40, MI, 110), '1300s', 'Paris', 'minima: the smallest'), clock(330, 200, 'ck'),
          bigtext(560, 440, CR, 300, 'crn'), bigtext(800, 440, MI, 300, 'mnm'),
          '<g id="c1">' + f'<circle id="cc0" cx="560" cy="500" r="20" fill="{C}"/>' + '</g><g id="c2">' + ''.join(f'<circle id="mc{k}" cx="{776 + k * 50}" cy="500" r="20" fill="{C}"/>' for k in range(2)) + '</g>',
          clara_stand(930, 'clara'), dim(), lone()],
@@ -129,7 +139,7 @@ R['hbr-T2'] = dict(n=6, title='Notes: crotchet and minim', sub='Two notes in the
 # 7 Dotted minim and semibreve: the clock strikes four; Clara holds one note for the whole bar
 def rings(): return ''.join(f'<circle id="rg{k}" cx="640" cy="330" r="60" fill="none" stroke="{C}" stroke-width="4" opacity="0"/>' for k in range(4))
 R['hbr-T2-s2'] = dict(n=7, title='Notes: dotted minim and semibreve', sub='A note for the whole bar', at=('K.quote+1', 'K.endBody+5'),
-  parts=[wall(win=False, chand=False, style='panel'), floor(), sign('T'), plate(1010, 200, bigtext(0, 30, SB, 100), '1200s', 'Paris', 'breve · semibreve'), clock(300, 160, 'ck'), piano_front(640), stool(640), clara_sit(640, 'clara'), rings(),
+  parts=[wall(win=False, chand=False, style='panel', cat='T'), floor(), sign('T'), plate(1010, 200, bigtext(0, 30, SB, 100), '1200s', 'Paris', 'breve · semibreve'), clock(300, 160, 'ck'), piano_front(640), stool(640), clara_sit(640, 'clara'), rings(),
          bigtext(640, 220, SB, 120, 'sbn'), ''.join(f'<circle id="sc{k}" cx="{565 + k * 50}" cy="252" r="16" fill="#fff" stroke="{C}" stroke-width="3"/>' for k in range(4)),
          bigtext(640, 250, '', 110, 'brv', 'NM', N), butler(880), fanlight_door(1150), dim(), lone()],
   js=r'''

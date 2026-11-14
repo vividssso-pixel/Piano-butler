@@ -7,15 +7,18 @@ def inner(svg): return svg[svg.index('>') + 1:svg.rindex('</svg>')]
 RAB = inner(ART['rabbit'])
 CR, MI, SB, BR = '\U0001D15F', '\U0001D15E', '\U0001D15D', '\U0001D15C'
 HATCH = f'<defs><pattern id="hcl" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><rect width="7" height="7" fill="#fffdf7"/><line x1="0" y1="0" x2="0" y2="7" stroke="{N}" stroke-width="2.2"/></pattern></defs>'
-def paper(style):   # each room of the house has its own wall (her 14 Nov: "장면마다 다 같아서 다르게")
-    if style == 'stripe': return '<g class="deco">' + ''.join(f'<rect x="{x}" y="40" width="14" height="430" fill="#e4e4f0"/>' for x in range(0, 1280, 48)) + '</g>'
-    if style == 'tile': return '<g class="deco">' + ''.join(f'<rect x="{x + (y // 30 % 2) * 30}" y="{y}" width="58" height="28" fill="none" stroke="#d9d9e8" stroke-width="2"/>' for y in range(40, 470, 30) for x in range(-30, 1280, 60)) + '</g>'
-    if style == 'panel': return '<g class="deco">' + ''.join(f'<rect x="{30 + k * 210}" y="70" width="180" height="370" fill="none" stroke="#d4d4e6" stroke-width="3"/><rect x="{44 + k * 210}" y="84" width="152" height="342" fill="none" stroke="#e2e2ef" stroke-width="2"/>' for k in range(7)) + '</g>'
-    if style == 'dots': return '<g class="deco">' + ''.join(f'<circle cx="{x}" cy="{y}" r="3" fill="#e0e0ee"/>' for y in range(60, 470, 28) for x in range(14 + (y // 28 % 2) * 14, 1280, 28)) + '</g>'
-    return '<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="#e2e2ef"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>'
-def wall(chand=True, win=True, style='diamond', bg=None):
-    o = [f'<rect width="1280" height="600" fill="{bg or T}"/>', HATCH]
-    o.append(paper(style))
+WALLCOL = {'B': ('#e6edf8', '#cfdaee'), 'L': ('#e6edf8', '#cfdaee'), 'P': ('#eee8f7', '#dcd1ee'), 'T': ('#f7f0dc', '#e8dbb6'), 'E': ('#f9e8e4', '#efcfc6'), 'S': ('#e9f1f8', '#cddff0'), 'H': ('#f3ece2', '#e2d3bd'), 'EAR': ('#e4f2ec', '#c9e3d7')}
+def paper(style, ink=None):
+    INK = ink or '#e2e2ef'   # each room of the house has its own wall (her 14 Nov: "장면마다 다 같아서 다르게")
+    if style == 'stripe': return '<g class="deco">' + ''.join(f'<rect x="{x}" y="40" width="14" height="430" fill="{INK}"/>' for x in range(0, 1280, 48)) + '</g>'
+    if style == 'tile': return '<g class="deco">' + ''.join(f'<rect x="{x + (y // 30 % 2) * 30}" y="{y}" width="58" height="28" fill="none" stroke="{INK}" stroke-width="2"/>' for y in range(40, 470, 30) for x in range(-30, 1280, 60)) + '</g>'
+    if style == 'panel': return '<g class="deco">' + ''.join(f'<rect x="{30 + k * 210}" y="70" width="180" height="370" fill="none" stroke="{INK}" stroke-width="3"/><rect x="{44 + k * 210}" y="84" width="152" height="342" fill="none" stroke="{INK}" stroke-width="2"/>' for k in range(7)) + '</g>'
+    if style == 'dots': return '<g class="deco">' + ''.join(f'<circle cx="{x}" cy="{y}" r="3" fill="{INK}"/>' for y in range(60, 470, 28) for x in range(14 + (y // 28 % 2) * 14, 1280, 28)) + '</g>'
+    return '<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="{INK}"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>'
+def wall(chand=True, win=True, style='diamond', bg=None, cat=None):
+    col = WALLCOL.get(cat, (bg or T, None))
+    o = [f'<rect width="1280" height="600" fill="{col[0]}"/>', HATCH]
+    o.append(paper(style, col[1]))
     o.append(f'<rect width="1280" height="16" fill="{N}"/><rect y="16" width="1280" height="2" fill="#fff"/>' + ''.join(f'<rect x="{6 + k * 16}" y="24" width="8" height="8" fill="{N}"/>' for k in range(80)) + f'<rect y="38" width="1280" height="2" fill="{N}"/>')
     if win:
         o.append(f'<g class="deco" transform="translate(48 118) scale(.7)"><rect x="70" y="110" width="220" height="320" fill="{N}"/><circle cx="220" cy="180" r="26" fill="#fff"/><circle cx="232" cy="172" r="24" fill="{N}"/>'
@@ -28,15 +31,22 @@ def wall(chand=True, win=True, style='diamond', bg=None):
     o.append(f'<rect y="470" width="1280" height="130" fill="#fff"/><rect y="466" width="1280" height="6" fill="{N}"/><g class="deco">' + ''.join(f'<rect x="{20 + k * 160}" y="490" width="130" height="92" fill="none" stroke="{N}" stroke-width="2" stroke-opacity=".55"/>' for k in range(8)) + '</g>')
     return ''.join(o)
 def floor(): return f'<rect y="600" width="1280" height="120" fill="#fff"/>' + ''.join(f'<rect x="{c * 40}" y="{600 + r * 40}" width="40" height="40" fill="{N}"/>' for r in range(3) for c in range(32) if (r + c) % 2 == 0) + f'<rect y="598" width="1280" height="4" fill="{N}"/>'
-def plate(x, y, emblem, year, place, line):   # an oval portrait whose picture gives way to the history card in "How it ended"
+def _wrap2(t):
+    w = t.split(' ')
+    if len(t) <= 13 or len(w) < 2: return [t]
+    best = min(range(1, len(w)), key=lambda i: max(len(' '.join(w[:i])), len(' '.join(w[i:]))))
+    return [' '.join(w[:best]), ' '.join(w[best:])]
+def plate(x, y, emblem, year, place, line):   # an oval portrait whose picture gives way to the history card in "From music history"
+    ls = _wrap2(line); fs = min(16, 200 / max(len(l) for l in ls))
+    sub = ''.join(f'<text y="{40 + k * (fs + 3):.0f}" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-size="{fs:.1f}" fill="{N}">{l}</text>' for k, l in enumerate(ls))
     return (f'<g transform="translate({x} {y})"><ellipse rx="72" ry="90" fill="#fff" stroke="{N}" stroke-width="5"/><ellipse rx="62" ry="80" fill="none" stroke="{N}" stroke-width="1.6"/><g id="emb">{emblem}</g>'
-            f'<g id="hist" opacity="0"><text y="-14" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="{30 if len(year) < 6 else 24}" fill="{N}">{year}</text><text y="16" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-size="18" fill="{C}">{place}</text><text y="42" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-size="13" fill="{N}">{line}</text></g></g>')
+            f'<g id="hist" opacity="0"><text y="-18" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="{min(30, 190 / max(1, len(year))):.0f}" fill="{N}">{year}</text><text y="12" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-size="{min(20, 200 / max(1, len(place))):.0f}" fill="{C}">{place}</text>{sub}</g></g>')
 def door(): return (f'<g><rect x="1166" y="250" width="110" height="350" fill="{N}"/><rect id="glow" x="1176" y="260" width="90" height="340" fill="#ffd9a8" opacity="0"/>'
                     f'<g id="leaf" transform="translate(1176 0)"><rect x="0" y="260" width="90" height="340" fill="#fff" stroke="{N}" stroke-width="3"/><rect x="12" y="276" width="66" height="130" fill="none" stroke="{N}" stroke-width="2"/><rect x="12" y="424" width="66" height="156" fill="none" stroke="{N}" stroke-width="2"/><circle cx="74" cy="430" r="5" fill="{C}"/></g></g>')
 def lone(): return f'<g id="lone" opacity="0"><ellipse cx="0" cy="0" rx="12" ry="9" transform="rotate(-20)" fill="#ffd9a8"/><rect x="9" y="-46" width="4" height="46" fill="#ffd9a8"/></g>'
 def dim(): return f'<rect id="dim" width="1280" height="720" fill="{N}" opacity="0" pointer-events="none"/>'
 def notes(n=10, col=N): return ''.join(f'<g id="nt{k}" opacity="0"><ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)" fill="{col}"/><rect x="8" y="-44" width="3.5" height="44" fill="{col}"/></g>' for k in range(n))
-def butler(x, s=1.42, y=None): return f'<g id="butler" transform="translate({x} {600 - 207 * s if y is None else y}) scale({s})">{RAB}</g>'
+def butler(x, s=1.62, y=None): return f'<g id="butler" transform="translate({x} {600 - 207 * s if y is None else y}) scale({s})">{RAB}</g>'
 def piece(k, x, s, y=600, gid=None): return f'<g id="{gid or k}" transform="translate({x} {y}) scale({s})">{P[k]}</g>'
 def chair(x): return f'<path d="M{x - 40} 600 L{x - 34} 520 L{x + 34} 520 L{x + 40} 600" fill="none" stroke="{N}" stroke-width="4"/><path d="M{x - 30} 520 L{x - 26} 420 Q{x} 404 {x + 26} 420 L{x + 30} 520" fill="#fff" stroke="{N}" stroke-width="4"/><rect x="{x - 46}" y="512" width="92" height="12" rx="4" fill="{N}"/>'
 def piano_front(cx=640, gid='piano'):   # the upright, seen from the front, centred on cx
@@ -71,19 +81,27 @@ def clock(x, y0=150, gid='clock'):   # a long-case clock: face at the top, a pen
             + f'<line id="{gid}hh" x1="{x}" y1="{y0 + 54}" x2="{x}" y2="{y0 + 34}" stroke="{N}" stroke-width="4" stroke-linecap="round"/><line id="{gid}mh" x1="{x}" y1="{y0 + 54}" x2="{x + 24}" y2="{y0 + 54}" stroke="{N}" stroke-width="3" stroke-linecap="round"/><circle cx="{x}" cy="{y0 + 54}" r="4" fill="{C}"/>'
             f'<rect x="{x - 30}" y="{y0 + 110}" width="60" height="{600 - y0 - 160}" rx="4" fill="{T}" stroke="{N}" stroke-width="2"/><g id="{gid}pd"><line x1="{x}" y1="{y0 + 112}" x2="{x}" y2="{y0 + 112 + (600 - y0 - 230)}" stroke="{N}" stroke-width="3"/><circle cx="{x}" cy="{y0 + 112 + (600 - y0 - 230)}" r="14" fill="{C}"/></g></g>')
 def bigtext(x, y, s, size=200, gid=None, font='NM', fill=None, extra=''): return f'<text {f"id={chr(34)}{gid}{chr(34)} " if gid else ""}x="{x}" y="{y}" text-anchor="middle" font-family="{font}" font-size="{size}" fill="{fill or N}" {extra}>{s}</text>'
-PRELUDE = r'''
+NOTECARD = (f'<g id="notecard" opacity="0"><rect x="250" y="150" width="780" height="330" rx="8" fill="#fff" stroke="{N}" stroke-width="5"/><rect x="262" y="162" width="756" height="306" rx="4" fill="none" stroke="{N}" stroke-width="1.5"/>'
+            f'<g transform="translate(250 196) scale(1.25)">{RAB}</g><text x="470" y="214" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="17" letter-spacing="4" fill="{C}">THE BUTLER’S NOTE</text>'
+            f'<foreignObject x="466" y="232" width="530" height="220"><div xmlns="http://www.w3.org/1999/xhtml" id="notetext" style="font-family:Playfair Display,Georgia,serif;font-style:italic;font-weight:700;font-size:34px;line-height:1.3;color:{N}"></div></foreignObject></g>')
+NOTEJS = r"""
+function noteCard(t, Kt) { const nc = document.getElementById('notecard'); if (!nc) return; const L = TL.lines, i = L.findIndex(l => l.text && /^The Butler’s note/.test(l.text));
+  const on = i >= 0 && t >= L[i].t0; nc.setAttribute('opacity', on ? Math.min(1, (t - L[i].t0) / .6) : 0);
+  const nt = document.getElementById('notetext'); if (nt && i >= 0 && L[i + 1]) nt.textContent = L[i + 1].text; }
+"""
+PRELUDE = NOTEJS + r'''
 const ph = (t, a, b) => Math.max(0, Math.min(1, (t - a) / (b - a)));
 const S = id => document.getElementById(id);
 const L0 = TL.lines, F = (re, from) => L0.find(l => l.text && re.test(l.text) && (from === undefined || l.t0 >= from)), PI = L0.filter(l => l.who === 'piano');
-const K = { intro: L0[0].t0, tryA: (F(/^Now, at the piano/) || {}).t0 || 1e9, end: (F(/^And here is how it ended/) || {}).t0 || 1e9, tease: F(/^Behind the next door/).t0, dur: TL.dur };
-K.endBody = (L0.find(l => l.t0 > K.end && l.who === 'N') || {}).t0 || K.end; K.door = (L0.find(l => l.t0 > K.tease + .1 && l.who === 'N') || {}).t0 || K.tease;
-K.quote = (L0.find(l => l.who !== 'N' && l.text && l.t0 < K.tryA && !/^Now, at the piano/.test(l.text)) || {}).t0 || 1e9; K.cue = PI.length ? PI[0].t0 : 1e9; K.lone = PI.length ? PI[PI.length - 1].t0 : K.dur;
+const K = { intro: L0[0].t0, end: (F(/^A true story from music history/) || {}).t0 || 1e9, tease: F(/^The Butler’s note/).t0, dur: TL.dur }; K.tryA = Math.min(K.end, K.tease);
+K.endBody = (L0.find(l => l.t0 > K.end && l.who === 'N') || {}).t0 || K.end; K.door = 1e9;
+K.quote = (L0.find(l => l.who !== 'N' && l.text && l.t0 < K.tryA) || {}).t0 || 1e9; K.cue = PI.length ? PI[0].t0 : 1e9; K.lone = PI.length ? PI[PI.length - 1].t0 : K.dur;
 const opener = t => t >= K.intro && t < K.tryA, ending = t => t >= K.end && t < K.tease;
 function common(t) {
   for (let k = 0; k < 5; k++) { const f = S('fl' + k); if (f) { f.style.transformBox = 'fill-box'; f.style.transformOrigin = 'center bottom'; f.setAttribute('transform', `scale(1 ${1 + .1 * Math.sin(t * 6 + k * 1.7)})`); } }
   for (let k = 0; k < 2; k++) { const f = S('pf' + k); if (f) { f.style.transformBox = 'fill-box'; f.style.transformOrigin = 'center bottom'; f.setAttribute('transform', `scale(1 ${1 + .12 * Math.sin(t * 8 + k)})`); } }
   const hs = S('hist'), em = S('emb'); if (hs) { const h = t >= K.endBody && t < K.tease ? ph(t, K.endBody, K.endBody + 1.1) : 0; hs.setAttribute('opacity', h); em.setAttribute('opacity', 1 - h); }
-  S('dim').setAttribute('opacity', t >= K.tease ? .5 * ph(t, K.tease, K.tease + 1.7) : 0);
+  S('dim').setAttribute('opacity', t >= K.tease ? .55 * ph(t, K.tease, K.tease + .6) : 0); noteCard(t);
   const op = t >= K.tease ? ph(t, K.door, K.door + 3.5) : 0; const lf = S('leaf'); if (lf) { lf.setAttribute('transform', `translate(1176 0) scale(${1 - .72 * op} 1)`); S('glow').setAttribute('opacity', op * .95); }
   const lo = S('lone'); if (lo) { const q = ph(t, K.lone - 1.5, K.dur); lo.setAttribute('opacity', t >= K.lone - 1.5 && t >= K.tease ? Math.sin(Math.PI * q) : 0); lo.setAttribute('transform', `translate(${1221 - 300 * q} ${430 - 120 * q + 18 * Math.sin(q * 9)})`); }
   const sub = document.getElementById('sub'); if (sub) { const l = L0.find(l => l.text && t >= l.t0 && t < l.t1 + .25); sub.textContent = l ? l.text.replace(/[⟨⟩]/g, '') : ''; sub.style.opacity = l ? 1 : 0; }
@@ -96,8 +114,10 @@ def film(svg, js, room, title, sub):
     f = open('/tmp/claude-0/anim/film.html').read()
     i = f.index('<svg id="scene"'); j = f.index('</svg>', i) + 6; f = f[:i] + svg + f[j:]
     f = re.sub(r'<small>.*?</small><b>.*?</b><i>.*?</i>', f'<small>The Piano Butler · Beginner · Room {room}</small><b>{title}</b><i>{sub}</i>', f, count=1)
-    i = f.index('<script>') + 8; j = f.index('</script>', i); return f[:i] + js + f[j:]
-def scene(parts): return '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(parts) + '</svg>'
+    i = f.index('<script>') + 8; j = f.index('</script>', i); f = f[:i] + js + f[j:]
+    return f.replace('<svg id="scene" viewBox="0 0 1280 720"', '<svg id="scene" viewBox="0 46 1280 610"', 1)
+def scene(parts): return '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(parts) + NOTECARD + '</svg>'
+
 
 def bookshelf(x, w=300, gid='shelf'):
     o = f'<g id="{gid}" class="deco"><rect x="{x}" y="90" width="{w}" height="376" fill="#fff" stroke="{N}" stroke-width="4"/>'

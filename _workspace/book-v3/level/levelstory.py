@@ -97,7 +97,7 @@ def story(name, i, title, k, n, pic, text, piano, rid=None, first=False, tale=No
           else f'<div class="cxk cxc">Room {i} <i>◆</i> {title} <i>◆</i> {k} of {n}</div>')
     tz = ''
     if '<p class="tease">' in text: text, tz = text.split('<p class="tease">', 1); tz = '<div class="sttx"><p class="tease">' + tz + '</div>'   # the hook to the next room closes the page, after the try box
-    return f'{hd}<div class="stpic"><div class="stin">{pic}</div></div><div class="sttx">{text}</div><div class="stpn"><span>At the piano</span>{piano}</div>{tz}'
+    return f'{hd}<div class="stpic"><div class="stin">{pic}</div></div><div class="sttx">{text}</div>' + (f'<div class="stpn"><span>At the piano</span>{piano}</div>' if piano else '') + tz
 F_ = 'font-family="Atkinson Hyperlegible,sans-serif"'
 def st(notes, clef='t', w=560, names=True, led=True):   # a staff with a clef; notes = [(step, label)], step 0 = bottom line
     t, g = 46, 24; y = lambda k: t + 4 * g - k * g / 2; n = len(notes); x0 = 150; dx = (w - x0 - 50) / max(1, n - 1) if n > 1 else 0
@@ -509,36 +509,14 @@ STORY = {
              '<p>The story goes that in Rome, the young <b>Mozart</b>, aged fourteen, heard Allegri’s <i>Miserere</i> sung in the Pope’s chapel, a long piece nobody was allowed to copy.</p><p>He went home and wrote the whole thing down from memory, then went back a second time to check.</p>', 'Ask someone to play three notes. Sing them back. Then play them yourself to check.'), None),
 }
 # her 14 Nov ("다음이 궁금한 이야기로, 자꾸 더 듣고 싶고 보고 싶게"): every story ends on a line that opens the next door
-TEASE = {
- 'hbr-B1': 'That night, from the empty music room, Clara heard a single note. When she looked, all eighty-eight keys lay perfectly still. Which one had it been?',
- 'hbr-P1': 'Upstairs, a row of bells began to ring, one after another. Each bell had a number, and one of them was calling for Clara.',
- 'hbr-L1': 'Then the Butler handed her the key to the next floor. “Mind the Queen,” he said. “And whatever you do, do not sit in the King’s chair.”',
- 'hbr-P2': 'Downstairs, the great clock in the hall stopped. For the first time in a hundred years, the house went quiet.',
- 'hbr-T1': 'When the clock started again, two strangers were waiting in the hall. One was in a terrible hurry. The other refused to move.',
- 'hbr-T2': 'And someone had left a single dot on the stairs. The Butler picked it up very carefully, as if it might go off.',
- 'hbr-T2-s2': 'On Thursday there would be the music evening. Clara had her piece ready. Nobody had told her how loud to play it.',
- 'hbr-E1': 'After the evening, someone began to play behind a closed door. Clara could not see who. She would have to listen.',
- 'hbr-ear-beginner': 'At the top of the stairs Clara found a door she had never noticed. On it, in gold letters: PRELIM. Inside, someone was practising the same bar, again and again.',
- 'hbr-L2': 'On Thursday the Butler set out two extra chairs, one at each end of the music room. “Guests,” he said. “One is very quiet. The other is not.”',
- 'x-dyn': 'Later, Clara found the Queen and the King arguing on the landing. Both of them were pointing at the same small note.',
- 'hbr-P3': 'The Queen announced that anyone who wished to read her floor must first learn her sentence. The King said he had one too, and that his was better.',
- 'hbr-P4': 'At tea the Butler brought in one round cake and a very sharp knife. “Today,” he said, “we learn to count it.”',
- 'hbr-T3': 'Then a whistle blew at the bottom of the garden. Clara had not known the house had a station.',
- 'hbr-T4': 'Walking back from the station, Clara took the long corridor. She turned one corner, then another, and found the same door. Again.',
- 'hbr-T8': 'In the kitchen the Butler was pouring tea. Clara noticed he poured it in two different ways, and never once mixed them up.',
- 'hbr-E2': 'That evening the doorbell rang. On the step stood a Guest in a tall hat, and on the hat was a sign Clara had never seen.',
- 'hbr-S1': 'The Doorkeeper had one more list, much older than the first. It belonged to the rooms at the far end of the house, where the curtains are always half drawn.',
- 'hbr-S2': 'From the darker rooms, three notes came floating out at once. Somehow they sounded like one.',
- 'hbr-H1': 'That night the house grew very quiet, and Clara found she could hear things she had never noticed before.',
- 'hbr-ear-prelim': 'Upstairs, the next floor was waiting: GRADE 1. Behind its first door, something was humming, somewhere above the top line of the staff.',
-}
-TZ = lambda k: f'<p class="tease"><span>Behind the next door</span>{TEASE[k]}</p>' if k in TEASE else ''
+import sys as _s; _s.path.insert(0,'/tmp/claude-0/lvl'); from tease import TEASE   # the Butler's note per room (14 Nov: recall lines replace the teasers)
+TZ = lambda k: f'<p class="tease"><span>The Butler’s note</span>{TEASE[k]}</p>' if k in TEASE else ''
 # her 14 Nov ("첫번째 비기너 방 다 만들어줘"): Beginner rooms 1 to 7 take their illustrated scenes, the same drawings as the moving pictures and films
 for _r in ('hbr-B1', 'hbr-P1', 'hbr-L1', 'hbr-P2', 'hbr-T1', 'hbr-T2', 'hbr-T2-s2'):
     _op, _en = STORY[_r]; _cap = lambda pic: re.search(r'Plate \{PLATE\}\. (.*?)</div>', pic).group(1)
     STORY[_r] = ((ILLU(open(f'/tmp/claude-0/anim/rooms/{_r}-print-a.svg').read(), _cap(_op[0])),) + _op[1:], (ILLU(open(f'/tmp/claude-0/anim/rooms/{_r}-print-b.svg').read(), _cap(_en[0])),) + _en[1:])
-ROOMOPEN = {k: (v[0][0], v[0][1] + ('' if v[1] else TZ(k)), v[0][2]) for k, v in STORY.items()}
-ROOMEND = {k: (v[1][0], v[1][1] + TZ(k), v[1][2]) for k, v in STORY.items() if v[1]}
+ROOMOPEN = {k: (v[0][0], v[0][1] + ('' if v[1] else TZ(k)), '') for k, v in STORY.items()}
+ROOMEND = {k: (v[1][0], v[1][1] + TZ(k), '') for k, v in STORY.items() if v[1]}
 def build_story(floor_i, name, line):
     global RIGHT; RIGHT = name.upper()
     out = []; toc = []; n = 2
@@ -593,7 +571,7 @@ document.body.dataset.pruned='1';})();</script>"""
     out = [o.replace('Try it · 10 seconds', 'Try it') if 'rvbig' in o else o for o in out]
     out = [o.replace('M1576,1057 C2341,396 5000,316 5564,787 C4981,376 2363,455 1576,1057', 'M1420,1560 C2500,1940 4600,1770 5420,1330 C4600,1700 2500,1870 1420,1560') for o in out]
     out = [re.sub(r'<div class="cxk">Room (\d+) <i>◆</i> STORYOPEN of \d+</div><h1>', r'<div class="kk">Room \1 · The story</div><h1 class="lbh">', o) for o in out]
-    out = [re.sub(r'<div class="cxk cxc">Room (\d+) <i>◆</i> (.*?) <i>◆</i> STORYEND of 1</div>', r'<div class="kk">Room \1 · How it ended</div><h1 class="lbh">\2</h1>', o) for o in out]
+    out = [re.sub(r'<div class="cxk cxc">Room (\d+) <i>◆</i> (.*?) <i>◆</i> STORYEND of 1</div>', r'<div class="kk">Room \1 · From music history</div><h1 class="lbh">\2</h1>', o) for o in out]
     out = [re.sub(r'<div class="cxk cxc">Room (\d+) <i>◆</i> (.*?) <i>◆</i> (\d+ of \d+|Practise)</div>', lambda m: f'<div class="kk">Room {m.group(1)} · ' + ('Practise' if m.group(3) == 'Practise' else 'Step ' + m.group(3)) + f'</div><h1 class="lbh">{m.group(2)}</h1>', o) for o in out]
     out = [re.sub(r'<div class="cxk">Room (\d+) <i>◆</i> (\d+ of \d+)</div><h1>', lambda m: f'<div class="kk">Room {m.group(1)} · Step {m.group(2)}</div><h1 class="lbh">', o) for o in out]
     def _staffhead(o):   # her 14 Nov (picture of a five-line header): the room title sits on a staff across the top, the page number in coral at its right end
@@ -605,7 +583,7 @@ document.body.dataset.pruned='1';})();</script>"""
     out = [re.sub(r'<div class="sttx">(<p>.*?</p>)', lambda m: f'<div class="bub"><div class="bf">{RABBIT}</div><div class="bt">{m.group(1)}</div></div><div class="sttx">', o, count=1, flags=re.S) for o in out]
     out = [o.replace('· Step 1 of 1</div>', '· Listen</div>') for o in out]
     out = [re.sub(r'(Room (\d+) .*?)Plate \{PLATE\}', lambda m: m.group(1) + 'Plate ' + ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII'][int(m.group(2))], o, flags=re.S) for o in out]
-    out = [re.sub(r'· Step STORYOPEN of \d+', '· The story', re.sub(r'· Step STORYEND of 1', '· How it ended', o)) for o in out]
+    out = [re.sub(r'· Step STORYOPEN of \d+', '· The story', re.sub(r'· Step STORYEND of 1', '· From music history', o)) for o in out]
     html = f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS}{extra}</style></head><body>{cover}{"".join(out)}{fit}</body></html>'
     fn = f'/mnt/user-data/outputs/house-rooms/levelbook-{name.lower()}.html'
     open(fn, 'w').write(html); return fn
