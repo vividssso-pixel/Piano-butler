@@ -24,7 +24,12 @@ def apply(html, table):
                         if kd == 'fill':
                             body = re.sub(r'<span class="(wl|ab|al(?: inl)?)"></span>', lambda mm: f'<span class="{mm.group(1)} hasdone"><b class="done2">{vl}</b></span>', body, count=1)   # the answer sits on its own line, so the cell keeps the same shape as the others
                         elif kd == 'ring':
-                            body = body.replace(vl, f'<b class="done2 ringd">{vl}</b>', 1)
+                            done = [False]   # her 14 Nov proofread: only in text between tags (a bare "M" once matched inside an SVG path)
+                            def _rt(mm):
+                                t = mm.group(1)
+                                if done[0] or vl not in t: return mm.group(0)
+                                done[0] = True; return '>' + t.replace(vl, f'<b class="done2 ringd">{vl}</b>', 1) + '<'
+                            body = re.sub(r'>([^<>]*)<', _rt, body)
                     seg = head + body
                 pg = pg[:at] + seg + pg[end:]; start = at + len(seg)
         pages[pi] = pg
