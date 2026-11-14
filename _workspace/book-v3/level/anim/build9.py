@@ -8,8 +8,8 @@ TL = json.load(open('/tmp/claude-0/anim/e9.json'))
 def inner(svg): return svg[svg.index('>') + 1:svg.rindex('</svg>')]
 RAB = inner(ART['rabbit'])
 o = []
-o.append(f'<rect width="1280" height="600" fill="{T}"/>')
-o.append('<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="#e2e2ef"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>')
+o.append(f'<rect width="1280" height="600" fill="#e4f2ec"/>')
+o.append('<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="#c9e3d7"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>')
 o.append(f'<rect width="1280" height="16" fill="{N}"/><rect y="16" width="1280" height="2" fill="#fff"/>' + ''.join(f'<rect x="{6 + k * 16}" y="24" width="8" height="8" fill="{N}"/>' for k in range(80)) + f'<rect y="38" width="1280" height="2" fill="{N}"/>')
 # a wall lamp on each side of the door
 o.append('<g class="deco">' + ''.join(f'<path d="M{x} 250 q0 -30 -20 -40" fill="none" stroke="{N}" stroke-width="4"/><rect x="{x - 32}" y="196" width="24" height="18" rx="4" fill="#fff" stroke="{N}" stroke-width="3"/><path id="lf{k}" d="M{x - 20} 178 q7 10 0 16 q-7 -6 0 -16 z" fill="{C}"/>' for k, x in enumerate((90, 520))) + '</g>')
@@ -22,7 +22,8 @@ o.append('<g transform="translate(-180 0)">')
 o.append(f'<rect x="288" y="184" width="214" height="416" fill="{N}"/><path d="M288 184 L395 140 L502 184 Z" fill="{N}"/>')
 o.append(f'<clipPath id="cp9"><rect x="300" y="196" width="190" height="404"/></clipPath><g id="inside" clip-path="url(#cp9)"><rect x="300" y="196" width="190" height="404" fill="#ffe2bf"/><rect x="306" y="440" width="96" height="104" rx="4" fill="{N}"/><rect x="314" y="450" width="80" height="46" fill="none" stroke="#fff" stroke-opacity=".5"/>'
          + ''.join(f'<rect x="{308 + k * 13}" y="496" width="13" height="20" fill="#fff" stroke="{N}" stroke-width="1"/>' for k in range(7)) + f'<rect x="306" y="544" width="9" height="56" fill="{N}"/><rect x="393" y="544" width="9" height="56" fill="{N}"/>'
-         + f'<g transform="translate(372 400) scale(.95)">{RAB}</g></g>')
+         + '</g>')
+o.append(f'<g id="bout" opacity="0" transform="translate(300 {600 - 207 * 1.62:.1f}) scale(1.62)">{RAB}</g>')
 o.append(f'<g id="leaf" transform="translate(300 0)"><rect x="0" y="196" width="190" height="404" fill="#fff" stroke="{N}" stroke-width="3"/>'
          + f'<rect x="18" y="214" width="154" height="150" fill="none" stroke="{N}" stroke-width="2"/><rect x="18" y="384" width="154" height="196" fill="none" stroke="{N}" stroke-width="2"/>'
          + f'<circle cx="168" cy="392" r="8" fill="{C}"/><path d="M164 410 h8 l-2 14 h-4 z" fill="{N}"/></g>')
@@ -52,15 +53,16 @@ o.append(f'<g id="stairs">' + ''.join(f'<rect x="{1080 + k * 0}" y="{600 - (k + 
          + f'<line x1="1080" y1="600" x2="1240" y2="362" stroke="{N}" stroke-width="5"/>' + ''.join(f'<line x1="{1080 + k * 26}" y1="{600 - k * 38.6}" x2="{1080 + k * 26}" y2="{560 - k * 38.6}" stroke="{N}" stroke-width="3"/>' for k in range(7))
          + f'<rect x="1214" y="250" width="56" height="112" fill="{N}"/><rect id="pglow" x="1220" y="256" width="44" height="106" fill="#ffd9a8" opacity="0"/><rect x="1220" y="256" width="44" height="106" fill="#fff" stroke="{N}" stroke-width="2" id="pdoor"/>'
          + f'<text id="plbl" x="1170" y="300" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="22" letter-spacing="2" fill="#b8892f" opacity="0">PRELIM</text></g>')
-SVG = '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(o) + '</svg>'
+from kit import NOTECARD, NOTEJS
+SVG = '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(o) + NOTECARD + '</svg>'
 open('/tmp/claude-0/anim/scene9.svg', 'w').write(SVG)
-JS = r'''
+JS = NOTEJS + r'''
 const TL = __TL__;
 const ph = (t, a, b) => Math.max(0, Math.min(1, (t - a) / (b - a)));
 const S = id => document.getElementById(id);
 const L0 = TL.lines, F = (re) => L0.find(l => l.text && re.test(l.text)), PI = L0.filter(l => l.who === 'piano');
 const K = { intro: L0[0].t0, tune: PI[0].t0, high: PI[1].t0, highA: F(/^High\./).t0, low: PI[2].t0, lowA: F(/^Low\./).t0, same1: PI[3].t0, same2: PI[4].t0, sameA: F(/same tune, twice/).t0,
-  end: F(/^And here is how it ended/).t0, open: F(/^When the playing stops/).t0, word: F(/writes one word/).t0, tease: F(/^Behind the next door/).t0, pre: F(/^At the top of the stairs/).t0, dur: TL.dur };
+  end: F(/^A true story from music history/).t0, open: F(/^When the playing stops/).t0, word: F(/writes one word/).t0, tease: F(/^The Butler’s note/).t0, pre: 1e9, dur: TL.dur };
 function setT(t) {
   // the light under the door breathes while someone plays
   const playing = (t >= K.tune && t < K.tune + 4) || (t >= K.high && t < K.high + 1.6) || (t >= K.low && t < K.low + 1.6) || (t >= K.same1 && t < K.same2 + 2.2);
@@ -86,9 +88,10 @@ function setT(t) {
   const od = t >= K.open ? ph(t, K.open, K.open + 2.5) : 0;
   S('leaf').setAttribute('transform', `translate(${300 + 190 * od} 0) scale(${1 - .82 * od} 1)`);
   S('crack').setAttribute('opacity', od > 0 ? 0 : S('crack').getAttribute('opacity'));
+  S('bout').setAttribute('opacity', od > .6 && t < K.tease + 99 ? ph(od, .6, 1) : 0);
   S('book').setAttribute('opacity', t >= K.word && t < K.tease ? ph(t, K.word, K.word + .6) : 0);
   // behind the next door: the room dims, the little door at the top of the stairs lights up
-  S('dim').setAttribute('opacity', t >= K.tease ? .45 * ph(t, K.tease, K.tease + 1.5) : 0);
+  S('dim').setAttribute('opacity', t >= K.tease ? .55 * ph(t, K.tease, K.tease + .6) : 0); noteCard(t);
   const pg = t >= K.pre ? ph(t, K.pre, K.pre + 3) : 0;
   S('pglow').setAttribute('opacity', pg); S('pdoor').setAttribute('transform', `translate(${1220 * .0} 0) scale(${1 - .6 * pg} 1)`); S('pdoor').style.transformBox = 'fill-box'; S('pdoor').style.transformOrigin = 'left center';
   S('plbl').setAttribute('opacity', pg);
@@ -100,7 +103,7 @@ window.setT = setT;
 open('/tmp/claude-0/anim/scene9.js', 'w').write(JS)
 film = open('/tmp/claude-0/anim/film.html').read()
 i = film.index('<svg id="scene"'); j = film.index('</svg>', i) + 6
-film = film[:i] + SVG + film[j:]
+film = film[:i] + SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 46 1280 610"', 1) + film[j:]
 film = film.replace('Room 8</small><b>Loud and soft</b><i>The music evening</i>', 'Room 9</small><b>Ear training</b><i>The door</i>')
 i = film.index('<script>') + 8; j = film.index('</script>', i)
 film = film[:i] + JS + film[j:]

@@ -35,11 +35,10 @@ def voiced(text):   # the storyteller narrates; a quote is spoken only when a sp
 def lines_for(rid):
     op, en = STORY[rid]; L = []
     for p in re.findall(r'<p>(.*?)</p>', op[1], flags=re.S): L += voiced(plain(p))
-    L += [('piano', CUE.get(rid, 'C4 E4 G4')), ('B', 'Now, at the piano. ' + plain(op[2])), ('pause', 6)]
+    L += [('piano', CUE.get(rid, 'C4 E4 G4')), ('pause', .8)]   # her 14 Nov: no "try it" in the story audio
     if en:
-        L += [('N', 'And here is how it ended.')]
+        L += [('N', 'A true story from music history.')]
         for p in re.findall(r'<p>(.*?)</p>', en[1], flags=re.S): L += voiced(plain(p))
-        L += [('B', 'One more thing to try. ' + plain(en[2])), ('pause', 6)]
     return L
 if __name__ == '__main__':
     OUT = '/mnt/user-data/outputs/audio-stories'; os.makedirs(OUT, exist_ok=True); meta = {}

@@ -13,8 +13,8 @@ SIT = re.sub(r'<text[^>]*>key level</text>', '', SIT); SIT = re.sub(r'<line[^>]*
 SIT = inner(SIT)
 o = []
 # wall and its paper: small diamonds in a lattice
-o.append(f'<rect width="1280" height="600" fill="{T}"/>')
-o.append('<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="#e2e2ef"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>')
+o.append(f'<rect width="1280" height="600" fill="#f9e8e4"/>')
+o.append('<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="#efcfc6"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>')
 o.append(f'<rect width="1280" height="16" fill="{N}"/><rect y="16" width="1280" height="2" fill="#fff"/>' + ''.join(f'<rect x="{6 + k * 16}" y="24" width="8" height="8" fill="{N}"/>' for k in range(80)) + f'<rect y="38" width="1280" height="2" fill="{N}"/>')
 # window with night sky and curtains
 o.append(f'<g id="win" class="deco" transform="translate(48 118) scale(.7)"><rect x="70" y="110" width="220" height="320" fill="{N}"/><circle cx="220" cy="180" r="26" fill="#fff"/><circle cx="232" cy="172" r="24" fill="{N}"/>'
@@ -59,7 +59,7 @@ o.append(f'<defs><pattern id="hcl" width="7" height="7" patternUnits="userSpaceO
          + '</g>')
 o.append('</g>')
 # the Butler with the tea tray
-o.append(f'<g id="butler" transform="translate(925 305) scale(1.42)">{RAB}</g>')
+o.append(f'<g id="butler" transform="translate(905 265) scale(1.62)">{RAB}</g>')
 o.append(f'<g id="tray" transform="translate(-100 0)"><rect x="906" y="600" width="0" height="0"/><rect x="902" y="488" width="104" height="10" rx="3" fill="{N}"/><rect x="912" y="498" width="8" height="102" fill="{N}"/><rect x="988" y="498" width="8" height="102" fill="{N}"/><rect x="996" y="9999" width="120" height="8" rx="3" fill="{N}"/>' + ''.join(f'<g class="cup" id="cup{k}"><path d="M{912 + k * 32} 466 h24 v12 a12 12 0 0 1 -24 0 Z" fill="#fff" stroke="{N}" stroke-width="2.5"/><path d="M{936 + k * 32} 470 a5 5 0 0 1 0 10" fill="none" stroke="{N}" stroke-width="2.5"/><rect x="{908 + k * 32}" y="484" width="32" height="4" rx="2" fill="{N}"/></g>' for k in range(3)) + '</g>')
 # sound: the dynamic sign and the notes
 o.append(f'<text id="dyn" x="866" y="226" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-weight="900" font-size="120" fill="{C}" opacity="0">f</text><text id="dynw" x="866" y="262" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="22" letter-spacing="3" fill="{C}" opacity="0"></text>')
@@ -72,18 +72,20 @@ o.append(f'<g><rect x="1166" y="250" width="110" height="350" fill="{N}"/><rect 
          + f'<g id="leaf" transform="translate(1176 0)"><rect x="0" y="260" width="90" height="340" fill="#fff" stroke="{N}" stroke-width="3"/><rect x="12" y="276" width="66" height="130" fill="none" stroke="{N}" stroke-width="2"/><rect x="12" y="424" width="66" height="156" fill="none" stroke="{N}" stroke-width="2"/><circle cx="74" cy="430" r="5" fill="{C}"/></g></g>')
 # a single note that floats out of the door at the very end
 o.append(f'<g id="lone" opacity="0"><ellipse cx="0" cy="0" rx="12" ry="9" transform="rotate(-20)" fill="#ffd9a8"/><rect x="9" y="-46" width="4" height="46" fill="#ffd9a8"/></g>')
-SVG = '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(o) + '</svg>'
+from kit import NOTECARD, NOTEJS, WALLCOL, sign
+SVG = '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(o) + NOTECARD + '</svg>'
+FILMSVG = SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 46 1280 610"', 1)
 open('/tmp/claude-0/anim/scene.svg', 'w').write(SVG)
-JS = r'''
+JS = NOTEJS + r'''
 const TL = __TL__;
 const ph = (t, a, b) => Math.max(0, Math.min(1, (t - a) / (b - a)));
 const S = id => document.getElementById(id);
 const CR = { clara: [560, 254.6, 2.2], queen: [340, 514, 2.1], king: [450, 514, 1.95] };
 const L0 = TL.lines, F = (re) => L0.find(l => l.text && re.test(l.text)), PI = L0.filter(l => l.who === 'piano');
-const K = { intro: L0[0].t0, rattle: F(/cups ring/).t0, ask: F(/Now the same piece/).t0, ch1: PI[0].t0, ch2: PI[0].t0 + 2.9, melody: PI[1].t0, tryA: F(/^Now, at the piano/).t0,
-  end: F(/^And here is how it ended/).t0, again: F(/^So Clara plays it again/).t0, cristo: F(/Cristofori/).t0, tease: F(/^Behind the next door/).t0, door: F(/^After the evening/).t0, lone: PI[PI.length - 1].t0, dur: TL.dur };
+const K = { intro: L0[0].t0, rattle: F(/cups ring/).t0, ask: F(/Now the same piece/).t0, ch1: PI[0].t0, ch2: PI[0].t0 + 2.9, melody: PI[1].t0, 
+  end: F(/^A true story from music history/).t0, again: F(/^So Clara plays it again/).t0, cristo: F(/Cristofori/).t0, tease: F(/^The Butler’s note/).t0, door: 1e9, lone: PI[PI.length - 1].t0, dur: TL.dur };
 function setT(t) {
-  const L = TL.lines, at = (i) => L[i].t0;
+  K.tryA = K.end; const L = TL.lines, at = (i) => L[i].t0;
   const loud = t >= K.intro && t < K.ch2, soft = (t >= K.ch2 && t < K.tryA) || (t >= K.again && t < K.tease), tease = t >= K.tease;
   const hard = t >= K.rattle && t < K.ch2 ? 1 : loud ? .6 : 0, asking = t >= K.ask && t < K.ch1;
   // flames: flicker, faster when loud
@@ -119,7 +121,7 @@ function setT(t) {
   const cr = t >= K.cristo && t < K.tease ? Math.min(1, ph(t, K.cristo, K.cristo + 1.1)) : 0;
   S('cristo').setAttribute('opacity', cr); S('clefp').setAttribute('opacity', 1 - cr);
   // behind the next door: the room dims, the door opens, a light, one note floats out
-  S('dim').setAttribute('opacity', tease ? .5 * ph(t, K.tease, K.tease + 1.7) : 0);
+  S('dim').setAttribute('opacity', tease ? .55 * ph(t, K.tease, K.tease + .6) : 0); noteCard(t);
   const op = tease ? ph(t, K.door, K.door + 3.5) : 0;
   S('leaf').setAttribute('transform', `translate(1176 0) scale(${1 - .72 * op} 1)`); S('glow').setAttribute('opacity', op * .95);
   const lo = S('lone'), q = ph(t, K.lone - 1.5, K.dur);
@@ -136,11 +138,11 @@ FONTS = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=P
 NM = open('/tmp/claude-0/lvl/levelstory.py').read()
 film = f'''<!doctype html><html><head><meta charset="utf-8">{FONTS}<style>
 ''' + open('/tmp/claude-0/anim/nm.css').read().replace('{','{{').replace('}','}}') + f'''
-html,body{{margin:0;width:1280px;height:720px;overflow:hidden;background:#fff}} #scene{{width:1280px;height:720px;display:block}}
-#sub{{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);max-width:1040px;background:rgba(255,255,255,.94);border:2px solid {N};border-radius:16px;padding:12px 24px;font:500 27px/1.35 'Atkinson Hyperlegible',sans-serif;color:{N};text-align:center;transition:none}}
+html,body{{margin:0;width:1280px;height:720px;overflow:hidden;background:#fff}} #scene{{width:1280px;height:610px;display:block}}
+#sub{{position:absolute;left:0;right:0;top:610px;height:110px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:6px 60px;background:#fff;border-top:3px solid {N};font:500 24px/1.32 'Atkinson Hyperlegible',sans-serif;color:{N};text-align:center;transition:none}}
 #ttl{{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.9);color:{N}}}
 #ttl small{{font:700 18px 'Atkinson Hyperlegible',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:{C}}} #ttl b{{font:900 72px 'Playfair Display',serif;margin-top:8px}} #ttl i{{font:italic 500 26px 'Playfair Display',serif;margin-top:10px;color:#6d6f9c}}
-</style></head><body>{SVG}<div id="ttl"><small>The Piano Butler · Beginner · Room 8</small><b>Loud and soft</b><i>The music evening</i></div><div id="sub"></div>
+</style></head><body>{SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 46 1280 610"', 1)}<div id="ttl"><small>The Piano Butler · Beginner · Room 8</small><b>Loud and soft</b><i>The music evening</i></div><div id="sub"></div>
 <script>{JS}</script></body></html>'''
 open('/tmp/claude-0/anim/film.html', 'w').write(film)
 print('ok', len(SVG))
