@@ -533,6 +533,10 @@ TEASE = {
  'hbr-ear-prelim': 'Upstairs, the next floor was waiting: GRADE 1. Behind its first door, something was humming, somewhere above the top line of the staff.',
 }
 TZ = lambda k: f'<p class="tease"><span>Behind the next door</span>{TEASE[k]}</p>' if k in TEASE else ''
+# her 14 Nov ("첫번째 비기너 방 다 만들어줘"): Beginner rooms 1 to 7 take their illustrated scenes, the same drawings as the moving pictures and films
+for _r in ('hbr-B1', 'hbr-P1', 'hbr-L1', 'hbr-P2', 'hbr-T1', 'hbr-T2', 'hbr-T2-s2'):
+    _op, _en = STORY[_r]; _cap = lambda pic: re.search(r'Plate \{PLATE\}\. (.*?)</div>', pic).group(1)
+    STORY[_r] = ((ILLU(open(f'/tmp/claude-0/anim/rooms/{_r}-print-a.svg').read(), _cap(_op[0])),) + _op[1:], (ILLU(open(f'/tmp/claude-0/anim/rooms/{_r}-print-b.svg').read(), _cap(_en[0])),) + _en[1:])
 ROOMOPEN = {k: (v[0][0], v[0][1] + ('' if v[1] else TZ(k)), v[0][2]) for k, v in STORY.items()}
 ROOMEND = {k: (v[1][0], v[1][1] + TZ(k), v[1][2]) for k, v in STORY.items() if v[1]}
 def build_story(floor_i, name, line):
