@@ -1,6 +1,7 @@
 # her 14 Nov ("응", "영상", "둘 다 보여줘"): Beginner Room 8 as an illustrated, moving scene. One drawing serves the book page
 # (a still at a chosen moment), the screen version (moves with the audio) and the video (filmed frame by frame).
-import json, math
+import json, math, sys
+sys.path.insert(0, '/tmp/claude-0/anim'); from kit import sign
 N, C, PK, T = '#26296b', '#e4572e', '#f4a9bb', '#f6f6fb'
 P = json.load(open('/tmp/claude-0/lvl/pieces.json')); ART = json.load(open('/tmp/claude-0/lvl/pb-art.json'))
 TL = json.load(open('/tmp/claude-0/anim/e1.json'))
@@ -63,6 +64,7 @@ o.append(f'<g id="tray" transform="translate(-100 0)"><rect x="906" y="600" widt
 # sound: the dynamic sign and the notes
 o.append(f'<text id="dyn" x="866" y="226" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-weight="900" font-size="120" fill="{C}" opacity="0">f</text><text id="dynw" x="866" y="262" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="22" letter-spacing="3" fill="{C}" opacity="0"></text>')
 o.append(''.join(f'<g id="nt{k}" opacity="0"><ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)" fill="{N}"/><rect x="8" y="-44" width="3.5" height="44" fill="{N}"/></g>' for k in range(10)))
+o.append(sign('E'))
 o.append(f'<rect id="warm" width="1280" height="720" fill="#ffcf9e" opacity="0" pointer-events="none"/>')
 o.append(f'<rect id="dim" width="1280" height="720" fill="{N}" opacity="0" pointer-events="none"/>')
 # the door at the right, and its light

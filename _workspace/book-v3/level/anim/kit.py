@@ -7,9 +7,15 @@ def inner(svg): return svg[svg.index('>') + 1:svg.rindex('</svg>')]
 RAB = inner(ART['rabbit'])
 CR, MI, SB, BR = '\U0001D15F', '\U0001D15E', '\U0001D15D', '\U0001D15C'
 HATCH = f'<defs><pattern id="hcl" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><rect width="7" height="7" fill="#fffdf7"/><line x1="0" y1="0" x2="0" y2="7" stroke="{N}" stroke-width="2.2"/></pattern></defs>'
-def wall(chand=True, win=True):
-    o = [f'<rect width="1280" height="600" fill="{T}"/>', HATCH]
-    o.append('<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="#e2e2ef"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>')
+def paper(style):   # each room of the house has its own wall (her 14 Nov: "장면마다 다 같아서 다르게")
+    if style == 'stripe': return '<g class="deco">' + ''.join(f'<rect x="{x}" y="40" width="14" height="430" fill="#e4e4f0"/>' for x in range(0, 1280, 48)) + '</g>'
+    if style == 'tile': return '<g class="deco">' + ''.join(f'<rect x="{x + (y // 30 % 2) * 30}" y="{y}" width="58" height="28" fill="none" stroke="#d9d9e8" stroke-width="2"/>' for y in range(40, 470, 30) for x in range(-30, 1280, 60)) + '</g>'
+    if style == 'panel': return '<g class="deco">' + ''.join(f'<rect x="{30 + k * 210}" y="70" width="180" height="370" fill="none" stroke="#d4d4e6" stroke-width="3"/><rect x="{44 + k * 210}" y="84" width="152" height="342" fill="none" stroke="#e2e2ef" stroke-width="2"/>' for k in range(7)) + '</g>'
+    if style == 'dots': return '<g class="deco">' + ''.join(f'<circle cx="{x}" cy="{y}" r="3" fill="#e0e0ee"/>' for y in range(60, 470, 28) for x in range(14 + (y // 28 % 2) * 14, 1280, 28)) + '</g>'
+    return '<g class="deco">' + ''.join(f'<path d="M{x} {y - 5} l5 5 -5 5 -5 -5 z" fill="#e2e2ef"/>' for y in range(60, 470, 36) for x in range(18 + (y // 36 % 2) * 22, 1280, 44)) + '</g>'
+def wall(chand=True, win=True, style='diamond', bg=None):
+    o = [f'<rect width="1280" height="600" fill="{bg or T}"/>', HATCH]
+    o.append(paper(style))
     o.append(f'<rect width="1280" height="16" fill="{N}"/><rect y="16" width="1280" height="2" fill="#fff"/>' + ''.join(f'<rect x="{6 + k * 16}" y="24" width="8" height="8" fill="{N}"/>' for k in range(80)) + f'<rect y="38" width="1280" height="2" fill="{N}"/>')
     if win:
         o.append(f'<g class="deco" transform="translate(48 118) scale(.7)"><rect x="70" y="110" width="220" height="320" fill="{N}"/><circle cx="220" cy="180" r="26" fill="#fff"/><circle cx="232" cy="172" r="24" fill="{N}"/>'
@@ -92,3 +98,29 @@ def film(svg, js, room, title, sub):
     f = re.sub(r'<small>.*?</small><b>.*?</b><i>.*?</i>', f'<small>The Piano Butler · Beginner · Room {room}</small><b>{title}</b><i>{sub}</i>', f, count=1)
     i = f.index('<script>') + 8; j = f.index('</script>', i); return f[:i] + js + f[j:]
 def scene(parts): return '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(parts) + '</svg>'
+
+def bookshelf(x, w=300, gid='shelf'):
+    o = f'<g id="{gid}" class="deco"><rect x="{x}" y="90" width="{w}" height="376" fill="#fff" stroke="{N}" stroke-width="4"/>'
+    import random; rnd = random.Random(x)
+    for r in range(4):
+        y = 100 + r * 92; o += f'<rect x="{x}" y="{y + 82}" width="{w}" height="8" fill="{N}"/>'; bx = x + 10
+        while bx < x + w - 24:
+            bw = rnd.choice((14, 18, 22)); bh = rnd.choice((60, 68, 74)); col = rnd.choice((N, N, C, '#6d6f9c', '#fff'))
+            o += f'<rect x="{bx}" y="{y + 82 - bh}" width="{bw}" height="{bh}" fill="{col}" stroke="{N}" stroke-width="2"/>'; bx += bw + 2
+    return o + '</g>'
+def fireplace(x, gid='fire'):
+    return (f'<g id="{gid}"><rect x="{x - 130}" y="300" width="260" height="20" rx="4" fill="{N}"/><rect x="{x - 115}" y="320" width="230" height="146" fill="#fff" stroke="{N}" stroke-width="4"/>'
+            f'<path d="M{x - 70} 466 L{x - 70} 380 Q{x} 340 {x + 70} 380 L{x + 70} 466 Z" fill="{N}"/><path id="{gid}f" d="M{x - 30} 466 Q{x - 34} 420 {x - 6} 398 Q{x - 2} 424 {x + 10} 410 Q{x + 34} 436 {x + 30} 466 Z" fill="{C}"/></g>')
+def fanlight_door(x=1150):
+    return (f'<g><rect x="{x}" y="250" width="120" height="350" fill="{N}"/><path d="M{x} 250 A60 60 0 0 1 {x + 120} 250 Z" fill="{N}"/><path d="M{x + 10} 250 A50 50 0 0 1 {x + 110} 250 Z" fill="#ffe2bf"/>'
+            + ''.join(f'<line x1="{x + 60}" y1="250" x2="{x + 60 + 50 * __import__("math").cos(a)}" y2="{250 - 50 * __import__("math").sin(a)}" stroke="{N}" stroke-width="2"/>' for a in (0.4, 1.0, 1.57, 2.14, 2.74))
+            + f'<rect x="{x + 10}" y="260" width="100" height="340" fill="#fff" stroke="{N}" stroke-width="3"/><circle cx="{x + 96}" cy="430" r="5" fill="{C}"/></g>')
+# her 14 Nov ("피치, 타임 카테고리가 나눠져 있잖아, 방을 섹션마다 다르게"): every kind of lesson has its own room in the house,
+# the same each time, with a sign at the door: you know what kind of thinking a room asks for before the story starts.
+CATEGORY = {'B': ('PLAYING', 'THE PRACTICE ROOM'), 'L': ('PLAYING', 'THE PRACTICE ROOM'), 'P': ('PITCH', 'THE STAIRCASE'), 'T': ('TIME', 'THE CLOCK HALL'),
+            'E': ('EXPRESSION', 'THE DRAWING ROOM'), 'S': ('KEYS AND SCALES', 'THE DOORKEEPER’S LODGE'), 'H': ('HARMONY', 'THE DINING ROOM'), 'EAR': ('LISTENING', 'THE CORRIDOR')}
+def sign(cat):
+    a, b = CATEGORY[cat]; w = 18 + 10.5 * (len(a) + len(b) + 3)
+    return (f'<g id="sign"><rect x="28" y="50" width="{w:.0f}" height="34" rx="3" fill="#fff" stroke="{N}" stroke-width="3"/><rect x="33" y="55" width="{w - 10:.0f}" height="24" rx="2" fill="none" stroke="{N}" stroke-width="1"/>'
+            f'<text x="{28 + w / 2:.0f}" y="73" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="15" letter-spacing="2"><tspan fill="{C}">{a}</tspan><tspan fill="{N}"> · {b}</tspan></text></g>')
+def landing(y=232): return f'<rect y="{y}" width="1280" height="30" fill="#fff"/>' + ''.join(f'<rect x="{c * 30}" y="{y + r * 15}" width="30" height="15" fill="{N}"/>' for r in range(2) for c in range(43) if (r + c) % 2 == 0) + f'<rect y="{y - 4}" width="1280" height="4" fill="{N}"/><rect y="{y + 30}" width="1280" height="4" fill="{N}"/>'

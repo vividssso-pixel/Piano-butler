@@ -1,6 +1,7 @@
 # Beginner Room 9, Ear training (her 14 Nov: "다음 이야기도 부탁해"): the door from Room 8. Clara listens at a closed door;
 # high notes show at the top of the door, low ones at the bottom; at the end the door opens on the Butler at the practice piano.
-import json, math
+import json, math, sys
+sys.path.insert(0, '/tmp/claude-0/anim'); from kit import sign
 N, C, PK, T = '#26296b', '#e4572e', '#f4a9bb', '#f6f6fb'
 P = json.load(open('/tmp/claude-0/lvl/pieces.json')); ART = json.load(open('/tmp/claude-0/lvl/pb-art.json'))
 TL = json.load(open('/tmp/claude-0/anim/e9.json'))
@@ -44,6 +45,7 @@ o.append(f'<text id="ans" x="520" y="300" font-family="Playfair Display,serif" f
 o.append(f'<g id="same" opacity="0">' + ''.join(f'<g transform="translate({x} 0)">' + ''.join(f'<circle cx="{k * 22}" cy="{200 - k * 18}" r="9" fill="{N}"/>' for k in range(3)) + '</g>' for x in (500, 600)) + f'<text x="575" y="196" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="48" fill="{C}">=</text></g>')
 # the Butler's word in his book
 o.append(f'<g id="book" opacity="0" transform="translate(-170 0)"><rect x="700" y="210" width="190" height="96" rx="6" fill="#fff" stroke="{N}" stroke-width="3"/><line x1="795" y1="214" x2="795" y2="302" stroke="{N}" stroke-width="2"/><text x="795" y="272" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-weight="700" font-size="34" fill="{C}">Correct.</text></g>')
+o.append(sign('EAR'))
 o.append(f'<rect id="dim" width="1280" height="720" fill="{N}" opacity="0" pointer-events="none"/>')
 # the stairs to the next floor, at the right, with a small door at the top
 o.append(f'<g id="stairs">' + ''.join(f'<rect x="{1080 + k * 0}" y="{600 - (k + 1) * 34}" width="{200 - k * 22}" height="34" fill="#fff" stroke="{N}" stroke-width="3" transform="translate({k * 22} 0)"/>' for k in range(7))
