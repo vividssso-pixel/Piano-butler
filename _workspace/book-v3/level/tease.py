@@ -3,7 +3,7 @@
 TEASE = {
  'hbr-B1': 'Feet down, back tall, arms level. The chair comes first.',
  'hbr-P1': 'Twos and threes. Find the group, and you have found the key.',
- 'hbr-L1': 'Thumbs are 1, in both hands.',
+ 'hbr-L1': 'Thumbs are 1 in both hands. The numbers mirror.',
  'hbr-P2': 'Up the stairs is high, down the stairs is low. The clef tells you which floor.',
  'hbr-T1': 'The beat is the clock inside the music. It never hurries.',
  'hbr-T2': 'A crotchet is one tick. A minim waits for two.',

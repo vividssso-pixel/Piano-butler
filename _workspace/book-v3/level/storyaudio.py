@@ -15,30 +15,42 @@ CUE = {'hbr-B1': 'C4 E4 G4 C5', 'hbr-P1': 'C2*2 C6*2', 'hbr-L1': 'C4 D4 E4 F4 G4
        'hbr-E2': 'C4 D4 E4 F4 G4', 'hbr-S1': 'G4 A4 B4 C5 D5 E5 F#5 G5', 'hbr-S2': 'A3 B3 C4 D4 E4 F4 G4 A4', 'hbr-H1': 'C4 E4 G4 [C4 E4 G4]', 'hbr-ear-prelim': 'C5 E5 G5'}
 NAMES = [('Clara', 'P'), ('King', 'K'), ('Queen', 'Q'), ('Doorkeeper', 'D'), ('Stationmaster', 'S'), ('Butler', 'B')]
 def plain(h): return re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', re.sub(r'<i>(col piano e forte|forte|piano)</i>', r'⟨\1⟩', h)).replace('&nbsp;', ' ')).strip()
-def voiced(text):   # the storyteller narrates; a quote is spoken only when a speaker is named next to it ("says the King")
-    out = []; pos = 0
+ATTR = re.compile(r'^(?:(?:says|said|asks|explains|whispers) (?:the )?(?:Butler|Clara|Queen|King|Doorkeeper|Stationmaster)|(?:he|she) (?:says|asks|said))[.,]?$')
+def voiced(text):   # the storyteller narrates; a quote is spoken by the speaker named next to it ("says the King")
+    # her 14 Nov ("대화가 딱딱해"): a speaker's follow-on line keeps their voice, and a bare "says the Butler" is not read aloud
+    out = []; pos = 0; last = None
     for m in re.finditer(r'“(.*?)”', text):
-        after = text[m.end():m.end() + 30]; before = text[max(0, m.start() - 70):m.start()]
-        if not re.search(r'\b(says|said|asks|he says|she says)\b', after + ' ' + text[max(0, m.start() - 20):m.start()]): continue
-        pre = text[pos:m.start()].strip(' ,')
-        if pre: out.append(('N', pre))
-        ctx = before + ' ' + after; who = 'B'
-        for nm, v in NAMES:
-            if nm in after: who = v; break
-        else:
-            hits = [(ctx.rfind(nm), v) for nm, v in NAMES if nm in before]
-            if hits: who = max(hits)[1]
-        out.append((who, m.group(1).strip(' ,'))); pos = m.end()
+        after = text[m.end():m.end() + 30]; before = text[max(0, m.start() - 70):m.start()]; gap = text[pos:m.start()]
+        attributed = re.search(r'\b(says|said|asks|explains|whispers|he says|she says)\b', after + ' ' + text[max(0, m.start() - 20):m.start()])
+        follow = last and len(gap.strip()) < 45 and re.search(r'\b(says|said|asks|explains|whispers)\b', gap)
+        own = re.search(r'^\s*,?\s*(says|said|asks|explains|whispers)\b', after) or re.search(r'\b(he|she) (says|asks)\b', after[:14])
+        pre = gap.strip(' ,')
+        if own:
+            who = 'B'
+            for nm, v in NAMES:
+                if nm in after: who = v; break
+            else:
+                hits = [(before.rfind(nm), v) for nm, v in NAMES if nm in before]
+                if hits: who = max(hits)[1]
+        elif follow: who = last
+        elif attributed:
+            hits = [(before.rfind(nm), v) for nm, v in NAMES if nm in before]; who = max(hits)[1] if hits else 'B'
+        else: continue
+        if pre and not ATTR.match(pre): out.append(('N', pre))
+        out.append((who, m.group(1).strip(' ,'))); pos = m.end(); last = who
     post = text[pos:].strip(' ,')
-    if post: out.append(('N', post))
+    if post and not ATTR.match(post): out.append(('N', post))
     return out
 def lines_for(rid):
     op, en = STORY[rid]; L = []
     for p in re.findall(r'<p>(.*?)</p>', op[1], flags=re.S): L += voiced(plain(p))
     L += [('piano', CUE.get(rid, 'C4 E4 G4')), ('pause', .8)]   # her 14 Nov: no "try it" in the story audio
-    if en:
-        L += [('N', 'A true story from music history.')]
-        for p in re.findall(r'<p>(.*?)</p>', en[1], flags=re.S): L += voiced(plain(p))
+    if en:   # the header goes before the part that is history (Room 8 first finishes its story; the Ear room has none)
+        H = {'hbr-E1': 'The instrument', 'hbr-ear-beginner': '~none~', 'hbr-ear-prelim': '~none~'}.get(rid)
+        ps = re.findall(r'<p>(.*?)</p>', en[1], flags=re.S); done = False
+        for p in ps:
+            if not done and (H is None or plain(p).startswith(H)): L += [('N', 'A true story from music history.')]; done = True
+            L += voiced(plain(p))
     return L
 if __name__ == '__main__':
     OUT = '/mnt/user-data/outputs/audio-stories'; os.makedirs(OUT, exist_ok=True); meta = {}

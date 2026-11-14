@@ -25,7 +25,7 @@ o.append(f'<g id="win" class="deco" transform="translate(48 118) scale(.7)"><rec
          + f'<rect x="30" y="76" width="300" height="20" rx="4" fill="{N}"/><rect x="62" y="436" width="236" height="14" fill="{N}"/></g>')
 # portrait on the wall: a G clef in an oval frame; in the ending it becomes Cristofori's plate
 o.append(f'<g transform="translate(1010 200)"><ellipse rx="70" ry="88" fill="#fff" stroke="{N}" stroke-width="5"/><ellipse rx="60" ry="78" fill="none" stroke="{N}" stroke-width="1.6"/>'
-         + f'<g id="clefp"><text x="-2" y="44" text-anchor="middle" font-family="NM" font-size="132" fill="{N}">𝄞</text></g>'
+         + f'<g id="clefp"><text x="-2" y="44" text-anchor="middle" font-family="NM" font-size="88" fill="{N}">𝄞</text></g>'
          + f'<g id="cristo" opacity="0"><text y="-12" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="34" fill="{N}">c. 1700</text><text y="20" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-size="19" fill="{C}">Florence</text><text y="46" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-size="14" fill="{N}">piano e forte</text></g></g>')
 # chandelier
 o.append(f'<g class="deco"><line x1="640" x2="640" y1="40" y2="96" stroke="{N}" stroke-width="3"/><path d="M560 120 Q640 160 720 120" fill="none" stroke="{N}" stroke-width="4"/><circle cx="640" cy="104" r="10" fill="{N}"/>'
@@ -62,7 +62,7 @@ o.append('</g>')
 o.append(f'<g id="butler" transform="translate(905 265) scale(1.62)">{RAB}</g>')
 o.append(f'<g id="tray" transform="translate(-100 0)"><rect x="906" y="600" width="0" height="0"/><rect x="902" y="488" width="104" height="10" rx="3" fill="{N}"/><rect x="912" y="498" width="8" height="102" fill="{N}"/><rect x="988" y="498" width="8" height="102" fill="{N}"/><rect x="996" y="9999" width="120" height="8" rx="3" fill="{N}"/>' + ''.join(f'<g class="cup" id="cup{k}"><path d="M{912 + k * 32} 466 h24 v12 a12 12 0 0 1 -24 0 Z" fill="#fff" stroke="{N}" stroke-width="2.5"/><path d="M{936 + k * 32} 470 a5 5 0 0 1 0 10" fill="none" stroke="{N}" stroke-width="2.5"/><rect x="{908 + k * 32}" y="484" width="32" height="4" rx="2" fill="{N}"/></g>' for k in range(3)) + '</g>')
 # sound: the dynamic sign and the notes
-o.append(f'<text id="dyn" x="866" y="226" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-weight="900" font-size="120" fill="{C}" opacity="0">f</text><text id="dynw" x="866" y="262" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="22" letter-spacing="3" fill="{C}" opacity="0"></text>')
+o.append(f'<text id="dyn" x="820" y="172" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-weight="900" font-size="120" fill="{C}" opacity="0">f</text><text id="dynw" x="820" y="206" text-anchor="middle" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="22" letter-spacing="3" fill="{C}" opacity="0"></text>')
 o.append(''.join(f'<g id="nt{k}" opacity="0"><ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)" fill="{N}"/><rect x="8" y="-44" width="3.5" height="44" fill="{N}"/></g>' for k in range(10)))
 o.append(sign('E'))
 o.append(f'<rect id="warm" width="1280" height="720" fill="#ffcf9e" opacity="0" pointer-events="none"/>')
@@ -74,7 +74,7 @@ o.append(f'<g><rect x="1166" y="250" width="110" height="350" fill="{N}"/><rect 
 o.append(f'<g id="lone" opacity="0"><ellipse cx="0" cy="0" rx="12" ry="9" transform="rotate(-20)" fill="#ffd9a8"/><rect x="9" y="-46" width="4" height="46" fill="#ffd9a8"/></g>')
 from kit import NOTECARD, NOTEJS, WALLCOL, sign
 SVG = '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(o) + NOTECARD + '</svg>'
-FILMSVG = SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 46 1280 610"', 1)
+FILMSVG = SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 0 1280 720"', 1)
 open('/tmp/claude-0/anim/scene.svg', 'w').write(SVG)
 JS = NOTEJS + r'''
 const TL = __TL__;
@@ -127,7 +127,7 @@ function setT(t) {
   const lo = S('lone'), q = ph(t, K.lone - 1.5, K.dur);
   lo.setAttribute('opacity', t >= K.lone - 1.5 ? Math.sin(Math.PI * q) : 0); lo.setAttribute('transform', `translate(${1221 - 300 * q} ${430 - 120 * q + 18 * Math.sin(q * 9)})`);
   // the line being spoken
-  const sub = document.getElementById('sub'); if (sub) { const l = L.find(l => l.text && t >= l.t0 && t < l.t1 + .25); sub.textContent = l ? l.text.replace(/[⟨⟩]/g, '') : ''; sub.style.opacity = l ? 1 : 0; }
+  const sub = document.getElementById('sub'); if (sub) { const l = L.find(l => l.text && l.text !== 'Pause and try.' && t >= l.t0 && t < l.t1 + .25); sub.textContent = l ? subText(l, t) : ''; sub.style.opacity = l ? 1 : 0; }
   const ttl = document.getElementById('ttl'); if (ttl) ttl.style.opacity = t < K.intro - .4 ? 1 : Math.max(0, 1 - (t - K.intro + .4) / .6);
 }
 window.setT = setT;
@@ -137,12 +137,11 @@ open('/tmp/claude-0/anim/scene.js', 'w').write(JS)
 FONTS = '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,500&family=Atkinson+Hyperlegible:wght@400;700&display=swap">'
 NM = open('/tmp/claude-0/lvl/levelstory.py').read()
 film = f'''<!doctype html><html><head><meta charset="utf-8">{FONTS}<style>
-''' + open('/tmp/claude-0/anim/nm.css').read().replace('{','{{').replace('}','}}') + f'''
-html,body{{margin:0;width:1280px;height:720px;overflow:hidden;background:#fff}} #scene{{width:1280px;height:610px;display:block}}
-#sub{{position:absolute;left:0;right:0;top:610px;height:110px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:6px 60px;background:#fff;border-top:3px solid {N};font:500 24px/1.32 'Atkinson Hyperlegible',sans-serif;color:{N};text-align:center;transition:none}}
+''' + open('/tmp/claude-0/anim/nm.css').read() + f'''
+html,body{{margin:0;width:1280px;height:720px;overflow:hidden;background:#fff}} #scene{{width:1280px;height:720px;display:block}}
 #ttl{{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.9);color:{N}}}
 #ttl small{{font:700 18px 'Atkinson Hyperlegible',sans-serif;letter-spacing:.24em;text-transform:uppercase;color:{C}}} #ttl b{{font:900 72px 'Playfair Display',serif;margin-top:8px}} #ttl i{{font:italic 500 26px 'Playfair Display',serif;margin-top:10px;color:#6d6f9c}}
-</style></head><body>{SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 46 1280 610"', 1)}<div id="ttl"><small>The Piano Butler · Beginner · Room 8</small><b>Loud and soft</b><i>The music evening</i></div><div id="sub"></div>
+</style></head><body>{SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 0 1280 720"', 1)}<div id="ttl"><small>The Piano Butler · Beginner · Room 8</small><b>Loud and soft</b><i>The music evening</i></div>
 <script>{JS}</script></body></html>'''
 open('/tmp/claude-0/anim/film.html', 'w').write(film)
 print('ok', len(SVG))

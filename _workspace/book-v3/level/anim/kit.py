@@ -36,10 +36,10 @@ def _wrap2(t):
     if len(t) <= 13 or len(w) < 2: return [t]
     best = min(range(1, len(w)), key=lambda i: max(len(' '.join(w[:i])), len(' '.join(w[i:]))))
     return [' '.join(w[:best]), ' '.join(w[best:])]
-def plate(x, y, emblem, year, place, line):   # an oval portrait whose picture gives way to the history card in "From music history"
+def plate(x, y, emblem, year, place, line, s=1):   # an oval portrait whose picture gives way to the history card in "From music history"
     ls = _wrap2(line); fs = min(16, 200 / max(len(l) for l in ls))
     sub = ''.join(f'<text y="{40 + k * (fs + 3):.0f}" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-size="{fs:.1f}" fill="{N}">{l}</text>' for k, l in enumerate(ls))
-    return (f'<g transform="translate({x} {y})"><ellipse rx="72" ry="90" fill="#fff" stroke="{N}" stroke-width="5"/><ellipse rx="62" ry="80" fill="none" stroke="{N}" stroke-width="1.6"/><g id="emb">{emblem}</g>'
+    return (f'<g transform="translate({x} {y}) scale({s})"><ellipse rx="72" ry="90" fill="#fff" stroke="{N}" stroke-width="5"/><ellipse rx="62" ry="80" fill="none" stroke="{N}" stroke-width="1.6"/><g id="emb">{emblem}</g>'
             f'<g id="hist" opacity="0"><text y="-18" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="{min(30, 190 / max(1, len(year))):.0f}" fill="{N}">{year}</text><text y="12" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-size="{min(20, 200 / max(1, len(place))):.0f}" fill="{C}">{place}</text>{sub}</g></g>')
 def door(): return (f'<g><rect x="1166" y="250" width="110" height="350" fill="{N}"/><rect id="glow" x="1176" y="260" width="90" height="340" fill="#ffd9a8" opacity="0"/>'
                     f'<g id="leaf" transform="translate(1176 0)"><rect x="0" y="260" width="90" height="340" fill="#fff" stroke="{N}" stroke-width="3"/><rect x="12" y="276" width="66" height="130" fill="none" stroke="{N}" stroke-width="2"/><rect x="12" y="424" width="66" height="156" fill="none" stroke="{N}" stroke-width="2"/><circle cx="74" cy="430" r="5" fill="{C}"/></g></g>')
@@ -80,11 +80,29 @@ def clock(x, y0=150, gid='clock'):   # a long-case clock: face at the top, a pen
             f'<circle cx="{x}" cy="{y0 + 54}" r="38" fill="#fff" stroke="{N}" stroke-width="4"/>' + ''.join(f'<circle cx="{x + 30 * math.sin(a * math.pi / 6):.1f}" cy="{y0 + 54 - 30 * math.cos(a * math.pi / 6):.1f}" r="2.6" fill="{N}"/>' for a in range(12))
             + f'<line id="{gid}hh" x1="{x}" y1="{y0 + 54}" x2="{x}" y2="{y0 + 34}" stroke="{N}" stroke-width="4" stroke-linecap="round"/><line id="{gid}mh" x1="{x}" y1="{y0 + 54}" x2="{x + 24}" y2="{y0 + 54}" stroke="{N}" stroke-width="3" stroke-linecap="round"/><circle cx="{x}" cy="{y0 + 54}" r="4" fill="{C}"/>'
             f'<rect x="{x - 30}" y="{y0 + 110}" width="60" height="{600 - y0 - 160}" rx="4" fill="{T}" stroke="{N}" stroke-width="2"/><g id="{gid}pd"><line x1="{x}" y1="{y0 + 112}" x2="{x}" y2="{y0 + 112 + (600 - y0 - 230)}" stroke="{N}" stroke-width="3"/><circle cx="{x}" cy="{y0 + 112 + (600 - y0 - 230)}" r="14" fill="{C}"/></g></g>')
+def nshape(kind, x, y, s=1, gid=None, col=None, ext=''):   # notes drawn as shapes, not font glyphs (her Mac showed empty boxes for the music font)
+    c = col or N; g = f' id="{gid}"' if gid else ''
+    head_f = f'<ellipse cx="0" cy="0" rx="13" ry="9.5" transform="rotate(-20)" fill="{c}"/>'
+    head_o = f'<ellipse cx="0" cy="0" rx="13" ry="9.5" transform="rotate(-20)" fill="#fff" stroke="{c}" stroke-width="4.5"/>'
+    stem = f'<rect x="10" y="-50" width="3.6" height="50" fill="{c}"/>'
+    if kind == 'crotchet': b = head_f + stem
+    elif kind == 'minim': b = head_o + stem
+    elif kind == 'dminim': b = head_o + stem + f'<circle cx="24" cy="-2" r="4.2" fill="{c}"/>'
+    elif kind == 'semibreve': b = f'<ellipse cx="0" cy="0" rx="16" ry="10.5" fill="#fff" stroke="{c}" stroke-width="5"/>'
+    elif kind == 'breve': b = f'<ellipse cx="0" cy="0" rx="16" ry="10.5" fill="#fff" stroke="{c}" stroke-width="5"/><rect x="-23" y="-14" width="3.5" height="28" fill="{c}"/><rect x="-29" y="-14" width="3.5" height="28" fill="{c}"/><rect x="19.5" y="-14" width="3.5" height="28" fill="{c}"/><rect x="25.5" y="-14" width="3.5" height="28" fill="{c}"/>'
+    return f'<g transform="translate({x} {y}) scale({s})"><g{g} {ext}>{b}</g></g>'
 def bigtext(x, y, s, size=200, gid=None, font='NM', fill=None, extra=''): return f'<text {f"id={chr(34)}{gid}{chr(34)} " if gid else ""}x="{x}" y="{y}" text-anchor="middle" font-family="{font}" font-size="{size}" fill="{fill or N}" {extra}>{s}</text>'
 NOTECARD = (f'<g id="notecard" opacity="0"><rect x="250" y="150" width="780" height="330" rx="8" fill="#fff" stroke="{N}" stroke-width="5"/><rect x="262" y="162" width="756" height="306" rx="4" fill="none" stroke="{N}" stroke-width="1.5"/>'
             f'<g transform="translate(250 196) scale(1.25)">{RAB}</g><text x="470" y="214" font-family="Atkinson Hyperlegible,sans-serif" font-weight="700" font-size="17" letter-spacing="4" fill="{C}">THE BUTLER’S NOTE</text>'
             f'<foreignObject x="466" y="232" width="530" height="220"><div xmlns="http://www.w3.org/1999/xhtml" id="notetext" style="font-family:Playfair Display,Georgia,serif;font-style:italic;font-weight:700;font-size:34px;line-height:1.3;color:{N}"></div></foreignObject></g>')
 NOTEJS = r"""
+function subText(l, t) {   // long lines play as short subtitle chunks, timed by length (her 14 Nov: subtitles inside the floor)
+  const s = l.text.replace(/[⟨⟩]/g, ''); if (s.length <= 104) return s;
+  let parts = s.match(/[^.!?;:]+[.!?;:]+[”’"]?\s*|[^.!?;:]+$/g) || [s];
+  parts = parts.flatMap(p => p.length > 120 ? (p.match(/[^,]+,\s*|[^,]+$/g) || [p]) : [p]);
+  const ch = []; let cur = ''; for (const p of parts) { if ((cur + p).length > 104 && cur) { ch.push(cur.trim()); cur = p; } else cur += p; } if (cur.trim()) ch.push(cur.trim());
+  const tot = ch.reduce((a, c) => a + c.length, 0), f = Math.min(.999, Math.max(0, (t - l.t0) / Math.max(.1, l.t1 - l.t0))) * tot; let acc = 0;
+  for (const c of ch) { acc += c.length; if (f < acc) return c; } return ch[ch.length - 1]; }
 function noteCard(t, Kt) { const nc = document.getElementById('notecard'); if (!nc) return; const L = TL.lines, i = L.findIndex(l => l.text && /^The Butler’s note/.test(l.text));
   const on = i >= 0 && t >= L[i].t0; nc.setAttribute('opacity', on ? Math.min(1, (t - L[i].t0) / .6) : 0);
   const nt = document.getElementById('notetext'); if (nt && i >= 0 && L[i + 1]) nt.textContent = L[i + 1].text; }
@@ -104,7 +122,7 @@ function common(t) {
   S('dim').setAttribute('opacity', t >= K.tease ? .55 * ph(t, K.tease, K.tease + .6) : 0); noteCard(t);
   const op = t >= K.tease ? ph(t, K.door, K.door + 3.5) : 0; const lf = S('leaf'); if (lf) { lf.setAttribute('transform', `translate(1176 0) scale(${1 - .72 * op} 1)`); S('glow').setAttribute('opacity', op * .95); }
   const lo = S('lone'); if (lo) { const q = ph(t, K.lone - 1.5, K.dur); lo.setAttribute('opacity', t >= K.lone - 1.5 && t >= K.tease ? Math.sin(Math.PI * q) : 0); lo.setAttribute('transform', `translate(${1221 - 300 * q} ${430 - 120 * q + 18 * Math.sin(q * 9)})`); }
-  const sub = document.getElementById('sub'); if (sub) { const l = L0.find(l => l.text && t >= l.t0 && t < l.t1 + .25); sub.textContent = l ? l.text.replace(/[⟨⟩]/g, '') : ''; sub.style.opacity = l ? 1 : 0; }
+  const sub = document.getElementById('sub'); if (sub) { const l = L0.find(l => l.text && l.text !== 'Pause and try.' && t >= l.t0 && t < l.t1 + .25); sub.textContent = l ? subText(l, t) : ''; sub.style.opacity = l ? 1 : 0; }
   const ttl = document.getElementById('ttl'); if (ttl) ttl.style.opacity = t < K.intro - .4 ? 1 : Math.max(0, 1 - (t - K.intro + .4) / .6);
 }
 function notesFX(t, n, x0, w, y0, rise, rate, dark) { for (let k = 0; k < 10; k++) { const g = S('nt' + k); if (!g) continue; if (k >= n) { g.setAttribute('opacity', 0); continue; }
@@ -115,7 +133,9 @@ def film(svg, js, room, title, sub):
     i = f.index('<svg id="scene"'); j = f.index('</svg>', i) + 6; f = f[:i] + svg + f[j:]
     f = re.sub(r'<small>.*?</small><b>.*?</b><i>.*?</i>', f'<small>The Piano Butler · Beginner · Room {room}</small><b>{title}</b><i>{sub}</i>', f, count=1)
     i = f.index('<script>') + 8; j = f.index('</script>', i); f = f[:i] + js + f[j:]
-    return f.replace('<svg id="scene" viewBox="0 0 1280 720"', '<svg id="scene" viewBox="0 46 1280 610"', 1)
+    return f.replace('<svg id="scene" viewBox="0 0 1280 720"', '<svg id="scene" viewBox="0 0 1280 720"', 1)
+SUBFO = (f'<foreignObject class="deco" x="60" y="610" width="1160" height="104"><div xmlns="http://www.w3.org/1999/xhtml" id="sub" style="box-sizing:border-box;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:6px 34px;background:rgba(255,255,255,.95);border:3px solid {N};border-radius:12px;font:500 26px/1.3 \'Atkinson Hyperlegible\',sans-serif;color:{N}"></div></foreignObject>')   # her 14 Nov: subtitles play inside the chequered floor
+NOTECARD = NOTECARD + SUBFO
 def scene(parts): return '<svg id="scene" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">' + ''.join(parts) + NOTECARD + '</svg>'
 
 
