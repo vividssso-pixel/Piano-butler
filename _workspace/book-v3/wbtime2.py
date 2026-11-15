@@ -130,16 +130,16 @@ B3 = tp('Use', 'How long is a note?', 'How long is a note?', 'A tie can cross a 
 {ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a dotted minim', 'a dotted crotchet', 'a tie', 'a rest of one whole bar']))}''', 6, 40)
 
 # ---------- 4 Time signatures ----------
-sc = [ts(3, 4), ts(6, 8), ts(2, 2), ts(9, 8), ts(4, 4), ts(12, 8), ts(3, 8), ts(6, 4)]
-scrows = ''.join(f'<div class="scc">{x}<span class="sel">simple · compound</span><span class="add">beats {BOX}</span></div>' for x in sc)
+sc = [ts(3, 4), ts(2, 2), ts(4, 4), ts(3, 8), ts(2, 4), ts(3, 2), ts(4, 8), ts(4, 2)]   # her 14 Nov proofread: simple time only here; compound comes on p. 62
+scrows = ''.join(f'<div class="scc">{x}<span class="add">beats {BOX}</span></div>' for x in sc)
 A4 = tp('Learn', 'Time signatures', 'Time signatures', 'Top number: how many counts in a bar. Bottom number: which note is one count.', f'''
 {ex(1, 'Which time signature?', 1, 'Each line is one full bar. Write a time signature that fits.', grid([cell(k, 'time signature ' + BOX, 60) for k in ('wt1', 'wt2', 'wt3', 'wt4', 'wt5', 'wt6')], 3))}
-{ex(2, 'Simple or compound?', 2, 'Circle simple or compound, then write how many beats are in each bar.', f'<div class="scg">{scrows}</div>')}
-{ex(3, 'What does it mean?', 1, 'Complete each sentence.', '<div class="sent"><p>In 3/4 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al inl') + '.</p><p>In 6/8 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al inl') + '.</p><p>C means the same as ' + BOX + ' ; ¢ means the same as ' + BOX + ' .</p></div>')}''', 7, 42)
+{ex(2, 'How many beats?', 2, 'Write how many beats are in each bar: the top number.', f'<div class="scg">{scrows}</div>')}
+{ex(3, 'What does it mean?', 1, 'Complete each sentence.', '<div class="sent"><p>In 3/4 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al inl') + '.</p><p>In 2/2 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al inl') + '.</p><p>C means the same as ' + BOX + ' ; ¢ means the same as ' + BOX + ' .</p></div>')}''', 7, 42)
 TRAINEX = ex(3, 'Book every seat', 2, 'Each carriage is one bar of the time signature on the engine. Draw one note or rest in the dashed seats so every seat is booked. The first is done.', wtrain([[('n', 2, 'm'), ('d', 1, 'c')], [('n', 1, 'c'), ('x', 2, '')], [('r', 1, 'c'), ('x', 2, '')]], '3/4') + wtrain([[('n', 2, 'm'), ('x', 2, '')], [('n', 1, 'c'), ('n', 1, 'c'), ('x', 2, '')]], '4/4'))
-B4 = tp('Use', 'Time signatures', 'Time signatures', 'In compound time each beat is a dotted note, divided into three.', f'''
+B4 = tp('Use', 'Time signatures', 'Time signatures', 'Beam quavers so you can see each beat: one group for each beat.', f'''
 {ex(1, 'Add the bar lines', 2, 'Draw a bar line after every full bar, and a final bar line at the end.', wx('wb1', 50) + wx('wb2', 50))}
-{ex(2, 'Beam them', 3, 'The same six quavers in two time signatures. Join them with beams to show the beats: in twos for 3/4, in threes for 6/8.', grid([cell('wbm2', '3 beats', 64), cell('wbm1', '2 beats', 64)], 2))}
+{ex(2, 'Beam them', 3, 'Join the quavers with beams to show the beats: one pair for each crotchet beat.', grid([cell('wbm2', '3 beats', 64), cell('wbm1', '2 beats', 64)], 2))}
 {TRAINEX}''', 8, 42)
 
 # ---------- 5 Compound and irregular time ----------
@@ -201,7 +201,7 @@ rsum = ''.join('<div class="sum">' + ' <span class="pl">+</span> '.join(gin('n',
 R = wpage(f'''<div class="kick">Time · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 19: one mark for each answer.</p>
 {ex(1, 'Name the notes', 1, 'Write the name of each note.', '<div class="nm4">' + ''.join(f'<div>{gcell("n", k, 40)}{LINE}</div>' for k in ('m', 'q', 'dc', 'sb')) + '</div>')}
 {ex(2, 'How many beats?', 1, 'Crotchet = 1 beat.', f'<div class="sums">{rsum}</div>')}
-{ex(3, 'Time signatures', 2, 'Write a time signature for each bar, then circle the compound ones (one more mark).', grid([cell(k, 'time signature ' + BOX, 56) for k in ('wt3', 'wt5', 'wt6')], 3))}
+{ex(3, 'Time signatures', 2, 'Write a time signature for each bar, then circle the compound ones (one more mark).', grid([cell(k, 'time signature ' + BOX, 56) for k in ('wrt1', 'wrt2', 'wrt3')], 3))}
 {ex(4, 'Count it', 2, 'Write a count in every box.', wx('wrev', 74))}
 {ex(5, 'True or false?', 2, 'Circle T or F.', ''.join(f'<div class="row">{t}<span class="tf">T &nbsp; F</span></div>' for t in ('A tie joins two notes of different pitches.', '6/8 has two beats in a bar.', 'In 4/4, a beam may cross the middle of the bar.')))}
 <div class="score">Score <span class="ab"></span> / 20</div>''', 17, None)
@@ -214,9 +214,9 @@ ans = [('p. 1', 'Slow to fast: 4, 1, 3, 2 (60 slowest, 120 fastest). Strong beat
        ('p. 3', 'Draw it: minim, quaver, crotchet, semibreve. Table: crotchet 1, crotchet rest; minim 2, minim rest; quaver ½, quaver rest; semiquaver ¼, semiquaver rest. Why a whole note: minim = half note, 2 beats; crotchet = quarter note, 1 beat; quaver = eighth note, ½ beat; semiquaver = sixteenth note, ¼ beat.'),
        ('p. 4', 'Stems: up on the right below the middle line, down on the left on or above it. Finish with a rest: minim, crotchet, minim, crotchet. Empty slices: minim rest 2 beats (2 pizzas), crotchet rest 1 beat (1 pizza), quaver rest ½ beat (half a pizza).'),
        ('p. 5', 'Sums: 3, 1½, 4, 6, 2, 2. Complete: crotchet, crotchet, crotchet, quaver, quaver, quaver. Ode to Joy: 1 2 3 4 · 1–2 & 3–4.'),
-       ('p. 6', 'Tie or dot: dotted minim, dotted crotchet, dotted semibreve. Mistake: bar 2 has 5 beats.'),
-       ('p. 7', 'Time signatures: 3/4, 2/4, 6/8 (3/4 also fits), 4/4, 5/4, 9/8. Compound: 6/8, 9/8, 12/8, 6/4 (beats 2, 3, 4, 2). Simple: 3/4 (3), 2/2 (2), 4/4 (4), 3/8 (3). 3/4: 3 crotchet beats; 6/8: 2 dotted-crotchet beats; C = 4/4, ¢ = 2/2.'),
-       ('p. 8', 'Bar lines: 3/4 after notes 3, 5 and 6, final bar line after note 9; 4/4 after notes 3 and 7, final bar line after note 8. Beams: 3/4 in three pairs; 6/8 in two groups of three. Seats: 3/4 carriage 1 a crotchet, carriage 2 a minim, carriage 3 a minim (or a minim rest); 4/4 carriage 1 a minim (or a minim rest), carriage 2 a minim (or a minim rest).'),
+       ('p. 6', 'Tie or dot: dotted minim, dotted crotchet, dotted quaver. Mistake: bar 2 has 5 beats.'),
+       ('p. 7', 'Time signatures: 3/4, 2/4, 2/2 (4/4 also fits), 4/4, 3/8, 3/2. Beats: 3/4 3, 2/2 2, 4/4 4, 3/8 3, 2/4 2, 3/2 3, 4/8 4, 4/2 4. 3/4: 3 crotchet beats; 2/2: 2 minim beats; C = 4/4, ¢ = 2/2.'),
+       ('p. 8', 'Bar lines: 3/4 after notes 3, 5 and 6, final bar line after note 9; 4/4 after notes 3 and 7, final bar line after note 8. Beams: 3/4 in three pairs; 2/4 in two pairs. Seats: 3/4 carriage 1 a crotchet, carriage 2 a minim (or a minim rest), carriage 3 a minim (or a minim rest); 4/4 carriage 1 a minim (or a minim rest), carriage 2 a minim (or a minim rest).'),
        ('p. 9', '6/8: 1 2 3 4 5 6 · 1 4. Beams: 3/4 (pairs), 6/8 (threes). 5/4: 1 2 3 1 2. 7/8: 1 2 1 2 1 2 3. Compound beats: 6/8 2, 9/8 3, 12/8 4.'),
        ('p. 10', 'Bar lines: 9/8 after the 3rd and 8th notes; 5/4 after the 4th and 9th notes. 3 + 3 + 2: 1 2 3 1 2 3 1 2.'),
        ('p. 11', 'Grouping: ✓ ✗ ✓ ✗. Pizza: a triplet, a third of a beat each, 1 & a; four semiquavers, a quarter each, 1 e & a. Triplet: 1 & a 2. Semiquavers: 1 e & a 2 · 1 e & a 2.'),
@@ -245,6 +245,6 @@ css += f'''
 '''
 pages = [A1, B1, A2, B2, A3, B3, A4, B4, A5, B5, A6, B6, A7, B7, A8, B8, R, PR, AN]
 import sys as _s; _s.path.insert(0, '/tmp/claude-0/pk'); import importlib, firstdone; importlib.reload(firstdone)
-FIRST = {'Which time signature?': [('fill', '3/4')], 'Finish with a rest': [('fill', 'minim rest')], 'Tie or dot?': [('fill', 'dotted minim')], 'Simple or compound?': [('both', [('ring', 'simple'), ('fill', '3')])], '3/4 or 6/8?': [('fill', '3/4')], 'Beats in compound time': [('fill', '2')], 'Good grouping?': [('ring', '✓')], 'Slow to fast': [('fill', '4')]}
+FIRST = {'Which time signature?': [('fill', '3/4')], 'Finish with a rest': [('fill', 'minim rest')], 'Tie or dot?': [('fill', 'dotted minim')], 'How many beats?': [('fill', '3'), None], '3/4 or 6/8?': [('fill', '3/4')], 'Beats in compound time': [('fill', '2')], 'Good grouping?': [('ring', '✓')], 'Slow to fast': [('fill', '4')]}
 open('/mnt/user-data/outputs/house-rooms/workbook-time2.html', 'w').write(_LG(firstdone.apply(f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{"".join(pages)}</body></html>', FIRST).replace('</style></head>', firstdone.CSS + '</style></head>', 1)))
 print('ok', len(pages))

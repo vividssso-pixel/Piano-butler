@@ -1,6 +1,6 @@
 const t = (en) => en; const LANG = 'en';
 const pEase = (k) => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
-const PEN_N = '#26296b', PEN_C = '#e4572e', PEN_P = '#fffdf7', PEN_G = '#2e8a6e';
+const PEN_N = '#26296b', PEN_C = '#e4572e', PEN_P = '#ffffff', PEN_G = '#2e8a6e';
 const PEN_FIELD = [[[0.155563, -0.117238, 4.873777, 0.322693], [-0.041694, 0.127865, 5.488698, 0.322693], [0.043848, -0.091346, 5.008135, 0.322693], [-0.055961, 0.161683, 1.7494, 0.322693], [-0.130771, 0.04701, 3.17017, 0.322693], [0.435705, -0.012322, 4.980442, 0.145212], [0.449899, -0.031258, 1.352824, 0.145212], [-0.265623, -0.226978, 0.276096, 0.145212], [-0.320598, -0.030079, 2.929259, 0.145212]], [[-0.164339, -0.173307, 3.230296, 0.322693], [0.00274, 0.175436, 0.074104, 0.322693], [-0.046147, -0.121047, 1.260449, 0.322693], [0.156213, 0.003666, 5.215344, 0.322693], [-0.013664, 0.123067, 5.53129, 0.322693], [0.244339, -0.349289, 4.019462, 0.145212], [0.400563, 0.259517, 3.400107, 0.145212], [0.294099, -0.307948, 2.269889, 0.145212], [0.415175, 0.162125, 2.435562, 0.145212]]];
 function penField(x, y) {
   const f = (cc) => { let v = 0; for (let i = 0; i < cc.length; i++) { const c = cc[i]; v += c[3] * Math.sin(c[0] * x + c[1] * y + c[2]); } return v; };
@@ -301,7 +301,7 @@ function penBakeList(list, hatch, shift, step = 4.6, small = 17, chr = false) {
     if (e.k !== 'tx' && !(chr || e.ch)) { out += penPlain(e, hatch); return; }   // not a character: clean and straight
     if (e.k === 'tx') { out += '<text x="' + pFix(e.x) + '" y="' + pFix(e.y) + '" text-anchor="' + e.anchor + '" font-size="' + e.size + '" font-weight="' + e.weight + '" fill="' + e.fill + '" font-family="Inter,sans-serif"'
       + (e.serif || e.italic ? ' style="' + (e.serif ? "font-family:'Playfair Display',Georgia,serif;" : '') + (e.italic ? 'font-style:italic;' : '') + '"' : '')
-      + (e.halo ? ' stroke="#fffdf7" stroke-width="2.4" stroke-linejoin="round" paint-order="stroke"' : '') + '>' + penEsc(e.text) + '</text>'; return; }
+      + (e.halo ? ' stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round" paint-order="stroke"' : '') + '>' + penEsc(e.text) + '</text>'; return; }
     let box;
     const subs = e.k === 'hr' ? null : penGeom(e);
     const sc = e.m ? Math.sqrt(Math.abs(e.m[0] * e.m[3] - e.m[1] * e.m[2])) || 1 : 1;

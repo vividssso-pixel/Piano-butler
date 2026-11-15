@@ -55,7 +55,7 @@ Q7 = tp('Learn', 'The staff and the keyboard', 'The staff and the keyboard', 'Ev
 {ex(2, 'Count from Middle C', 1, 'Count the notes, both ends included. The first is done.', tbl(['From', 'To', 'Notes'], [['Middle C', 'up to treble G', D7('5')], ['Middle C', 'down to bass F', BOX], ['Middle C', 'up to A', BOX], ['Middle C', 'down to E', BOX], ['G', 'up to the next G', BOX]], ['30%', '40%', '30%']))}
 {ex(3, 'Mirror notes', 1, 'Complete each sentence.', sent7([f'Treble G and bass F are both note {BOX} from Middle C.', f'Treble G is on line {BOX} of the treble staff; bass F is on line {BOX} of the bass staff.']))}''', 5, 'P3')
 Q8 = tp('Use', 'The staff and the keyboard', 'The staff and the keyboard', 'Middle C can be written in either staff: the hand that plays it chooses.', f'''
-{ex(1, 'From the key to the page', 2, 'Count up from Middle C, then write the note’s name and its place on the staff. The first is done.', tbl(['Key', 'Name', 'Place on the treble staff'], [['the 2nd white key up from Middle C', D7('D'), D7('the space below the staff')], ['the 3rd white key up', BOX, LINE], ['the 5th white key up', BOX, LINE], ['the 8th white key up', BOX, LINE]], ['44%', '16%', '40%']))}
+{ex(1, 'From the key to the page', 2, 'Count up from Middle C (count Middle C as 1), then write the note’s name and its place on the staff. The first is done.', tbl(['Key', 'Name', 'Place on the treble staff'], [['the 2nd white key up from Middle C', D7('D'), D7('the space below the staff')], ['the 3rd white key up', BOX, LINE], ['the 5th white key up', BOX, LINE], ['the 8th white key up', BOX, LINE]], ['44%', '16%', '40%']))}
 {ex(2, 'Draw it', 2, 'Draw each note as a semibreve, in the one place on the staff where it fits.', grid([pc('blank_t', t, 58) for t in ('G on a line', 'C in a space', 'E on a line', 'F in a space')] + [pc('blank_b', t, 58) for t in ('A in a space', 'B on a line', 'G on a line', 'E in a space')], 4))}
 {ex(3, 'True or false?', 1, 'Circle T or F.', tfrows(('D sits in the space just below the treble staff.', 'Middle C sits on a ledger line of its own.', 'One step on the staff can skip a white key.')))}
 {ex(4, 'Play it', 1, 'Play Middle C and walk up the white keys, saying each name and picturing it climbing the staff: line, space, line, space. Tick a circle each day.', ticks())}''', 6, 'P3+1')
@@ -120,11 +120,11 @@ qans = [('p. 1', 'Groups (A to G, three octaves): twos 3, threes 2 (the single b
         ('p. 5', 'Keys: 1 E, 2 G, 3 A, 4 E, 5 G, 6 C (Treble C). Count: 5, 5, 6, 6, 8 (an octave). Mirror: 5; line 2, line 4.'),
         ('p. 6', 'Key to page: E, the bottom line; G, line 2; C (Treble C), space 3. True or false: T, T, F. Draw it: treble G line 2, C space 3, E line 1, F space 1; bass A space 1, B line 2, G line 1, E space 3.'),
         ('p. 7', 'Treble spaces F A C E; bass lines G B D F A; bass spaces A C E G. Step or skip: step, skip, step, skip, skip, step. Treble: G E A C F D B E.'),
-        ('p. 8', 'Bass: F A C G E B D A. Words: BAG, FACE, EGG, CAGE, BED, CAFE, BAD, CAGE.'),
+        ('p. 8', 'Bass: F A C G E B D A. Words: BAG, FACE, EGG, CAGE, BED, CAFE, BAD, FADE.'),
         ('p. 9', 'Ledger lines: A, C, B, C · C, E, B, D. Step out: G · A · B; F · E · D; B · Middle C · D. T, F (nearest), T, F (it is E).'),
         ('p. 10', 'First ledger lines: Middle C, A, E. Middle C: below, above, the same key. Two names: space 2 treble A, bass C; line 5 treble F, bass A; space 4 treble E, bass G.'),
         ('p. 11', 'Signs: sharp, the very next key to the right; flat, the very next key to the left; natural, cancels a sharp or flat. Black keys: 2 D♯/E♭, 3 F♯/G♭, 4 G♯/A♭, 5 A♯/B♭. Notes: F♯, B♭, C♯, E♭, G♯, A♭, F♯, B♭.'),
-        ('p. 12', 'Bar: 1 F♯, 2 G, 3 F♯, 4 F (natural), 5 F. Sharp / flat: E♯ = F (white) / E♭ (black) · F♯ (black) / F♭ = E (white) · G♯ / G♭ (black) · B♯ = C (white) / B♭ (black). Enharmonics: D♭, D♯, F♯, B♭, F, B.'),
+        ('p. 12', 'Bar: 1 F♯, 2 G, 3 F♯, 4 F (natural), 5 F. Sharp / flat: E♯ = F (white) / E♭ (black) · F♯ (black) / F♭ = E (white) · G♯ (black) / G♭ (black) · B♯ = C (white) / B♭ (black). Enharmonics: D♭, D♯, F♯, B♭, F, B.'),
         ('p. 13', 'S, T, S, T, T, T. Up or down: F, E, C, B, E, G. True or false: T, F, T, T. Find them: E – F and B – C.'),
         ('p. 14', 'Numbers: 3rd, 5th, 2nd, 6th, 4th, octave, 7th, 3rd. Melodic, harmonic, harmonic, melodic. Note above: E, A, B, E, A, F.'),
         ('p. 15', 'Between: 3, 2, 3, 2, 6, 4. 3rds: 3 M, 2 m, 2 m, 3 M, 3 M, 2 m. Sizes: 3, 4, 6, 7, 8, 11.'),
@@ -132,7 +132,7 @@ qans = [('p. 1', 'Groups (A to G, three octaves): twos 3, threes 2 (the single b
         ('p. 17', 'E, C (Bass C), F♯, G · F, 8, Highest C · F (a semitone), T, T.')]
 QA = _wp7(f'''<div class="kick">Pitch · Answers</div><h1>Answers</h1>
 {tbl(['Page', 'Answers'], [[p, a] for p, a in qans], ['12%', '88%'], 'ansT')}
-<p class="sm">“Draw it”, “in your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 17, None)
+<p class="sm">“In your music”, listening and playing have no single answer to copy: check them at the piano with your teacher, or with the online lessons.</p>''', 17, None)
 pages = [Q1, Q2, Q3, Q4, Q7, Q8, Q5, Q6, QL, QL2, Q9, Q10, Q11, Q12, Q13, Q14, QR, QP, QA]
 pages = [re.sub(r'<div class="foot"><span>\d+</span>', f'<div class="foot"><span>{k + 1}</span>', pg, count=1) for k, pg in enumerate(pages)]
 FIRST.update({'Major or minor 3rd?': [('both', [('fill', '3'), ('ring', 'M')])], 'Which key?': [('fill', 'E')], 'Treble or bass?': [('ring', 'treble')]})

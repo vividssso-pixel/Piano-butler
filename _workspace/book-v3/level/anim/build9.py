@@ -42,8 +42,8 @@ o.append(f'<g id="clara" transform="translate(-160 0)">{legs}{dress}{arm}{head}<
 # what she hears: notes at the top of the door for high, at the bottom for low; two ladders for the same tune
 def note(i, col=N): return f'<g id="hn{i}" opacity="0"><ellipse cx="0" cy="0" rx="12" ry="9" transform="rotate(-20)" fill="{col}"/><rect x="9" y="-46" width="4" height="46" fill="{col}"/></g>'
 o.append(''.join(note(i) for i in range(6)))
-o.append(f'<text id="ans" x="520" y="300" font-family="Playfair Display,serif" font-weight="900" font-size="64" fill="{C}" opacity="0"></text>')
-o.append(f'<g id="same" opacity="0">' + ''.join(f'<g transform="translate({x} 0)">' + ''.join(f'<circle cx="{k * 22}" cy="{200 - k * 18}" r="9" fill="{N}"/>' for k in range(3)) + '</g>' for x in (500, 600)) + f'<text x="575" y="196" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="48" fill="{C}">=</text></g>')
+o.append(f'<text id="ans" x="600" y="300" font-family="Playfair Display,serif" font-weight="900" font-size="64" fill="{C}" opacity="0"></text>')
+o.append(f'<g id="same" opacity="0">' + ''.join(f'<g transform="translate({x} 0)">' + ''.join(f'<circle cx="{k * 22}" cy="{200 - k * 18}" r="9" fill="{N}"/>' for k in range(3)) + '</g>' for x in (600, 730)) + f'<text x="690" y="196" text-anchor="middle" font-family="Playfair Display,serif" font-weight="900" font-size="48" fill="{C}">=</text></g>')
 # the Butler's word in his book
 o.append(f'<g id="book" opacity="0" transform="translate(-170 0)"><rect x="700" y="210" width="190" height="96" rx="6" fill="#fff" stroke="{N}" stroke-width="3"/><line x1="795" y1="214" x2="795" y2="302" stroke="{N}" stroke-width="2"/><text x="795" y="272" text-anchor="middle" font-family="Playfair Display,serif" font-style="italic" font-weight="700" font-size="34" fill="{C}">Correct.</text></g>')
 o.append(sign('EAR'))
@@ -62,7 +62,7 @@ const ph = (t, a, b) => Math.max(0, Math.min(1, (t - a) / (b - a)));
 const S = id => document.getElementById(id);
 const L0 = TL.lines, F = (re) => L0.find(l => l.text && re.test(l.text)), PI = L0.filter(l => l.who === 'piano');
 const K = { intro: L0[0].t0, tune: PI[0].t0, high: PI[1].t0, highA: F(/^High\./).t0, low: PI[2].t0, lowA: F(/^Low\./).t0, same1: PI[3].t0, same2: PI[4].t0, sameA: F(/same tune, twice/).t0,
-  end: F(/^A true story from music history/).t0, open: F(/^When the playing stops/).t0, word: F(/writes one word/).t0, tease: F(/^The Butler’s note/).t0, pre: 1e9, dur: TL.dur };
+  end: (F(/^A true story from music history/) || F(/^When the playing stops/)).t0, open: F(/^When the playing stops/).t0, word: F(/writes one word/).t0, tease: F(/^The Butler’s note/).t0, pre: 1e9, dur: TL.dur };
 function setT(t) {
   // the light under the door breathes while someone plays
   const playing = (t >= K.tune && t < K.tune + 4) || (t >= K.high && t < K.high + 1.6) || (t >= K.low && t < K.low + 1.6) || (t >= K.same1 && t < K.same2 + 2.2);
@@ -95,7 +95,7 @@ function setT(t) {
   const pg = t >= K.pre ? ph(t, K.pre, K.pre + 3) : 0;
   S('pglow').setAttribute('opacity', pg); S('pdoor').setAttribute('transform', `translate(${1220 * .0} 0) scale(${1 - .6 * pg} 1)`); S('pdoor').style.transformBox = 'fill-box'; S('pdoor').style.transformOrigin = 'left center';
   S('plbl').setAttribute('opacity', pg);
-  const sub = document.getElementById('sub'); if (sub) { const l = L0.find(l => l.text && t >= l.t0 && t < l.t1 + .25); sub.textContent = l ? l.text.replace(/[⟨⟩]/g, '') : ''; sub.style.opacity = l ? 1 : 0; }
+  const sub = document.getElementById('sub'); if (sub) { const l = L0.find(l => l.text && l.text !== 'Pause and try.' && t >= l.t0 && t < l.t1 + .25); sub.textContent = l ? subText(l, t) : ''; sub.style.opacity = l ? 1 : 0; }
   const ttl = document.getElementById('ttl'); if (ttl) ttl.style.opacity = t < K.intro - .4 ? 1 : Math.max(0, 1 - (t - K.intro + .4) / .6);
 }
 window.setT = setT;
@@ -103,7 +103,7 @@ window.setT = setT;
 open('/tmp/claude-0/anim/scene9.js', 'w').write(JS)
 film = open('/tmp/claude-0/anim/film.html').read()
 i = film.index('<svg id="scene"'); j = film.index('</svg>', i) + 6
-film = film[:i] + SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 46 1280 610"', 1) + film[j:]
+film = film[:i] + SVG.replace('viewBox="0 0 1280 720"', 'viewBox="0 0 1280 720"', 1) + film[j:]
 film = film.replace('Room 8</small><b>Loud and soft</b><i>The music evening</i>', 'Room 9</small><b>Ear training</b><i>The door</i>')
 i = film.index('<script>') + 8; j = film.index('</script>', i)
 film = film[:i] + JS + film[j:]
