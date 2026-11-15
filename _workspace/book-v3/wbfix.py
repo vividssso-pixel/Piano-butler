@@ -115,7 +115,7 @@ for f2, fn in (('handbook-before', lambda t: re.sub(r'Workbook pp\.(\u00a0| )1�
                 ('handbook-further', lambda t: re.sub(r'Workbook pp?\.(\u00a0| )[0-9–]+ · ', '', t))):   # Going further is not in this Workbook edition
     t = open(H + f2 + '.html').read(); open(H + f2 + '.html', 'w').write(fn(t))
 p = H + 'handbook-front.html'; s = open(p).read()
-s = s.replace('Draft edition, November 2026', 'First edition, 2026').replace('<p>ISBN: to come</p>', '').replace(' Teachers may copy single Workbook pages for their own students.', '</p>\n<p>This copy is for one buyer and one household: you may print the pages you need for your own use. Teachers who print pages for their students need a teacher licence.')
+s = s.replace('Draft edition, November 2026', 'First edition, 2026').replace('<p>ISBN: to come</p>', '')
 s = s.replace('two pages to write in for every chapter: Learn, then Use', 'pages to write in for every chapter: Learn, then Use (one page for each Scales and keys chapter)')
 open(p, 'w').write(s)
 print('wbfix', OFF, TOTAL, 'handbook pages with workbook refs', nref)
