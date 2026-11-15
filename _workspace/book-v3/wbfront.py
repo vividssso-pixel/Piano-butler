@@ -15,7 +15,7 @@ title = title.replace('<h1 class="fth">Handbook</h1>', '<h1 class="fth">Workbook
 COPY = '''<div class="fcopy">
 <p><b>The Piano Butler Workbook</b><br>First edition, 2026</p>
 <p>Text, music examples and drawings © 2026 Sohyun Park. All rights reserved. No part of this book may be copied, stored or shared, in print or online, without written permission, except short quotations in a review.</p>
-<p>Teachers may copy single Workbook pages for their own students.</p>
+<p>This copy is for one buyer and one household: you may print the pages you need for your own use. Teachers who print pages for their students need a teacher licence.</p>
 <p>The music examples are drawn from works in the public domain (traditional tunes and composers who died more than 70 years ago), newly engraved for this book.</p>
 <p>Piano Butler is independent. It is not affiliated with, or endorsed by, any examination board. Grade levels are a guide to the order in which ideas are usually met.</p>
 <p class="sm">Set in Atkinson Hyperlegible and Playfair Display. Music engraved with Verovio.</p></div>'''
