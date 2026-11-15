@@ -3,7 +3,7 @@
 Prices in AUD. Digital download (PDF). One file of the Handbook part and one of its Workbook pages in each product.
 
 ## Store blurb (top of the shop page)
-Clear, friendly piano theory, one topic at a time. Each part has the Handbook pages (the idea, with pictures and examples) and the Workbook pages (exercises with the first answer done, a review and the answers). Read the whole Handbook free online, with every chapter read aloud, at thepianobutler.com/books/read/. Teachers may copy single Workbook pages for their own students.
+Clear, friendly piano theory, one topic at a time. Each part has the Handbook pages (the idea, with pictures and examples) and the Workbook pages (exercises with the first answer done, a review and the answers). Read the whole Handbook free online, with every chapter read aloud, at thepianobutler.com/books/read/.
 
 ## Products
 | # | Title | Price | Line under the title |
