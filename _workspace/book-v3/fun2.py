@@ -45,7 +45,7 @@ ws = ''.join(f'<div class="wsc">{grid[r][c]}</div>' for r in range(S) for c in r
 clues = [(['m'], 'MINIM'), (['c'], 'CROTCHET'), (['q'], 'QUAVER'), (['sb'], 'SEMIBREVE'), (['rc'], 'REST')]
 cl = ''.join(f'<div class="wcl">{pat(p, 30)}<span class="al"></span></div>' for p, _ in clues)
 add('Rhythm word search', 'Twelve rhythm words are hidden across, down and diagonally. First name the five pictures, then find all twelve words.',
-    f'<div class="wsg">{ws}</div><div class="two" style="grid-template-columns:1.2fr 1fr"><div><h3>Name them</h3><div class="wcg">{cl}</div></div><div><h3>Also find</h3><p class="wl">TIE · DOT · BAR · BEAT · PULSE · TEMPO · TRIPLET</p></div></div>')
+    f'<div class="wsg">{ws}</div><div class="two" style="grid-template-columns:1.2fr 1fr"><div><h3>Name them</h3><div class="wcg">{cl}</div></div><div><h3>Also find</h3><p class="wl">TIE&nbsp;· DOT&nbsp;· BAR&nbsp;· BEAT&nbsp;· PULSE&nbsp;· TEMPO&nbsp;· TRIPLET</p></div></div>')
 
 # 8 Rhythm sudoku (4x4)
 SYM = [['c', 'c'], ['m'], ['q', 'q', 'c'], ['c', 'rc']]
@@ -95,7 +95,7 @@ add('The dice composer', 'Two hundred years ago, composers sold dice games for w
     f'<table class="ht dice"><thead><tr><th></th>' + ''.join(f'<th>{c}</th>' for c in COLS) + f'</tr></thead><tbody>{rows}</tbody></table><h3>My piece</h3>' + staff('4/4', 4) + '<div class="tickrow"><span>Clapped it · Played it · Played it to someone</span>' + ticks(3) + '</div><p class="sm">There are 6 × 6 × 6 × 6 = 1,296 possible pieces.</p>')
 
 # 11 Rhythm menu
-MENU = [('Tea', ['c'], 'tea'), ('Juice', ['c'], 'juice'), ('Coffee', ['q', 'q'], 'cof-fee'), ('Cocoa', ['q', 'q'], 'co-coa'), ('Lemonade', ['q', 'q', 'c'], 'lem-on-ade'), ('Pancakes', ['q', 'q', 'c'], 'pan-cakes'), ('Ice cream', ['c', 'c'], 'ice cream'), ('Watermelon', ['sq', 'sq', 'sq', 'sq'], 'wa-ter-mel-on'), ('Pie', ['m'], 'pie… (long)')]
+MENU = [('Tea', ['c'], 'tea'), ('Juice', ['c'], 'juice'), ('Coffee', ['q', 'q'], 'cof-fee'), ('Cocoa', ['q', 'q'], 'co-coa'), ('Lemonade', ['q', 'q', 'c'], 'lem-on-ade'), ('Spaghetti', ['q', 'q', 'c'], 'spa-ghet-ti'), ('Ice cream', ['c', 'c'], 'ice cream'), ('Watermelon', ['sq', 'sq', 'sq', 'sq'], 'wa-ter-mel-on'), ('Pie', ['m'], 'pie… (long)')]
 menu = ''.join(f'<div class="mi"><b>{n}</b><span class="dots2"></span>{pat(p, 26)}<i>{s}</i></div>' for n, p, s in MENU)
 add('The rhythm café', 'Every dish on the menu has a rhythm: say it and clap it. Then order a meal that fills exactly one bar of 4/4 (4 beats). Write your order and its rhythm, and clap it to the waiter.',
     f'<div class="menu"><div class="mh">Café Rubato · Menu</div>{menu}</div><h3>My orders</h3>' + ''.join(f'<div class="ord"><span class="wn">{i}</span><span class="al"></span><span class="al"></span></div>' for i in range(1, 4)) + '<p class="sm">Make your own menu: your favourite foods, or your family’s names.</p>')

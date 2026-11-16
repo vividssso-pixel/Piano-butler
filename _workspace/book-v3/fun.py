@@ -4,13 +4,27 @@ exec(open('/tmp/claude-0/pk/wbtime2.py').read())
 random.seed(7)
 def g(k, h=26):
     return gin('r', k[1:], h) if k.startswith('r') else gin('n', k, h)
+DUR = {'breve': 8, 'dsb': 6, 'sb': 4, 'dm': 3, 'm': 2, 'dc': 1.5, 'c': 1, 'dq': .75, 'q': .5, 'sq': .25}
+def beamed(keys, h):   # her 16 Nov: quavers beamed in beats, as the Handbook writes them (two quavers, or four semiquavers, one beam group per beat)
+    n = len(keys); W = 100 + (n - 1) * 62; x0 = 30; out = ''
+    for i in range(n): out += f'<text x="{x0 + i * 62:.1f}" y="120" font-family="NM" font-size="100" fill="{N}">{NT["c"]}</text>'
+    xa, xb = x0 + 35 - 3.4, x0 + (n - 1) * 62 + 35
+    out += f'<rect x="{xa:.1f}" y="19" width="{xb - xa:.1f}" height="11" fill="{N}"/>'
+    if keys[0] == 'sq': out += f'<rect x="{xa:.1f}" y="36" width="{xb - xa:.1f}" height="11" fill="{N}"/>'
+    return f'<svg viewBox="0 0 {W} 140" style="height:{h}px;width:{h * W / 140:.0f}px;display:inline-block;vertical-align:-6px;margin:0 2px;overflow:visible">{out}</svg>'
 def pat(keys, h=26, maxw=None):
     if maxw: h = min(h, int((maxw / len(keys) - 2) / 0.72))
-    return '<span class="pat">' + ''.join(g(k, h) for k in keys) + '</span>'
+    out, i, pos = '', 0, 0.0
+    while i < len(keys):
+        k = keys[i]; d = DUR.get(k[1:] if k.startswith('r') else k, 1)
+        if k == 'q' and pos % 1 == 0 and keys[i + 1:i + 2] == ['q']: out += beamed(['q', 'q'], h); i += 2; pos += 1; continue
+        if k == 'sq' and pos % 1 == 0 and keys[i + 1:i + 4] == ['sq'] * 3: out += beamed(['sq'] * 4, h); i += 4; pos += 1; continue
+        out += g(k, h); i += 1; pos += d
+    return '<span class="pat">' + out + '</span>'
 def fpage(kind, title, how, inner, n, foot=True):
     ff = f'<div class="ffoot"><span>{bow}</span><span>More at <b>thepianobutler.com</b></span><span>Free for personal and classroom use. Share the link, not the file. © Piano Butler</span></div>' if foot else ''
     return f'''<section class="pg"><div class="top"><span>PIANO BUTLER · {kind}</span><span>RHYTHM GAMES</span></div><div class="rule"></div>
-<div class="body"><div class="kick">Rhythm game</div><h1>{title}</h1><p class="lead">{how}</p>{inner}</div>{ff}<div class="foot"><span>{n}</span></div></section>'''
+<div class="body"><div class="kick">Rhythm game</div><h1>{title}</h1><p class="lead">{how}</p>{inner}</div>{ff}</section>'''
 bow = f'<svg viewBox="0 0 40 24" style="width:30px;height:18px"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="{N}" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="{N}" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="{C}"/></svg>'
 
 # 1. Colour by beats: the hidden picture is the Piano Butler bow tie
@@ -74,7 +88,7 @@ for pos, i in enumerate(order):
     else: inner = pat(s, 30, maxw=88)
     grid[pos] = f'<div class="bsq{" spc" if isinstance(s, str) else ""}"><span class="bn">{i + 1}</span>{inner}</div>'
 P4 = fpage('FREE PRINTABLE', 'Race to the double bar', 'Two to four players, one die, a counter each. Roll and move. Clap the rhythm on your square while counting aloud: if another player agrees it was right, stay; if not, go back to where you were. First to the final bar wins.',
-           f'<div class="board">{"".join(grid)}</div><div class="rules"><div><b>Start</b> on square 1.</div><div><b>Harder:</b> play the rhythm on the piano instead of clapping, at ♩ = 80.</div><div><b>Team game:</b> one claps, the other counts aloud.</div></div>', 4)
+           f'<div class="board">{"".join(grid)}</div><div class="rules"><div><b>Start</b> on square 1.</div><div><b>Harder:</b> play the rhythm on the piano instead of clapping, at <span style="white-space:nowrap">♩ = 80</span>.</div><div><b>Team game:</b> one claps, the other counts aloud.</div></div>', 4)
 
 css += f'''
 .ffoot{{position:absolute;left:58px;right:58px;bottom:56px;display:flex;align-items:center;gap:12px;border-top:1.5px solid {N};padding-top:9px;font-size:12px;color:#3d4080}} .ffoot span:last-child{{margin-left:auto;color:{MUTE};font-size:10.5px}}
