@@ -10,7 +10,7 @@ def hb_pages(*parts): return sorted({x['pg'] for p in parts for x in NM[p]})
 def wb_pages(*parts): return sorted({x['pg'] for p in parts for x in json.load(open(f'{O}pilot/wb/{p}.map.json'))['pages']})
 def first(part, k): return [x['pg'] for x in NM[part] if x['k'] == k]
 def wb_first(part, k): return [x['pg'] for x in json.load(open(f'{O}pilot/wb/{part}.map.json'))['pages'] if x.get('k') == k]
-HB_FRONT = [1, 3, 4, 17]; WB_FRONT = [1, 2, 3, 4]; AUTHOR = 'Clara Sohyun Park'
+HB_FRONT = [1, 3, 4, 17]; WB_FRONT = [1, 2, 3, 4]; AUTHOR = 'Piano Butler'
 def write(path, reader, pages, title):
     w = PdfWriter()
     for n in pages: w.add_page(reader.pages[n - 1])

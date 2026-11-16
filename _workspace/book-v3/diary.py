@@ -38,7 +38,7 @@ page('''<div class="kick">Before you start</div><h1>How to use this diary</h1><p
 <tr><td><b>Pieces</b></td><td>One line each: which bars, and what to listen for.</td></tr>
 <tr><td><b>Theory</b></td><td>This week’s topic: read it, write it, then play it.</td></tr>
 <tr><td><b>Aural and sight-reading</b></td><td>A few minutes: sing it back, clap it back, read something new.</td></tr></tbody></table>
-<p class="sm" style="margin-top:14px">© 2026 Clara Sohyun Park. Free to print as many copies as you like for yourself, your family or your students. Please share the link, not the file.</p>''', n, z=1.3); n += 1
+<p class="sm" style="margin-top:14px">© 2026 Clara Music Pty Ltd, trading as Piano Butler. Free to print as many copies as you like for yourself, your family or your students. Please share the link, not the file.</p>''', n, z=1.3); n += 1
 lines = lambda k: ''.join('<div class="dl"></div>' for _ in range(k))
 page(f'''<div class="kick">This year</div><h1>About me</h1><div class="dg"><div><div class="dlab">My name</div>{lines(1)}</div><div><div class="dlab">My teacher</div>{lines(1)}</div>
 <div><div class="dlab">Lesson day and time</div>{lines(1)}</div><div><div class="dlab">I started piano</div>{lines(1)}</div></div>
