@@ -17611,6 +17611,27 @@ function HbEar({ r }) {
   </div>);
 }
 function HbRoom({ r }) { return r.ear ? <HbEar r={r}/> : r.review ? <HbReview r={r}/> : <HbRoomMain r={r}/>; }
+// her 16 Nov ("따로 들어가게 하지 말고 바로 드릴이 보이게"): the room's drill plays right in the room, below Read & listen and the
+// Workbook: its own level only, no level or mode buttons, no books strip. A small link still opens it full screen.
+function HbRoomDrill({ r, done, onTick, fallback }) {
+  const d = r.dr[0]; const dd = DRILLS.find(x => x.id === d[0]); const [mode, setMode] = useState('lesson'); const [key, setKey] = useState(0);
+  if (!dd || !dd.concept) return fallback;
+  const href = '?drill=' + d[0] + '&tab=drill' + (d[1] ? '&level=' + d[1] : '') + (d[3] ? '&' + d[3] : '');
+  return (
+    <div className="card" style={{padding:'14px 14px',marginBottom:10}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
+        <span style={{width:30,height:30,borderRadius:'50%',background:done ? 'var(--navy)' : 'var(--coral)',color:'#fff',fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center',flex:'none'}}>{done ? '✓' : 3}</span>
+        <div style={{flex:1}}><div style={{fontSize:16,fontWeight:900,color:'var(--navy)'}}>{t('Drill', '드릴')} · {t(d[2], HB_DR_KO[d[2]] || d[2])}</div>
+          <div style={{fontSize:14,color:'var(--muted)',lineHeight:1.4}}>{t('Ten questions, right here. Best the day after the Workbook, and again the day after that.', '열 문제, 여기서 바로. 워크북 다음 날, 그리고 그다음 날 또.')}</div></div>
+      </div>
+      <div key={key + mode}><ConceptView concept={dd.concept} tab="drill" level={d[1] || (dd.concept.levels[0] || {}).n || 1} mode={mode} locked={true} drillOnly={true} onChange={(u) => { if (u && u.mode) setMode(u.mode); }}/></div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}>
+        <button className="ghost-btn" onClick={onTick}>{done ? t('Done ✓', '했어요 ✓') : t('Mark as done', '했어요')}</button>
+        <button className="ghost-btn" onClick={() => { setMode(mode === 'game' ? 'lesson' : 'game'); setKey(key + 1); }}>{mode === 'game' ? t('Back to lesson mode', '레슨 모드로') : t('Play it as a game', '게임으로 하기')}</button>
+        <a className="ghost-btn" style={{textDecoration:'none',display:'inline-block'}} href={href}>{t('Open full screen', '전체 화면으로')}</a>
+      </div>
+    </div>);
+}
 function HbRoomMain({ r }) {
   const [done, setDone] = useState(() => loadDone()[r.id] || {});
   const tick = (k) => { const all = loadDone(), cur = { ...(all[r.id] || {}) }; cur[k] = !cur[k]; all[r.id] = cur; saveDone(all); setDone(cur); };
@@ -17635,7 +17656,7 @@ function HbRoomMain({ r }) {
     </div>
     <HbRead r={r} done={!!done.read} onDone={() => { if (!loadDone()[r.id] || !loadDone()[r.id].read) tick('read'); }} onTick={() => tick('read')}/>
     <HbWork r={r} done={!!done.wb} onTick={() => tick('wb')}/>
-    {step('drill', 3, t('Drill', '드릴'), t(d[2] + ': ten questions. Best the day after the Workbook, and again the day after that.', (HB_DR_KO[d[2]] || d[2]) + ': 열 문제. 워크북 다음 날, 그리고 그다음 날 또.'), '?drill=' + d[0] + '&tab=drill' + (d[1] ? '&level=' + d[1] : '') + (d[3] ? '&' + d[3] : ''), t('Start the drill', '드릴 시작'), false)}
+    <HbRoomDrill r={r} done={!!done.drill} onTick={() => tick('drill')} fallback={step('drill', 3, t('Drill', '드릴'), t(d[2] + ': ten questions. Best the day after the Workbook, and again the day after that.', (HB_DR_KO[d[2]] || d[2]) + ': 열 문제. 워크북 다음 날, 그리고 그다음 날 또.'), '?drill=' + d[0] + '&tab=drill' + (d[1] ? '&level=' + d[1] : '') + (d[3] ? '&' + d[3] : ''), t('Start the drill', '드릴 시작'), false)}/>
   </div>);
 }
 const HB_ROOM_DRILLS = HB_HOUSE ? HB_ROOMS.map(r => ({ id: r.id, label: r.en + (r.again ? ' · ' + r.again[0] : ''), render: () => <HbRoom r={r}/>, track: 'hb', hbRoom: true })) : [];
