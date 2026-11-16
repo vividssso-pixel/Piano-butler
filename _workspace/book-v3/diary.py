@@ -17,7 +17,10 @@ box = '<span class="fbox"></span>'
 DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 def grid(rows, mins=True):
     th = ''.join(f'<th>{d}</th>' for d in DAYS)
-    tr = ''.join(f'<tr><td><b>{r}</b></td>' + ''.join(f'<td class="c">{box}</td>' for _ in DAYS) + '</tr>' for r in rows)
+    # her 16 Nov: a pupil may have six pieces or more, so 'Piece' rows carry a line to write each piece's name
+    cell = lambda r: '<td><span style="display:inline-block;width:92%;border-bottom:1px solid #c9cbe0;height:18px"></span></td>' if r == 'PIECE' else f'<td><b>{r}</b></td>'
+    tr = ''.join((('<tr><td colspan="8" style="padding-top:8px"><b style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e4572e">My pieces</b></td></tr>') if r == 'PIECES' else
+                  f'<tr>{cell(r)}' + ''.join(f'<td class="c">{box}</td>' for _ in DAYS) + '</tr>') for r in rows)
     if mins: tr += '<tr class="mins"><td><b>Minutes</b></td>' + ''.join('<td></td>' for _ in DAYS) + '</tr>'
     return f'<table class="ht"><colgroup><col style="width:30%">' + '<col style="width:10%">' * 7 + f'</colgroup><thead><tr><th></th>{th}</tr></thead><tbody>{tr}</tbody></table>'
 # cover: the Handbook cover with a new title and line
@@ -33,7 +36,7 @@ page('''<div class="kick">Before you start</div><h1>How to use this diary</h1><p
 <h3>What the rows mean</h3><table class="ht"><colgroup><col style="width:34%"><col style="width:66%"></colgroup><tbody>
 <tr><td><b>30-second check</b></td><td>Sit tall, a round hand, feet flat: before every practice.</td></tr><tr><td><b>Warm-ups</b></td><td>Five-finger patterns or a few slow scales.</td></tr>
 <tr><td><b>This week’s chapter</b></td><td>The Handbook chapter you are learning: listen to it, write its Workbook page, play its drill.</td></tr>
-<tr><td><b>Scales</b></td><td>The scales and arpeggios on your list.</td></tr><tr><td><b>My piece</b></td><td>The hardest bars first, slowly, then the whole piece once.</td></tr><tr><td><b>Something just for fun</b></td><td>A piece you already love, or one you make up.</td></tr></tbody></table>
+<tr><td><b>Scales</b></td><td>The scales and arpeggios on your list.</td></tr><tr><td><b>My pieces</b></td><td>Write each piece on its own line (up to seven). The hardest bars first, slowly, then the whole piece once.</td></tr><tr><td><b>Something just for fun</b></td><td>A piece you already love, or one you make up.</td></tr></tbody></table>
 <p class="sm" style="margin-top:14px">© 2026 Clara Sohyun Park. Free to print as many copies as you like for yourself, your family or your students. Please share the link, not the file.</p>''', n, z=1.36); n += 1
 lines = lambda k: ''.join('<div class="dl"></div>' for _ in range(k))
 page(f'''<div class="kick">This year</div><h1>About me</h1><div class="dg"><div><div class="dlab">My name</div>{lines(1)}</div><div><div class="dlab">My teacher</div>{lines(1)}</div>
@@ -52,9 +55,9 @@ page('<div class="kick">This year</div><h1>Scales and technique</h1><p class="le
      f'<table class="ht"><colgroup><col style="width:36%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup><thead><tr><th>Scale</th><th>Hands separately</th><th>Hands together</th><th>From memory</th><th>At speed</th></tr></thead><tbody>{tr}</tbody></table>', n, z=1.28); n += 1
 for w in range(1, 41):
     page(f'''<div class="wkh"><div class="kick">Week {w}</div><span class="dt">Lesson date ____________</span></div><h1 style="margin-top:2px">My practice week</h1>
-{grid(['30-second check', 'Warm-ups', 'This week’s chapter', 'Scales', 'My piece', 'Something just for fun'])}
-<h3>This week</h3><div class="fwk"><div><b>Chapter</b><span class="fl"></span></div><div><b>Piece</b><span class="fl"></span></div><div><b>One thing to fix</b><span class="fl"></span></div><div><b>What went well</b><span class="fl"></span></div>
-<div><b>My teacher says</b><span class="fl"></span><span class="fl"></span></div><div><b>A question for next lesson</b><span class="fl"></span><span class="fl"></span></div><div><b>Total minutes this week</b><span class="fl"></span></div><div><b>Next week I will…</b><span class="fl"></span></div></div>''', n, z=1.32); n += 1
+{grid(['30-second check', 'Warm-ups', 'This week’s chapter', 'Scales', 'PIECES'] + ['PIECE'] * 7 + ['Something just for fun'])}
+<h3>This week</h3><div class="fwk"><div><b>Chapter</b><span class="fl"></span></div><div><b>Piece to work on most</b><span class="fl"></span></div><div><b>One thing to fix</b><span class="fl"></span></div><div><b>What went well</b><span class="fl"></span></div>
+<div><b>My teacher says</b><span class="fl"></span><span class="fl"></span></div><div><b>A question for next lesson</b><span class="fl"></span><span class="fl"></span></div><div><b>Total minutes this week</b><span class="fl"></span></div><div><b>Next week I will…</b><span class="fl"></span></div></div>''', n, z=1.12); n += 1
 page(f'''<div class="kick">Getting ready</div><h1>A concert or an exam</h1><div class="dg"><div><div class="dlab">What and when</div>{lines(1)}</div><div><div class="dlab">Where</div>{lines(1)}</div></div>
 <h3>Four weeks before</h3><p>Play everything through once a day without stopping. Mark the bars that slip and practise only those.</p>
 <h3>One week before</h3><p>Play for someone every day: a parent, a friend, a toy. Practise walking in, sitting, breathing and bowing.</p>
