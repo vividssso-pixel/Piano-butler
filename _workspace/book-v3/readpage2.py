@@ -88,10 +88,11 @@ for pg in ('17', '18', '19', '20'):
 import sys as _s; _s.path.insert(0, '/tmp/claude-0/tts'); import importlib as _il
 from marks import line_marks, phrase_spans, PM as _PM
 import scripts_new as _SN
-MARKED = {'P1'}
+MARKED = set(_SN.CH)   # her 16 Nov: after the chapter 1 trial, every chapter
 for c in CH:
     if c['k'] not in MARKED or not c.get('clips'): continue
     sc = _SN.CH[c['k']][1]
+    if len(sc) != len(c['clips']): print('clip count differs', c['k'], len(sc), len(c['clips']))
     for ci_, cl in enumerate(c['clips']):
         specs = [t for who, t, *_ in sc[ci_][1] if who == 'piano'] if ci_ < len(sc) and isinstance(sc[ci_][1], list) else []
         k = 0; asked = any(l.get('who') == 'pause' for l in cl['l']); answered = not asked
