@@ -54,6 +54,22 @@ def find_text(phrase, pg, reg):
     if not best: return None
     return merge_rects([w[3] for w in best[1]])
 
+def find_item(item, pg, reg):
+    """A short list item (a chapter name, a sign's name): all its words, in order, close together on the page."""
+    ws = [norm(w) for w, _ in words_of(item)]; cw = [w for w in ws if w not in STOP] or ws
+    if not cw or (len(cw) == 1 and len(cw[0]) < 3): return None
+    seq = page_seq(pg); best = None
+    for i in range(len(seq)):
+        if seq[i][2] != cw[0]: continue
+        j, k = i, 0; run = []
+        while j < len(seq) and k < len(cw) and j - i <= len(ws) + 2 and seq[j][0] == seq[i][0]:
+            if seq[j][2] == cw[k]: k += 1
+            run.append(seq[j]); j += 1
+        if k == len(cw):
+            sc = (inside(run[0][3], reg), -len(run))
+            if not best or sc > best[0]: best = (sc, run)
+    return merge_rects([w[3] for w in best[1]]) if best else None
+
 def key_letters(kb):   # each white key's letter: printed, or worked out from where the black keys sit
     wh = kb['white']; names = [w['n'] for w in wh]
     if all(names): return names
@@ -113,6 +129,38 @@ def piano_keys(spec, kbs, reg):
         sc = (len(names) >= span + 1, -abs(len(names) - span))
         if not best or sc > best[0]: best = (sc, [(kb['white'][i]['r'], names[i]) for i in idx])
     return best[1] if best else None
+
+def region_notes(pg, reg):
+    return [n for n in PM.get(str(pg), {}).get('notes', []) if inside(n['r'], reg, 0.03)]
+
+def pick_notes(letters, notes):
+    """Noteheads for named letters: a run in order along one staff if there is one, else the first of each, left to right."""
+    best = None
+    for st in sorted(set(n['st'] for n in notes)):
+        row = [n for n in notes if n['st'] == st]; names = [n['n'] for n in row]
+        for s0 in range(len(row)):
+            for d in (1, -1):
+                idx = [s0 + d * j for j in range(len(letters))]
+                if all(0 <= i < len(row) and names[i] == letters[j] for j, i in enumerate(idx)):
+                    return [row[i] for i in idx]
+        if best is None and all(l in names for l in letters):
+            out = []; start = 0
+            for l in letters:
+                i = next((k for k in range(start, len(row)) if names[k] == l), None)
+                if i is None: i = names.index(l)
+                out.append(row[i]); start = i + 1
+            best = out
+    return best
+
+def piano_notes(spec, notes):   # the played notes, matched by pitch, left to right
+    want = [(l, int(o)) for l, acc, o in NOTE.findall(spec) if not acc]
+    if not want or len(want) != len(NOTE.findall(spec)): return None
+    out = []; start = 0
+    for l, o in want:
+        i = next((k for k in range(start, len(notes)) if notes[k]['n'] == l and notes[k]['o'] == o), None)
+        if i is None: return None
+        out.append(notes[i]); start = i + 1
+    return out
 
 def is_article(ph, i):   # "A whole tune" is an article; "F, G, A and B", "A again", "A to G" are keys
     if ph[i] != 'A': return False
@@ -186,6 +234,10 @@ def line_marks(ln, prev_reg_kbs=None, spec=None, REG=None, audio=None, answered=
         kbs = PM.get(str(pg), {}).get('kbs', [])
     t0, t1 = ln['t0'], ln['t1']; out = []
     if ln.get('who') == 'piano' and spec and ln.get('notes'):
+        if not pop:
+            ns = piano_notes(spec, region_notes(pg, reg))
+            if ns:
+                for t, n in zip(ln['notes'], ns): out.append({'k': 'nt', 't': round(t, 2), 'e': round(t1, 2), 'p': pg, 'r': [n['r']], 'n': n['n']})
         ks = piano_keys(spec, kbs, reg)
         if ks:
             for t, (k, nm) in zip(ln['notes'], ks): out.append({'k': 'key', 't': round(t, 2), 'e': round(t1, 2), 'p': pg, 'r': [k], 'n': nm, 'snd': 1})
@@ -199,6 +251,21 @@ def line_marks(ln, prev_reg_kbs=None, spec=None, REG=None, audio=None, answered=
         a, z = at(m.start()), at(m.end())
         hi = None if pop else find_text(ph, pg, reg)
         nxt = at(phr[j + 1].start()) if j + 1 < len(phr) else END
+        items = [x for x in re.finditer(r'[^,]+', m.group(0))]
+        if not pop and len(items) >= 3:   # a list said aloud (chapter names, signs): each item lights as it is said
+            got = []
+            for it in items:
+                whole = it.group(0).strip(' .:;?!')
+                whole = re.sub(r'^(and|or)\s+', '', whole)
+                r_ = find_item(whole, pg, reg) if len(whole) >= 3 else None
+                if r_: got.append((at(m.start() + it.start() + max(0, it.group(0).find(whole))), r_)); continue
+                for part in re.split(r'\band\b|\bor\b', it.group(0)):
+                    if not part.strip() or len(part.strip()) < 3: continue
+                    r_ = find_item(part.strip(' .:;?!'), pg, reg)
+                    if r_: got.append((at(m.start() + it.start() + it.group(0).find(part)), r_))
+            if len(got) >= 2:
+                for k_, (ta, r_) in enumerate(got): out.append({'k': 'hi', 't': ta, 'e': nxt, 'p': pg, 'r': r_})
+                hi = None
         if hi: out.append({'k': 'hi', 't': a, 'e': round(max(nxt, a + 1.2), 2), 'p': pg, 'r': hi})
         lets = [(x.group(1), x.start()) for x in LETTERS.finditer(ph) if not is_article(ph, x.start())]
         low = ph.lower()
@@ -211,6 +278,10 @@ def line_marks(ln, prev_reg_kbs=None, spec=None, REG=None, audio=None, answered=
                         big = max((k for k in kbs if inside(k['r'], reg, 0.05)), key=lambda k: len(k['black']), default=None)
                         rs = [r for g in (groups(big) if big else []) if len(g) == want[0] for r in g]
                     if rs: out.append({'k': 'blk', 't': at(m.start() + max(0, low.find(want[1]))), 'e': nxt, 'p': pg, 'r': rs})
+        if lets and not pop:
+            ns = pick_notes([l for l, _ in lets], region_notes(pg, reg))
+            if ns:
+                for (l, pos), n in zip(lets, ns): out.append({'k': 'nt', 't': at(m.start() + pos), 'e': next((at(q.start()) for q in phr[j + 1:] if any(not is_article(q.group(0), x.start()) for x in LETTERS.finditer(q.group(0)))), END), 'p': pg, 'r': [n['r']], 'n': l})
         if lets:
             ks = pick_keys([l for l, _ in lets], kbs, reg)
             if ks:

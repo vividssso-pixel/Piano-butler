@@ -6,6 +6,9 @@ CSS = r'''
 .mkkey{position:absolute;border-radius:1px 1px 4px 4px;background:rgba(255,206,84,.5);box-shadow:inset 0 -5px 0 rgba(255,170,0,.75);mix-blend-mode:multiply;animation:mkkey .4s ease-out both}
 .mkkey.now{background:rgba(255,196,64,.78);box-shadow:inset 0 -7px 0 #f2a900,0 0 0 2px rgba(242,169,0,.55);animation:mkkey .4s ease-out both,mkpress .5s ease-out}
 .mkbadge{position:absolute;transform:translate(-50%,-118%);min-width:1.9em;height:1.9em;padding:0 .35em;border-radius:99px;background:#26296b;color:#fff;font:800 clamp(10px,1.35vw,15px)/1.9em 'Atkinson Hyperlegible',Arial,sans-serif;text-align:center;box-shadow:0 2px 6px rgba(20,22,60,.3);animation:mkbadge .35s cubic-bezier(.3,1.6,.5,1) both}
+.mknote{position:absolute;border-radius:50%;background:rgba(255,206,84,.55);box-shadow:0 0 0 2px #f2a900;mix-blend-mode:multiply;animation:mkkey .35s ease-out both}
+.mknote.now{background:rgba(255,196,64,.8);box-shadow:0 0 0 3px #f2a900,0 0 12px rgba(242,169,0,.7)}
+.mkbadge.up{transform:translate(-50%,-112%)}
 .mkbadge{display:none} .mkbadge.now{display:block}
 .mkblk{position:absolute;border-radius:2px;box-shadow:0 0 0 4px #ffc440,0 0 18px rgba(255,196,64,.95);animation:mkblk 1.1s ease-in-out infinite alternate}
 @keyframes mkpen{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
@@ -31,14 +34,15 @@ function drawMarks(ln, t) {
   const idOf = m => ln.t0 + ':' + m.k + ':' + m.t + ':' + (m.pop || '') + m.r[0].join(',');
   const want = new Set(act.map(idOf));
   for (const [id, el] of mkOn) if (!want.has(id) || !el.isConnected) { el.remove(); mkOn.delete(id); }
-  const lastKey = act.filter(m => m.k === 'key').pop();
+  const lastKey = act.filter(m => m.k === 'key').pop(), lastNote = act.filter(m => m.k === 'nt').pop();
   act.forEach(m => { const id = idOf(m); let el = mkOn.get(id);
     if (!el) { el = document.createElement('div'); el.className = 'mkg';
       el.innerHTML = m.r.map(([x, y, w, h], i) => m.k === 'hi' ? `<div class="mkhi" style="left:${x * 100 - .3}%;top:${y * 100 - .15}%;width:${w * 100 + .6}%;height:${h * 100 + .3}%;animation-delay:${i * .35}s"></div>`
         : m.k === 'key' ? `<div class="mkkey" style="left:${x * 100}%;top:${y * 100}%;width:${w * 100}%;height:${h * 100}%"></div>` + (m.n ? `<div class="mkbadge" style="left:${(x + w / 2) * 100}%;top:${(y + h) * 100}%">${m.n}</div>` : '')
+        : m.k === 'nt' ? `<div class="mknote" style="left:${(x - w * .55) * 100}%;top:${(y - h * .55) * 100}%;width:${w * 210}%;height:${h * 210}%"></div>` + (m.n ? `<div class="mkbadge up" style="left:${(x + w / 2) * 100}%;top:${(y - h * .7) * 100}%">${m.n}</div>` : '')
         : `<div class="mkblk" style="left:${x * 100}%;top:${y * 100}%;width:${w * 100}%;height:${h * 100}%;animation-delay:${i * .12}s"></div>`).join('');
       (m.pop ? popLayer(m.pop) : ov2).appendChild(el); mkOn.set(id, el); }
-    el.querySelectorAll('.mkkey,.mkbadge').forEach(k => k.classList.toggle('now', m === lastKey)); });
+    el.querySelectorAll('.mkkey,.mknote,.mkbadge').forEach(k => k.classList.toggle('now', m === lastKey || m === lastNote)); });
   return act.filter(m => !m.pop);
 }
 function clearMarks() { if (ov2) ov2.innerHTML = ''; mkOn.forEach(el => el.remove()); mkOn.clear(); }
