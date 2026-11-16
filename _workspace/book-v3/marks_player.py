@@ -62,10 +62,11 @@ ZOOM_NEW = ("      let [x, y, w, h] = reg.b; let S = Math.min(2.2, Math.max(1, 0
             # her 16 Nov ("too much moving"): on a desktop the page stays still and only the marks move; on a phone the page
             # sits at one zoom and moves only when what is being said leaves the view, slowly
             "      if (window.innerWidth >= 760) stage.style.transform = '';\n"
-            "      else { const S2 = 1.35, f = mb || [x, y, w, Math.min(h, 0.25)]; const cam = window.__cam && window.__cam.p === c.p ? window.__cam : null;\n"
-            "        const vis = cam ? [-cam.tx / S2, -cam.ty / S2, 1 / S2, 1 / S2] : null;\n"
-            "        const inView = vis && f[1] >= vis[1] && f[1] + Math.min(f[3], 0.12) <= vis[1] + vis[3] - 0.04 && f[0] + f[2] / 2 >= vis[0] && f[0] + f[2] / 2 <= vis[0] + vis[2];\n"
-            "        if (!inView) { const fx = f[0] + f[2] / 2, fy = f[1] + Math.min(f[3], 0.3) / 2; window.__cam = { p: c.p, tx: Math.min(0, Math.max(1 - S2, 0.5 - S2 * fx)), ty: Math.min(0, Math.max(1 - S2, 0.4 - S2 * fy)) }; }\n"
+            "      else { const S2 = 1.15, f = mb || [x, y, w, Math.min(h, 0.25)]; const cam = window.__cam && window.__cam.p === c.p ? window.__cam : null;\n"
+            # her 16 Nov (cut off at the side): on a phone the zoom only trims the page margins, so a line of text is never cut; the page moves up and down only
+            "        const vis = cam ? [0, -cam.ty / S2, 1, 1 / S2] : null;\n"
+            "        const inView = vis && f[1] >= vis[1] && f[1] + Math.min(f[3], 0.12) <= vis[1] + vis[3] - 0.04;\n"
+            "        if (!inView) { const fy = f[1] + Math.min(f[3], 0.3) / 2; window.__cam = { p: c.p, tx: 0.5 - S2 * 0.5, ty: Math.min(0, Math.max(1 - S2, 0.4 - S2 * fy)) }; }\n"
             "        stage.style.transition = 'transform 1.1s ease-in-out'; stage.style.transform = `translate(${window.__cam.tx * 100}%, ${window.__cam.ty * 100}%) scale(${S2})`; }\n"
             "      const zoomed = true;")
 TRANS_OLD = "      stage.style.transform = `translate(${tx * 100}%, ${ty * 100}%) scale(${S})`;\n      lensEl"
