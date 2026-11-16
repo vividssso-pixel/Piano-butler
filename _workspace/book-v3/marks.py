@@ -46,7 +46,7 @@ def find_text(phrase, pg, reg):
             got = [w for w in win if w[2] in content]
             uniq = len(set(w[2] for w in got)); score = uniq / len(set(content))
             inr = sum(inside(w[3], reg) for w in win) / len(win)
-            if uniq >= 2 and (score >= 0.6 or (inr >= 0.5 and score >= 0.4)):
+            if (inr >= 0.5 and uniq >= 2 and score >= 0.4) or (uniq >= 3 and score >= 0.72):   # outside the cued part: only a clear match
                 a = win.index(got[0]); z = len(win) - 1 - win[::-1].index(got[-1]); run = win[a:z + 1]
                 tight = uniq / len(run)
                 key = (sum(inside(w[3], reg) for w in run) / len(run) >= 0.5, score, tight)
@@ -107,9 +107,11 @@ def piano_keys(spec, kbs, reg):
             idx = []
             for l, p in zip(seq, pitch):
                 opts = [i for i, n in enumerate(names) if n == l]; f = (p - lo) / span if span else 0
-                idx.append(min(opts, key=lambda o: abs(o / (len(names) - 1) - f)))
+                if not opts: idx = None; break
+                idx.append(min(opts, key=lambda o: abs(o / max(1, len(names) - 1) - f)))
+            if idx is None: continue
         sc = (len(names) >= span + 1, -abs(len(names) - span))
-        if not best or sc > best[0]: best = (sc, [kb['white'][i]['r'] for i in idx])
+        if not best or sc > best[0]: best = (sc, [(kb['white'][i]['r'], names[i]) for i in idx])
     return best[1] if best else None
 
 def is_article(ph, i):   # "A whole tune" is an article; "F, G, A and B", "A again", "A to G" are keys
@@ -186,7 +188,7 @@ def line_marks(ln, prev_reg_kbs=None, spec=None, REG=None, audio=None, answered=
     if ln.get('who') == 'piano' and spec and ln.get('notes'):
         ks = piano_keys(spec, kbs, reg)
         if ks:
-            for t, k in zip(ln['notes'], ks): out.append({'k': 'key', 't': round(t, 2), 'e': round(t1, 2), 'p': pg, 'r': [k], 'snd': 1})
+            for t, (k, nm) in zip(ln['notes'], ks): out.append({'k': 'key', 't': round(t, 2), 'e': round(t1, 2), 'p': pg, 'r': [k], 'n': nm, 'snd': 1})
         return tag(out, pop)
     text = ln.get('text') or ''
     if not text: return []
