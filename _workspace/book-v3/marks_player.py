@@ -59,8 +59,15 @@ TICK_NEW = "  const act = follow ? drawMarks(ln, t) : (clearMarks(), []);\n  con
 ZOOM_OLD = "      const [x, y, w, h] = reg.b; const S = Math.min(2.2, Math.max(1, 0.94 / w));"
 ZOOM_NEW = ("      let [x, y, w, h] = reg.b; let S = Math.min(2.2, Math.max(1, 0.94 / w));\n"
             "      const mb = act.length && act[0].p === c.p ? markBox(act) : null;\n"
-            "      if (mb) { const ph = window.innerWidth < 760; const fx = mb[0] + mb[2] / 2, fy = mb[1] + mb[3] / 2; const S2 = ph ? Math.min(2.4, Math.max(1.2, 0.8 / Math.max(mb[2], 0.3))) : Math.min(1.5, Math.max(1.15, 0.75 / Math.max(mb[2], 0.35))); const tx2 = Math.min(0, Math.max(1 - S2, 0.5 - S2 * fx)), ty2 = Math.min(0, Math.max(1 - S2, 0.42 - S2 * fy)); stage.style.transform = `translate(${tx2 * 100}%, ${ty2 * 100}%) scale(${S2})`; }\n"
-            "      const zoomed = !!mb;")
+            # her 16 Nov ("too much moving"): on a desktop the page stays still and only the marks move; on a phone the page
+            # sits at one zoom and moves only when what is being said leaves the view, slowly
+            "      if (window.innerWidth >= 760) stage.style.transform = '';\n"
+            "      else { const S2 = 1.35, f = mb || [x, y, w, Math.min(h, 0.25)]; const cam = window.__cam && window.__cam.p === c.p ? window.__cam : null;\n"
+            "        const vis = cam ? [-cam.tx / S2, -cam.ty / S2, 1 / S2, 1 / S2] : null;\n"
+            "        const inView = vis && f[1] >= vis[1] && f[1] + Math.min(f[3], 0.12) <= vis[1] + vis[3] - 0.04 && f[0] + f[2] / 2 >= vis[0] && f[0] + f[2] / 2 <= vis[0] + vis[2];\n"
+            "        if (!inView) { const fx = f[0] + f[2] / 2, fy = f[1] + Math.min(f[3], 0.3) / 2; window.__cam = { p: c.p, tx: Math.min(0, Math.max(1 - S2, 0.5 - S2 * fx)), ty: Math.min(0, Math.max(1 - S2, 0.4 - S2 * fy)) }; }\n"
+            "        stage.style.transition = 'transform 1.1s ease-in-out'; stage.style.transform = `translate(${window.__cam.tx * 100}%, ${window.__cam.ty * 100}%) scale(${S2})`; }\n"
+            "      const zoomed = true;")
 TRANS_OLD = "      stage.style.transform = `translate(${tx * 100}%, ${ty * 100}%) scale(${S})`;\n      lensEl"
 TRANS_NEW = "      if (!zoomed) stage.style.transform = `translate(${tx * 100}%, ${ty * 100}%) scale(${S})`;\n      lensEl"
 SUB_OLD = "if (hit) txt = txt.slice(0, hit[2]) + '<mark>' + txt.slice(hit[2], hit[3]) + '</mark>' + txt.slice(hit[3]);"
