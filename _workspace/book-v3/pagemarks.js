@@ -32,7 +32,9 @@ const OUT=await p.evaluate(([want,POPS])=>{const R={};
    const H=Math.max(...whites.map(w=>w.b.height)); const ws2=whites.filter(w=>w.b.height>H*0.8);
    const texts=[...sv.querySelectorAll('text')].map(t=>({t:t.textContent.trim(),b:t.getBoundingClientRect()})).filter(t=>/^[A-G][♯♭#b]?$/.test(t.t));
    const keyOf=(bx)=>{const cx=bx.left+bx.width/2; const lab=texts.find(t=>{const tx=t.b.left+t.b.width/2;return Math.abs(tx-cx)<bx.width*0.45&&t.b.top>bx.top+bx.height*0.4&&t.b.top<bx.bottom+bx.height*0.35;});return lab?lab.t:null;};
-   kbs.push({r:fr(sv.getBoundingClientRect()),white:ws2.map(w=>({r:fr(w.b),n:keyOf(w.b)})),black:blacks.map(k=>({r:fr(k.b)}))});}
+   const tags=[...sv.querySelectorAll('text')].map(t=>({t:t.textContent.trim(),b:t.getBoundingClientRect()})).filter(t=>/^(Very High|Very Low|Lowest|Highest|Middle|Bass|Treble|Low|High) C$/.test(t.t));
+   const tagOf=(bx)=>{const cx=bx.left+bx.width/2; const g=tags.filter(t=>t.b.top>bx.bottom-bx.height*0.15&&t.b.top<bx.bottom+bx.height*0.9).sort((a,b)=>Math.abs(a.b.left+a.b.width/2-cx)-Math.abs(b.b.left+b.b.width/2-cx))[0]; return g&&Math.abs(g.b.left+g.b.width/2-cx)<Math.max(bx.width*0.6,6)?g.t:null;};
+   kbs.push({r:fr(sv.getBoundingClientRect()),white:ws2.map(w=>({r:fr(w.b),n:keyOf(w.b),tag:tagOf(w.b)})),black:blacks.map(k=>({r:fr(k.b)}))});}
   // staff notes: staves are five evenly spaced long horizontal lines; noteheads are SMuFL noteheads (Verovio) or ellipses;
   // the pitch comes from the step above the bottom line and the clef (G, F) sitting on that staff
   const notes=[];
@@ -47,15 +49,17 @@ const OUT=await p.evaluate(([want,POPS])=>{const R={};
    const clefs=[...sv.querySelectorAll('use,text')].map(e=>{const g=e.tagName==='use'?glyph(e):'';const t=e.tagName==='text'?e.textContent:'';const k=(g==='E050'||t.includes('𝄞')||t.includes(''))?'G':(g==='E062'||t.includes('𝄢')||t.includes(''))?'F':null;return k?{k,b:e.getBoundingClientRect()}:null;}).filter(Boolean);
    staves.forEach((st,k)=>{const c=clefs.find(c=>{const cy=c.b.top+c.b.height/2;return cy>st.top-st.sp*2&&cy<st.bot+st.sp*2;}); st.clef=c?c.k:(staves.length===2?(k===0?'G':'F'):'G'); st.known=!!c;});
    const heads=[...sv.querySelectorAll('use,ellipse,text')].filter(e=>{if(e.tagName==='use') return /^E0A[0-4]$/.test(glyph(e)); if(e.tagName==='ellipse'){const b=e.getBoundingClientRect(); return b.width>2&&b.width<staves[0].sp*2.6&&b.height<staves[0].sp*1.6;} return /[-]/.test(e.textContent);});
+   const accs=[...sv.querySelectorAll('use,text')].map(e=>{const g=e.tagName==='use'?glyph(e):'';const t=e.tagName==='text'?e.textContent.trim():'';const a=(g==='E262'||t==='♯'||t==='\uE262')?'#':(g==='E260'||t==='♭'||t==='\uE260')?'b':(g==='E261'||t==='♮'||t==='\uE261')?'n':null;return a?{a,b:e.getBoundingClientRect()}:null;}).filter(Boolean);
    for(const h of heads){const b=h.getBoundingClientRect(); const cx=b.left+b.width/2, cy=b.top+b.height/2;
+    const ac=accs.find(a=>a.b.right<=b.left+2&&b.left-a.b.right<b.width*1.6&&a.b.top<cy&&a.b.bottom>cy); const acc=ac&&ac.a!=='n'?ac.a:'';
     const st=staves.reduce((best,s)=>{const d=cy<s.top?s.top-cy:cy>s.bot?cy-s.bot:0;return !best||d<best.d?{s,d}:best;},null).s;
     if(cx<st.x0-st.sp||cx>st.x1+st.sp) continue;
     const step=Math.round((st.bot-cy)/(st.sp/2)); const base=st.clef==='F'?18:30; const n=base+step;
     if(notes.some(o=>o.sv===SB&&Math.abs(o.x-cx)<st.sp*0.5&&Math.abs(o.cy-cy)<st.sp*0.35)) continue;
-    notes.push({sv:SB,cy,r:fr(b),n:'CDEFGAB'[((n%7)+7)%7],o:Math.floor(n/7),st:staves.indexOf(st),clef:st.clef,known:st.known,x:cx});}}
+    notes.push({sv:SB,cy,r:fr(b),acc,n:'CDEFGAB'[((n%7)+7)%7],o:Math.floor(n/7),st:staves.indexOf(st),clef:st.clef,known:st.known,x:cx});}}
   notes.sort((a,b)=>a.x-b.x); notes.forEach(n=>{delete n.x;delete n.sv;delete n.cy;});
   R[pg]={words,kbs,notes};}
  return R;},[[...want],POPS]);
 const F='/tmp/claude-0/pk/pagemarks.json'; const all=fs.existsSync(F)?JSON.parse(fs.readFileSync(F)):{}; Object.assign(all,OUT); fs.writeFileSync(F,JSON.stringify(all));
-for(const [pg,v] of Object.entries(OUT)) console.log(pg,'blocks',v.words.length,'words',v.words.reduce((a,b)=>a+b.ws.length,0),'notes',(v.notes||[]).map(n=>n.n+n.o).join(' ').slice(0,80),'keyboards',v.kbs.map(k=>k.white.length+'w/'+k.black.length+'b labels:'+k.white.map(w=>w.n||'.').join('')).join(' | '));
+for(const [pg,v] of Object.entries(OUT)) console.log(pg,'blocks',v.words.length,'words',v.words.reduce((a,b)=>a+b.ws.length,0),'notes',(v.notes||[]).map(n=>n.n+(n.acc||'')+n.o).join(' ').slice(0,80),'keyboards',v.kbs.map(k=>k.white.length+'w/'+k.black.length+'b labels:'+k.white.map(w=>w.n||'.').join('')).join(' | '));
 await b.close();})();

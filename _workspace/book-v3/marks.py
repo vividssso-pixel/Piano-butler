@@ -82,18 +82,31 @@ def key_letters(kb):   # each white key's letter: printed, or worked out from wh
             if all(n is None or n == g for n, g in zip(names, guess)): return guess
     return names
 
+LMK = re.compile(r'\b(Very High|Very Low|Lowest|Highest|Middle|Bass|Treble|Low|High)\s+C\b')
+LMK_OCT = {'Lowest': 1, 'Low': 2, 'Bass': 3, 'Middle': 4, 'Treble': 5, 'High': 6, 'Very High': 7, 'Highest': 8}
+def landmarks(ph):   # char position of the C -> its name ("Middle C" names one key, not any C)
+    return {mm.end() - 1: mm.group(1) for mm in LMK.finditer(ph)}
+def pick_landmark(name, kbs, reg):
+    best = None
+    for kb in kbs:
+        for w in kb['white']:
+            if w.get('tag') == name + ' C':
+                sc = inside(kb['r'], reg, 0.05)
+                if not best or sc > best[0]: best = (sc, w['r'])
+    return best[1] if best else None
 def pick_keys(letters, kbs, reg, prefer_small=True):
     """Keys for a list of letters: a run of neighbours if the letters run in order, else the nearest of each."""
     cands = []
     for kb in kbs:
         names = key_letters(kb)
         if not all(l in names for l in letters): continue
-        run = None
+        runs = []
         for s in range(len(names)):
             for d in (1, -1):
                 idx = [s + d * j for j in range(len(letters))]
-                if all(0 <= i < len(names) and names[i] == letters[j] for j, i in enumerate(idx)): run = idx; break
-            if run: break
+                if all(0 <= i < len(names) and names[i] == letters[j] for j, i in enumerate(idx)): runs.append(idx)
+        mid = next((i for i, w in enumerate(kb['white']) if w.get('tag') == 'Middle C'), (len(names) - 1) / 2)
+        run = min(runs, key=lambda r: abs(min(r) - mid)) if runs else None   # a run of letters: the one starting nearest Middle C
         if not run:
             run = []; last = None
             for l in letters:
@@ -114,6 +127,14 @@ def piano_keys(spec, kbs, reg):
     for kb in kbs:
         names = key_letters(kb)
         if not all(names) or not inside(kb['r'], reg, 0.05): continue
+        anc = next(((i, w['tag']) for i, w in enumerate(kb['white']) if w.get('tag')), None)
+        if anc:   # the picture names a C (Middle C...): every key's real pitch is known, so each note goes to its own key
+            i0, nm = anc; p0 = LMK_OCT[nm[:-2]] * 7
+            idx = [i0 + p - p0 for p in pitch]
+            if all(0 <= i < len(names) for i in idx):
+                sc = (True, 99)
+                if not best or sc > best[0]: best = (sc, [(kb['white'][i]['r'], names[i]) for i in idx])
+            continue
         lo = min(pitch); span = max(pitch) - lo
         if span < len(names):   # it fits: line the notes up on the matching letters, nearest the middle
             offs = [s for s in range(len(names) - span) if names[s] == WHITE[lo % 7]]
@@ -133,11 +154,12 @@ def piano_keys(spec, kbs, reg):
 def region_notes(pg, reg):
     return [n for n in PM.get(str(pg), {}).get('notes', []) if inside(n['r'], reg, 0.03)]
 
-def pick_notes(letters, notes):
+def pick_notes(letters, notes, accs=None):
     """Noteheads for named letters: a run in order along one staff if there is one, else the first of each, left to right."""
     best = None
     for st in sorted(set(n['st'] for n in notes)):
-        row = [n for n in notes if n['st'] == st]; names = [n['n'] for n in row]
+        row = [n for n in notes if n['st'] == st]; names = [n['n'] + (n.get('acc') or '') for n in row] if accs and any(accs) else [n['n'] for n in row]
+        if accs and any(accs): letters = [l + a for l, a in zip(letters, accs)]
         for s0 in range(len(row)):
             for d in (1, -1):
                 idx = [s0 + d * j for j in range(len(letters))]
@@ -153,11 +175,11 @@ def pick_notes(letters, notes):
     return best
 
 def piano_notes(spec, notes):   # the played notes, matched by pitch, left to right
-    want = [(l, int(o)) for l, acc, o in NOTE.findall(spec) if not acc]
-    if not want or len(want) != len(NOTE.findall(spec)): return None
+    want = [(l, {'': '', '#': '#', '♯': '#', 'b': 'b', '♭': 'b'}[acc], int(o)) for l, acc, o in NOTE.findall(spec)]
+    if not want: return None
     out = []; start = 0
-    for l, o in want:
-        i = next((k for k in range(start, len(notes)) if notes[k]['n'] == l and notes[k]['o'] == o), None)
+    for l, a, o in want:
+        i = next((k for k in range(start, len(notes)) if notes[k]['n'] == l and notes[k]['o'] == o and (notes[k].get('acc') or '') == a), None)
         if i is None: return None
         out.append(notes[i]); start = i + 1
     return out
@@ -194,8 +216,41 @@ def gaps(path, t0, t1, min_ms=120):   # silent stretches inside a line (centres,
             i = j
         else: i += 1
     return out
+
+_DEC = None
+_AL = {}
+def align(path, t0, t1, text):
+    """Word start times for a spoken line, by forced alignment of its known text (PocketSphinx). Returns [(char_pos, time)] or None."""
+    global _DEC
+    key = (path, round(t0, 2), text)
+    if key in _AL: return _AL[key]
+    try:
+        from pocketsphinx import Decoder
+        if _DEC is None: _DEC = Decoder(samprate=16000, bestpath=False, loglevel='FATAL')
+        toks = [(mm.start(), mm.group(0).lower().replace('’', "'")) for mm in re.finditer(r"[A-Za-z’']+", text)]
+        keep = [(p, w) for p, w in toks if _DEC.lookup_word(w) is not None]
+        if len(keep) < max(1, len(toks) * 0.6): _AL[key] = None; return None
+        raw = subprocess.run(['ffmpeg', '-loglevel', 'error', '-i', path, '-ss', str(max(0, t0 - 0.05)), '-to', str(t1 + 0.1), '-f', 's16le', '-ac', '1', '-ar', '16000', '-'], capture_output=True).stdout
+        _DEC.set_align_text(' '.join(w for _, w in keep))
+        _DEC.start_utt(); _DEC.process_raw(raw, full_utt=True); _DEC.end_utt()
+        seg = [s for s in _DEC.seg() if s.word not in ('<sil>', '<s>', '</s>', '[NOISE]')]
+        if len(seg) != len(keep): _AL[key] = None; return None
+        res = [(p, round(max(0, t0 - 0.05) + s.start_frame / 100, 2)) for (p, _), s in zip(keep, seg)]
+    except Exception:
+        res = None
+    _AL[key] = res; return res
 PUNCT = re.compile(r'[.?!:;,]')
 def timer(text, t0, t1, path=None):
+    al = align(path, t0, t1, text) if path else None
+    if al:   # the time of the word holding (or just after) a character, shown a breath early
+        def at_al(ch):
+            for p, t in al:
+                if p >= ch - 1: return round(max(t0, t - 0.08), 2)
+            return round(t1 - 0.2, 2)
+        at_al.aligned = True
+        return at_al
+    return timer_est(text, t0, t1, path)
+def timer_est(text, t0, t1, path=None):
     """Time of a character position in a spoken line: the pauses heard in the audio are pinned to the punctuation."""
     W = {',': 5, ';': 8, ':': 8, '.': 11, '?': 11, '!': 11}
     marks = [(m.start(), W[m.group(0)]) for m in PUNCT.finditer(text) if m.end() < len(text.rstrip())]
@@ -217,10 +272,13 @@ def timer(text, t0, t1, path=None):
         return round(tail, 2)
     return at
 def tag(out, pop):
+    for x in out:   # long enough to be seen (her 16 Nov audit): a highlight at least 1 s, a key or note at least 0.8 s
+        x['e'] = round(max(x['e'], x['t'] + (1.0 if x['k'] == 'hi' else 0.8)), 2)
     if pop:
         for m in out: m['pop'] = pop
     return out
-LETTERS = re.compile(r'\b([A-G])\b(?![a-z\'’])')
+LETTERS = re.compile(r'\b([A-G])(?:\s+(sharp|flat)\b|([♯♭]))?(?![a-z\'’])')
+def acc_of(x): return '#' if (x.group(2) == 'sharp' or x.group(3) == '♯') else 'b' if (x.group(2) == 'flat' or x.group(3) == '♭') else ''
 def line_marks(ln, prev_reg_kbs=None, spec=None, REG=None, audio=None, answered=True):
     c = ln.get('cue') or {}; pg = c.get('p'); r = c.get('r', '')
     pop = None
@@ -234,10 +292,10 @@ def line_marks(ln, prev_reg_kbs=None, spec=None, REG=None, audio=None, answered=
         kbs = PM.get(str(pg), {}).get('kbs', [])
     t0, t1 = ln['t0'], ln['t1']; out = []
     if ln.get('who') == 'piano' and spec and ln.get('notes'):
-        if not pop:
-            ns = piano_notes(spec, region_notes(pg, reg))
+        if True:
+            ns = piano_notes(spec, PM['pop:' + pop].get('notes', []) if pop else region_notes(pg, reg))
             if ns:
-                for t, n in zip(ln['notes'], ns): out.append({'k': 'nt', 't': round(t, 2), 'e': round(t1, 2), 'p': pg, 'r': [n['r']], 'n': n['n']})
+                for t, n in zip(ln['notes'], ns): out.append({'k': 'nt', 't': round(t, 2), 'e': round(t1, 2), 'p': pg, 'r': [n['r']], 'n': n['n'] + {'#': '♯', 'b': '♭'}.get(n.get('acc') or '', '')})
         ks = piano_keys(spec, kbs, reg)
         if ks:
             for t, (k, nm) in zip(ln['notes'], ks): out.append({'k': 'key', 't': round(t, 2), 'e': round(t1, 2), 'p': pg, 'r': [k], 'n': nm, 'snd': 1})
@@ -268,6 +326,7 @@ def line_marks(ln, prev_reg_kbs=None, spec=None, REG=None, audio=None, answered=
                 hi = None
         if hi: out.append({'k': 'hi', 't': a, 'e': round(max(nxt, a + 1.2), 2), 'p': pg, 'r': hi})
         lets = [(x.group(1), x.start()) for x in LETTERS.finditer(ph) if not is_article(ph, x.start())]
+        accs = [acc_of(x) for x in LETTERS.finditer(ph) if not is_article(ph, x.start())]
         low = ph.lower()
         if not pop and ('black key' in low or 'twos and threes' in low):
             for want in ((2, 'two'), (3, 'three')):
@@ -278,14 +337,39 @@ def line_marks(ln, prev_reg_kbs=None, spec=None, REG=None, audio=None, answered=
                         big = max((k for k in kbs if inside(k['r'], reg, 0.05)), key=lambda k: len(k['black']), default=None)
                         rs = [r for g in (groups(big) if big else []) if len(g) == want[0] for r in g]
                     if rs: out.append({'k': 'blk', 't': at(m.start() + max(0, low.find(want[1]))), 'e': nxt, 'p': pg, 'r': rs})
-        if lets and not pop:
-            ns = pick_notes([l for l, _ in lets], region_notes(pg, reg))
-            if ns:
-                for (l, pos), n in zip(lets, ns): out.append({'k': 'nt', 't': at(m.start() + pos), 'e': next((at(q.start()) for q in phr[j + 1:] if any(not is_article(q.group(0), x.start()) for x in LETTERS.finditer(q.group(0)))), END), 'p': pg, 'r': [n['r']], 'n': l})
         if lets:
-            ks = pick_keys([l for l, _ in lets], kbs, reg)
+            pool = PM['pop:' + pop].get('notes', []) if pop else region_notes(pg, reg); lm2 = landmarks(ph)
+            if lm2 and any(pos in lm2 for _, pos in lets):
+                ns = []
+                for l, pos in lets:
+                    o_ = LMK_OCT.get(lm2.get(pos)); hit = next((n for n in pool if n['n'] == 'C' and n['o'] == o_), None) if o_ else None
+                    ns.append(hit)
+                pairs = [(x, n) for x, n in zip(zip(lets, accs), ns) if n]
+                lets_n = [x for x, _ in pairs]; ns = [n for _, n in pairs]
+            else:
+                ns = pick_notes([l for l, _ in lets], pool, accs); lets_n = list(zip(lets, accs))
+            if ns:
+                for ((l, pos), a_), n in zip(lets_n, ns): out.append({'k': 'nt', 't': at(m.start() + pos), 'e': next((at(q.start()) for q in phr[j + 1:] if any(not is_article(q.group(0), x.start()) for x in LETTERS.finditer(q.group(0)))), END), 'p': pg, 'r': [n['r']], 'n': l + {'#': '♯', 'b': '♭'}.get(a_, '')})
+        if lets and any(accs): lets = [x for x, a_ in zip(lets, accs) if not a_]   # a sharp or flat is a black key: not lit as its white neighbour
+        if lets:
+            lm = landmarks(ph); named = [(l, pos) for l, pos in lets if pos in lm]
+            ks = None
+            if named:   # Middle C, Treble C...: only the key that carries that name, never another C
+                ks = []; keep = []
+                for l, pos in lets:
+                    if pos in lm:
+                        r_ = pick_landmark(lm[pos], kbs, reg)
+                        if r_: ks.append(r_); keep.append((l, pos))
+                lets = keep
+            elif len(lets) == 1:   # one letter on its own: every such key in the picture (every C), unless the picture is small
+                kb_ = [k for k in kbs if inside(k['r'], reg, 0.05) and lets[0][0] in key_letters(k)]
+                if kb_:
+                    kb_ = min(kb_, key=lambda k: len(k['white'])); names_ = key_letters(kb_)
+                    ks = [[kb_['white'][i]['r'] for i, n_ in enumerate(names_) if n_ == lets[0][0]]]
+                    lets = [lets[0]]
+            else: ks = pick_keys([l for l, _ in lets], kbs, reg)
             if ks:
-                for (l, pos), k in zip(lets, ks): out.append({'k': 'key', 't': at(m.start() + pos), 'e': next((at(q.start()) for q in phr[j + 1:] if any(not is_article(q.group(0), x.start()) for x in LETTERS.finditer(q.group(0)))), END), 'p': pg, 'r': [k], 'n': l})   # lit until the next phrase that names keys
+                for (l, pos), k in zip(lets, ks): out.append({'k': 'key', 't': at(m.start() + pos), 'e': next((at(q.start()) for q in phr[j + 1:] if any(not is_article(q.group(0), x.start()) for x in LETTERS.finditer(q.group(0)))), END), 'p': pg, 'r': k if k and isinstance(k[0], list) else [k], 'n': l})   # lit until the next phrase that names keys
     return tag(out, pop)
 
 def phrase_spans(ln, audio=None):   # [time, start, end] of each phrase, for the caption under the page
