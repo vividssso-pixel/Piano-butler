@@ -53,10 +53,17 @@ for part in (1, 2):
     tr = ''.join('<tr><td style="height:30px"></td><td></td><td></td><td></td><td></td></tr>' for _ in range(24))
     page(f'<div class="kick">This year</div><h1>My pieces{" · continued" if part == 2 else ""}</h1>' + (f'<p class="lead">Every piece you learn, with the dates. It is a good list to look back on.</p>' if part == 1 else '')
          + f'<table class="ht"><colgroup><col style="width:38%"><col style="width:22%"><col style="width:13%"><col style="width:13%"><col style="width:14%"></colgroup><thead><tr><th>Piece</th><th>Composer</th><th>Started</th><th>Learned</th><th>Played for someone</th></tr></thead><tbody>{tr}</tbody></table>', n); n += 1
-SC = ['C major', 'G major', 'F major', 'D major', 'A minor', 'E minor', 'D minor', 'B♭ major', 'A major', 'E♭ major', 'B minor', 'G minor', 'E major', 'C minor', 'Contrary motion', 'Chromatic', 'Arpeggios', '']
-tr = ''.join(f'<tr><td><b>{s}</b></td>' + ''.join(f'<td class="c">{box}</td>' for _ in range(4)) + '</tr>' for s in SC)
-page('<div class="kick">This year</div><h1>Scales and technique</h1><p class="lead">Tick each step when it is steady three times in a row. Add your own on the empty line.</p>'
-     f'<table class="ht"><colgroup><col style="width:36%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup><thead><tr><th>Scale</th><th>Hands separately</th><th>Hands together</th><th>From memory</th><th>At speed</th></tr></thead><tbody>{tr}</tbody></table>', n, z=1.28); n += 1
+# her 16 Nov ("마이너는?"): majors and minors apart, in circle-of-fifths order; each minor names its form (natural, harmonic, melodic)
+MAJ = ['C major', 'G major', 'D major', 'A major', 'E major', 'B major', 'F major', 'B♭ major', 'E♭ major', 'A♭ major', '']
+MIN = ['A minor', 'E minor', 'B minor', 'F♯ minor', 'D minor', 'G minor', 'C minor', 'F minor', '']
+OTH = ['Contrary motion', 'Chromatic', 'Arpeggios', '']
+def srow(name, minor=False):
+    lab = f'<b>{name}</b>' + (' <span style="font-size:11px;color:#6d6f9c;letter-spacing:.04em;margin-left:6px">natural · harmonic · melodic</span>' if minor and name else '')
+    return f'<tr><td>{lab}</td>' + ''.join(f'<td class="c">{box}</td>' for _ in range(4)) + '</tr>'
+def shead(t): return f'<tr><td colspan="5" style="padding-top:9px"><b style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e4572e">{t}</b></td></tr>'
+tr = shead('Major scales') + ''.join(srow(x) for x in MAJ) + shead('Minor scales · circle the form') + ''.join(srow(x, True) for x in MIN) + shead('Technique') + ''.join(srow(x) for x in OTH)
+page('<div class="kick">This year</div><h1>Scales and technique</h1><p class="lead">Tick each step when it is steady three times in a row. For a minor scale, circle the form you are learning. Add your own on the empty lines.</p>'
+     f'<table class="ht tight"><colgroup><col style="width:44%"><col style="width:14%"><col style="width:14%"><col style="width:14%"><col style="width:14%"></colgroup><thead><tr><th>Scale</th><th>Hands separately</th><th>Hands together</th><th>From memory</th><th>At speed</th></tr></thead><tbody>{tr}</tbody></table>', n, z=0.96); n += 1
 def weeklist(n_rows):
     th = ''.join(f'<th>{d[0]}</th>' for d in DAYS)
     ln = '<span style="display:block;height:30px"></span>'
