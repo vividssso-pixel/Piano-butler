@@ -17502,6 +17502,34 @@ const HB_FLOORS = HB_PARTS.map(([pre, en, ko]) => {
   return { ids, en: [en, part[0]], ko: [ko, part[1]], part: pre };
 });
 const HB_ROOM_NO = {}; HB_FLOORS.forEach(f => f.ids.forEach((id, j) => { const r = HB_ROOMS.find(x => x.id === id); HB_ROOM_NO[id] = id === HB_EAR_HUB ? '♪' : f.part === 'BP' ? '★' : (r && r.num) || j + 1; }));
+// her 18 Nov ("룸 안에서는 전체 챕터 ... 선택할 수 있는 기능", "인형의 집에서 검색창"): every room reachable from anywhere
+const hbRoomLabel = (id) => { const r = HB_ROOMS.find(x => x.id === id); if (!r) return id; const no = HB_ROOM_NO[id];
+  return (no && no !== '★' && no !== '♪' ? no + ' · ' : '') + (id === HB_EAR_HUB ? t('Ear games', '청음 게임') : t(r.en, r.ko || r.en)); };
+function HbRoomPicker({ id, onPick }) {
+  return <select data-testid="room-picker" aria-label={t('Go to a chapter', '챕터로 가기')} value={id} onChange={(e) => onPick(e.target.value)}
+    style={{flex:'1 1 auto',minWidth:0,maxWidth:340,font:'inherit',fontSize:13.5,fontWeight:800,color:'var(--navy)',background:'#fff',border:'1.5px solid var(--navy-line)',borderRadius:10,padding:'6px 8px'}}>
+    {HB_FLOORS.map(f => <optgroup key={f.part} label={t(f.en[0], f.ko[0])}>{f.ids.map(rid => <option key={rid} value={rid}>{hbRoomLabel(rid)}</option>)}</optgroup>)}
+  </select>;
+}
+const hbSearchText = (id) => { const r = HB_ROOMS.find(x => x.id === id) || {}; const f = HB_FLOORS.find(x => x.ids.includes(id)) || { en: [''], ko: [''] };
+  return [hbRoomLabel(id), r.en, r.ko, f.en[0], f.ko[0], r.pages ? 'p ' + r.pages + ' p. ' + r.pages : '', ROOM_GRADE[id], id === HB_EAR_HUB ? 'ear listening aural 청음' : ''].join(' ').toLowerCase(); };
+function HbSearch({ onOpen }) {
+  const [q, setQ] = useState('');
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const hits = words.length ? HB_FLOORS.flatMap(f => f.ids).filter(id => words.every(w => hbSearchText(id).includes(w))).slice(0, 8) : [];
+  return <div data-testid="house-search" style={{position:'relative',margin:'0 0 10px'}}>
+    <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('Search the chapters: rests, scales, p. 75…', '챕터 찾기: 쉼표, 음계, 75쪽…')} aria-label={t('Search the chapters', '챕터 찾기')}
+      style={{width:'100%',boxSizing:'border-box',font:'inherit',fontSize:15,padding:'10px 14px',border:'1.5px solid var(--navy-line)',borderRadius:12,background:'#fff',color:'var(--navy)'}}/>
+    {words.length > 0 && <div role="listbox" style={{position:'absolute',left:0,right:0,top:'100%',zIndex:20,background:'#fff',border:'1.5px solid var(--navy-line)',borderRadius:12,marginTop:4,boxShadow:'0 10px 30px rgba(38,41,107,.15)',overflow:'hidden'}}>
+      {hits.length ? hits.map(id => { const r = HB_ROOMS.find(x => x.id === id) || {}; const f = HB_FLOORS.find(x => x.ids.includes(id));
+        return <button key={id} type="button" role="option" data-search-hit={id} onClick={() => { setQ(''); onOpen(id); }}
+          style={{display:'block',width:'100%',textAlign:'left',border:'none',borderTop:'1px solid #eeeef6',background:'#fff',padding:'9px 14px',cursor:'pointer',font:'inherit'}}>
+          <b style={{color:'var(--navy)',fontSize:14.5}}>{hbRoomLabel(id)}</b>
+          <span style={{display:'block',fontSize:12,color:'var(--muted)'}}>{f ? t(f.en[0], f.ko[0]) : ''}{r.pages ? ' · ' + t('p. ' + r.pages, r.pages + '쪽') : ''}{ROOM_GRADE[id] ? ' · ' + ROOM_GRADE[id] : ''}</span></button>; })
+        : <div style={{padding:'10px 14px',fontSize:13.5,color:'var(--muted)'}}>{t('No chapter by that name. Try another word.', '그런 이름의 챕터가 없어요. 다른 말로 찾아봐요.')}</div>}
+    </div>}
+  </div>;
+}
 const EXAM_KEY = 'pb_exam_v1';
 const loadExam = () => { try { const v = localStorage.getItem(EXAM_KEY) || ''; return HB_GRADES.includes(v) ? v : ''; } catch (e) { return ''; } };
 const examOK = (id, ex) => !ex || !ROOM_GRADE[id] || HB_GRADES.indexOf(ROOM_GRADE[id]) <= HB_GRADES.indexOf(ex);
@@ -26368,6 +26396,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
         {weekEl && <div style={{marginBottom:14,maxWidth:440}}>{weekEl}</div>}
         {!compact && <ReviewCard/>}
         {!compact && inside && <PieceBar here={here} col={pcol} onCol={(c) => { try { localStorage.setItem(PIECE_COL_KEY, c); } catch (e) {} setPcol(c); }}/>}
+        {HB_HOUSE && inside && !compact && <HbSearch onOpen={onOpen}/>}
         {HB_HOUSE && inside && !compact && <div data-testid="my-exam" style={{display:'flex',flexWrap:'wrap',gap:5,alignItems:'center',margin:'0 0 12px'}}><span style={{fontSize:12.5,fontWeight:800,color:'#6d6f9c',marginRight:2}}>{t('My exam:', '내 시험:')}</span>{['', ...HB_GRADES].map(g => <button key={g || 'all'} type="button" className={'chip' + (g === exam ? ' active' : '')} aria-pressed={g === exam} data-exam={g || 'all'} onClick={() => setEx(g)} style={{fontSize:12.5,padding:'3px 10px'}}>{g ? lvlName(g) : t('All', '전체')}</button>)}</div>}
         {false && inside && !compact && <HouseTopics value={topic} onChange={setTopic}/>}   {/* m29: the Library does topics now */}
         <div ref={houseRef} data-house-view role="group" aria-label={t('The Piano Butler’s house: ' + houseFloors() + ', one room for each chapter', '피아노 버틀러의 집: ' + houseFloors(true) + ', 챕터마다 방 하나')}>
@@ -27287,7 +27316,8 @@ function App() {
           return (
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:14}}>
               <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{(T || (HM && st.view === 'home')) ? (st.view === 'home' ? '← ' + ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Lessons', '레슨')) : t('← Back', '← 뒤로')) : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
-              <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? sg.title : ''}</span>
+              {HB_HOUSE && HB_ROOMS.some(r => r.id === active.id) ? <HbRoomPicker id={active.id} onPick={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>   /* her 18 Nov: any chapter, one tap away */
+                : <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? sg.title : ''}</span>}
               <span style={{display:'flex',gap:4}}>
                 {!(HM && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>}
                 {!(HM && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k >= list.length - 1} onClick={() => update({ drill: list[k + 1], tab: 'learn', level: 1 })}>›</button>}
