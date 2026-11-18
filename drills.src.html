@@ -3002,9 +3002,11 @@ function SoundSettings({ menu }) {   // m15: menu = inside the teacher's ⚙ men
 
 let _audioCtx = null;
 let _clickNodes = [];
+let PL_LIVE = null, PL_TAPPED = null;
+try { window.addEventListener('pointerdown', (e) => { PL_TAPPED = e.target; }, true); } catch (e) {}   // the beat run sounding now: PlRunStatus under every pad reads it (count-in, then 'Bar n of N')
 function stopClicks() {
   _clickNodes.forEach(o => { try { o.stop(); } catch (e) {} });
-  _clickNodes = []; _count.last = null;
+  _clickNodes = []; _count.last = null; PL_LIVE = null;
   try { _speechTimers.forEach(clearTimeout); _speechTimers = []; if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
 }
 function playClicks(bpm, count) {
@@ -37837,7 +37839,7 @@ const LS_CHORD = { C: [21, 25, 28, 30], G: [18, 22, 27, 29] };   // C3 G3 C4 E4 
 const lsQuietOf = (m) => (i) => !LS_PLAN[m][Math.floor(i / m)];
 function lsBeatRun(m, bpm) {
   const bars = LS_PLAN[m];
-  return plRun(m + bars.length * m, { bpm, silentFrom: m, extra: (ctx, tm, i, spb) => { if (i < m) return; const b = i - m, ch = bars[Math.floor(b / m)];
+  return plRun(m + bars.length * m, { lead: m, top: m, bpm, silentFrom: m, extra: (ctx, tm, i, spb) => { if (i < m) return; const b = i - m, ch = bars[Math.floor(b / m)];
     if (ch) LS_CHORD[ch].forEach(d => lsNote(ctx, tm, d, spb * 0.6, b % m === 0 ? 0.1 : 0.06)); } });
 }
 function LsBeatPad({ onResult, meter = 2, speed = 'moderate', fixed }) {
@@ -37904,7 +37906,7 @@ function LsCells({ cells, lit = -1, show = true, size = 30 }) {
 // count-in (4 clicks), the call (2 bars), the echo (2 bars); a soft click on every beat keeps the pulse going
 function lsEchoRun(cells) {
   const n = cells.length;
-  return plRun(4 + n * 2, { bpm: LS_BPM, silentFrom: 4, extra: (ctx, tm, i, spb) => { if (i < 4) return; metroClick(ctx, tm, false, 0.09); const b = i - 4; if (b >= n) return;
+  return plRun(4 + n * 2, { lead: 4, top: 4, bpm: LS_BPM, silentFrom: 4, extra: (ctx, tm, i, spb) => { if (i < 4) return; metroClick(ctx, tm, false, 0.09); const b = i - 4; if (b >= n) return;
     const c = cells[b]; if (c === 'w') lsNote(ctx, tm, 32, lsHold(cells, b) * spb * 0.85, 0.22); else if (c === 'r') { lsNote(ctx, tm, 32, spb * 0.42, 0.22); lsNote(ctx, tm + spb / 2, 32, spb * 0.42, 0.22); } } });
 }
 function LsEchoPad({ onResult, fixed }) {
@@ -43169,7 +43171,7 @@ const s4Two = (k) => { const c = S4_ST[k], out = [];
 const S4_BPM = 52;
 // four lead-in clicks, then the scale four notes a beat with no clicks: legato (each note held to the next) or staccato (short)
 const s4PlayTouch = (k, stacc, bpm = S4_BPM) => { const sq = s4Two(k);
-  return plRun(4 + 8, { bpm, vol: 0.28, silentFrom: 4, extra: (ctx, tm, i, spb) => { if (i < 4) return; const b = i - 4;
+  return plRun(4 + 8, { lead: 4, top: 4, bpm, vol: 0.28, silentFrom: 4, extra: (ctx, tm, i, spb) => { if (i < 4) return; const b = i - 4;
     for (let q = 0; q < 4; q++) { const n = b * 4 + q; if (n >= sq.length) break; blip(ctx, tm + q * spb / 4, spHz(sq[n].i), n === sq.length - 1 ? spb * (stacc ? 0.2 : 1) : stacc ? spb * 0.07 : spb / 4 * 0.98, 0.15, 'triangle'); } } }); };
 function S4Groups({ k, cur = -1, marks = null }) {
   const sq = s4Two(k), groups = []; for (let b = 0; b * 4 < sq.length; b++) groups.push(sq.slice(b * 4, b * 4 + 4).map((x, q) => [x, b * 4 + q]));
@@ -55069,7 +55071,9 @@ function plRun(n, o = {}) {
     if (o.extra) o.extra(ctx, t, i, spb);
     t += o.gaps ? o.gaps[i] || spb : spb;
   }
-  return { ctx, spb, at, lat, t0, now: () => ctx.currentTime };
+  const r = { ctx, spb, at, lat, t0, now: () => ctx.currentTime, lead: o.lead, top: o.top, from: o.from || 0 };
+  r.origin = PL_TAPPED && PL_TAPPED.isConnected ? PL_TAPPED : document.activeElement;   // the button that started it
+  PL_LIVE = r; return r;
 }
 // one beat: the same click every time (strong and weak beats are room 8's, B4), or the spoken count when the sound
 // settings ask for a voice (never while a child counts inside her head)
@@ -55104,7 +55108,32 @@ function usePlTimers() {
   };
 }
 // a big tap pad, and the space bar while it is live
-function PlPad({ on, onTap, onRelease, label, h = 74 }) {   // onRelease (Phase 463): the pad let go, so a note can sound as long as it is held
+// her 18 Nov rule: a timed task shows its count-in, then which bar is playing ("Bar 2 of 4"), under the pad, from the audio clock
+function plRunState() {
+  const r = PL_LIVE; if (!r || !r.top || !r.at.length || r.ctx.state !== 'running') return null;
+  const now = r.ctx.currentTime, at = r.at, lead = r.lead || 0;
+  if (now > at[at.length - 1] + r.spb) return null;
+  let i = -1; for (let j = 0; j < at.length; j++) { if (at[j] <= now + 0.015) i = j; else break; }
+  if (i < lead) return { c: i, lead, top: r.top };
+  const k = i - lead + r.from, up = r.from > 0 ? 1 : 0;   // a row that starts with an upbeat: the upbeat is not bar 1
+  if (up && k < r.top) return { up: true };
+  return { bar: Math.floor(k / r.top) + 1 - up, of: Math.ceil((at.length - lead + r.from) / r.top) - up };
+}
+// only the pad in the same box as the button that started the run shows it (a page can hold several try-boxes)
+const plMine = (el, r) => { const o = r && r.origin; if (!el || !o || !o.isConnected) return false; let a = el.parentElement;
+  while (a && !a.contains(o)) a = a.parentElement; return !!a && a.querySelectorAll('[data-pl-pad]').length === 1; };
+function PlRunStatus() {
+  const [st, setSt] = useState(null), me = useRef(null);
+  useEffect(() => { let id, last = 'null'; const f = () => { const v0 = plRunState(), v = v0 && plMine(me.current, PL_LIVE) ? v0 : null, k = v ? JSON.stringify(v) : 'null';
+    if (k !== last) { last = k; setSt(v); } id = requestAnimationFrame(f); }; id = requestAnimationFrame(f); return () => cancelAnimationFrame(id); }, []);
+  const box = (kids) => <div data-pl-status ref={me} style={{minHeight:30,display:'flex',gap:6,justifyContent:'center',alignItems:'center',marginTop:6,flexWrap:'wrap'}}>{kids}</div>;
+  if (!st) return box(null);
+  if (st.up) return box(<span style={{fontSize:14,fontWeight:900,color:BK.ink,letterSpacing:'0.02em'}}>{t('The upbeat', '못갖춘마디')}</span>);
+  if (st.bar) return box(<span style={{fontSize:14,fontWeight:900,color:BK.ink,letterSpacing:'0.02em'}}>{t('Bar ' + st.bar + ' of ' + st.of, st.of + '마디 중 ' + st.bar + '마디')}</span>);
+  const nums = Array.from({ length: st.lead }, (_, i) => i < st.top ? i + 1 : i - st.top + 1);
+  return box(<><span style={{fontSize:12.5,fontWeight:900,letterSpacing:'0.06em',color:BK.muted}}>{t('COUNT IN', '먼저 세기')}</span>{nums.map((n, i) => { const lit = i <= st.c; return <span key={i} style={{width:24,height:24,borderRadius:'50%',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900,border:'2px solid ' + (lit ? BK.coral : BK.ink),background:lit ? BK.coral : 'transparent',color:lit ? '#fff' : BK.ink}}>{n}</span>; })}</>);
+}
+function PlPad({ on, onTap, onRelease, label, h = 74, status = true }) {   // onRelease (Phase 463): the pad let go, so a note can sound as long as it is held
   useEffect(() => {
     if (!on) return;
     const k = (e) => { if ((e.code === 'Space' || e.key === ' ') && !e.repeat) { e.preventDefault(); onTap(); } };
@@ -55112,8 +55141,8 @@ function PlPad({ on, onTap, onRelease, label, h = 74 }) {   // onRelease (Phase 
     window.addEventListener('keydown', k); window.addEventListener('keyup', u); return () => { window.removeEventListener('keydown', k); window.removeEventListener('keyup', u); };
   }, [on, onTap, onRelease]);
   const up = () => { if (onRelease) onRelease(); };
-  return <button data-pl-pad onPointerDown={(e) => { e.preventDefault(); if (on) onTap(); }} onPointerUp={up} onPointerLeave={up} onPointerCancel={up} disabled={!on}
-    style={{width:'100%',height:h,borderRadius:14,border:'2px solid ' + (on ? BK.coral : BK.line),background:on ? '#fbe3da' : '#fff',color:on ? BK.coral : BK.muted,fontSize:18,fontWeight:900,touchAction:'manipulation',cursor:on ? 'pointer' : 'default',userSelect:'none'}}>{label || t('TAP', '탭')}</button>;
+  return <><button data-pl-pad onPointerDown={(e) => { e.preventDefault(); if (on) onTap(); }} onPointerUp={up} onPointerLeave={up} onPointerCancel={up} disabled={!on}
+    style={{width:'100%',height:h,borderRadius:14,border:'2px solid ' + (on ? BK.coral : BK.line),background:on ? '#fbe3da' : '#fff',color:on ? BK.coral : BK.muted,fontSize:18,fontWeight:900,touchAction:'manipulation',cursor:on ? 'pointer' : 'default',userSelect:'none'}}>{label || t('TAP', '탭')}</button>{status && <PlRunStatus/>}</>;
 }
 const plHint = () => <div style={{fontSize:12,color:'var(--muted)',textAlign:'center',marginTop:6,lineHeight:1.4}}>{t('Tap the pad or press the space bar. The device speaker or wired headphones work best: Bluetooth adds a delay.', '패드를 누르거나 스페이스 바를 눌러요. 기기 스피커나 유선 이어폰이 가장 좋아요: 블루투스는 소리가 늦게 와요.')}</div>;
 // a row of beat circles in plain SVG (the book's beat circles): kinds 'beat' | 'play' | 'silent'; lit = the one sounding now
@@ -55235,7 +55264,7 @@ function PlSilentBeats() {
   const P = PL_SILENT[pi], N = 8, play = (i) => P.play[i % 4] === 1;
   function start() {
     T.clear(); setRes(null); taps.current = [];
-    const r = plRun(4 + N, { vol: 0.22 }); if (!r) return; run.current = r;
+    const r = plRun(4 + N, { lead: 4, top: 4, vol: 0.22 }); if (!r) return; run.current = r;
     r.at.forEach((a, i) => T.at(r, a, () => { setLit(i - 4); setPhase(i < 4 ? 'count' : 'go'); }));
     T.at(r, r.at[4 + N - 1] + r.spb * 0.9, () => {
       setLit(-1); setPhase('done');
@@ -55289,7 +55318,7 @@ function PlWordsBeat() {
   const row = PL_WORD_SETS[si], ROUNDS = 2, N = 4 * ROUNDS;
   function start(m) {
     T.clear(); setRes(null); taps.current = []; setMode(m);
-    const r = plRun(4 + N, { vol: 0.25, extra: plWordSounds(row) }); if (!r) return; run.current = r;
+    const r = plRun(4 + N, { lead: 4, top: 4, vol: 0.25, extra: plWordSounds(row) }); if (!r) return; run.current = r;
     r.at.forEach((a, i) => T.at(r, a, () => { setPos(i - 4); setPhase(i < 4 ? 'count' : 'go'); }));
     T.at(r, r.at[4 + N - 1] + r.spb * 0.95, () => {
       setPos(-1); setPhase('done');
@@ -55345,7 +55374,7 @@ function PlFingerBeat() {
   const tune = PL_FINGER_TUNES[ti], N = 8, want = (i) => tune.seq[i % 4];
   function start() {
     T.clear(); setRes(null); taps.current = [];
-    const r = plRun(4 + N, { vol: 0.22 }); if (!r) return; run.current = r;
+    const r = plRun(4 + N, { lead: 4, top: 4, vol: 0.22 }); if (!r) return; run.current = r;
     r.at.forEach((a, i) => T.at(r, a, () => { setPos(i - 4); setPhase(i < 4 ? 'count' : 'go'); }));
     T.at(r, r.at[4 + N - 1] + r.spb * 0.9, () => {
       setPos(-1); setPhase('done');
@@ -56091,7 +56120,7 @@ function nvSounds(row) {
 // 4 clicks to get ready, then the row: its notes on middle C (none when the child taps them), 'and' over a pair's beat
 function nvRunRow(row, o = {}) {
   const n = nvBeats(row), snd = nvSounds(row), pairs = new Set(snd.filter(s => s.h === 1).map(s => Math.round(s.b - 0.5)));
-  return plRun(4 + n, { bpm: NV_BPM, vol: o.vol != null ? o.vol : 0.24, extra: (ctx, tm, i, spb) => {
+  return plRun(4 + n, { lead: 4, top: 4, bpm: NV_BPM, vol: o.vol != null ? o.vol : 0.24, extra: (ctx, tm, i, spb) => {
     if (i < 4) return;
     const b = i - 4;
     if (!o.silent) snd.filter(s => Math.floor(s.b + 1e-9) === b).forEach(s => blip(ctx, tm + (s.b - b) * spb, 261.63, Math.max(0.1, s.d * spb * 0.92), 0.2, 'triangle'));
@@ -57161,7 +57190,7 @@ function tsSeq(items, ties = []) {
 // spoken count only in the count-in (a child counting in her head); o.silent: no notes (she taps them)
 function tsPlayRow(seq, o = {}) {
   const top = seq.top, ands = new Set(seq.snd.filter(s => Math.abs(s.b % 1 - 0.5) < 1e-9).map(s => Math.floor(s.b)));
-  return plRun(top + seq.n, { bpm: o.bpm || TS_BPM, silentFrom: 0, noVoice: true, extra: (ctx, tm, i, spb) => {
+  return plRun(top + seq.n, { lead: top, top, bpm: o.bpm || TS_BPM, silentFrom: 0, noVoice: true, extra: (ctx, tm, i, spb) => {
     const inBar = i % top, countIn = i < top;
     const said = SOUND.count === 'voice' && (countIn || !o.voiceIn) && sayCount(ctx, tm, String(inBar + 1), 1);
     if (!said) metroClick(ctx, tm, (o.accent !== false || countIn) && inBar === 0, 0.27);
@@ -57263,7 +57292,7 @@ function TsStrongPad() {
       <div style={{maxWidth:600,margin:'0 auto'}}><TsStaff full items={tsBar4(top)} o={{ D: 30, strong: true, mid: false, lit }}/></div>
       <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.muted,minHeight:18,margin:'2px 0 4px'}}>{phase === 'count' ? t('Count in: ', '먼저 세기: ') + count : phase === 'go' ? t('Bar ' + (Math.floor(lit / top) + 1) + ' of 4: tap on 1!', '네 마디 중 ' + (Math.floor(lit / top) + 1) + '마디: 1에서 쳐요!') : ''}</div>
       <div style={{textAlign:'center',marginBottom:8}}><button className="ghost-btn" onClick={start}>{t('▶ Start', '▶ 시작')}</button></div>
-      <PlPad on={live} onTap={tap} label={t('TAP ON EVERY 1', '1박마다 쳐요')}/>
+      <PlPad on={live} onTap={tap} status={false} label={t('TAP ON EVERY 1', '1박마다 쳐요')}/>
       {res && <div style={{textAlign:'center',fontSize:14.5,fontWeight:900,marginTop:6,color:ok ? BK.green : BK.coral}}>{t('Strong beats on time: ' + res.hits + ' of ' + res.total + (res.extra ? ' · extra taps: ' + res.extra : ''), '제때 친 센박: ' + res.total + '개 중 ' + res.hits + '개' + (res.extra ? ' · 더 친 것: ' + res.extra + '개' : ''))}{ok ? '  ✓' : ''}</div>}
       {plHint()}
     </div>
@@ -57496,7 +57525,7 @@ function TsQuestion({ q, given, locked, onAnswer, pixel }) {
       {staff(tsBar4(top), { D: 30, strong: true, mid: false, lit }, null, 600)}
       <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:pixel ? '#f6f6fb' : BK.muted,minHeight:18,margin:'2px 0 4px'}}>{phase === 'count' ? t('Count in: ', '먼저 세기: ') + cnt : phase === 'go' ? t('Bar ' + (Math.floor(lit / top) + 1) + ' of 4: tap on 1!', '네 마디 중 ' + (Math.floor(lit / top) + 1) + '마디: 1에서 쳐요!') : ''}</div>
       {!done && phase === 'ready' && <div style={{textAlign:'center',marginBottom:8}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={start} style={{fontSize:15,padding:'10px 18px'}}>{t('▶ Start', '▶ 시작')}</button></div>}
-      {!done && <PlPad on={phase === 'count' || phase === 'go'} onTap={onTap} h={64} label={t('TAP ON EVERY 1', '1박마다 쳐요')}/>}
+      {!done && <PlPad on={phase === 'count' || phase === 'go'} onTap={onTap} h={64} status={false} label={t('TAP ON EVERY 1', '1박마다 쳐요')}/>}
       {res && <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:8,color:res.ok ? BK.green : BK.coral}}>{t('Strong beats on time: ' + res.hits + ' of ' + res.total + (res.extra ? ' · extra taps: ' + res.extra : ''), '제때 친 센박: ' + res.total + '개 중 ' + res.hits + '개' + (res.extra ? ' · 더 친 것: ' + res.extra + '개' : ''))}</div>}
     </div>;
   }
@@ -61662,7 +61691,7 @@ function srhRun(items, o = {}) {
       if (voice && Math.abs(s.b - b - 0.5) < 1e-6) sayCount(ctx, tm + spb / 2, 'and', 0.8);
     });
   } });
-  if (r) r.lead = lead;
+  if (r) { r.lead = lead; r.top = top; r.from = from; }
   return r;
 }
 // which tap answers each note (the nearest free tap within the tolerance), or -1
@@ -79936,7 +79965,7 @@ function rqRunS(items, o = {}) {
     if (i < lead) return; const b = (i - lead) * u;
     snd.filter(s => s.b > b - 1e-9 && s.b < b + u - 1e-9).forEach(s => { if (!o.silent && !s.rest) blip(ctx, tm + (sw(s.b) - b) / u * spb, SRH_HZ, Math.max(0.08, s.d / u * spb * 0.9), 0.2, 'triangle'); });
   } });
-  if (r) r.lead = lead; return r;
+  if (r) { r.lead = lead; r.top = top; r.from = from; } return r;
 }
 const rqD = (items) => items.some(x => x[0] === '|') ? 34 : 44;
 // only: the beats (from the row's start) to tap instead of the notes, e.g. beat 1 of every bar
