@@ -2724,11 +2724,15 @@ function onsetOf(buf, frac) {
 }
 // How long after it is scheduled a sound actually comes out of the speaker.
 function outLatency(ctx) { return Math.min(0.3, (ctx && (ctx.outputLatency || ctx.baseLatency)) || 0); }
+// her 18 Nov ('피아노 소리로'): the piano files are fetched as the page opens, so the very first note is already the piano
+const _pianoAB = {};
+function prefetchPiano() { if (typeof fetch === 'undefined') return; PIANO_FILES.forEach(f => { if (!_pianoAB[f.name]) _pianoAB[f.name] = fetch('audio/piano/' + f.name + '.mp3').then(r => r.ok ? r.arrayBuffer() : Promise.reject()).catch(() => null); }); }
+try { if (SOUND.piano) setTimeout(prefetchPiano, 400); } catch (e) {}
 function loadPiano(ctx) {
   if (_piano.started || !ctx || typeof fetch === 'undefined') return;
-  _piano.started = true;
+  _piano.started = true; prefetchPiano();
   PIANO_FILES.forEach(f => {
-    fetch('audio/piano/' + f.name + '.mp3').then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+    _pianoAB[f.name].then(ab => ab || Promise.reject())
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
       .then(b => { _piano.on[f.midi] = onsetOf(b, 0.05); _piano.buf[f.midi] = b; }).catch(() => {});
   });
@@ -4778,7 +4782,7 @@ function getAudio() {
   } catch (e) { return null; }
 }
 function blip(ctx, t, freq, len, vol, type) {   // returns release(): stop the note early (Phase 463, a held tap)
-  if (type === 'triangle' && SOUND.piano) return pianoNote(ctx, t, freq, len, vol);
+  if (SOUND.piano && (type === 'triangle' || ((!type || type === 'sine') && len >= 0.08 && freq >= 50 && freq <= 4200))) return pianoNote(ctx, t, freq, len, vol);   // her 18 Nov ('피아노 소리로'): every pitched note is the piano; only short clicks stay clicks
   const o = ctx.createOscillator(), g = ctx.createGain();
   if (type) o.type = type;
   o.frequency.value = freq;
