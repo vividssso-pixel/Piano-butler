@@ -17496,18 +17496,22 @@ const ROOM_GRADE = {}; HB_GRADE_FLOORS.forEach(f => f.ids.forEach(id => { if (!R
 const HB_GRADES = HB_GRADE_FLOORS.map(f => f.en[0]);
 const HB_EAR_HUB = 'hbr-ear-beginner';
 const HB_PARTS = [['BP', 'Before you play', '연주 전에'], ['P', 'Pitch', '음높이'], ['T', 'Time', '박과 리듬'], ['B', 'Bars and repeats', '마디와 반복'], ['E', 'Expression', '표현'], ['S', 'Scales and keys', '음계와 조'], ['H', 'Chords', '화음'], ['M', 'Harmony in music', '음악 속 화성'], ['F', 'Shape and style', '형식과 양식'], ['L', 'Playing and listening', '연주와 듣기'], ['G', 'Going further', '더 나아가기']];
-const hbChNo = (ch) => parseInt(String(ch).replace(/^[A-Z]+/, ''), 10) || 0;
+const hbChNo = (ch) => ch === 'T5' ? 0.5 : parseInt(String(ch).replace(/^[A-Z]+/, ''), 10) || 0;   // her 18 Nov: Pulse and tempo (key T5) is Time 1
 const HB_FLOORS = HB_PARTS.map(([pre, en, ko]) => {
   const rs = HB_ROOMS.filter(r => !r.review && !r.ear && r.ch && (pre === 'BP' ? r.ch === 'BP' : r.ch !== 'BP' && r.ch.replace(/\d+$/, '') === pre)).sort((a, b) => hbChNo(a.ch) - hbChNo(b.ch));
   const ids = rs.map(r => r.id);
   const part = rs[0] && rs[0].part ? rs[0].part : [en, ko];
   return { ids, en: [en, part[0]], ko: [ko, part[1]], part: pre };
 });
-HB_FLOORS.push({ ids: HB_ROOMS.filter(r => r.ear).map(r => r.id), en: ['Aural', 'Aural: ear tests'], ko: ['청음', '청음 시험'], part: 'A' });   // her 18 Nov: the Aural floor, one room per level
-const HB_ROOM_NO = {}; HB_FLOORS.forEach(f => f.ids.forEach((id, j) => { const r = HB_ROOMS.find(x => x.id === id); HB_ROOM_NO[id] = f.part === 'A' ? '♪' : f.part === 'BP' ? '★' : (r && r.num) || j + 1; }));
+{ // her 18 Nov: Playing and listening goes inside Going further; its two listening chapters lead the Ear training floor ("오럴 방을 ear training 방으로")
+  const HB_EAR_LEARN = ['hbr-L4', 'hbr-n-L5'], fL = HB_FLOORS.findIndex(f => f.part === 'L'), fG = HB_FLOORS.findIndex(f => f.part === 'G');
+  if (fL >= 0 && fG >= 0) { HB_FLOORS[fG].ids = HB_FLOORS[fL].ids.filter(id => !HB_EAR_LEARN.includes(id)).concat(HB_FLOORS[fG].ids); HB_FLOORS.splice(fL, 1); }
+  HB_FLOORS.push({ ids: HB_EAR_LEARN.concat(HB_ROOMS.filter(r => r.ear).map(r => r.id)), en: ['Ear training', 'Ear training: the aural tests'], ko: ['청음', '청음: 귀 시험'], part: 'A' });
+}
+const HB_ROOM_NO = {}; HB_FLOORS.forEach(f => f.ids.forEach((id, j) => { const r = HB_ROOMS.find(x => x.id === id); HB_ROOM_NO[id] = f.part === 'A' ? (r && r.ear ? '♪' : f.ids.indexOf(id) + 1) : f.part === 'G' ? j + 1 : f.part === 'BP' ? '★' : (r && r.num) || j + 1; }));
 // her 18 Nov ("룸 안에서는 전체 챕터 ... 선택할 수 있는 기능", "인형의 집에서 검색창"): every room reachable from anywhere
 const hbRoomLabel = (id) => { const r = HB_ROOMS.find(x => x.id === id); if (!r) return id; const no = HB_ROOM_NO[id];
-  return (no && no !== '★' && no !== '♪' ? no + ' · ' : '') + (r.ear ? t('Aural', '청음') + ' · ' + ROOM_GRADE[id] : t(r.en, r.ko || r.en)); };
+  return (no && no !== '★' && no !== '♪' ? no + ' · ' : '') + (r.ear ? t('Ear training', '청음') + ' · ' + ROOM_GRADE[id] : t(r.en, r.ko || r.en)); };
 function HbRoomPicker({ id, onPick }) {
   return <select data-testid="room-picker" aria-label={t('Go to a chapter', '챕터로 가기')} value={id} onChange={(e) => onPick(e.target.value)}
     style={{flex:'1 1 auto',minWidth:0,maxWidth:340,font:'inherit',fontSize:13.5,fontWeight:800,color:'var(--navy)',background:'#fff',border:'1.5px solid var(--navy-line)',borderRadius:10,padding:'6px 8px'}}>
@@ -17716,8 +17720,8 @@ function HbAuralG1({ r }) {
   const log = (id) => (res) => { auralLog(g, id, !!res.ok); bump(n => n + 1); };
   return (<div data-hb-aural={r.id}>
     <div style={{margin:'4px 0 6px'}}>
-      <div style={{fontSize:12,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--coral)'}}>{t('Aural · Grade 1', '청음 · Grade 1')}</div>
-      <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:800,color:'var(--navy)',lineHeight:1.2,margin:'4px 0'}}>{t('Your Grade 1 aural', 'Grade 1 청음')}</div>
+      <div style={{fontSize:12,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--coral)'}}>{t('Ear training · Grade 1', '청음 · Grade 1')}</div>
+      <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:800,color:'var(--navy)',lineHeight:1.2,margin:'4px 0'}}>{t('Your Grade 1 ear tests', 'Grade 1 청음 시험')}</div>
       <div style={{fontSize:14.5,color:'var(--muted)',lineHeight:1.5}}>{t('Three listening tests. A few minutes, three or four times a week. Always out loud: the examiner wants to hear your voice.', '듣기 시험 세 가지. 일주일에 서너 번, 몇 분씩. 언제나 소리 내어: 시험관은 여러분의 목소리를 듣고 싶어 해요.')}</div>
     </div>
     <div className="card" style={{padding:'10px 14px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center',margin:'10px 0 4px'}} data-aural="record">
@@ -24245,7 +24249,7 @@ function MapHome({ onOpen }) {
   return (
     <div className="fade-up" data-testid="map-home">
       <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={<>{t((['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][houseFloorsN()] || houseFloorsN()) + ' floors of music. ', houseFloorsN() + '층의 음악. ')}<b style={{color:'var(--navy)'}}>{t('Open any door', '아무 문이나 열고')}</b>{t(' and climb.', ' 올라가요.')}</>}   /* m17: her 'too long, nobody reads it' *//>
-      {HB_HOUSE && <div style={{margin:'-4px 0 12px'}}><button type="button" className="chip" data-testid="aural-door" style={{fontSize:13.5,padding:'6px 14px',fontWeight:800}} onClick={() => onOpen(auralRoomId())}>♪ {t('Aural: the ear tests, Beginner to Grade 8', '청음: 귀 시험, Beginner부터 Grade 8까지')}</button></div>}
+      {HB_HOUSE && <div style={{margin:'-4px 0 12px'}}><button type="button" className="chip" data-testid="aural-door" style={{fontSize:13.5,padding:'6px 14px',fontWeight:800}} onClick={() => onOpen(auralRoomId())}>♪ {t('Ear training: the aural tests, Beginner to Grade 8', '청음: 귀 시험, Beginner부터 Grade 8까지')}</button></div>}
       <MapHead onOpen={onOpen}/>
       <HouseMap onOpen={onOpen} noIntro/>
     </div>
@@ -26521,7 +26525,7 @@ const PIECE_PROMO = {
   rook: ['Rooks are the strong towers of the board, and your playing is that strong now.', '룩은 체스판의 든든한 탑이에요. 이제 연주도 그만큼 든든해요.'],
   queen: ['The pawn reached the far side and is crowned. Every move is yours.', '폰이 끝까지 가서 왕관을 썼어요. 이제 모든 길이 열려요.'],
 };
-if (HB_HOUSE) HB_ROOMS.forEach(r => { CH_SHORT[r.id] = r.ear ? ['Aural · ' + ROOM_GRADE[r.id], '청음 · ' + ROOM_GRADE[r.id]] : [r.en, r.ko]; CH_SUB[r.id] = r.ear ? [r.ear.length + ' listening games', '듣기 게임 ' + r.ear.length + '개'] : r.review ? [r.review.length + ' short parts', '짧은 부분 ' + r.review.length + '개'] : r.again ? ['Again: ' + r.again[0], '다시: ' + r.again[1]] : ['p. ' + r.pages + ' · ' + (ROOM_GRADE[r.id] || ''), r.pages + '쪽 · ' + (ROOM_GRADE[r.id] || '')]; if (r.id === HB_EAR_HUB) { CH_SHORT[r.id] = ['Ear games', '청음 게임']; CH_SUB[r.id] = ['Beginner to Grade 8', 'Beginner부터 Grade 8까지']; } });   // her 11 Nov: the part's name only (Pitch, Time), so it fits the room   // her 11 Nov: the house rooms' names
+if (HB_HOUSE) HB_ROOMS.forEach(r => { CH_SHORT[r.id] = r.ear ? ['Ear training · ' + ROOM_GRADE[r.id], '청음 · ' + ROOM_GRADE[r.id]] : [r.en, r.ko]; CH_SUB[r.id] = r.ear ? [r.ear.length + ' listening games', '듣기 게임 ' + r.ear.length + '개'] : r.review ? [r.review.length + ' short parts', '짧은 부분 ' + r.review.length + '개'] : r.again ? ['Again: ' + r.again[0], '다시: ' + r.again[1]] : ['p. ' + r.pages + ' · ' + (ROOM_GRADE[r.id] || ''), r.pages + '쪽 · ' + (ROOM_GRADE[r.id] || '')]; if (r.id === HB_EAR_HUB) { CH_SHORT[r.id] = ['Ear games', '청음 게임']; CH_SUB[r.id] = ['Beginner to Grade 8', 'Beginner부터 Grade 8까지']; } });   // her 11 Nov: the part's name only (Pitch, Time), so it fits the room   // her 11 Nov: the house rooms' names
 function PieceBar({ here, col, onCol }) {
   const kind = pieceOfRoom(here), c = col || '#26296b', i = PIECE_ORDER.indexOf(kind), nx = PIECE_ORDER[i + 1];
   const [promo, setPromo] = useState(() => { if (UI_TEACHER) return null; let last = null; try { last = localStorage.getItem(PIECE_LAST_KEY); localStorage.setItem(PIECE_LAST_KEY, kind); } catch (e) {}
