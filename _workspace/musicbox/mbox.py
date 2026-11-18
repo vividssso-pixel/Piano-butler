@@ -150,3 +150,17 @@ for i in range(1, 20):
         j, w, h = WAYS[d['id']]; d['gig'].update({'ways': w, 'ways_job': j, 'ways_how': h, 'ways_title': d['title'].split(',')[0].replace(' Go Marching In', '') + (', Two Keys' if d['id'] == 'london' else ', Three Shapes' if d['id'] == 'saints' else ', Four Ways')})
         if d['id'] == 'saints': d['gig']['ways_roots'] = ['C', 'F', 'G']
         json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
+
+# Music Box 1 (her 18 Nov 15:19: 'The Piano Butler's Music Box 1 / 2 / 3', numbers only). Song 19 is the book's last page,
+# Twinkle again with the left hand the child has now (her 18 Nov 13:57: every book ends with Twinkle, so the growth shows).
+RK = {'C': 'C - G -', 'G': 'G - D -', 'F': 'F - C -'}
+t = json.load(open('mb7.json')); g = t['gig']
+t.update({'title': 'Twinkle, Now', 'label': 'End of Music Box 1', 'lesson': 19})
+g['job'] = 'You played Twinkle as Song 7, with one key a chord. Play it again with the left hand you have now. Same tune, bigger left hand.'
+g['fmap'] = {'c': 5, 'd': 4, 'f': 2, 'g': 1}; g['tool_cap'] = 'C then G (5, 1). F then C (2, 5). G then D (1, 4).'
+g['song_how'] = '<b>Then</b> (Song 7): one key a bar. <b>Now</b>: two keys a bar, steady as a rock.'
+for line in g['song_grid']:
+    for b in line: b['lp'] = RK[b['l']]
+g.pop('ways', None); json.dump(t, open('mb19.json', 'w'), ensure_ascii=False)
+for i in range(1, 20):
+    d = json.load(open(f'mb{i}.json')); d['book'] = "THE PIANO BUTLER'S MUSIC BOX 1"; json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
