@@ -463,6 +463,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
         if n < 4: g += f'<path d="M32 37V3" stroke="{N}" stroke-width="2.2"/>'
         if n == 3: g += f'<circle cx="40" cy="41" r="2.6" fill="{N}"/>'
         return f'<svg class="nh" viewBox="2 2 42 52" width="28" height="35">{g}</svg>'
+    # her 18 Nov 21:01: the left hand's quavers split their box like the right hand's (L.H. row, '<G.G')
     def SHADOW(b, i, lh=False):   # her 18 Nov 19:02: a faint note behind the letter, big enough for the letter to sit in its head
         tok = lambda q, k: (q.split() + ['-'] * meter_now[0])[k] if q else ''
         t = tok(b.get('r', ''), i)
@@ -474,9 +475,9 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
             else: break
         N = '#26296b'
         g = f'<ellipse cx="20" cy="34" rx="{17 if n == 4 else 16}" ry="11.5" transform="rotate({0 if n == 4 else -15} 20 34)" fill="{N if n == 1 else "none"}" stroke="{N}" stroke-width="3"/>'
-        if n < 4: g += f'<path d="M5.5 37V64" stroke="{N}" stroke-width="3"/>' if lh else f'<path d="M34.5 31V4" stroke="{N}" stroke-width="3"/>'   # her 18 Nov 20:07: the left hand's stems point down
+        if n < 4: g += f'<path d="M5.5 37V70" stroke="{N}" stroke-width="3"/>' if lh else f'<path d="M34.5 31V4" stroke="{N}" stroke-width="3"/>'   # her 18 Nov 20:07: the left hand's stems point down
         if n == 3: g += f'<circle cx="43" cy="35" r="3" fill="{N}"/>'
-        return f'<svg viewBox="0 0 48 66" width="48" height="66">{g}</svg>' if lh else f'<svg viewBox="0 0 48 50" width="48" height="50">{g}</svg>'
+        return f'<svg viewBox="0 0 48 78" width="48" height="78">{g}</svg>' if lh else f'<svg viewBox="0 0 48 50" width="48" height="50">{g}</svg>'
     def SBG(b, i, lh=False):   # her 18 Nov 19:02: on long songs the shape is a faint shadow behind the letter, not beside it
         import urllib.parse
         g = SHP(b, i, lh)
@@ -525,7 +526,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
             if 'sm' in cls: r += '<tr class="lh"><th></th>' + ''.join(f'<td class="ll b0 span" colspan="{meter}"><span class="ch2">{b["l"]}</span><i class="hold"></i></td>' for b in bars) + '</tr>'   # a small card: the chord holds the whole bar
             elif any(b.get('lp') for b in bars):   # a left-hand pattern in the song (her 11 Nov 00:40): the chord's name on beat 1, then the keys it plays
                 r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{c(b, i)}">' + ((f'<span class="ch2">{b["l"]}</span>' if b.get('l') else '') if i == 0 else '<i class="hold"></i>' if tok(b.get('lp', ''), i) == '-' else f'<b class="hk2">{tok(b.get("lp", ""), i)}</b>') + '</td>') + '</tr>'
-            else: r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{c(b, i)}">' + ((f'<span class="ch2 {"two" if b["l"].count("+") == 1 else "three"}">{"<br>".join(reversed(b["l"].split("+")))}</span>' if '+' in b['l'] else f'<span class="ch2">{b["l"]}</span>') if i == 0 and b.get('l') else (f'<span class="shw"><span class="shd">{SHADOW(b, i, True)}</span><b class="hk2">{half(tok(b.get("r", ""), i)[1:])}</b></span>' if SONG['gig'].get('shapes') and '.' not in tok(b.get('r', ''), i) else f'<b class="hk2">{half(tok(b.get("r", ""), i)[1:])}</b>') if tok(b.get('r', ''), i).startswith('<') else '<i class="hold"></i>' if (lhheld(b, i) or (b.get('l') and not any(tok(b.get('r', ''), j).startswith('<') for j in range(i)))) else '') + '</td>') + '</tr>'
+            else: r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{c(b, i)}">' + ((f'<span class="ch2 {"two" if b["l"].count("+") == 1 else "three"}">{"<br>".join(reversed(b["l"].split("+")))}</span>' if '+' in b['l'] else f'<span class="ch2">{b["l"]}</span>') if i == 0 and b.get('l') else (f'<span class="shw"><span class="shd">{SHADOW(b, i, True)}</span><b class="hk2">{half(tok(b.get("r", ""), i)[1:])}</b></span>' if SONG['gig'].get('shapes') and '.' not in tok(b.get('r', ''), i) else ('<span class="hbx">' + ''.join(f'<span><b class="hk2">{x}</b></span>' for x in tok(b.get("r", ""), i)[1:].split('.')) + '</span>' if '.' in tok(b.get('r', ''), i) else f'<b class="hk2">{tok(b.get("r", ""), i)[1:]}</b>')) if tok(b.get('r', ''), i).startswith('<') else '<i class="hold"></i>' if (lhheld(b, i) or (b.get('l') and not any(tok(b.get('r', ''), j).startswith('<') for j in range(i)))) else '') + '</td>') + '</tr>'
             if any(tok(b.get('r', ''), i).startswith('<') for b in bars for i in range(meter)):
                 lfn = lambda b, i: '.'.join((tok(b['lf'], i).split('.')[k] if b.get('lf') else str(SONG['gig']['fmap'].get(x.lower(), ''))) for k, x in enumerate(tok(b.get('r', ''), i)[1:].split('.'))) if tok(b.get('r', ''), i).startswith('<') else ''
                 r += '<tr class="mbfr lfr"><th></th>' + row(lambda b, i: f'<td class="mbfn lfn{c(b, i)}">{half(lfn(b, i))}</td>') + '</tr>'
