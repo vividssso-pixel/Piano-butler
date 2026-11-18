@@ -445,8 +445,43 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
         SONG.update({'_kb_all': 1}); h = kb(width=240, fmap=fm); SONG.update({'_kb_all': 0}); return h
     def kbL(fm):
         SONG.update({'_kb_all': 1, 'kb_c': 'below middle C'}); h = kb(width=240, fmap=fm); SONG.update({'_kb_all': 0, 'kb_c': 'middle C'}); return h
+    meter_now = [4]
+    def HEAD(b, i):   # her 18 Nov 18:13: Music Box 2 writes the letter inside the note head
+        tok = lambda q, k: (q.split() + ['-'] * meter_now[0])[k] if q else ''
+        t = tok(b.get('r', ''), i)
+        N = '#26296b'
+        if '.' in t:
+            a, z = t.split('.')[:2]
+            hd = lambda x, cx: f'<ellipse cx="{cx}" cy="40" rx="11.5" ry="8.6" transform="rotate(-15 {cx} 40)" fill="{N}"/><text x="{cx}" y="44.5" text-anchor="middle" font-size="14" font-weight="800" font-family="AH,Inter,sans-serif" fill="#fff">{x}</text>'
+            return f'<svg class="nh" viewBox="2 2 60 52" width="29" height="25">{hd(a, 15)}{hd(z, 47)}<path d="M25.6 38V5M57.6 38V5" stroke="{N}" stroke-width="2"/><path d="M24.6 6H58.6" stroke="{N}" stroke-width="5"/></svg>'
+        n = 1
+        for j in range(i + 1, meter_now[0]):
+            if tok(b.get('r', ''), j) == '-': n += 1
+            else: break
+        fill = N if n == 1 else '#fff'; col = '#fff' if n == 1 else N
+        g = f'<ellipse cx="18" cy="40" rx="15" ry="11" transform="rotate(-15 18 40)" fill="{fill}" stroke="{N}" stroke-width="2.2"/><text x="18" y="45.5" text-anchor="middle" font-size="19" font-weight="800" font-family="AH,Inter,sans-serif" fill="{col}">{t}</text>'
+        if n < 4: g += f'<path d="M32 37V3" stroke="{N}" stroke-width="2.2"/>'
+        if n == 3: g += f'<circle cx="40" cy="41" r="2.6" fill="{N}"/>'
+        return f'<svg class="nh" viewBox="2 2 42 52" width="28" height="35">{g}</svg>'
+    def SHP(b, i, lh=False):   # her 18 Nov: Music Box 2 begins the move to notation -- each letter gets the shape of its length underneath
+        tok = lambda q, k: (q.split() + ['-'] * meter_now[0])[k] if q else ''
+        t = tok(b.get('r', ''), i)
+        if lh: t = t[1:] if t.startswith('<') else ''
+        if t in ('', '-', 'r') or t.startswith('<'): return ''
+        if '.' in t: return '<svg viewBox="0 0 30 24" width="30" height="24"><ellipse cx="7" cy="19" rx="4.6" ry="3.4" transform="rotate(-20 7 19)" fill="#26296b"/><ellipse cx="23" cy="19" rx="4.6" ry="3.4" transform="rotate(-20 23 19)" fill="#26296b"/><path d="M11.2 18V3M27.2 18V3" stroke="#26296b" stroke-width="1.6"/><path d="M10.4 3.6H28" stroke="#26296b" stroke-width="3.2"/></svg>'
+        n = 1
+        for j in range(i + 1, meter_now[0]):
+            if tok(b.get('r', ''), j) == '-': n += 1
+            else: break
+        head = lambda fill: f'<ellipse cx="9" cy="19" rx="5" ry="3.6" transform="rotate(-20 9 19)" fill="{fill}" stroke="#26296b" stroke-width="1.6"/>'
+        stem = '<path d="M13.6 18V2" stroke="#26296b" stroke-width="1.6"/>'
+        if n == 1: g = head('#26296b') + stem
+        elif n == 2: g = head('#fff') + stem
+        elif n == 3: g = head('#fff') + stem + '<circle cx="19" cy="19" r="1.9" fill="#26296b"/>'
+        else: g = '<ellipse cx="9" cy="19" rx="6" ry="3.9" fill="#fff" stroke="#26296b" stroke-width="2"/>'
+        return f'<svg viewBox="2 0 18 24" width="18" height="24">{g}</svg>'
     def GRID(lines, meter, words=True, rh=True, cls=''):   # her 10 Nov 22:19: both hands as letters in beat boxes, so the count is visible
-        out = ''
+        out = ''; meter_now[0] = meter
         for li, bars in enumerate(lines):
             row = lambda f: ''.join(''.join(f(b, i) for i in range(meter)) for b in bars)
             tok = lambda s, i: (s.split() + ['-'] * meter)[i] if s else ''
@@ -460,7 +495,9 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
             lhheld = lambda b, i: tok(b.get('r', ''), i) == '-' and next((t for t in reversed([tok(b.get('r', ''), j) for j in range(i)]) if t != '-'), '').startswith('<')   # a hold after a left-hand tune note belongs to the left hand
             if rh and 'big' in cls:
                 r = '<tr class="mbfr"><th></th>' + row(lambda b, i: f'<td class="mbfn{c(b, i)}">{half(tok(b["f"], i).replace("-", "") if b.get("f") else fg(tok(b.get("r", ""), i)))}</td>') + '</tr>'   # b['f']: this bar's own fingers, one per box (her 11 Nov 00:00: the hand moves where the tune needs it)
-                r += '<tr class="rh"><th>R.H.</th>' + row(lambda b, i: f'<td class="rl{c(b, i)}"></td>' if lhheld(b, i) else cell(tok(b.get('r', ''), i), 'rl', c(b, i))) + '</tr>' + ('<tr class="cnt"><th></th>' + row(lambda b, i: f'<td class="cn mbcm{c(b, i)}">' + (half(f'{i + 1}.&') if '.' in tok(b.get('r', ''), i) else str(i + 1)) + '</td>') + '</tr>')
+                cmp = SONG['gig'].get('shapes') and ('mid' in cls or 'tri' in cls)   # a long song: the shape sits beside its letter, no extra row
+                plain = lambda t: t not in ('', '-', 'r') and '.' not in t and not t.startswith('<')
+                r += '<tr class="rh"><th>R.H.</th>' + row(lambda b, i: f'<td class="rl{c(b, i)}"></td>' if lhheld(b, i) else (f'<td class="rl nhc{c(b, i)}">{HEAD(b, i)}</td>' if SONG['gig'].get('heads') and tok(b.get('r', ''), i) not in ('', '-', 'r') and not tok(b.get('r', ''), i).startswith('<') else f'<td class="rl{c(b, i)}">{tok(b.get("r", ""), i)}<span class="shi">{SHP(b, i)}</span></td>' if cmp and plain(tok(b.get('r', ''), i)) else cell(tok(b.get('r', ''), i), 'rl', c(b, i)))) + '</tr>' + (('<tr class="shp"><th></th>' + row(lambda b, i: f'<td class="sh{c(b, i)}">{SHP(b, i)}</td>') + '</tr>') if SONG['gig'].get('shapes') and not cmp else '') + ('<tr class="cnt"><th></th>' + row(lambda b, i: f'<td class="cn mbcm{c(b, i)}">' + (half(f'{i + 1}.&') if '.' in tok(b.get('r', ''), i) else str(i + 1)) + '</td>') + '</tr>')
             else:
                 r = '' if ('sm' in cls or (li and ('big' not in cls or 'mid' in cls))) else cnt
                 if rh: r += '<tr class="rh"><th>R.H.</th>' + row(lambda b, i: cell(tok(b.get('r', ''), i), 'rl', c(b, i))) + '</tr>'
@@ -468,7 +505,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
             if 'sm' in cls: r += '<tr class="lh"><th></th>' + ''.join(f'<td class="ll b0 span" colspan="{meter}"><span class="ch2">{b["l"]}</span><i class="hold"></i></td>' for b in bars) + '</tr>'   # a small card: the chord holds the whole bar
             elif any(b.get('lp') for b in bars):   # a left-hand pattern in the song (her 11 Nov 00:40): the chord's name on beat 1, then the keys it plays
                 r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{c(b, i)}">' + ((f'<span class="ch2">{b["l"]}</span>' if b.get('l') else '') if i == 0 else '<i class="hold"></i>' if tok(b.get('lp', ''), i) == '-' else f'<b class="hk2">{tok(b.get("lp", ""), i)}</b>') + '</td>') + '</tr>'
-            else: r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{c(b, i)}">' + ((f'<span class="ch2 two">{b["l"].split("+")[1]}<br>{b["l"].split("+")[0]}</span>' if '+' in b['l'] else f'<span class="ch2">{b["l"]}</span>') if i == 0 and b.get('l') else f'<b class="hk2">{half(tok(b.get("r", ""), i)[1:])}</b>' if tok(b.get('r', ''), i).startswith('<') else '<i class="hold"></i>' if (lhheld(b, i) or (b.get('l') and not any(tok(b.get('r', ''), j).startswith('<') for j in range(i)))) else '') + '</td>') + '</tr>'
+            else: r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{c(b, i)}">' + ((f'<span class="ch2 {"two" if b["l"].count("+") == 1 else "three"}">{"<br>".join(reversed(b["l"].split("+")))}</span>' if '+' in b['l'] else f'<span class="ch2">{b["l"]}</span>') if i == 0 and b.get('l') else f'<b class="hk2">{half(tok(b.get("r", ""), i)[1:])}</b>' + (f'<span class="shi">{SHP(b, i, True)}</span>' if SONG['gig'].get('shapes') and '.' not in tok(b.get('r', ''), i) else '') if tok(b.get('r', ''), i).startswith('<') else '<i class="hold"></i>' if (lhheld(b, i) or (b.get('l') and not any(tok(b.get('r', ''), j).startswith('<') for j in range(i)))) else '') + '</td>') + '</tr>'
             if any(tok(b.get('r', ''), i).startswith('<') for b in bars for i in range(meter)):
                 lfn = lambda b, i: '.'.join((tok(b['lf'], i).split('.')[k] if b.get('lf') else str(SONG['gig']['fmap'].get(x.lower(), ''))) for k, x in enumerate(tok(b.get('r', ''), i)[1:].split('.'))) if tok(b.get('r', ''), i).startswith('<') else ''
                 r += '<tr class="mbfr lfr"><th></th>' + row(lambda b, i: f'<td class="mbfn lfn{c(b, i)}">{half(lfn(b, i))}</td>') + '</tr>'
@@ -524,7 +561,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
 .nxt{{margin-left:42px;color:{MUTE}}} .lmore{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-left:42px}} .lm{{border:1px solid rgba(38,41,107,.2);border-radius:8px;padding:8px 10px}} .lm .lsl{{font-size:14.5px;row-gap:2px}} .lm .cw{{padding-top:20px}} .lm .cw{{white-space:normal}} .toolm .cap2{{margin-top:6px}} .lm .ch{{font-size:13px}} .lmt{{font-family:'PF',serif;font-weight:700;font-size:16px;margin-bottom:2px}}
 .bgt{{border-collapse:collapse;table-layout:fixed;width:100%}} .bgt th{{width:40px;font:700 11px 'AH';letter-spacing:.08em;color:{MUTE};text-align:left;padding:0}} .bgt td{{text-align:center;padding:0;border-left:1px solid rgba(38,41,107,.14)}} .bgt td.b0{{border-left:2px solid {N}}} .bgt tr td:last-child{{border-right:2px solid {N}}}
 .bgt .cn{{font-size:11px;color:{MUTE};height:16px;vertical-align:bottom}} .bgt .rl{{font:700 21px 'AH';height:31px;border-top:1px solid rgba(38,41,107,.14)}} .bgt .w{{font-size:11.5px;letter-spacing:-.01em;color:{MUTE};height:17px;vertical-align:top}} .bgt .ll{{height:36px;border-top:1px solid rgba(38,41,107,.14);border-bottom:1px solid rgba(38,41,107,.14)}}
-.ch2{{display:inline-block;font:700 17px 'AH';border:1.5px solid {N};border-radius:4px;padding:0 5px;line-height:1.35}} .hold{{display:block;margin:0 auto;width:60%;border-top:2px solid rgba(38,41,107,.3)}}
+.ch2.three{{font-size:13.5px!important;line-height:.95!important;padding:2px 6px!important}} .bgt .sh{{height:26px;vertical-align:top;padding:0}} .bgt.big:not(.mid):not(.tri):has(.shp) .rl{{height:46px;vertical-align:bottom;padding-bottom:4px}} .bgt.big:not(.mid):not(.tri):has(.shp)+.bgt.big{{margin-top:20px}} .bgt.big:not(.mid):not(.tri):has(.shp) .rl:has(.hold){{vertical-align:middle;padding-bottom:0}} .bgt.big:not(.mid):not(.tri):has(.shp) .ll{{height:62px}} .bgt.big:not(.mid):not(.tri) .ll:has(.shi) .hk2{{font-size:21px}} .ll .shi{{margin-left:0}} .bgt .rl.nhc{{padding:6px 0;line-height:0;vertical-align:middle}} .bgt .nh{{display:block;margin:0 auto}} .bgt.big:has(.nhc) .rl{{height:58px}} .shi{{display:inline-block;margin-left:1px;vertical-align:-2px;line-height:0}} .shi svg{{height:15px;width:auto;display:block}} .bgt.tri .shi svg{{height:15px}} .bgt.big.tri:has(.shi) .rl{{font-size:22px}} .bgt .sh svg{{display:block;margin:0 auto}} .ch2{{display:inline-block;font:700 17px 'AH';border:1.5px solid {N};border-radius:4px;padding:0 5px;line-height:1.35}} .hold{{display:block;margin:0 auto;width:60%;border-top:2px solid rgba(38,41,107,.3)}}
 .gsong{{display:grid;gap:8px;margin-left:42px}} .tg{{width:auto}} .tg td{{width:44px}} .gmore{{display:grid;gap:8px;margin-left:42px}} .gm{{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:8px}} .gm .lmt{{font-size:15px;margin:0}} .bgt.sm .rl{{font-size:17px;height:28px}} .bgt.sm .ll{{height:32px}} .bgt.sm .ch2{{font-size:14px;padding:0 6px}} .gmore{{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px!important}} .gm{{display:block!important;border:1px solid rgba(38,41,107,.2);border-radius:8px;padding:6px 10px 8px}} .gm .lmt{{margin-bottom:2px!important}} .bgt.sm th{{display:none}} .bgt.sm .hold{{width:45%}} .bgt.sm .ch2{{font-size:14px!important;padding:0 5px!important}} .bgt .span{{text-align:left;padding-left:6px;white-space:nowrap}} .bgt .span .hold{{display:inline-block;vertical-align:middle;width:calc(100% - 34px);margin-left:5px}} .gm{{padding:6px 5px 8px!important}} .gmore{{gap:7px!important}} .pg:has(.gsong) .sp{{min-height:6px!important}} .bgt.sm+.bgt.sm{{margin-top:6px}}
 .pg:has(.job) .sp{{min-height:12px}} .real{{display:flex;gap:14px;align-items:center;border:1.5px dashed rgba(228,87,46,.6);border-radius:10px;padding:10px 14px;font-size:16px}}"""
 BODY = ready_pages() if SONG.get('kind') == 'ready' else BODY if (SONG.get('mock') or SONG.get('v3') or SONG.get('v4')) else P1 + P2 + P3 + P4
