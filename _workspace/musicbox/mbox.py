@@ -50,7 +50,7 @@ S = [
       g=[[B('r C E F', 'C', '- Oh when the'), B('G - - -', 'C', 'saints - - -'), B('r C E F', 'C', '- go march- ing'), B('G - - -', 'C', 'in - - -')],
          [B('r C E F', 'C', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - E -', 'C', 'march- - ing -'), B('D - - -', 'G', 'in - - -')],
          [B('r E E D', 'G', '- Oh Lord, I'), B('C - - C', 'C', 'want - - to'), B('E - G G', 'C', 'be - in that'), B('G F - -', 'F', 'num- ber - -')],
-         [B('r C E F', 'C', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - D -', 'G', 'march- - ing -'), B('C - - -', 'C', 'in - - -')]]),
+         [B('r C E F', 'F', '- Oh when the'), B('G - E -', 'C', 'saints - go -'), B('C - D -', 'G', 'march- - ing -'), B('C - - -', 'C', 'in - - -')]]),   # her 18 Nov 20:59: the last line's left hand starts on F
  dict(t='Are You Sleeping?', id='frere', job='A round: when you can play it, someone else starts it two bars after you.', lh=('C with 5. The thumb waits on G.', {'c': 5, 'g': 1}),
       rf=({'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5, 'A': 5}, {'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5, 'a': 5}, 'Finger 5 reaches to A again, then back to G.'),
       how='New: a tune note for the left hand. Where the right hand says L.H., your left thumb plays G.',
