@@ -20,7 +20,7 @@ const { chromium } = require('playwright');
     const shown = (e) => { const s = cs(e); return s.display !== 'none' && s.visibility !== 'hidden' && !e.closest('[hidden]') && R(e).width > 0 && R(e).height > 0; };
     [...document.querySelectorAll('.pg')].forEach((pg, pi) => {
       const P = 'p' + (pi + 1), pr = R(pg), ps = cs(pg), L = pr.left + parseFloat(ps.paddingLeft) - 1.5, Rt = pr.right - parseFloat(ps.paddingRight) + 1.5;
-      const els = [...pg.querySelectorAll('*')].filter(e => !(e instanceof SVGElement) || e.tagName === 'svg').filter(e => !e.closest('.foot, .top, .rule')).filter(shown);
+      const els = [...pg.querySelectorAll('*')].filter(e => !(e instanceof SVGElement) || e.tagName === 'svg').filter(e => !e.closest('.foot, .top, .rule, .shd')).filter(shown);   // .shd: a faint note-shape shadow behind a letter (her 18 Nov 19:02), drawn on purpose past its box
       for (const e of els) {
         const er = R(e);
         if (er.left < L || er.right > Rt) out.push(`${P} out: ${name(e)} '${text(e)}' runs ${er.left < L ? 'left ' + (L - er.left).toFixed(1) : 'right ' + (er.right - Rt).toFixed(1)}px past the margin`);
@@ -30,7 +30,7 @@ const { chromium } = require('playwright');
         if ((s.overflow === 'hidden' || s.overflowY === 'hidden') && (e.scrollHeight > e.clientHeight + 2 || e.scrollWidth > e.clientWidth + 2) && !e.classList.contains('body') && !e.classList.contains('pg')) out.push(`${P} clip: ${name(e)} '${text(e)}' cut off`);
         // a bordered box: its content at least 5px in from the border
         if (parseFloat(s.borderTopWidth) > 0.5 && parseFloat(s.borderLeftWidth) > 0.5 && e.children.length && !(e instanceof SVGElement)) {
-          const kids = [...e.children].filter(shown); if (kids.length) { const top = Math.min(...kids.map(k => R(k).top)), bot = Math.max(...kids.map(k => R(k).bottom)), lf = Math.min(...kids.map(k => R(k).left)), rt = Math.max(...kids.map(k => R(k).right));
+          const kids = [...e.children].filter(shown).filter(k => !k.classList.contains('shd')); if (kids.length) { const top = Math.min(...kids.map(k => R(k).top)), bot = Math.max(...kids.map(k => R(k).bottom)), lf = Math.min(...kids.map(k => R(k).left)), rt = Math.max(...kids.map(k => R(k).right));
             const d = Math.min(top - er.top, er.bottom - bot, lf - er.left, er.right - rt); if (d < 5) out.push(`${P} tight: ${name(e)} '${text(e)}' content ${d.toFixed(1)}px from its border`); } }
         // siblings: overlap, and no gap one under the other
         const kids = e instanceof SVGElement ? [] : [...e.children].filter(shown).filter(k => cs(k).position !== 'absolute' && !cs(k).display.startsWith('inline') || ['inline-block', 'inline-flex'].includes(cs(k).display));   // inline words wrap across lines: their boxes are not blocks

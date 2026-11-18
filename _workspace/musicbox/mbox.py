@@ -164,3 +164,9 @@ for line in g['song_grid']:
 g.pop('ways', None); json.dump(t, open('mb19.json', 'w'), ensure_ascii=False)
 for i in range(1, 20):
     d = json.load(open(f'mb{i}.json')); d['book'] = "THE PIANO BUTLER'S MUSIC BOX 1"; json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
+# Note shapes from the middle of Music Box 1 (her 18 Nov 18:12-18:13: '1 중간쯤부터'; Book 2 then writes the letter
+# inside the note head): from Song 10 each letter shows the shape of its length, just to look at.
+for i in range(10, 20):
+    d = json.load(open(f'mb{i}.json')); d['gig']['shapes'] = 1
+    if i == 10 and 'Look:' not in d['gig']['song_how']: d['gig']['song_how'] = d['gig']['song_how'].rstrip() + ' <b>Look:</b> behind each letter is a faint note. Its shape shows how long the note is.'
+    json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
