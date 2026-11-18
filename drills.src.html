@@ -2724,11 +2724,15 @@ function onsetOf(buf, frac) {
 }
 // How long after it is scheduled a sound actually comes out of the speaker.
 function outLatency(ctx) { return Math.min(0.3, (ctx && (ctx.outputLatency || ctx.baseLatency)) || 0); }
+// her 18 Nov ('피아노 소리로'): the piano files are fetched as the page opens, so the very first note is already the piano
+const _pianoAB = {};
+function prefetchPiano() { if (typeof fetch === 'undefined') return; PIANO_FILES.forEach(f => { if (!_pianoAB[f.name]) _pianoAB[f.name] = fetch('audio/piano/' + f.name + '.mp3').then(r => r.ok ? r.arrayBuffer() : Promise.reject()).catch(() => null); }); }
+try { if (SOUND.piano) setTimeout(prefetchPiano, 400); } catch (e) {}
 function loadPiano(ctx) {
   if (_piano.started || !ctx || typeof fetch === 'undefined') return;
-  _piano.started = true;
+  _piano.started = true; prefetchPiano();
   PIANO_FILES.forEach(f => {
-    fetch('audio/piano/' + f.name + '.mp3').then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+    _pianoAB[f.name].then(ab => ab || Promise.reject())
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
       .then(b => { _piano.on[f.midi] = onsetOf(b, 0.05); _piano.buf[f.midi] = b; }).catch(() => {});
   });
@@ -4778,7 +4782,7 @@ function getAudio() {
   } catch (e) { return null; }
 }
 function blip(ctx, t, freq, len, vol, type) {   // returns release(): stop the note early (Phase 463, a held tap)
-  if (type === 'triangle' && SOUND.piano) return pianoNote(ctx, t, freq, len, vol);
+  if (SOUND.piano && (type === 'triangle' || ((!type || type === 'sine') && len >= 0.08 && freq >= 50 && freq <= 4200))) return pianoNote(ctx, t, freq, len, vol);   // her 18 Nov ('피아노 소리로'): every pitched note is the piano; only short clicks stay clicks
   const o = ctx.createOscillator(), g = ctx.createGain();
   if (type) o.type = type;
   o.frequency.value = freq;
@@ -17505,8 +17509,9 @@ const HB_FLOORS = HB_PARTS.map(([pre, en, ko]) => {
 });
 { // her 18 Nov: Playing and listening goes inside Going further; its two listening chapters lead the Ear training floor ("오럴 방을 ear training 방으로")
   const HB_EAR_LEARN = ['hbr-L4', 'hbr-n-L5'], fL = HB_FLOORS.findIndex(f => f.part === 'L'), fG = HB_FLOORS.findIndex(f => f.part === 'G');
-  if (fL >= 0 && fG >= 0) { HB_FLOORS[fG].ids = HB_FLOORS[fL].ids.filter(id => !HB_EAR_LEARN.includes(id)).concat(HB_FLOORS[fG].ids); HB_FLOORS.splice(fL, 1); }
-  HB_FLOORS.push({ ids: HB_EAR_LEARN.concat(HB_ROOMS.filter(r => r.ear).map(r => r.id)), en: ['Ear training', 'Ear training: the aural tests'], ko: ['청음', '청음: 귀 시험'], part: 'A' });
+  // her 18 Nov evening: the two listening chapters are Handbook skills, not exam tests; they stay with Playing and listening, inside Going further
+  if (fL >= 0 && fG >= 0) { HB_FLOORS[fG].ids = HB_FLOORS[fL].ids.concat(HB_FLOORS[fG].ids); HB_FLOORS.splice(fL, 1); }
+  HB_FLOORS.push({ ids: HB_ROOMS.filter(r => r.ear).map(r => r.id), en: ['Ear training', 'Ear training: the aural tests'], ko: ['청음', '청음: 귀 시험'], part: 'A' });
 }
 const HB_ROOM_NO = {}; HB_FLOORS.forEach(f => f.ids.forEach((id, j) => { const r = HB_ROOMS.find(x => x.id === id); HB_ROOM_NO[id] = f.part === 'A' ? (r && r.ear ? '♪' : f.ids.indexOf(id) + 1) : f.part === 'G' ? j + 1 : f.part === 'BP' ? '★' : (r && r.num) || j + 1; }));
 // her 18 Nov ("룸 안에서는 전체 챕터 ... 선택할 수 있는 기능", "인형의 집에서 검색창"): every room reachable from anywhere
@@ -26571,7 +26576,7 @@ const PIECE_PROMO = {
   rook: ['Rooks are the strong towers of the board, and your playing is that strong now.', '룩은 체스판의 든든한 탑이에요. 이제 연주도 그만큼 든든해요.'],
   queen: ['The pawn reached the far side and is crowned. Every move is yours.', '폰이 끝까지 가서 왕관을 썼어요. 이제 모든 길이 열려요.'],
 };
-if (HB_HOUSE) HB_ROOMS.forEach(r => { CH_SHORT[r.id] = r.ear ? ['Ear training · ' + ROOM_GRADE[r.id], '청음 · ' + ROOM_GRADE[r.id]] : [r.en, r.ko]; CH_SUB[r.id] = r.ear ? [r.ear.length + ' listening games', '듣기 게임 ' + r.ear.length + '개'] : r.review ? [r.review.length + ' short parts', '짧은 부분 ' + r.review.length + '개'] : r.again ? ['Again: ' + r.again[0], '다시: ' + r.again[1]] : ['p. ' + r.pages + ' · ' + (ROOM_GRADE[r.id] || ''), r.pages + '쪽 · ' + (ROOM_GRADE[r.id] || '')]; if (r.id === HB_EAR_HUB) { CH_SHORT[r.id] = ['Ear games', '청음 게임']; CH_SUB[r.id] = ['Beginner to Grade 8', 'Beginner부터 Grade 8까지']; } });   // her 11 Nov: the part's name only (Pitch, Time), so it fits the room   // her 11 Nov: the house rooms' names
+if (HB_HOUSE) HB_ROOMS.forEach(r => { CH_SHORT[r.id] = r.ear ? ['Ear training · ' + ROOM_GRADE[r.id], '청음 · ' + ROOM_GRADE[r.id]] : [r.en, r.ko]; CH_SUB[r.id] = r.ear ? [r.ear.length + ' listening games', '듣기 게임 ' + r.ear.length + '개'] : r.review ? [r.review.length + ' short parts', '짧은 부분 ' + r.review.length + '개'] : r.again ? ['Again: ' + r.again[0], '다시: ' + r.again[1]] : ['p. ' + r.pages + ' · ' + (ROOM_GRADE[r.id] || ''), r.pages + '쪽 · ' + (ROOM_GRADE[r.id] || '')]; if (r.ear) CH_SUB[r.id] = ROOM_GRADE[r.id] === 'Beginner' ? ['Warm-ups before any exam', '시험 전 준비 운동'] : ['The AMEB aural tests, ' + r.ear.filter(p => !/mixed|warm-up/i.test(p.en)).length + ' of them', 'AMEB 청음 시험 ' + r.ear.filter(p => !/mixed|warm-up/i.test(p.en)).length + '가지']; });   // her 11 Nov: the part's name only (Pitch, Time), so it fits the room   // her 11 Nov: the house rooms' names
 function PieceBar({ here, col, onCol }) {
   const kind = pieceOfRoom(here), c = col || '#26296b', i = PIECE_ORDER.indexOf(kind), nx = PIECE_ORDER[i + 1];
   const [promo, setPromo] = useState(() => { if (UI_TEACHER) return null; let last = null; try { last = localStorage.getItem(PIECE_LAST_KEY); localStorage.setItem(PIECE_LAST_KEY, kind); } catch (e) {}
