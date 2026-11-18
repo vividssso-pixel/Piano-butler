@@ -17499,14 +17499,15 @@ const HB_PARTS = [['BP', 'Before you play', '연주 전에'], ['P', 'Pitch', '�
 const hbChNo = (ch) => parseInt(String(ch).replace(/^[A-Z]+/, ''), 10) || 0;
 const HB_FLOORS = HB_PARTS.map(([pre, en, ko]) => {
   const rs = HB_ROOMS.filter(r => !r.review && !r.ear && r.ch && (pre === 'BP' ? r.ch === 'BP' : r.ch !== 'BP' && r.ch.replace(/\d+$/, '') === pre)).sort((a, b) => hbChNo(a.ch) - hbChNo(b.ch));
-  const ids = rs.map(r => r.id); if (pre === 'L') ids.push(HB_EAR_HUB);
+  const ids = rs.map(r => r.id);
   const part = rs[0] && rs[0].part ? rs[0].part : [en, ko];
   return { ids, en: [en, part[0]], ko: [ko, part[1]], part: pre };
 });
-const HB_ROOM_NO = {}; HB_FLOORS.forEach(f => f.ids.forEach((id, j) => { const r = HB_ROOMS.find(x => x.id === id); HB_ROOM_NO[id] = id === HB_EAR_HUB ? '♪' : f.part === 'BP' ? '★' : (r && r.num) || j + 1; }));
+HB_FLOORS.push({ ids: HB_ROOMS.filter(r => r.ear).map(r => r.id), en: ['Aural', 'Aural: ear tests'], ko: ['청음', '청음 시험'], part: 'A' });   // her 18 Nov: the Aural floor, one room per level
+const HB_ROOM_NO = {}; HB_FLOORS.forEach(f => f.ids.forEach((id, j) => { const r = HB_ROOMS.find(x => x.id === id); HB_ROOM_NO[id] = f.part === 'A' ? '♪' : f.part === 'BP' ? '★' : (r && r.num) || j + 1; }));
 // her 18 Nov ("룸 안에서는 전체 챕터 ... 선택할 수 있는 기능", "인형의 집에서 검색창"): every room reachable from anywhere
 const hbRoomLabel = (id) => { const r = HB_ROOMS.find(x => x.id === id); if (!r) return id; const no = HB_ROOM_NO[id];
-  return (no && no !== '★' && no !== '♪' ? no + ' · ' : '') + (id === HB_EAR_HUB ? t('Ear games', '청음 게임') : t(r.en, r.ko || r.en)); };
+  return (no && no !== '★' && no !== '♪' ? no + ' · ' : '') + (r.ear ? t('Aural', '청음') + ' · ' + ROOM_GRADE[id] : t(r.en, r.ko || r.en)); };
 function HbRoomPicker({ id, onPick }) {
   return <select data-testid="room-picker" aria-label={t('Go to a chapter', '챕터로 가기')} value={id} onChange={(e) => onPick(e.target.value)}
     style={{flex:'1 1 auto',minWidth:0,maxWidth:340,font:'inherit',fontSize:13.5,fontWeight:800,color:'var(--navy)',background:'#fff',border:'1.5px solid var(--navy-line)',borderRadius:10,padding:'6px 8px'}}>
@@ -17514,7 +17515,7 @@ function HbRoomPicker({ id, onPick }) {
   </select>;
 }
 const hbSearchText = (id) => { const r = HB_ROOMS.find(x => x.id === id) || {}; const f = HB_FLOORS.find(x => x.ids.includes(id)) || { en: [''], ko: [''] };
-  return [hbRoomLabel(id), r.en, r.ko, f.en[0], f.ko[0], r.pages ? 'p ' + r.pages + ' p. ' + r.pages : '', ROOM_GRADE[id], (HB_TERMS[id] || []).join(' '), id === HB_EAR_HUB ? 'ear listening aural 청음' : ''].join(' ').toLowerCase(); };
+  return [hbRoomLabel(id), r.en, r.ko, f.en[0], f.ko[0], r.pages ? 'p ' + r.pages + ' p. ' + r.pages : '', ROOM_GRADE[id], (HB_TERMS[id] || []).join(' '), r.ear ? 'ear listening aural ear test 청음' : ''].join(' ').toLowerCase(); };
 function HbSearch({ onOpen }) {
   const [q, setQ] = useState('');
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -17662,7 +17663,103 @@ function HbEarHub() {   // her 17 Nov: the ten Ear training rooms in one room on
   const r = ears.find(x => x.id === g) || ears[0];
   return <div><div style={{display:'flex',flexWrap:'wrap',gap:6,margin:'0 0 12px'}}>{ears.map(x => <button key={x.id} type="button" className={'chip' + (x.id === g ? ' active' : '')} data-ear-grade={ROOM_GRADE[x.id]} onClick={() => setG(x.id)} style={{fontSize:12.5,padding:'4px 10px'}}>{lvlName(ROOM_GRADE[x.id])}</button>)}</div><HbEar key={r.id} r={r}/></div>;
 }
-function HbRoom({ r }) { return r.id === HB_EAR_HUB ? <HbEarHub/> : r.ear ? <HbEar r={r}/> : r.review ? <HbReview r={r}/> : <HbRoomMain r={r}/>; }
+// ── her 18 Nov ("오럴 테스트 방을 따로", "레벨별로", "grade 1까지 무료"): the Aural floor. Grade 1 is the first complete room:
+// each test practised with the live pad that checks it (hum then find home, tap the rhythm back, sing then play the tune),
+// a mock exam in the examiner's order, a record a parent can read, and the day itself.
+const AURAL_KEY = 'pb_aural_v1';
+const auralLoad = () => { try { return JSON.parse(localStorage.getItem(AURAL_KEY)) || {}; } catch (e) { return {}; } };
+const auralSave = (o) => { try { localStorage.setItem(AURAL_KEY, JSON.stringify(o)); } catch (e) {} };
+const auralDay = (d) => { const x = d || new Date(); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+const auralG = (o, g) => o[g] || (o[g] = { days: [], tests: {}, mocks: [] });
+function auralLog(g, test, ok) { const o = auralLoad(), G = auralG(o, g), d = auralDay(); if (!G.days.includes(d)) G.days = [...G.days, d].slice(-90);
+  G.tests[test] = [...(G.tests[test] || []), ok ? 1 : 0].slice(-10); auralSave(o); }
+function auralMock(g, score, n) { const o = auralLoad(), G = auralG(o, g), d = auralDay(); if (!G.days.includes(d)) G.days = [...G.days, d].slice(-90);
+  G.mocks = [...G.mocks, { d, s: score, n }].slice(-10); auralSave(o); }
+function auralStreak(days) { const set = new Set(days || []); const x = new Date(); if (!set.has(auralDay(x))) x.setDate(x.getDate() - 1); let s = 0; while (set.has(auralDay(x))) { s++; x.setDate(x.getDate() - 1); } return s; }
+const AURAL_G1 = [
+  { id: 'home', en: 'Find the home note', ko: '집 음 찾기', exam: 'The examiner plays a short tune that stops before it gets home. You hum or sing the home note (the tonic).', examko: '시험관이 집에 도착하기 전에 멈추는 짧은 선율을 쳐요. 집 음(으뜸음)을 흥얼거리거나 불러요.',
+    how: 'Hum it out loud first, then find it on the keys: the key tells you if you were right.', howko: '먼저 소리 내어 흥얼거리고, 그다음 건반에서 찾아요. 건반이 맞았는지 알려 줘요.', game: ['listen-write', 1] },
+  { id: 'clap', en: 'Clap it back', ko: '따라 치기', exam: 'The examiner plays a passage in two or three time, twice. Then you clap or tap it.', examko: '시험관이 2박자나 3박자 악구를 두 번 쳐요. 그다음 손뼉이나 탭으로 쳐요.',
+    how: 'Listen both times without clapping and count inside. Start with one bar, then two, then all four, like the test.', howko: '두 번 다 손뼉 치지 말고 속으로 세며 들어요. 한 마디, 두 마디, 그다음 네 마디 전부, 시험처럼.', game: ['listen-write', 4] },
+  { id: 'sing', en: 'Sing it back', ko: '따라 부르기', exam: 'The examiner plays a short tune twice. You hum or sing it back: the notes and the rhythm together.', examko: '시험관이 짧은 선율을 두 번 쳐요. 음과 리듬을 함께 흥얼거리거나 불러요.',
+    how: 'Sing it on "la" out loud, then play it: each right key lights up, so you know your voice was right.', howko: '"라"로 소리 내어 부르고, 그다음 쳐요. 맞는 건반마다 불이 들어와서 목소리가 맞았는지 알 수 있어요.', game: ['listen-write', 3] },
+];
+const auralPad = (id, fixed, onResult) => id === 'home' ? <LwHomePad fixed={fixed} onResult={onResult}/> : id === 'clap' ? <LwClapPad fixed={fixed} onResult={onResult}/> : <LwPhrasePad fixed={fixed} onResult={onResult}/>;
+const auralFixed = (id) => id === 'home' ? { pos: Math.random() < 0.5 ? 'C' : 'G', i: Math.floor(Math.random() * LW_HOME.length) } : id === 'clap' ? Math.floor(Math.random() * LW_CLAP.length) : 1 + Math.floor(Math.random() * (LW_PH.length - 1));
+const auralH = {fontFamily:"'Playfair Display', Georgia, serif",fontSize:21,fontWeight:800,color:'var(--navy)',margin:'22px 0 8px'};
+function AuralDots({ arr }) { return <span style={{display:'inline-flex',gap:3,verticalAlign:'middle'}}>{(arr || []).map((v, i) => <span key={i} style={{width:9,height:9,borderRadius:'50%',background:v ? 'var(--navy)' : '#fff',border:'1.5px solid var(--navy)'}}/>)}</span>; }
+function AuralMockRun({ g, tests, onDone }) {
+  const [k, setK] = useState(0), [res, setRes] = useState([]), [fx] = useState(() => tests.map(x => auralFixed(x.id)));
+  const cur = tests[k], got = res[k];
+  if (k >= tests.length) { const s = res.filter(x => x).length;
+    return <div className="card" style={{padding:'16px',textAlign:'center'}} data-aural="mock-done">
+      <div style={{fontSize:13,fontWeight:900,letterSpacing:'0.08em',color:'var(--coral)'}}>{t('MOCK EXAM', '모의시험')}</div>
+      <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:40,fontWeight:800,color:'var(--navy)',margin:'4px 0'}}>{s} / {tests.length}</div>
+      <div style={{fontSize:14.5,color:'var(--muted)',marginBottom:12}}>{s === tests.length ? t('All three first time. Ready for the examiner.', '세 가지 모두 한 번에. 시험관 앞에서도 준비됐어요.') : t('Practise the ones that slipped, then try again tomorrow.', '놓친 것을 연습하고, 내일 다시 해 봐요.')}</div>
+      <button className="primary-btn" style={{width:'auto',padding:'10px 18px'}} onClick={onDone}>{t('Done', '끝')}</button>
+    </div>; }
+  return <div data-aural="mock">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',margin:'0 2px 6px'}}>
+      <div style={{fontSize:13,fontWeight:900,letterSpacing:'0.08em',color:'var(--coral)'}}>{t('MOCK EXAM · TEST ' + (k + 1) + ' OF ' + tests.length, '모의시험 · ' + tests.length + '개 중 ' + (k + 1) + '번째')}</div>
+      <button className="ghost-btn" style={{padding:'4px 10px',fontSize:12.5}} onClick={onDone}>{t('Stop', '그만')}</button>
+    </div>
+    <div style={{fontSize:14,color:'var(--muted)',margin:'0 2px 8px',lineHeight:1.45}}><b style={{color:'var(--navy)'}}>{t(cur.en, cur.ko)}.</b> {t(cur.exam, cur.examko)}</div>
+    <div key={k}>{auralPad(cur.id, fx[k], (r) => { if (res[k] != null) return; const ok = !!r.ok; auralLog(g, cur.id, ok); setRes(x => { const y = x.slice(); y[k] = ok; return y; }); })}</div>
+    {got != null && <div style={{textAlign:'center',marginTop:10}}>
+      <button className="primary-btn" style={{width:'auto',padding:'10px 18px'}} onClick={() => { const nk = k + 1; if (nk >= tests.length) auralMock(g, res.filter(x => x).length, tests.length); setK(nk); }}>{k + 1 < tests.length ? t('Next test ›', '다음 시험 ›') : t('See my score ›', '점수 보기 ›')}</button></div>}
+  </div>;
+}
+function HbAuralG1({ r }) {
+  const g = 'Grade 1', tests = AURAL_G1;
+  const [open, setOpen] = useState(null), [mock, setMock] = useState(false), [, bump] = useState(0);
+  const G = auralLoad()[g] || { days: [], tests: {}, mocks: [] }, streak = auralStreak(G.days), last = G.mocks[G.mocks.length - 1];
+  const log = (id) => (res) => { auralLog(g, id, !!res.ok); bump(n => n + 1); };
+  return (<div data-hb-aural={r.id}>
+    <div style={{margin:'4px 0 6px'}}>
+      <div style={{fontSize:12,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--coral)'}}>{t('Aural · Grade 1', '청음 · Grade 1')}</div>
+      <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:800,color:'var(--navy)',lineHeight:1.2,margin:'4px 0'}}>{t('Your Grade 1 aural', 'Grade 1 청음')}</div>
+      <div style={{fontSize:14.5,color:'var(--muted)',lineHeight:1.5}}>{t('Three listening tests. A few minutes, three or four times a week. Always out loud: the examiner wants to hear your voice.', '듣기 시험 세 가지. 일주일에 서너 번, 몇 분씩. 언제나 소리 내어: 시험관은 여러분의 목소리를 듣고 싶어 해요.')}</div>
+    </div>
+    <div className="card" style={{padding:'10px 14px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center',margin:'10px 0 4px'}} data-aural="record">
+      <span style={{fontSize:13.5,color:'var(--navy)'}}><b>{streak}</b> {t(streak === 1 ? 'day in a row' : 'days in a row', '일 연속')}</span>
+      {tests.map(x => <span key={x.id} style={{fontSize:13,color:'var(--muted)'}}>{t(x.en, x.ko)} <AuralDots arr={G.tests[x.id]}/></span>)}
+      <span style={{fontSize:13,color:'var(--muted)'}}>{t('Mock exam: ', '모의시험: ')}<b style={{color:'var(--navy)'}}>{last ? last.s + ' / ' + last.n : t('not yet', '아직')}</b></span>
+    </div>
+    {mock ? <div style={{marginTop:14}}><AuralMockRun g={g} tests={tests} onDone={() => { setMock(false); bump(n => n + 1); }}/></div> : <>
+      <div style={auralH}>{t('Practise each test', '시험별 연습')}</div>
+      {tests.map((x, i) => (
+        <div key={x.id} className="card" style={{padding:'12px 14px',marginBottom:10}} data-aural-test={x.id}>
+          <div style={{display:'grid',gridTemplateColumns:'34px 1fr',gap:'2px 12px',alignItems:'start'}}>
+            <span style={{width:30,height:30,borderRadius:'50%',background:'var(--coral)',color:'#fff',fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span>
+            <div>
+              <div style={{fontSize:16,fontWeight:900,color:'var(--navy)'}}>{t(x.en, x.ko)}</div>
+              <div style={{fontSize:13.5,color:'var(--muted)',lineHeight:1.45,margin:'2px 0 4px'}}><b style={{color:'var(--navy)'}}>{t('In the exam: ', '시험에서: ')}</b>{t(x.exam, x.examko)}</div>
+              <div style={{fontSize:13.5,color:'var(--muted)',lineHeight:1.45,margin:'0 0 8px'}}><b style={{color:'var(--navy)'}}>{t('Practise: ', '연습: ')}</b>{t(x.how, x.howko)}</div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                <button className="primary-btn" style={{width:'auto',padding:'8px 14px'}} onClick={() => setOpen(open === x.id ? null : x.id)}>{open === x.id ? t('Close', '닫기') : t('Practise here', '여기서 연습')}</button>
+                <a className="ghost-btn" style={{textDecoration:'none',display:'inline-block'}} href={'?drill=' + x.game[0] + '&tab=drill&level=' + x.game[1]}>{t('Play the game', '게임 하기')}</a>
+              </div>
+            </div>
+          </div>
+          {open === x.id && <div style={{marginTop:10}}>{auralPad(x.id, undefined, log(x.id))}</div>}
+        </div>))}
+      <div style={auralH}>{t('Mock exam', '모의시험')}</div>
+      <div className="card" style={{padding:'12px 14px'}}>
+        <div style={{fontSize:14,color:'var(--muted)',lineHeight:1.5,marginBottom:10}}>{t('The three tests in a row, each once, as the examiner gives them. New music every time. Your score goes into your record.', '시험관처럼 세 가지를 이어서, 한 번씩. 매번 새로운 음악. 점수는 기록에 남아요.')}</div>
+        <button className="primary-btn" style={{width:'auto',padding:'10px 18px'}} data-aural="mock-start" onClick={() => setMock(true)}>{t('▶ Start the mock exam', '▶ 모의시험 시작')}</button>
+      </div>
+      <div style={auralH}>{t('On the day', '시험 날')}</div>
+      <div className="card" style={{padding:'12px 14px',fontSize:14,color:'var(--muted)',lineHeight:1.6}}>
+        {[t('Sing out. A clear, loud voice sounds sure, even when you are not.', '크게 불러요. 또렷한 목소리는 자신 없을 때도 자신 있게 들려요.'),
+          t('Breathe before the first note, and count one bar in your head.', '첫 음 전에 숨을 쉬고, 머릿속으로 한 마디를 세요.'),
+          t('Missed it? Keep going to the end; one slip costs little.', '놓쳤나요? 끝까지 계속해요. 한 번의 실수는 별것 아니에요.'),
+          t('It is fine to whistle if your voice is breaking.', '변성기라면 휘파람으로 해도 괜찮아요.')].map((x, i) => <div key={i}>• {x}</div>)}
+      </div>
+      <div style={{fontSize:12.5,color:'var(--muted)',lineHeight:1.45,margin:'12px 2px 0'}}>{t('Based on the aural tests of the AMEB 2026 syllabus (Manual of Syllabuses, section 21). Check the current syllabus with your teacher before an exam.', 'AMEB 2026 실러버스의 청음 시험(Manual of Syllabuses, 21항)을 바탕으로 했어요. 시험 전에는 선생님과 최신 실러버스를 확인하세요.')}</div>
+    </>}
+  </div>);
+}
+function HbRoom({ r }) { return r.ear ? (ROOM_GRADE[r.id] === 'Grade 1' ? <HbAuralG1 r={r}/> : <HbEar r={r}/>) : r.review ? <HbReview r={r}/> : <HbRoomMain r={r}/>; }
 // her 16 Nov ("따로 들어가게 하지 말고 바로 드릴이 보이게"): the room's drill plays right in the room, below Read & listen and the
 // Workbook: its own level only, no level or mode buttons, no books strip. A small link still opens it full screen.
 function HbRoomDrill({ r, done, onTick, fallback }) {
@@ -24143,10 +24240,12 @@ function MapHead({ onOpen }) {
     </div>
   );
 }
+const auralRoomId = () => { const ex = loadExam(), r = HB_ROOMS.find(x => x.ear && ROOM_GRADE[x.id] === (ex || 'Grade 1')); return r ? r.id : 'hbr-ear-grade1'; };
 function MapHome({ onOpen }) {
   return (
     <div className="fade-up" data-testid="map-home">
       <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={<>{t((['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][houseFloorsN()] || houseFloorsN()) + ' floors of music. ', houseFloorsN() + '층의 음악. ')}<b style={{color:'var(--navy)'}}>{t('Open any door', '아무 문이나 열고')}</b>{t(' and climb.', ' 올라가요.')}</>}   /* m17: her 'too long, nobody reads it' *//>
+      {HB_HOUSE && <div style={{margin:'-4px 0 12px'}}><button type="button" className="chip" data-testid="aural-door" style={{fontSize:13.5,padding:'6px 14px',fontWeight:800}} onClick={() => onOpen(auralRoomId())}>♪ {t('Aural: the ear tests, Beginner to Grade 8', '청음: 귀 시험, Beginner부터 Grade 8까지')}</button></div>}
       <MapHead onOpen={onOpen}/>
       <HouseMap onOpen={onOpen} noIntro/>
     </div>
@@ -25938,7 +26037,8 @@ const TH_FLOOR = [   // per floor (Phase 436: levels 1-5 use the first five): wa
   { wp: 'sprig', fl: 'herring', lamp: 'lantern' },      // 8 (Build BO: Grades 6 to 8 add three floors)
   { wp: 'trellis', fl: 'tiles', lamp: 'pendant' },      // 9
   { wp: 'damask', fl: 'planks', lamp: 'globe' },        // 10 (Build CC: Prelim and Grade 1 are a floor each)
-  { wp: 'regency', fl: 'herring', lamp: 'chandelier' }  // 11 (her 17 Nov: eleven part floors)
+  { wp: 'regency', fl: 'herring', lamp: 'chandelier' }, // 11 (her 17 Nov: eleven part floors)
+  { wp: 'scale', fl: 'chequer', lamp: 'bell' }           // 12 (her 18 Nov: the Aural floor)
 ];
 function thDefs() {
   const N = ST.N, p = (id, w, h, body) => '<pattern id="' + id + '" width="' + w + '" height="' + h + '" patternUnits="userSpaceOnUse">' + body + '</pattern>';
@@ -26421,7 +26521,7 @@ const PIECE_PROMO = {
   rook: ['Rooks are the strong towers of the board, and your playing is that strong now.', '룩은 체스판의 든든한 탑이에요. 이제 연주도 그만큼 든든해요.'],
   queen: ['The pawn reached the far side and is crowned. Every move is yours.', '폰이 끝까지 가서 왕관을 썼어요. 이제 모든 길이 열려요.'],
 };
-if (HB_HOUSE) HB_ROOMS.forEach(r => { CH_SHORT[r.id] = [r.en, r.ko]; CH_SUB[r.id] = r.ear ? [r.ear.length + ' listening games', '듣기 게임 ' + r.ear.length + '개'] : r.review ? [r.review.length + ' short parts', '짧은 부분 ' + r.review.length + '개'] : r.again ? ['Again: ' + r.again[0], '다시: ' + r.again[1]] : ['p. ' + r.pages + ' · ' + (ROOM_GRADE[r.id] || ''), r.pages + '쪽 · ' + (ROOM_GRADE[r.id] || '')]; if (r.id === HB_EAR_HUB) { CH_SHORT[r.id] = ['Ear games', '청음 게임']; CH_SUB[r.id] = ['Beginner to Grade 8', 'Beginner부터 Grade 8까지']; } });   // her 11 Nov: the part's name only (Pitch, Time), so it fits the room   // her 11 Nov: the house rooms' names
+if (HB_HOUSE) HB_ROOMS.forEach(r => { CH_SHORT[r.id] = r.ear ? ['Aural · ' + ROOM_GRADE[r.id], '청음 · ' + ROOM_GRADE[r.id]] : [r.en, r.ko]; CH_SUB[r.id] = r.ear ? [r.ear.length + ' listening games', '듣기 게임 ' + r.ear.length + '개'] : r.review ? [r.review.length + ' short parts', '짧은 부분 ' + r.review.length + '개'] : r.again ? ['Again: ' + r.again[0], '다시: ' + r.again[1]] : ['p. ' + r.pages + ' · ' + (ROOM_GRADE[r.id] || ''), r.pages + '쪽 · ' + (ROOM_GRADE[r.id] || '')]; if (r.id === HB_EAR_HUB) { CH_SHORT[r.id] = ['Ear games', '청음 게임']; CH_SUB[r.id] = ['Beginner to Grade 8', 'Beginner부터 Grade 8까지']; } });   // her 11 Nov: the part's name only (Pitch, Time), so it fits the room   // her 11 Nov: the house rooms' names
 function PieceBar({ here, col, onCol }) {
   const kind = pieceOfRoom(here), c = col || '#26296b', i = PIECE_ORDER.indexOf(kind), nx = PIECE_ORDER[i + 1];
   const [promo, setPromo] = useState(() => { if (UI_TEACHER) return null; let last = null; try { last = localStorage.getItem(PIECE_LAST_KEY); localStorage.setItem(PIECE_LAST_KEY, kind); } catch (e) {}
