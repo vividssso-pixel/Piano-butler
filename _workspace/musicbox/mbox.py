@@ -168,5 +168,5 @@ for i in range(1, 20):
 # inside the note head): from Song 10 each letter shows the shape of its length, just to look at.
 for i in range(10, 20):
     d = json.load(open(f'mb{i}.json')); d['gig']['shapes'] = 1
-    if i == 10 and 'Look:' not in d['gig']['song_how']: d['gig']['song_how'] = d['gig']['song_how'].rstrip() + ' <b>Look:</b> under each letter is a small shape. It shows how long the note is.'
+    if i == 10 and 'Look:' not in d['gig']['song_how']: d['gig']['song_how'] = d['gig']['song_how'].rstrip() + ' <b>Look:</b> behind each letter is a faint note. Its shape shows how long the note is.'
     json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
