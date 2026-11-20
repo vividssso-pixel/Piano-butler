@@ -55487,13 +55487,14 @@ function PlQuestion({ q, given, locked, onAnswer, pixel }) {
   const done = !!given;
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const prompt = (txt) => <p style={{fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{txt}</p>;
+  const [heard, setHeard] = useState(false);
   function listen() {
-    T.clear();
+    T.clear(); setHeard(true);
     const r = plRun(8, { gaps: q.gaps }); if (!r) return;
     r.at.forEach((a, i) => T.at(r, a, () => setPos(i)));
     T.at(r, r.at[7] + 0.5, () => setPos(-1));
   }
-  useEffect(() => { T.clear(); stopClicks(); setPhase('ready'); setPos(-1); taps.current = []; if (q.kind === 'steady') { const id = setTimeout(listen, 300); return () => clearTimeout(id); } }, [q.uid]);
+  useEffect(() => { T.clear(); stopClicks(); setPhase('ready'); setPos(-1); taps.current = []; setHeard(false); }, [q.uid]);   // no sound until the student presses Listen (her 20 Nov: the clicks started the moment the lesson opened)
   function start() {
     if (done || phase !== 'ready') return;
     T.clear(); taps.current = [];
@@ -55517,7 +55518,7 @@ function PlQuestion({ q, given, locked, onAnswer, pixel }) {
     return (<div>
       {prompt(t('Listen to 8 clicks. Is the beat steady, the same gap every time?', '클릭 8번을 들어요. 박이 꾸준한가요, 매번 똑같은 간격인가요?'))}
       <PlCircles n={8} lit={pos} label={() => ''} r={13} gap={34}/>
-      <div style={{textAlign:'center',margin:'6px 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={listen}>{t('♪ Listen again', '♪ 다시 듣기')}</button></div>
+      <div style={{textAlign:'center',margin:'6px 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={listen}>{heard ? t('♪ Listen again', '♪ 다시 듣기') : t('♪ Listen', '♪ 듣기')}</button></div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
         <button disabled={locked} className={cls('steady')} style={{padding:'14px 0',fontSize:pixel ? 10 : 17}} onClick={() => { T.clear(); stopClicks(); onAnswer('steady'); }}>{t('Steady', '꾸준해요')}</button>
         <button disabled={locked} className={cls('not')} style={{padding:'14px 0',fontSize:pixel ? 10 : 17}} onClick={() => { T.clear(); stopClicks(); onAnswer('not'); }}>{t('Not steady', '들쭉날쭉해요')}</button>
