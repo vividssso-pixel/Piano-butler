@@ -14786,7 +14786,8 @@ function QuestionAnswer() {
   const notes = [{ d: 28, dur: 1 }, { d: 29, dur: 1 }, { d: 30, dur: 1 }, { d: e.d, dur: 2 }];
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   function play() { timers.current.forEach(clearTimeout); timers.current = playMelody(notes, 132, setOn); }
-  useEffect(() => { play(); setGuess(null); }, [i]);
+  const first = useRef(true);   // her 20 Nov: silent when the page opens; plays after the student chooses
+  useEffect(() => { if (first.current) first.current = false; else play(); setGuess(null); }, [i]);
   function choose(k) { setGuess(k); }
   function next() { let ni = i; while (ni === i) ni = Math.floor(Math.random() * QA_ENDINGS.length); setI(ni); }
   const correct = guess === e.kind;
@@ -15066,7 +15067,8 @@ function SameOrNewSection() {
   const pair = SON_PAIRS[i];
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   function play() { timers.current.forEach(clearTimeout); timers.current = playFormSeq([pair.first, pair.second]); }
-  useEffect(() => { play(); setGuess(null); }, [i]);
+  const first = useRef(true);   // her 20 Nov: silent when the page opens; plays after the student chooses
+  useEffect(() => { if (first.current) first.current = false; else play(); setGuess(null); }, [i]);
   function next() { let ni = i; while (ni === i) ni = Math.floor(Math.random() * SON_PAIRS.length); setI(ni); }
   const correct = guess === pair.answer;
   return (
@@ -15091,7 +15093,7 @@ function RondoRefrain() {
   const [revealed, setRevealed] = useState(1);
   const [guess, setGuess] = useState(null);
   const timers = useRef([]);
-  useEffect(() => { timers.current.push(...playMelody(FORM_MOTIF[RONDO_SEQUENCE[0]], 132)); return () => timers.current.forEach(clearTimeout); }, []);
+  useEffect(() => { return () => timers.current.forEach(clearTimeout); }, []);   // her 20 Nov: silent when the page opens
   const done = revealed >= RONDO_SEQUENCE.length;
   const nextBlock = RONDO_SEQUENCE[revealed];
   function playRevealed() { timers.current.forEach(clearTimeout); timers.current = playFormSeq(RONDO_SEQUENCE.slice(0, revealed)); }
@@ -15139,7 +15141,8 @@ function BinaryTernarySpot() {
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   function play() { timers.current.forEach(clearTimeout); timers.current = playFormSeq(ex.blocks); }
-  useEffect(() => { play(); setGuess(null); }, [ex]);
+  const first = useRef(true);   // her 20 Nov: silent when the page opens; plays after the student chooses
+  useEffect(() => { if (first.current) first.current = false; else play(); setGuess(null); }, [ex]);
   function next() { setEx(genBTExample()); }
   const correct = guess === ex.answer;
   return (
@@ -15408,7 +15411,8 @@ function TextureSpotter() {
   const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
   const [tex, setTex] = useState(() => TEX_ORDER[Math.floor(Math.random() * 3)]);
   const [guess, setGuess] = useState(null), [run, setRun] = useState(0), [score, setScore] = useState({ right: 0, tries: 0 });
-  useEffect(() => { const tmo = setTimeout(() => TEXTURE_TYPES[tex].play(), 250); return () => clearTimeout(tmo); }, [tex]);
+  const first = useRef(true);   // her 20 Nov: silent when the page opens; plays after the student chooses
+  useEffect(() => { if (first.current) { first.current = false; return; } const tmo = setTimeout(() => TEXTURE_TYPES[tex].play(), 250); return () => clearTimeout(tmo); }, [tex]);
   function again() { TEXTURE_TYPES[tex].play(); if (guess !== null) setRun(r => r + 1); }
   function choose(id) { if (guess !== null) return; setGuess(id); setScore(s => ({ right: s.right + (id === tex ? 1 : 0), tries: s.tries + 1 })); }
   function next() { let nt = tex; while (nt === tex) nt = TEX_ORDER[Math.floor(Math.random() * 3)]; setTex(nt); setGuess(null); setRun(0); }
