@@ -21,20 +21,20 @@ Fixed in this build
 - [x] LC-H10-0, LC-H9-0: keyboard moved off the right edge. LC-M6-0: caption clear of the circle. LS-O8-0: long tile text made smaller. LS-G1-1: "look at how it moves".
 - [x] LC-H4-0: in the A minor part the row shows minor-key numerals (i, iv, V).
 
-Must fix (music facts) — open
-- [ ] **LB-T10-1** (Upbeats, last frame): the last bar is counted 1, 2 but holds one crotchet; the second seat is empty. Fill it (or show a rest) so 1 + 2 = 3 works, as in LB-T10-2.
-- [ ] **LB-T7-0** (Compound time, last frame): the row "count: 1 · · 2 · ·" does not line up with the bananas and stops after two beats. One mark under each banana, through all four beats, or cut the row.
+Must fix (music facts)
+- [x] (3b18ee1) **LB-T10-1** (Upbeats, last frame): the last bar is counted 1, 2 but holds one crotchet; the second seat is empty. Fill it (or show a rest) so 1 + 2 = 3 works, as in LB-T10-2.
+- [x] (3b18ee1) **LB-T7-0** (Compound time, last frame): the row "count: 1 · · 2 · ·" does not line up with the bananas and stops after two beats. One mark under each banana, through all four beats, or cut the row.
 
-Should fix (looks) — open
-- [ ] **LB-T10-0 / -1 / -2**: beat numbers 1 and 3 sit on the carriage wheels. Move them below the wheels.
-- [ ] **LB-T6-3**: the 4/4 → 3/4 on the small stave is tiny and the lines run through the digits. Enlarge.
-- [ ] **LB-T7-5**: the coral ring round the 8 cuts the bottom of the 6.
-- [ ] **LB-B3-2**: the D.S. arrow runs through "segno (the sign)" and "D.S. al Coda". Raise the arc.
-- [ ] **LE-E6-0**: the train ends touching the right edge. Stop it earlier.
-- [ ] **LE-E9-0**: "E: above" sits on the stave. Move it clear.
-- [ ] **LE-E5-5**: the navy shapes look clipped (tops of circles only); the metronome marks are very small.
-- [ ] **LE-S6-0 / LE-S6-1**: the 6 sits on the bottom edge and has no sharp/flat sign; outside labels are small.
-- [ ] **LE-O4-0**: the tile "Slowing down, speeding up" fills its box edge to edge.
+Should fix (looks)
+- [x] (3b18ee1) **LB-T10-0 / -1 / -2**: beat numbers 1 and 3 sit on the carriage wheels. Move them below the wheels.
+- [x] (3b18ee1) **LB-T6-3**: the 4/4 → 3/4 on the small stave is tiny and the lines run through the digits. Enlarge.
+- [x] (3b18ee1) **LB-T7-5**: the coral ring round the 8 cuts the bottom of the 6.
+- [x] (3b18ee1) **LB-B3-2**: the D.S. arrow runs through "segno (the sign)" and "D.S. al Coda". Raise the arc.
+- [x] (3b18ee1) **LE-E6-0**: the train ends touching the right edge. Stop it earlier.
+- [x] (3b18ee1) **LE-E9-0**: "E: above" sits on the stave. Move it clear.
+- [x] (3b18ee1) **LE-E5-5**: the navy shapes look clipped (tops of circles only); the metronome marks are very small.
+- [x] (3b18ee1) **LE-S6-0 / LE-S6-1**: the 6 sits on the bottom edge and has no sharp/flat sign; outside labels are small.
+- [x] (3b18ee1) **LE-O4-0**: the tile "Slowing down, speeding up" fills its box edge to edge.
 
 Her call (do not change until she answers)
 - [ ] **Colour in the picture lesson**: green, gold and purple are used as category colours in most new pictures too (bass notes, minor chords, left hand, form letters, periods, chord flavours). Same question as "Colour" below; one answer covers both.
