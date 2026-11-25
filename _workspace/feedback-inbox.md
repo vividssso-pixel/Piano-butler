@@ -5,6 +5,13 @@ behind it and writes here. **The building window reads this file before every bu
 ticks them (`[x]`, with the commit hash) and leaves items marked *Her call* until she answers on the board
 (Curriculum Plan doc, tab 전체 지도). New feedback is added at the top of "Open", newest first.
 
+## Audit checklist (for any reviewer)
+
+For every new picture (first, middle and last frame) and page: music facts (British names: semibreve, minim, crotchet, quaver;
+bar lines, rests, key and time signatures, scales, chords, terms); sound matches picture; house colours (navy #26296b and
+coral #e4572e; green only for correct or practised; pink only for Clara); no overlapping or clipped text; spelling;
+public-domain melodies only. Report only clear problems: file, what is wrong, the fix. Taste questions go under 'Her call'.
+
 ## Open
 
 ### Library picture books — audit of 26 Nov (82 pictures: first, middle and last frame of each; sound not yet heard)
