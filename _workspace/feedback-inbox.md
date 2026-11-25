@@ -37,12 +37,12 @@ Should fix (looks)
 - [x] (3b18ee1) **LE-O4-0**: the tile "Slowing down, speeding up" fills its box edge to edge.
 
 Her call (do not change until she answers)
-- [ ] **Colour in the picture lesson**: green, gold and purple are used as category colours in most new pictures too (bass notes, minor chords, left hand, form letters, periods, chord flavours). Same question as "Colour" below; one answer covers both.
-- [ ] **LS-L5-0**: the octave song is named "Somewhere over the Rainbow" (1939). The clip plays only the two notes C to C, not the tune. Keep the title, or pick a public-domain octave song?
-- [ ] **LB-T8-3**: "five-four: from Grade 5" — check against the syllabus.
-- [ ] **LB-B3-0**: the caption says "jump back at the sign" under a D.C. al Fine map with no segno; "the sign" may be misread.
-- [ ] **LB-T7-4**: title "feel two beats, on 1 and 4" but the numbers under the beats are 1 and 2.
-- [ ] **LE-E3-7**: marcato wedges are drawn under the note heads; in print they normally sit above.
+- [x] (a9014ca) **Colour in the picture lesson**: green, gold and purple are used as category colours in most new pictures too (bass notes, minor chords, left hand, form letters, periods, chord flavours). Same question as "Colour" below; one answer covers both. → Her 26 Nov: "색깔은 그 전이랑 같이" — navy and coral as before. All 119 lesson pictures re-rendered; green only on ticks.
+- [x] (a9014ca) **LS-L5-0**: the octave song is named "Somewhere over the Rainbow" (1939). The clip plays only the two notes C to C, not the tune. Keep the title, or pick a public-domain octave song? → Her 26 Nov: OK, keep the title.
+- [x] (a9014ca) **LB-T8-3**: "five-four: from Grade 5" — check against the syllabus. → Her 26 Nov: take the grade wording out. Line removed from the picture and from the lesson audio.
+- [x] (a9014ca) **LB-B3-0**: the caption says "jump back at the sign" under a D.C. al Fine map with no segno; "the sign" may be misread. → Her 26 Nov: ok. Caption now "go back · stop at Fine · or jump to the Coda".
+- [x] (a9014ca) **LB-T7-4**: title "feel two beats, on 1 and 4" but the numbers under the beats are 1 and 2. → Her 26 Nov: ok. Title now "feel two big beats in the bar".
+- [x] (a9014ca) **LE-E3-7**: marcato wedges are drawn under the note heads; in print they normally sit above. → Her 26 Nov: ok. Marcato wedges now sit above the notes.
 
 ### Library picture books — audit of 26 Nov (82 pictures: first, middle and last frame of each; sound not yet heard)
 
@@ -56,8 +56,8 @@ Should fix (looks)
 - [x] (15b67d4) **E5-all** (The kitchen, tempo race): at the end the fast animals have wrapped back to the start, so you cannot see who arrived first. Stop each animal at the finish line.
 
 Her call (do not change until she answers)
-- [ ] **Colour**: yellow and green are used as category colours in F-form (A B C), F-texture (three lines), H-inv (C E G), H-seventh (the 7th), R-dots (the dot's beat), P-semi (tone) and L-nerves (captions). The house rule is navy + coral, green only for correct. Keep if this follows the Handbook's own colour code; otherwise navy and coral tints.
-- [ ] **L-ears**: the octave example is "Somewhere over the Rainbow" (1939, still in copyright). Naming the title is fine; check that the picture or its clip does not play the melody, or choose a public-domain octave song.
+- [x] (a9014ca) **Colour**: yellow and green are used as category colours in F-form (A B C), F-texture (three lines), H-inv (C E G), H-seventh (the 7th), R-dots (the dot's beat), P-semi (tone) and L-nerves (captions). The house rule is navy + coral, green only for correct. Keep if this follows the Handbook's own colour code; otherwise navy and coral tints. → Her 26 Nov: navy and coral as before. F-form, F-texture, H-inv, H-seventh, R-dots, P-semi, L-nerves recoloured.
+- [x] (a9014ca) **L-ears**: the octave example is "Somewhere over the Rainbow" (1939, still in copyright). Naming the title is fine; check that the picture or its clip does not play the melody, or choose a public-domain octave song. → Her 26 Nov: OK, keep the title (the clip plays only the two notes).
 
 ## Done
 
