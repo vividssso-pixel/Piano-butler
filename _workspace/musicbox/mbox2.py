@@ -135,8 +135,12 @@ song('Daisy Bell', 3, 'staff',
  [[Q("D' - -", 'G', '5'), Q('B - -', 'G', '3'), Q('G - -', 'G', '1'), Q('D - -', 'G', '1')],
   [Q('E F# G', 'C', '2 3 4'), Q('E - G', 'C', '2 - 4'), Q('D - -', 'G', '1'), Q('~D - -', 'G')],
   [Q('A - -', 'D', '5'), Q("D' - -", 'D', '5'), Q('B - -', 'G', '3'), Q('G - -', 'Em', '1')],
-  [Q('E F# G', 'C', '2 3 4'), Q('A - B', 'C', '2 - 3'), Q('A - -', 'D', '2'), B('~A - -', l=Dg, ch='D')]],
- src='Nottingham Music Database (Daisy Daisy), first half', composer='Harry Dacre, 1892')
+  [Q('E F# G', 'C', '2 3 4'), Q('A - B', 'C', '2 - 3'), Q('A - -', 'D', '2'), Q('A A B', 'D', '2 - 3')],
+  [Q("C' B A", 'D', '4 3 2'), Q("D' - B", 'D', '5 - 3'), Q('A G -', 'G', '2 1'), Q('G G A', 'G', '1 - 2')],
+  [Q('B - G', 'G', '3 - 1'), Q('E - G', 'C', '2 - 4'), Q('E D -', 'D', '2 1'), Q('D - F#', 'D', '1 - 3')],
+  [Q('G - B', 'G', '1 - 3'), Q('A - D', 'D', '5 - 1'), Q('G - B', 'G', '1 - 3'), Q("A B C'", 'D', '2 3 4')],
+  [Q("D' B G", 'G', '5 3 1'), Q('A - B', 'D', '2 - 3'), Q('G - -', 'G', '1'), B('~G - -', l=Gg, ch='G')]],
+ src='Nottingham Music Database (Daisy Daisy), the whole chorus', composer='Harry Dacre, 1892')
 
 # 9
 song('Minuet in G', 3, 'staff',
@@ -167,21 +171,26 @@ song('Greensleeves', 6, 'bare',
   [H("D' - B G -.A B", G2, None, 'G', f='5 - 3 1 -.2 3', show='D'), H("C' - A A -.G# A", Am, F2, 'Am', 'F', '5 - 3 3 -.2 3', 'C')],
   [H('B - - E - A', E2, None, 'E', f='4 - - 1 - 1', show='B'), H("C' - D' E' -.F' E'", Am, C2, 'Am', 'C', '2 - 3 4 -.5 4', 'C')],
   [H("D' - B G -.A B", G2, None, 'G', f='5 - 3 1 -.2 3', show='D'), H("C' -.B A G# -.F# G#", Am, E2, 'Am', 'E', '5 -.4 3 2 -.1 2', 'C')],
-  [B('A - - A - r', lp=f'{Am} - - - - -', ch='Am', f='3', show='A')]],
- unit='e', src='Mutopia Project (Greensleeves, soprano), first half, moved from E minor to A minor', composer='Traditional, England, 1500s')
+  [B('A - - A - r', lp=f'{Am} - - - - -', ch='Am', f='3', show='A')],
+  [H("G' - - G' -.F#' E'", C2, None, 'C', show='G'), H("D' - B G -.A B", G2, None, 'G', show='D'), H("C' - A A -.G# A", Am, F2, 'Am', 'F', show='C')],
+  [H('B - G# E - r', E2, None, 'E', show='B'), H("G' - - G' -.F#' E'", C2, None, 'C', show='G'), H("D' - B G -.A B", G2, None, 'G', show='D')],
+  [H("C' -.B A G# -.F# G#", Am, E2, 'Am', 'E', show='C'), B('A - - A - -', lp=f'{Am} - - - - -', ch='Am', show='A')]],
+ unit='e', src='Mutopia Project (Greensleeves, soprano), verse and chorus, moved from E minor to A minor', composer='Traditional, England, 1500s')
 
 # 11
 song('Canon', 4, 'bare',
  'Eight bass notes that go <b>round and round</b>: C G A E, F C F G. The whole piece is built on them. Now only the first note of each line has a letter.',
  'One key at a time, two beats each. Say the eight letters until you know them by heart; then your eyes are free for the right hand.',
- 'Line 1: finger 5 on high E, walking down. The numbers show where the hand moves. Line 3 is the same idea in quick notes.',
+ 'Line 1: finger 5 on high E, walking down. The numbers show where the hand moves. Line 2 is the same bass with quick notes on top: choose your own fingers there, and pencil them in.',
  'The coral names show the chord each bass note belongs to. Am and Em are <b>minor</b> chords: the darker cousins of C and G. You will use them in the last song.',
  'the left hand can go round the eight notes while you talk.',
  ['c', 6, '5 . 3 2 1 x'], ['c', 10, 'x x x x x x x x x x', None, 280],
  [[B("E' D' C' B", lp='C - G -', ch='C - G -', f='5 4 3 2'), B('A G A B', lp='A - E -', ch='Am - Em -', f='2 1 2 3')],
   [B("C' B A G", lp='F - C -', ch='F - C -', f='4 3 2 1', show='C'), B('F E F D', lp='F - G -', ch='F - G -', f='3 2 3 1')],
-  [B('C.E G.F E.C E.D', lp='C - G -', ch='C - G -', f='1.3 5.4 3.1 3.2', show='C'), B('C - - -', l=Cc, ch='C', f='1')]],
- src='Mutopia Project (Canon per 3 violini e basso), bars 3 to 7, moved from D to C', composer='Johann Pachelbel, late 1600s')
+  [B('C.E G.F E.C E.D', lp='C - G -', ch='C - G -', f='1.3 5.4 3.1 3.2', show='C'), B('C.A, C.G F.A G.F', lp='A - E -', ch='Am - Em -')],
+  [B("E.C D.B C'.E' G'.G", lp='F - C -', ch='F - C -', show='E'), B("A.F G.E C.C' C'", lp='F - G -', ch='F - G -')],
+  [B('C - - -', l=Cc, ch='C', f='1', show='C')]],
+ src='Mutopia Project (Canon per 3 violini e basso), bars 3 to 10, moved from D to C', composer='Johann Pachelbel, late 1600s')
 
 # 12
 song('In the Hall of the Mountain King', 4, 'bare',
@@ -199,15 +208,20 @@ song('In the Hall of the Mountain King', 4, 'bare',
 RR = 'r r r r r r'
 song('Für Elise', 6, 'bare',
  'The most famous piano tune of all, as Beethoven wrote it. The two hands <b>pass the music to each other</b>: the left hand runs up three keys, and the right hand carries on from where it stopped.',
- 'Bottom, middle, top. A, E, A with fingers 5, 2, 1. Then E, E, G♯ with 5, 1, 2. The arrow means the lower key of that name.',
+ 'Bottom, middle, top. A, E, A with fingers 5, 2, 1. Then E, E, G♯ with 5, 1, 2. An arrow ↓ means the lower key of that name; ↑ the next one up, ↑↑ the one above that. In the middle the left hand climbs right up beside the right hand, and the two take turns on E and D♯.',
  'Fingers 5 and 4 rock between E and the black key D♯. Then the hand walks down to A. After each left-hand run, the right hand answers from the thumb.',
  'The boxes are very quick now: six in a bar, count <b>1 and 2 and 3 and</b>. Play so slowly that the left-hand run and the right-hand answer sound like one hand.',
  'nobody listening could tell where one hand stops and the other begins.',
  ['e', 11, 'x . . x . . . x . . x', {'9': ' '}, 290], ['c', 10, 'x . x . . x x x x x', {'4': ' ', '8': ' '}, 280],
  [[B("r r r r E' D#'", f='- - - - 5 4', pick=2), B("E' D#' E' B D' C'", f='5 4 5 2 4 3', show='D#'), B('A - r C E A', lp='A↓ E A r r r', ch='Am', f='1 - - 1 2 4')],
   [B('B - r E G# B', lp='E↓ E G♯ r r r', ch='E', f='5 - - 1 2 4', show='B G#'), B("C' - r E E' D#'", lp='A↓ E A r r r', ch='Am', f='5 - - 1 5 4', show='C'), B("E' D#' E' B D' C'", f='5 4 5 2 4 3')],
-  [B('A - r C E A', lp='A↓ E A r r r', ch='Am', f='1 - - 1 2 4', show='A'), B("B - r E C' B", lp='E↓ E G♯ r r r', ch='E', f='5 - - 1 3 2'), B('A - - - r r', lp='A↓ E A r r r', ch='Am', f='1')]],
- unit='s', counts=['1', '&', '2', '&', '3', '&'], src='Mutopia Project (Beethoven, WoO 59), bars 1 to 8', composer='Ludwig van Beethoven, 1810')
+  [B('A - r C E A', lp='A↓ E A r r r', ch='Am', f='1 - - 1 2 4', show='A'), B("B - r E C' B", lp='E↓ E G♯ r r r', ch='E', f='5 - - 1 3 2'), B("A - r B C' D'", lp='A↓ E A r r r', ch='Am', f='1 - - 2 3 4')],
+  [B("E' - - G F' E'", lp='C G C↑ r r r', ch='C', f='5 - - 1 4 3', show='E'), B("D' - - F E' D'", lp='G↓ G B r r r', ch='G', f='4 - - 1 4 3'), B("C' - - E D' C'", lp='A↓ E A r r r', ch='Am', f='3 - - 1 4 3')],
+  [B("B - r E E' r", lp='E↓ E E↑ r r E↑', ch='E', f='2 - - 1 5', show='B'), B("r E' E'' r r D#'", lp='E↑↑ r r D♯↑↑ E↑↑ r'), B("E' - r D#' E' D#'", lp='r D♯↑↑ E↑↑ r r r')],
+  [B("E' D#' E' B D' C'", f='5 4 5 2 4 3'), B('A - r C E A', lp='A↓ E A r r r', ch='Am', f='1 - - 1 2 4'), B('B - r E G# B', lp='E↓ E G♯ r r r', ch='E', f='5 - - 1 2 4')],
+  [B("C' - r E E' D#'", lp='A↓ E A r r r', ch='Am', f='5 - - 1 5 4', show='C'), B("E' D#' E' B D' C'", f='5 4 5 2 4 3'), B('A - r C E A', lp='A↓ E A r r r', ch='Am', f='1 - - 1 2 4')],
+  [B("B - r E C' B", lp='E↓ E G♯ r r r', ch='E', f='5 - - 1 3 2', show='B'), B('A - - - r r', lp='A↓ E A r r r', ch='Am', f='1')]],
+ unit='s', counts=['1', '&', '2', '&', '3', '&'], src='Mutopia Project (Beethoven, WoO 59), the whole first section, bars 1 to 22, without the repeat', composer='Ludwig van Beethoven, 1810')
 
 # 14
 V = {'C': 'C E+G', 'Em': 'B E+G', 'F': 'C F+A', 'Dm': 'D F+A', 'Am': 'C E+A', 'G': 'B D+G'}
@@ -241,7 +255,8 @@ WAYS = {
  13: ['Keep the left hand\'s three keys held down after you play them, so the chord rings under the answer.', 'From memory, two bars at a time, eyes on the keys.'],
  14: ['Left hand as a fan, one key at a time: bottom, middle, top, middle.', 'Make it yours: in any bar, swap a minor colour back to C, F or G, and keep the ones you like.'],
 }
-GROUP = {7: [6, 6, 6, 6], 10: [3, 2, 2, 2], 11: [4, 2]}
+GROUP = {7: [6, 6, 6, 6], 10: [3, 3, 3, 3, 3, 2], 11: [4, 4, 1], 13: [3, 3, 3, 3, 3, 3, 3, 2]}
+SPLIT = {8: 4, 10: 3, 13: 3}; P0 = 3
 for i, s in enumerate(S, 1):
     if i in GROUP:
         flat = [b for ln in s['lines'] for b in ln]; s['lines'] = []
@@ -250,7 +265,7 @@ for i, s in enumerate(S, 1):
     d = copy.deepcopy(base); g = d['gig']; last = i == len(S)
     d.update(id=f'mc{i}', title=s['title'], lesson=i, beats=s['beats'], book="THE PIANO BUTLER'S MUSIC BOX 2", label='End of Music Box 2' if last else f'Song {i}')
     d['composer'] = {'name': s['composer'], 'years': '', 'stamp': ''}
-    d['page0'] = 3 + 2 * (i - 1)
+    g['split'] = SPLIT.get(i, 99); d['page0'] = P0; P0 += 1 + -(-len(s['lines']) // SPLIT.get(i, 99))
     for k in ('shapes', 'ways', 'ways2', 'lkb_from'): g.pop(k, None)
     g.update(mb2=s['stage'], unit=s['unit'], job=s['job'], tool_cap=s['lcap'], r_cap=s['rcap'], song_how=s['how'], ready=s['ready'], lkb=s['lkb'], rkb=s['rkb'],
              song_grid=s['lines'], ways_txt=WAYS[i], ticks=s['ticks'], simple=1, grid=1, song_title=s['title'], src=s['src'])
