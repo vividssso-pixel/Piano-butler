@@ -185,3 +185,14 @@ g['r_cap'] = 'Thumb on middle C. B↓ is the key just below it: the thumb steps 
 g['song_how'] = 'The waltz: the box names the chord. Play it on ONE, then its other key twice. In the tune, a rising call is answered by two bell notes that start on beat 3 and ring on.'
 flat = [b for ln in g['song_grid'] for b in ln]; g['song_grid'] = [flat[:5], flat[5:9], flat[9:13], flat[13:]]
 json.dump(d, open('mb18.json', 'w'), ensure_ascii=False)
+
+# ---- 27 Nov: one song at a time, each finished and checked (PLAN.md). Song 1.
+# Hot Cross Buns: checked against the Kodály Center song collection (song 845, from Heritage Songster, 1966):
+# tone set do re mi, form a a b a, motives "mi re do rest" and "do do re re" in quick pairs. So the fourth beat is a rest, not a held note.
+d = json.load(open('mb1.json')); g = d['gig']
+for ln in g['song_grid']:
+    for b in ln:
+        if b['r'] == 'E D C -': b['r'] = 'E D C r'
+g['today'] = 'Roots'
+g['song_how'] = 'Count out loud, 1 2 3 4. One letter, one box. A small circle is a rest: lift, and say the number without playing. A box split in two: two quick notes, “one-a, pen-ny”.'
+json.dump(d, open('mb1.json', 'w'), ensure_ascii=False)
