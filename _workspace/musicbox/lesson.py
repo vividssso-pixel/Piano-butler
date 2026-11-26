@@ -1,7 +1,7 @@
 # The Piano Butler Lesson Book (song-led), Level 0: one lesson from one song's data. The look is the Handbook's
 # (book-v3/book10.py): the same type, colours, running head and page frame; bigger type for children.
 # Usage: python3 lesson.py song.json snippets.json out.html
-import json, base64, sys
+import json, base64, sys, os, re
 SONG, V = json.load(open(sys.argv[1])), json.load(open(sys.argv[2]))
 N, C, MUTE, HELD = '#26296b', '#e4572e', '#6d6f9c', '#9a9cc4'
 FD = 'node_modules/@fontsource/'
@@ -444,7 +444,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
     def kbR(fm):
         SONG.update({'_kb_all': 1}); h = kb(width=240, fmap=fm); SONG.update({'_kb_all': 0}); return h
     def kbL(fm):
-        SONG.update({'_kb_all': 1, 'kb_c': 'below middle C'}); h = kb(width=240, fmap=fm); SONG.update({'_kb_all': 0, 'kb_c': 'middle C'}); return h
+        SONG.update({'_kb_all': 1, 'kb_c': 'below middle C'}); h = kb(width=240, fmap=fm, frm=SONG['gig'].get('lkb_from')); SONG.update({'_kb_all': 0, 'kb_c': 'middle C'}); return h   # lkb_from: the left keyboard may start on B (Music Box 2: the G chord B D G)
     meter_now = [4]
     def HEAD(b, i):   # her 18 Nov 18:13: Music Box 2 writes the letter inside the note head
         tok = lambda q, k: (q.split() + ['-'] * meter_now[0])[k] if q else ''
@@ -501,9 +501,157 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
         elif n == 3: g = head('#fff') + stem + '<circle cx="19" cy="19" r="1.9" fill="#26296b"/>'
         else: g = '<ellipse cx="9" cy="19" rx="6" ry="3.9" fill="#fff" stroke="#26296b" stroke-width="2"/>'
         return f'<svg viewBox="2 0 18 24" width="18" height="24">{g}</svg>'
+    # ---- Music Box 2 (her 18 and 26 Nov): the letters move into note heads, then onto a staff, then fade ----
+    GCLEF = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gclef.json')))['d']
+    def kb2(frm, n, fing, sharp=None, width=None):   # a keyboard from any white key, n keys; fing: one finger per white key ('.' = none, 'x' = lit, no number); sharp: {index of the white key before the black key: finger}
+        W7 = ['c', 'd', 'e', 'f', 'g', 'a', 'b']; f0 = W7.index(frm); w, H = 42, 150; out = ''; fing = fing.split(); sharp = sharp or {}
+        names = [(W7 * 3)[f0 + i] for i in range(n)]
+        for i, nm in enumerate(names):
+            lit = fing[i] != '.'
+            out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="3" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.5"/><text x="{i * w + w / 2}" y="{H - 12}" text-anchor="middle" font-family="AH" font-weight="700" font-size="17" fill="{N}">{nm.upper()}</text>'
+            if lit and fing[i] != 'x': out += f'<circle cx="{i * w + w / 2}" cy="{H + 19}" r="13" fill="{C}"/><text x="{i * w + w / 2}" y="{H + 24.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="#fff">{fing[i]}</text>'
+        for i in range(n - 1):
+            if names[i] in 'cdfga':
+                on = str(i) in sharp
+                out += f'<rect x="{(i + 1) * w - 13}" y="0" width="26" height="{H * 0.6}" rx="2" fill="{C if on else N}"/>'
+                if on: out += f'<text x="{(i + 1) * w}" y="{H * 0.6 - 8}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="#fff">{sharp[str(i)]}</text>'
+        Wd = n * w; wd = width or min(300, 30 * n)
+        return f'<svg viewBox="-2 -2 {Wd + 4} {H + 38}" style="width:{wd}px;max-width:100%;display:block">{out}</svg>'
+    LIDX = {'C': 0, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5, 'B': 6}
+    def ptok(t):   # 'F#' / "C'" / 'B,' / '<G' -> (letter, accidental, step from E4, left-hand flag)
+        m = re.match(r"^(<)?([A-G])([#b]?)([',]*)$", t)
+        if not m: return None
+        return m[2], m[3], LIDX[m[2]] + 7 * m[4].count("'") - 7 * m[4].count(',') - 2, bool(m[1])
+    ACC = {'#': '♯', 'b': '♭', '': ''}
+    def GRID2(bars, meter, cls, maxnb, first_done):
+        G_ = SONG['gig']; stage = G_['mb2']; unit = G_.get('unit', 'q'); cw = 633 / maxnb; cur = [bars[0]]
+        idx = lambda b: list(range(meter - b['pick'], meter)) if b.get('pick') else list(range(meter))   # a pick-up bar shows only its last boxes
+        nb = sum(len(idx(b)) for b in bars); insong = any(bars is ln for ln in G_['song_grid'])
+        staff = stage in ('staff', 'bare'); S, T, H = (14, 30, 122) if staff else (0, 0, 60)
+        if staff:   # the staff is as tall as this song's highest and lowest notes need
+            sts = [ptok(x.lstrip('~'))[2] for ln in G_['song_grid'] for b in ln for t in b.get('r', '').split() for x in t.split('.') if ptok(x.lstrip('~')) and not ptok(x.lstrip('~'))[3]]
+            T = max(8, max(sts) * 7 - 42); H = max(T + 72, T + 56 - min(sts) * 7 + 13)
+        stfpos = f'background-position:0 {T}px,0 {T + S}px,0 {T + 2 * S}px,0 {T + 3 * S}px,0 {T + 4 * S}px'
+        labels = G_.get('counts') or [str(i + 1) for i in range(meter)]
+        toks = lambda s: (s.split() + ['-'] * meter)[:meter] if s else [''] * meter
+        b0 = lambda i: ' b0' if i == idx(cur[0])[0] else ''
+        def dur(R, i):   # boxes this note lasts, and whether a '-.X' after it adds half a box
+            n = 1; j = i + 1
+            while j < meter and R[j] == '-': n += 1; j += 1
+            return n, (j < meter and R[j].startswith('-.'))
+        def shape(n, dot):   # -> (filled, stem, flags, dotted)
+            if unit == 'q': return {1: (1, 1, 0, dot), 2: (0, 1, 0, dot), 3: (0, 1, 0, 1), 4: (0, 0, 0, 0)}.get(n, (0, 1, 0, 0))
+            if unit == 'e': return {1: (1, 1, 1, dot), 2: (1, 1, 0, dot), 3: (1, 1, 0, 1), 4: (0, 1, 0, dot), 6: (0, 1, 0, 1)}.get(n, (0, 1, 0, 0))
+            return {1: (1, 1, 2, 0), 2: (1, 1, 1, dot), 3: (1, 1, 1, 1), 4: (1, 1, 0, dot), 6: (1, 1, 0, 1)}.get(n, (1, 1, 0, 0))
+        yof = lambda st: (T + 4 * S - st * S / 2) if staff else 40
+        seen = set()
+        def note(cx, p, filled, stem, flags, dot, up=None, beam_y=None, show=True, k=1.0):
+            L, acc, st, _ = p; y = yof(st); rx, ry = (9.5 * k, 6.9 * k) if staff else (13.5 * k, 9.8 * k); g = ''
+            if cx - rx < 1 or cx + rx > cw - 1 or y - ry < 1 or y + ry > H - 1 or (beam_y is not None and not 2 <= beam_y <= H - 2):
+                if insong: print('NOTE OUT OF BOX', SONG['title'], L, st, round(cx, 1), round(cw, 1), beam_y, H, file=sys.stderr)
+            if staff:
+                for s2 in range(-2, st - 1, -2): g += f'<path d="M{cx - 14.5} {yof(s2)}H{cx + 14.5}" stroke="{N}" stroke-width="1.2"/>'
+                for s2 in range(10, st + 1, 2): g += f'<path d="M{cx - 14.5} {yof(s2)}H{cx + 14.5}" stroke="{N}" stroke-width="1.2"/>'
+            if up is None: up = (st < 4) if staff else True
+            if not stem: rx *= 1.12
+            g += f'<ellipse cx="{cx}" cy="{y}" rx="{rx}" ry="{ry}" transform="rotate({-18 if stem else 0} {cx} {y})" fill="{N if filled else "#fff"}" stroke="{N}" stroke-width="{1.7 if staff else 2.2}"/>'
+            if show: g += f'<text x="{cx}" y="{y + (3.9 if staff else 5.6) * k}" text-anchor="middle" font-size="{(11 if staff else 16) * k}" font-weight="800" font-family="AH,Inter,sans-serif" fill="{"#fff" if filled else N}">{L}</text>'
+            if not staff and (st >= 5 or st <= -3): g += f'<text x="{cx - rx - 1}" y="{y - ry + 3}" text-anchor="middle" font-size="{13 * max(k, .8)}" font-weight="800" font-family="AH,Inter,sans-serif" fill="{C}">{"↑" if st >= 5 else "↓"}</text>'   # no staff yet: an arrow tells the high C from the low one
+            if acc: g += f'<text x="{cx - (rx + 5 if staff else 24)}" y="{y + 5}" text-anchor="middle" font-size="{15 if staff else 19}" font-weight="700" font-family="AH,Inter,sans-serif" fill="{N}">{ACC[acc]}</text>'
+            ln = 39 if staff else 34
+            if stem:
+                sx = cx + (rx - 0.9) * (1 if up else -1); y1 = beam_y if beam_y is not None else (y - ln if up else y + ln)
+                g += f'<path d="M{sx} {y - 1.5 if up else y + 1.5}V{y1}" stroke="{N}" stroke-width="1.7"/>'
+                if beam_y is None:
+                    for f in range(flags): yy = y1 + (7 * f if up else -7 * f); g += f'<path d="M{sx} {yy}c2 {8 if up else -8} 12 {9 if up else -9} 8 {21 if up else -21}" fill="none" stroke="{N}" stroke-width="2.4" stroke-linecap="round"/>'
+            if dot: g += f'<circle cx="{cx + rx + 5}" cy="{y - (S / 2 if staff and st % 2 == 0 else 0)}" r="2.2" fill="{N}"/>'
+            return g
+        def rest(cx):
+            y = yof(4) if staff else 34
+            if unit == 'q': return f'<path d="M{cx - 3} {y - 12}l6 7l-5 6q7 -1 5 7q-7 -4 -5 5" fill="none" stroke="{N}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
+            return f'<circle cx="{cx - 3}" cy="{y - 5}" r="2.4" fill="{N}"/><path d="M{cx - 2} {y - 4}q5 0 6 -3l-5 14" fill="none" stroke="{N}" stroke-width="1.8" stroke-linecap="round"/>'
+        def rhrow(bars):
+            out = ''
+            for b in bars:
+                R = toks(b.get('r', '')); beams = {}; R0 = R; R = [x.lstrip('~') for x in R]; cur[0] = b
+                if unit in ('e', 's') and staff:   # beam runs of single boxes inside each beat group
+                    gsz = 3 if unit == 'e' else meter
+                    for g0 in range(0, meter, gsz):
+                        run = []
+                        for i in list(range(g0, min(meter, g0 + gsz))) + [None]:
+                            ok = i is not None and ptok(R[i]) and not ptok(R[i])[3] and dur(R, i) == (1, False)
+                            if ok: run.append(i)
+                            else:
+                                if len(run) > 1:
+                                    sts = [ptok(R[j])[2] for j in run]; up = sum(sts) / len(sts) < 4
+                                    by = max(4, min(yof(s) for s in sts) - 37) if up else min(H - 4, max(yof(s) for s in sts) + 37)
+                                    for j in run: beams[j] = (up, by, 'first' if j == run[0] else 'last' if j == run[-1] else 'mid')
+                                run = []
+                for i in idx(b):
+                    t = R0[i]; g = ''; cx = cw / 2
+                    def show(p):
+                        if stage != 'bare': return True
+                        s = (not first_done[0]) or (p[0] + p[1]) in (b.get('show') or '').split(); first_done[0] = True
+                        return s
+                    tie = t.startswith('~'); t = t.lstrip('~')
+                    if t in ('', '-'): g = '' if staff or t == '' else f'<path d="M{cw * .2} 40H{cw * .8}" stroke="rgba(38,41,107,.3)" stroke-width="2"/>'
+                    elif t == 'r': g = rest(cx) if (unit == 'q' or i == 0 or R[i - 1] != 'r') else ''
+                    elif '.' in t:
+                        a, z = t.split('.')[:2]; pa, pz = ptok(a), ptok(z); xa, xz = cw * .27, cw * .73; k = .86 if staff else .62
+                        if pa and pz:
+                            up = ((pa[2] + pz[2]) / 2 < 4) if staff else True; by = max(4, min(yof(pa[2]), yof(pz[2])) - (34 if staff else 28)) if up else min(H - 4, max(yof(pa[2]), yof(pz[2])) + (34 if staff else 28))
+                            g = note(xa, pa, 1, 1, 0, 0, up, by, show(pa), k) + note(xz, pz, 1, 1, 0, 0, up, by, show(pz), k)
+                            rx = ((9.5 if staff else 13.5) * k - 0.9) * (1 if up else -1)
+                            for q in range(1 if unit == 'q' else 2): g += f'<path d="M{xa + rx} {by + (5.5 * q if up else -5.5 * q)}H{xz + rx}" stroke="{N}" stroke-width="3.6"/>'
+                        elif pz: g = note(xz, pz, 1, 1, 1 if unit == 'q' else 2, 0, None, None, show(pz), k)
+                        elif pa: g = note(xa, pa, 1, 1, 1 if unit == 'q' else 2, 0, None, None, show(pa), k)
+                    else:
+                        p = ptok(t)
+                        if p and p[3]: g = f'<text x="{cx}" y="{(yof(4) + 4) if staff else 44}" text-anchor="middle" font-size="10" font-weight="700" font-family="AH,Inter,sans-serif" fill="#6d6f9c">L.H.</text>'
+                        elif p:
+                            n, dot = dur(R, i); f, stem, fl, d = shape(n, dot)
+                            if i in beams:
+                                up, by, pos = beams[i]; g = note(cx, p, f, stem, fl, d, up, by, show(p)); sx = cx + 8.6 * (1 if up else -1)
+                                x0, x1 = (sx, cw) if pos == 'first' else (0, sx) if pos == 'last' else (0, cw)
+                                for q in range(1 if unit == 'e' else 2): g += f'<path d="M{x0} {by + (5.5 * q if up else -5.5 * q)}H{x1}" stroke="{N}" stroke-width="3.6"/>'
+                            else: g = note(cx, p, f, stem, fl, d, None, None, show(p))
+                    if tie and ptok(t): yy = yof(ptok(t)[2]) + (11 if staff else 14); g += f'<path d="M-4 {yy}Q{cx / 2 - 4} {yy + 9} {cx - 10} {yy}" fill="none" stroke="{N}" stroke-width="1.8"/>'
+                    out += f'<td class="rl n2{" stf" if staff else ""}{b0(i)}" style="{stfpos if staff else ""}"><svg viewBox="0 0 {cw:.2f} {H}" preserveAspectRatio="none" style="height:{H}px">{g}</svg></td>'
+            return out
+        row = lambda f: ''.join(''.join((cur.__setitem__(0, b) or f(b, i)) for i in idx(b)) for b in bars)
+        halfs = lambda t: ('<span class="hbx">' + ''.join(f'<span>{x if x != "-" else ""}</span>' for x in t.split('.')) + '</span>') if '.' in t else ('' if t == '-' else t)
+        r = '<tr class="mbfr"><th></th>' + row(lambda b, i: f'<td class="mbfn{b0(i)}">{halfs(toks(b.get("f", ""))[i])}</td>') + '</tr>'
+        clef = f'<svg class="clef" viewBox="0 0 38 {H}" style="height:{H}px;width:38px"><g transform="translate(4 {T + 3 * S}) scale({S * 4 / 1000})"><path transform="scale(1,-1)" d="{GCLEF}" fill="{N}"/></g></svg>' if staff else 'R.H.'
+        r += f'<tr class="rh"><th class="{"stf" if staff else ""}" style="{stfpos if staff else ""}">{clef}</th>' + rhrow(bars) + '</tr>'
+        r += '<tr class="cnt"><th></th>' + row(lambda b, i: f'<td class="cn mbcm{b0(i)}">' + (halfs(f'{labels[i]}.&') if '.' in toks(b.get('r', ''))[i] and unit == 'q' else labels[i]) + '</td>') + '</tr>'
+        if any(b.get('w') for b in bars): r += '<tr class="wd"><th></th>' + row(lambda b, i: f'<td class="w{b0(i)}">{halfs(toks(b.get("w", ""))[i])}</td>') + '</tr>'
+        lastc = ['']
+        def chn(b, i):
+            t = toks(b.get('ch', ''))[i].replace('-', '')
+            if not t or t == lastc[0]: return ''
+            lastc[0] = t; return t
+        def lcell(b, i):
+            chord = lambda l: (f'<span class="ch2 {"two" if l.count("+") == 1 else "three"}">{"<br>".join(reversed(l.replace("#", "♯").split("+")))}</span>' if '+' in l else f'<span class="ch2">{l}</span>')
+            if b.get('lp'):
+                t = toks(b['lp'])[i]
+                if t == '-': return '<i class="hold"></i>'
+                if t == 'r': return '<i class="rst"></i>'
+                if t == '=': return chord(b['l'])
+                if '+' in t: return chord(t)
+                if '.' in t: return '<span class="hbx">' + ''.join(f'<span><b class="hk2">{x}</b></span>' for x in t.split('.')) + '</span>'
+                t = t.replace('#', '♯')
+                return f'<b class="hk2">{t}</b>' if t else ''
+            return (chord(b['l']) if b.get('l') else '') if i == 0 else ('<i class="hold"></i>' if b.get('l') else '')
+        if any(b.get('ch') for b in bars): r += '<tr class="chn"><th></th>' + row(lambda b, i: f'<td class="cnm{b0(i)}">{chn(b, i)}</td>') + '</tr>'
+        r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{b0(i)}">{lcell(b, i)}</td>') + '</tr>'
+        if not any('+' in (b.get('l', '') + b.get('lp', '')) for ln in G_['song_grid'] for b in ln): cls += ' slim'
+        return f'<table class="bgt g2 {cls}" style="width:calc(44px + (100% - 44px) * {nb / maxnb:.4f})">{r}</table>'
     def GRID(lines, meter, words=True, rh=True, cls=''):   # her 10 Nov 22:19: both hands as letters in beat boxes, so the count is visible
         out = ''; meter_now[0] = meter
         for li, bars in enumerate(lines):
+            if SONG['gig'].get('mb2'):
+                if li == 0: fd2 = [False]
+                out += GRID2(bars, meter, cls, max(sum(b.get('pick', meter) for b in x) for x in lines), fd2); continue
             row = lambda f: ''.join(''.join(f(b, i) for i in range(meter)) for b in bars)
             tok = lambda s, i: (s.split() + ['-'] * meter)[i] if s else ''
             c = lambda b, i: ' b0' if i == 0 else ''
@@ -557,12 +705,31 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
 {('<div class="gmore">' + ''.join(f'<div class="gm"><div class="lmt">{t}</div>{GRID([l[:2], l[2:]], SONG["beats"], words=False, cls="sm")}</div>' for t, l in G['more']) + '</div>') if G.get('grid') else '<div class="lmore">' + ''.join(f'<div class="lm"><div class="lmt">{t}</div>{LS(l)}</div>' for t, l in G['more']) + '</div>'}
 <div class="sp"></div><div class="real"><span class="ah">The real test</span><span>{G['real']}</span></div>
 <div class="end">{ticks(G['ticks'], True)}</div>""", LESSON)
-    if G.get('simple'):   # her 10 Nov 22:29: the Music Box opens here -- no numbers, no extra songs, the whole song big: 'oh, I can do this'
+    if G.get('front'):   # the opening pages of a Music Box: the map, how to use it, where the tunes come from
+        P1 = ''.join(page(h, LESSON) for h in G['front'])
+    elif G.get('mb2'):   # Music Box 2: a spread per song -- left page gets you ready, right page is the song
+        steps = G.get('steps') or ['Point at each note of line 1 and <b>say its letter</b> in time.', '<b>Left hand alone</b>, counting out loud.', '<b>Right hand alone</b>, with the finger numbers.', '<b>Hands together</b>, one line at a time, so slowly that you never have to stop.', 'All the way through. A wrong note is fine. Stopping is not.']
+        P1 = page(f"""<div class="kick">{SONG['label']}</div><h1>{SONG['title']}</h1><p class="byl">{SONG['composer']['name']}</p>
+<div class="mb-intro"><p>{G['job']}</p></div>
+<div class="mb-hands"><div><div class="ah">Left hand</div>{kb2(*G['lkb'])}<p class="cap2">{G['tool_cap']}</p></div><div><div class="ah">Right hand</div>{kb2(*G['rkb'])}<p class="cap2">{G['r_cap']}</p></div></div>
+<div class="sp"></div><div class="say"><div class="ah">How to read it</div><p>{G['song_how']}</p></div>
+<div class="sp"></div><div class="say"><div class="ah">Practise in this order</div><ol class="stp">{''.join(f'<li>{x}</li>' for x in steps)}</ol></div>
+<div class="sp"></div><div class="say"><div class="ah">When you can play it, try it another way</div><ol class="stp alt">{''.join(f'<li>{x}</li>' for x in G['ways_txt'])}</ol></div>""", LESSON)
+        P1 += page(f"""<div class="kick kb">{SONG['label']} · {SONG['title']}</div>
+<div class="mb-song">{GRID(G['song_grid'], SONG['beats'], cls='big')}</div>
+<div class="sp"></div><div class="end"><p class="rdy"><b>Ready for the next song when</b> {G['ready']}</p>{ticks(G['ticks'], True)}</div>""", LESSON)
+    elif G.get('simple'):   # her 10 Nov 22:29: the Music Box opens here -- no numbers, no extra songs, the whole song big: 'oh, I can do this'
         P1 = page(f"""<div class="kick">{SONG['label']}</div><h1>{SONG['title']}</h1>
 <div class="mb-intro"><p>{G['job']}</p><div class="jobq">{qr(URL, 48)}<span>Hear it first</span></div></div>
-<div class="mb-hands"><div><div class="ah">Left hand</div>{kbL(G['fmap'])}<p class="cap2">{G['tool_cap']}</p></div><div><div class="ah">Right hand</div>{kbR(G['rmap'])}<p class="cap2">{G['r_cap']}</p></div></div>
+<div class="mb-hands"><div><div class="ah">Left hand</div>{kb2(*G['lkb']) if G.get('mb2') else kbL(G['fmap'])}<p class="cap2">{G['tool_cap']}</p></div><div><div class="ah">Right hand</div>{kb2(*G['rkb']) if G.get('mb2') else kbR(G['rmap'])}<p class="cap2">{G['r_cap']}</p></div></div>
 <div class="sp"></div><div class="mb-song"><div class="ah">The song</div><p class="how">{G['song_how']}</p>{GRID(G['song_grid'], SONG['beats'], cls='big' + (' mid' if len(G['song_grid']) > 3 else ' tri' if len(G['song_grid']) == 3 else ''))}</div>
-<div class="sp"></div><div class="end">{ticks(G['ticks'], True)}</div>""", LESSON)
+<div class="sp"></div><div class="end">{f'<p class="rdy"><b>Ready for the next song when</b> {G["ready"]}</p>' if G.get('ready') else ''}{ticks(G['ticks'], True)}</div>""", LESSON)
+        if G.get('ways2'):
+            P1 += page(f"""<div class="kick">{SONG['label']} · The left hand, again</div><h1>{G['ways2']['title']}</h1>
+<div class="mb-intro"><p>{G['ways2']['job']}</p></div>
+<div class="sp"></div><div class="mb-ways"><p class="how">{G['ways2']['how']}</p><div class="ways">{''.join(f'<div class="way"><div class="wayt">{t}<span class="ways2">{s}</span></div>' + GRID([bs], SONG['beats'], cls='wy2') + '</div>' for t, s, bs in G['ways2']['ways'])}</div></div>
+<div class="sp"></div><div class="say"><div class="ah">Say it, tap it, play it</div><p>Say the name of the way out loud in time. Tap it on your knee with the left hand. Then play it with the song.</p></div>
+<div class="sp"></div><div class="end">{ticks([w[0] for w in G['ways2']['ways']], True)}</div>""", LESSON)
         if G.get('ways'):
             W = G['ways']
             P1 += page(f"""<div class="kick">{SONG['label']} · The left hand, again</div><h1>{G.get('ways_title', 'Four new ways')}</h1>
@@ -573,6 +740,12 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
     BODY = P1
     css += f""".mb-intro{{display:flex;justify-content:space-between;align-items:center;gap:20px;border-top:1.5px solid {N};border-bottom:1.5px solid {N};padding:10px 0}} .mb-intro p{{font-size:19px;margin:0}}
 .mb-hands{{display:grid;grid-template-columns:1fr 1fr;gap:28px}} .mb-hands>div{{display:grid;gap:10px;justify-items:start;align-content:start}} .mb-hands .cap2{{margin:0}} .pg:has(.mid) .mb-hands svg{{width:136px!important}} .pg:has(.mid) .mb-intro{{padding:6px 0}} .pg:has(.mid) .mb-hands>div{{gap:6px}} .pg:has(.mid) .mb-hands .ah{{margin-bottom:12px}} .pg:has(.mid) .mb-intro p{{font-size:17px}} .pg:has(.mid) .jobq>*:first-child{{width:38px!important;height:38px!important}} .pg:has(.mid) .mb-intro{{padding:4px 0!important}} .mb-song{{display:grid;gap:8px}} .mb-song .how{{margin:0}} .bgt.big .rl{{font-size:32px;height:62px}} .bgt.big .w{{font-size:13.5px;height:22px}} .bgt.big .ll{{height:62px}} .bgt.big .ch2{{font-size:21px;padding:2px 5px}} .bgt.big .cn{{font-size:12.5px;height:20px}} .bgt.big+.bgt.big{{margin-top:30px}} .bgt.big th{{width:44px}} .lhn{{font:700 11px 'AH';letter-spacing:.06em;color:{MUTE}}} .hk2{{font:700 26px 'AH';color:{N}}} .bgt .lfn{{vertical-align:top!important;height:15px;font-size:12px}} .pg:has(.lfr) .mb-hands .cap2{{font-size:14px}} .pg:has(.lfr) .sp{{min-height:4px!important}} .lf{{font:700 11px 'AH';color:{C};font-style:normal;vertical-align:super;margin-right:2px}} .hk2 .hbx{{font-size:.8em;width:calc(100% - 12px)}} .bgt.big.tri .hk2{{font-size:22px;line-height:1;display:inline-block}} .bgt.big.mid .hk2{{font-size:18px;line-height:.9;display:inline-block}} .lhn{{line-height:1;display:inline-block}} .ch2.two{{line-height:1.05;padding:3px 5px!important;font-size:16px!important}} .bgt.wy .ll{{height:58px!important}} .bgt.big .ll:has(.two){{height:64px}} .bgt.big .ch2.two{{font-size:17px!important}} .bgt.big.mid .ll:has(.two){{height:42px}} .bgt.big.mid .ch2.two{{font-size:12.5px!important;line-height:.9!important;padding:0 4px!important}} .mb-ways{{display:grid;gap:8px}} .mb-ways .how{{margin:4px 0 0}} .ways{{display:grid;grid-template-columns:1fr;gap:14px}} .way{{display:grid!important;grid-template-columns:190px 1fr;align-items:center;gap:16px}} .wayt{{flex-direction:column;align-items:flex-start!important;gap:2px!important}} .way{{border:1px solid rgba(38,41,107,.2);border-radius:10px;padding:12px 14px 14px}} .wayt{{font-family:'PF',serif;font-weight:700;font-size:22px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:baseline;gap:6px}} .ways2{{font:600 14px 'AH';color:{MUTE};font-style:normal;white-space:nowrap}} .wayt{{white-space:nowrap}} .bgt.wy .ll{{height:52px}} .bgt.wy .cn{{height:22px;font-size:12.5px}} .bgt.wy .ch2{{font-size:18px;padding:1px 4px}} .hk{{font:700 18px 'AH';color:{N}}} .say{{border-top:1.5px solid {N};padding-top:10px}} .say p{{font-size:17px;margin:6px 0 0}} .bgt.wy .hbx{{width:calc(100% - 10px)}} .rst{{display:block;margin:0 auto;width:7px;height:7px;border-radius:50%;border:1.5px solid rgba(38,41,107,.35)}} .bgt.big.tri .rl{{font-size:27px;height:36px}} .bgt.big.tri .ll{{height:40px}} .bgt.big.tri .w{{height:17px}} .bgt.big.tri .mbfn{{height:17px}} .bgt.big.tri .ch2{{font-size:19px;padding:1px 5px}} .bgt.big.tri+.bgt.big.tri{{margin-top:8px}} .bgt .mbfn{{font:700 13px 'AH';color:{C};height:22px;vertical-align:bottom}} .bgt .mbcm{{vertical-align:middle!important;height:24px!important;border-top:1px solid rgba(38,41,107,.1);font-size:12.5px}} .bgt.big.mid .mbfn{{height:14px;font-size:11.5px}} .hbx{{display:flex;width:calc(100% - 12px);margin:0 auto;line-height:1}} .hbx>span{{flex:1;display:flex;align-items:center;justify-content:center}} .hbx>span+span{{border-left:1px dashed rgba(38,41,107,.3)}} .rl .hbx{{font-size:.78em}} .w .hbx{{font-size:.92em}} .bgt.big.mid .rl{{font-size:24px;height:28px}} .bgt.big.mid .mbcm{{height:20px!important;font-size:11.5px}} .bgt.big.mid .mbcm .hbx{{font-size:9.5px}} .bgt.big.mid .w{{height:13px;font-size:12px}} .bgt.big.mid .ll{{height:32px}} .bgt.big.mid .cn{{height:17px}} .bgt.big.mid .ch2{{font-size:16px;padding:0 5px;line-height:1.15}} .bgt.big.mid+.bgt.big.mid{{margin-top:4px}} .pg:has(.mid) .mb-song{{gap:5px}} .pg:has(.mid) .mb-song .how{{margin-top:4px!important}}
+"""
+    css += """.bgt.g2 .rl.n2{padding:0;height:auto;line-height:0;vertical-align:middle} .bgt.g2 .rl.n2 svg{display:block;width:100%} .bgt.g2 th.stf{padding:0;line-height:0;text-align:right}
+.bgt.g2 .stf{background-image:linear-gradient(#26296b,#26296b),linear-gradient(#26296b,#26296b),linear-gradient(#26296b,#26296b),linear-gradient(#26296b,#26296b),linear-gradient(#26296b,#26296b);background-repeat:no-repeat;background-size:100% 1.2px;background-position:0 30px,0 44px,0 58px,0 72px,0 86px}
+.bgt.g2 .rl{border-top:1px solid rgba(38,41,107,.14)} .bgt.g2 .ll{height:50px!important} .bgt.g2 .ch2.three{font-size:12.5px!important;line-height:.95!important;padding:2px 6px!important} .bgt.g2 .hk2{font-size:19px!important} .bgt.g2 .mbfn{height:16px!important} .bgt.g2 .w{height:16px!important}
+.bgt.g2+.bgt.g2{margin-top:12px!important} .bgt.g2.wy2 .mbfr{display:none} .bgt.g2.wy2 tr.rh{display:none} .bgt.g2.wy2 th{display:none}
+.bgt .cnm{font:700 12.5px 'AH';color:#e4572e;height:17px;text-align:left;padding-left:5px;vertical-align:bottom;border:0!important} .bgt.g2 .ll{height:56px!important} .bgt.g2.slim .ll{height:36px!important} .bgt.g2 .ch2.three{font-size:11.5px!important;line-height:.95!important;padding:1px 5px!important} .bgt.g2+.bgt.g2{margin-top:9px!important} .bgt.g2 .ch2.two{font-size:14px!important;line-height:1!important;padding:2px 5px!important} .bgt.g2 .ll .hbx .hk2{font-size:15px!important} .kick.kb{margin-bottom:10px} table.ftb{width:100%;border-collapse:collapse;font-size:13px;line-height:1.3} table.ftb th{font:700 10.5px 'AH';letter-spacing:.12em;text-transform:uppercase;color:#e4572e;text-align:left;padding:5px 8px 5px 0;border-bottom:1.5px solid #26296b} table.ftb td{padding:5px 8px 5px 0;border-bottom:1px solid rgba(38,41,107,.14);vertical-align:top} table.ftb td.n{font-weight:700;width:22px} table.ftb tr.u td{font:700 11px 'AH';letter-spacing:.12em;text-transform:uppercase;padding-top:11px;border-bottom:1px solid rgba(38,41,107,.4)} table.ftb.sm{font-size:11.5px;line-height:1.3} table.ftb.sm td{padding:3.5px 8px 3.5px 0} .pg:has(.fl) .say p{font-size:15px} .pg:has(.fl) ol.stp{font-size:14.5px;gap:3px} .pg:has(.fl) .fl{font-size:13.5px;gap:4px 28px} .fl{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;font-size:14.5px;line-height:1.4;margin:0;padding:0;list-style:none} .fl b{color:#26296b} .fp{font-size:15.5px;line-height:1.5;margin:0 0 8px} .byl{margin:-6px 0 8px;font-size:13.5px;color:#6d6f9c} .h1b{font-size:30px!important;margin-bottom:10px!important} ol.stp{margin:4px 0 0;padding-left:22px;display:grid;gap:5px;font-size:15.5px;line-height:1.4} ol.stp li::marker{color:#e4572e;font-weight:700} ol.stp.alt{list-style:lower-alpha} .rdy{font-size:14.5px;margin:0 0 8px} .pg:has(.g2) .mb-hands svg{max-height:104px;width:auto!important} .pg:has(.g2) .mb-hands>div{gap:5px} .pg:has(.g2) .mb-hands .cap2{font-size:13.5px} .pg:has(.g2) .mb-intro p{font-size:16.5px} .pg:has(.g2) .mb-intro{padding:5px 0!important} .pg:has(.g2) .sp{min-height:4px!important} .pg:has(.g2) .mb-song{gap:5px}
 """
     css += f""".job{{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;border:1.5px solid {C};border-radius:12px;padding:10px 16px}} .jobt{{font-size:17px;margin:4px 0 0}} .jobq{{display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap;font-size:11.5px;color:{MUTE}}}
 .ah{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{C}}}
@@ -643,10 +816,11 @@ function paginate(){
     }
   }
   document.querySelectorAll('.pg').forEach(pg => { const b = pg.querySelector('.body'); while (b.firstElementChild && b.firstElementChild.matches('.sp') && b.classList.contains('cont')) b.firstElementChild.remove(); });
-  document.querySelectorAll('.pg .foot span').forEach((f, i) => f.textContent = i + 1);
+  document.querySelectorAll('.pg .foot span').forEach((f, i) => f.textContent = i + 1 + (window.PAGE0 || 0));
   window.__paged = 1;
 }
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => requestAnimationFrame(paginate));
 </script>"""
 html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{BODY}{PAGINATE}</body></html>'
+html = html.replace('<body', '<script>window.PAGE0 = %d;</script><body' % SONG.get('page0', 0), 1)
 open(sys.argv[3], 'w').write(html); print('ok', len(html))

@@ -20,7 +20,7 @@ const { chromium } = require('playwright');
     const shown = (e) => { const s = cs(e); return s.display !== 'none' && s.visibility !== 'hidden' && !e.closest('[hidden]') && R(e).width > 0 && R(e).height > 0; };
     [...document.querySelectorAll('.pg')].forEach((pg, pi) => {
       const P = 'p' + (pi + 1), pr = R(pg), ps = cs(pg), L = pr.left + parseFloat(ps.paddingLeft) - 1.5, Rt = pr.right - parseFloat(ps.paddingRight) + 1.5;
-      const els = [...pg.querySelectorAll('*')].filter(e => !(e instanceof SVGElement) || e.tagName === 'svg').filter(e => !e.closest('.foot, .top, .rule, .shd')).filter(shown);   // .shd: a faint note-shape shadow behind a letter (her 18 Nov 19:02), drawn on purpose past its box
+      const els = [...pg.querySelectorAll('*')].filter(e => !(e instanceof SVGElement) || e.tagName === 'svg').filter(e => !e.closest('.foot, .top, .rule, .shd') && !e.classList.contains('n2'))   /* .n2: a Music Box 2 note cell, an svg that fills its box on purpose so the staff lines run through; lesson.py checks the notes inside it itself (NOTE OUT OF BOX) */.filter(shown);   // .shd: a faint note-shape shadow behind a letter (her 18 Nov 19:02), drawn on purpose past its box
       for (const e of els) {
         const er = R(e);
         if (er.left < L || er.right > Rt) out.push(`${P} out: ${name(e)} '${text(e)}' runs ${er.left < L ? 'left ' + (L - er.left).toFixed(1) : 'right ' + (er.right - Rt).toFixed(1)}px past the margin`);
