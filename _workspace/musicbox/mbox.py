@@ -196,3 +196,7 @@ for ln in g['song_grid']:
 g['today'] = 'Roots'
 g['song_how'] = 'Count out loud, 1 2 3 4. One letter, one box. A small circle is a rest: lift, and say the number without playing. A box split in two: two quick notes, “one-a, pen-ny”.'
 json.dump(d, open('mb1.json', 'w'), ensure_ascii=False)
+
+# Song 2, Mary Had a Little Lamb: bars 1-3 and 5-8 agree note for note with the Musica Viva transcription (via folktunefinder 174581).
+# Bar 4 there is E E E (an English three-note version); this book keeps the usual E G G, the version with G that pianochord.org describes (notes C D E G, 8 bars).
+d = json.load(open('mb2.json')); d['gig']['today'] = 'Roots'; json.dump(d, open('mb2.json', 'w'), ensure_ascii=False)
