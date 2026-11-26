@@ -147,14 +147,18 @@ song('Minuet in G', 3, 'staff',
  'Until now the left hand played chords. Today it plays <b>a tune of its own</b>, one long note in a bar, while the right hand dances on top. Two tunes at once: this is how Bach wrote.',
  'Fingers 5 4 3 2 1 on G A B C D. Bar 1: the G chord for two beats, then A. Now and then the little finger reaches below G: for F♯, and for a low D or G. An arrow ↓ marks the low one.',
  'Start with finger 5 on high D, thumb on G. In bar 3 the thumb moves up to C; in bar 4 it reaches back down to G.',
- 'Beamed notes are quick: two in one beat. Learn the right hand two bars at a time. Bars 1 and 2 ask a question; bars 3 and 4 answer it one step higher. Lines 3 and 4 are lines 1 and 2 again with a new ending.',
+ 'Beamed notes are quick: two in one beat. Learn the right hand two bars at a time. Bars 1 and 2 ask a question; bars 3 and 4 answer it one step higher. Lines 3 and 4 are lines 1 and 2 again with a new ending. The second page is the second half: it travels away from G and comes home. Choose your own fingers there and pencil them in.',
  'you can play the left hand of lines 1 and 2 without looking at the page.',
  ['d', 8, 'x . . 5 4 3 2 1', {'2': ' '}], ['f', 9, '. 1 2 3 4 5 x . x', {'0': ' ', '7': ' '}],
  [[B("D' G.A B.C'", lp='G+B+D - A', ch='G', f='5 1.2 3.4'), B("D' G G", lp='B - -', f='5 1 1'), B("E' C'.D' E'.F#'", lp='C - -', ch='C', f='3 1.2 3.4'), B("G' G G", lp='B - -', ch='G', f='5 1 1')],
   [B("C' D'.C' B.A", lp='A - -', f='4 5.4 3.2'), B("B C'.B A.G", lp='G - -', ch='G', f='3 4.3 2.1'), B('F# G.A B.G', lp='D B G', ch='D', f='1 2.3 4.2'), B('A - -', lp='D D↓.C B.A', ch='D', f='3')],
   [B("D' G.A B.C'", lp='B - A', ch='G', f='5 1.2 3.4'), B("D' G G", lp='G B G', f='5 1 1'), B("E' C'.D' E'.F#'", lp='C - -', ch='C', f='3 1.2 3.4'), B("G' G G", lp='B C.B A.G', ch='G', f='5 1 1')],
-  [B("C' D'.C' B.A", lp='A - F#', f='4 5.4 3.2'), B("B C'.B A.G", lp='G - B', ch='G', f='3 4.3 2.1'), B('A B.A G.F#', lp='C D D↓', ch='D', f='3 4.3 2.1'), B('G - -', lp='G - G↓', ch='G', f='2')]],
- src='Mutopia Project (BWV Anh. 114), bars 1 to 16, both hands', composer='Christian Petzold, in Anna Magdalena Bach’s notebook')
+  [B("C' D'.C' B.A", lp='A - F#', f='4 5.4 3.2'), B("B C'.B A.G", lp='G - B', ch='G', f='3 4.3 2.1'), B('A B.A G.F#', lp='C D D↓', ch='D', f='3 4.3 2.1'), B('G - -', lp='G - G↓', ch='G', f='2')],
+  [B("B' G'.A' B'.G'", lp='G - -', ch='G'), B("A' D'.E' F#'.D'", lp='F# - -'), B("G' E'.F#' G'.D'", lp='E G E'), B("C#' B.C#' A", lp='A - A↓', ch='A')],
+  [B("A.B C#'.D' E'.F#'", lp='A - -'), B("G' F#' E'", lp='B D C#'), B("F#' A C#'", lp='D F#↓ A'), B("D' - -", lp='D D↓ C', ch='D')],
+  [B("D' G.F# G", lp='B D B', ch='G'), B("E' G.F# G", lp='C E C', ch='C'), B("D' C' B", lp='B A G', ch='G'), B('A.G F#.G A', lp='D - r', ch='D')],
+  [B('D.E F#.G A.B', lp='D - F#'), B("C' B A", lp='E G F#'), B("B.D' G F#", lp='G B↓ D', ch='G'), B('G - -', lp='G D G↓')]],
+ src='Mutopia Project (BWV Anh. 114), complete, both hands', composer='Christian Petzold, in Anna Magdalena Bach’s notebook')
 
 # 10 ----------------------------------------------------------------- UNIT 3: the letters fade
 Am, C2, G2, F2, E2 = 'A+C+E', 'G+C+E', 'G+B+D', 'A+C+F', 'G#+B+E'
@@ -195,14 +199,18 @@ song('Canon', 4, 'bare',
 # 12
 song('In the Hall of the Mountain King', 4, 'bare',
  'A troll tune that tiptoes. The left hand rocks between two keys, <b>bottom and top of the chord</b>: A E A E. No middle key at all, and it still sounds complete.',
- 'Bars 1 to 3: A with finger 5, E with the thumb. Bar 4: the whole hand moves up, C with 5 and G with the thumb.',
+ 'Lines 1 and 2: A with finger 5, E with the thumb; in bar 4 the hand moves up to C and G. Lines 3 and 4: E and B, then C, G♯, E, B.',
  'Thumb on A. In bar 2 two notes turn black: D♯ (finger 4) and B♭ (finger 2). A ♭ means the black key just to the left.',
- 'Short and light, like footsteps. Play the four bars four times: first as quiet as you can, then each time a little louder and a little faster.',
+ 'Short and light, like footsteps. Lines 1 and 2 are the troll theme. Lines 3 and 4 answer it from higher up, with two new black keys, F♯ and G♯. Then the theme comes back. Grieg plays each pair of lines twice: start as quiet as you can and grow a little louder and faster each time.',
  'bar 2 comes out with the right black keys three times in a row.',
  ['a', 7, '5 . 5 . 1 . 1'], ['a', 8, '1 2 3 4 5 . x x', {'0': '2', '3': '4'}],
  [[B("A.B C'.D' E'.C' E'", lp='A E A E', ch='Am', f='1.2 3.4 5.3 5'), B("D#'.B D#' D'.Bb D'", lp='A E A E', f='4.2 4 4.2 4', show='D# Bb D')],
-  [B("A.B C'.D' E'.C' E'.A'", lp='A E A E', ch='Am', f='1.2 3.4 5.3 2.5', show='A'), B("G'.E' C'.E' G' -", lp='C G C G', ch='C', f='4.2 1.2 4')]],
- src='Mutopia Project (Grieg, Op. 46 No. 4), bars 2 to 5, moved from B minor to A minor', composer='Edvard Grieg, 1875')
+  [B("A.B C'.D' E'.C' E'.A'", lp='A E A E', ch='Am', f='1.2 3.4 5.3 2.5', show='A'), B("G'.E' C'.E' G' -", lp='C G C G', ch='C', f='4.2 1.2 4')],
+  [B("E.F# G#.A B.G# B", lp='E B E B', ch='E', show='E'), B("C'.G# C' B.G# B", lp='C G♯ E B')],
+  [B("E.F# G#.A B.G# B", lp='E B E B', show='E'), B("C'.G# C' B -", lp='C G♯ E B')],
+  [B("A.B C'.D' E'.C' E'", lp='A E A E', ch='Am', f='1.2 3.4 5.3 5'), B("D#'.B D#' D'.Bb D'", lp='A E A E', f='4.2 4 4.2 4', show='A')],
+  [B("A.B C'.D' E'.C' E'.A'", lp='A E A E', ch='Am', f='1.2 3.4 5.3 2.5', show='E'), B("G'.E' C'.E' G' -", lp='C G C G', ch='C', f='4.2 1.2 4')]],
+ src='Mutopia Project (Grieg, Op. 46 No. 4), the theme, its answer a fifth higher, and the theme again, moved from B minor to A minor', composer='Edvard Grieg, 1875')
 
 # 13
 RR = 'r r r r r r'
@@ -255,8 +263,8 @@ WAYS = {
  13: ['Keep the left hand\'s three keys held down after you play them, so the chord rings under the answer.', 'From memory, two bars at a time, eyes on the keys.'],
  14: ['Left hand as a fan, one key at a time: bottom, middle, top, middle.', 'Make it yours: in any bar, swap a minor colour back to C, F or G, and keep the ones you like.'],
 }
-GROUP = {7: [6, 6, 6, 6], 10: [3, 3, 3, 3, 3, 2], 11: [4, 4, 1], 13: [3, 3, 3, 3, 3, 3, 3, 2]}
-SPLIT = {8: 4, 10: 3, 13: 3}; P0 = 3
+GROUP = {12: [2, 2, 2, 2, 2, 2], 7: [6, 6, 6, 6], 10: [3, 3, 3, 3, 3, 2], 11: [4, 4, 1], 13: [3, 3, 3, 3, 3, 3, 3, 2]}
+SPLIT = {8: 4, 9: 3, 10: 3, 12: 4, 13: 3}; P0 = 3
 for i, s in enumerate(S, 1):
     if i in GROUP:
         flat = [b for ln in s['lines'] for b in ln]; s['lines'] = []
