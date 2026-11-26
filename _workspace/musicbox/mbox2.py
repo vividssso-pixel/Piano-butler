@@ -273,14 +273,14 @@ HOME = {6: 'G', 8: 'G', 9: 'G', 10: 'Am', 12: 'Am', 13: 'Am'}
 def pat(name, chord, m, home):
     v = VO[home][chord].split(); root = chord[0]; fifth = 'CDEFGAB'[('CDEFGAB'.index(root) + 4) % 7]
     return {'Roots': {3: f'{root} - -', 4: f'{root} - - -', 6: f'{root} - - - - -'},
-            'Close triads': {3: f'{"+".join(v)} - -', 4: f'{"+".join(v)} - - -', 6: f'{"+".join(v)} - - - - -'},
-            'Boom-chick': {3: f'{v[0]} {v[1]}+{v[2]} {v[1]}+{v[2]}', 4: f'{v[0]} {v[1]}+{v[2]} {v[0]} {v[1]}+{v[2]}', 6: f'{v[0]} - - {v[1]}+{v[2]} - -'},
+            'Block chord': {3: f'{"+".join(v)} - -', 4: f'{"+".join(v)} - - -', 6: f'{"+".join(v)} - - - - -'},
+            'Waltz style': {3: f'{v[0]} {v[1]}+{v[2]} {v[1]}+{v[2]}', 4: f'{v[0]} {v[1]}+{v[2]} {v[0]} {v[1]}+{v[2]}', 6: f'{v[0]} - - {v[1]}+{v[2]} - -'},
             'Broken chord': {3: f'{v[0]} {v[1]} {v[2]}', 4: f'{v[0]} {v[1]} {v[2]} {v[1]}', 6: f'{v[0]} {v[1]} {v[2]} {v[0]} {v[1]} {v[2]}'},
-            'Open fifths': {3: f'{root} {fifth} {fifth}', 4: f'{root} {fifth} {root} {fifth}', 6: f'{root} - - {fifth} - -'}}[name][m]
-TODAY = {1: 'Close triads', 2: 'Close triads', 3: 'Close triads', 4: 'Close triads', 5: 'Boom-chick', 6: 'Close triads', 7: 'Broken chord', 8: 'Broken chord', 9: 'A bass line', 10: 'Close triads', 11: 'Roots', 12: 'Open fifths', 13: 'Broken chord', 14: 'Boom-chick'}
-OLDWAY = {1: 'Roots', 2: 'Roots', 3: 'Roots', 4: 'Roots', 5: 'Close triads', 6: 'Boom-chick', 7: 'Close triads', 8: 'Boom-chick', 9: 'Close triads', 10: 'Broken chord', 11: 'Close triads', 12: 'Close triads', 13: 'Close triads', 14: 'Broken chord'}
-BACK = {2: (1, 'Close triads'), 3: (1, 'Close triads'), 4: (2, 'Close triads'), 5: (3, 'Boom-chick'), 6: (5, 'Close triads'), 7: (5, 'Broken chord'), 8: (6, 'Broken chord'), 9: (7, 'Boom-chick'), 10: (7, 'Close triads'), 11: (8, 'Roots'), 12: (10, 'Open fifths'), 13: (11, 'Broken chord'), 14: (12, 'Boom-chick')}
-HOWP = {'Roots': 'One key: the letter in the chord’s name. Hold it.', 'Close triads': 'All three keys of the chord together. Hold them.', 'Boom-chick': 'Bottom key, then the top two together.', 'Broken chord': 'One key at a time: bottom, middle, top.', 'Open fifths': 'Bottom and top of the chord, rocking. No middle key.'}
+            'Zigzag': {3: f'{root} {fifth} {fifth}', 4: f'{root} {fifth} {root} {fifth}', 6: f'{root} - - {fifth} - -'}}[name][m]
+TODAY = {1: 'Block chord', 2: 'Block chord', 3: 'Block chord', 4: 'Block chord', 5: 'Waltz style', 6: 'Block chord', 7: 'Broken chord', 8: 'Broken chord', 9: 'A bass line', 10: 'Block chord', 11: 'Roots', 12: 'Zigzag', 13: 'Broken chord', 14: 'Waltz style'}
+OLDWAY = {1: 'Roots', 2: 'Roots', 3: 'Roots', 4: 'Roots', 5: 'Block chord', 6: 'Waltz style', 7: 'Block chord', 8: 'Waltz style', 9: 'Block chord', 10: 'Broken chord', 11: 'Block chord', 12: 'Block chord', 13: 'Block chord', 14: 'Broken chord'}
+BACK = {2: (1, 'Block chord'), 3: (1, 'Block chord'), 4: (2, 'Block chord'), 5: (3, 'Waltz style'), 6: (5, 'Block chord'), 7: (5, 'Broken chord'), 8: (6, 'Broken chord'), 9: (7, 'Waltz style'), 10: (7, 'Block chord'), 11: (8, 'Roots'), 12: (10, 'Zigzag'), 13: (11, 'Broken chord'), 14: (12, 'Waltz style')}
+HOWP = {'Roots': 'One key: the letter in the chord’s name. Hold it.', 'Block chord': 'All three keys of the chord together. Hold them.', 'Waltz style': 'Bottom key, then the top two together.', 'Broken chord': 'One key at a time: bottom, middle, top.', 'Zigzag': 'Bottom and top of the chord, rocking. No middle key.'}
 def exbar(k, name):   # the first whole bar of song k that carries a chord this pattern can use, with its left hand rewritten
     s = S[k - 1]; home = HOME.get(k, 'C')
     for strict in (True, False):
