@@ -14,6 +14,65 @@ public-domain melodies only. Report only clear problems: file, what is wrong, th
 
 ## Open
 
+### Note Writer Books 2, 3, 4 (65 pages each), self-audit of 26 Nov (two fresh reviewers)
+
+Fixed in this build (`_workspace/note-writer/`, not committed)
+- [x] Write it: a letter could mean two octaves on one staff: every name once per row pool (new notes first; ledger notes in Book 3); answers unambiguous.
+- [x] "C needs its own little line" was wrong outside middle C: now "notes above or below the staff need their ledger lines".
+- [x] Odd one out was visual only: the pair is the same name in two octaves; in Book 4 the odd one is often the same letter with another sign (F against F sharp).
+- [x] Frère Jacques fingering: G A G F E C = 4 5 4 3 2 1; repeated "right hand from middle C" removed.
+- [x] Grand-staff tunes: a whole-bar rest on the staff with no notes.
+- [x] Book 4: step/skip notes overlapped after the key signature (three boxes a row, room for signs); signs touched the clef or the note before (notes with a sign move right; two odd-one-out boxes a row); week 4 Which key lacked the new notes F sharp and B flat; the check-up drew a grand staff for a bass-only term (now one staff, right instruction).
+- [x] Treble clef clipped at the top of a staff (all books); keyboards redrawn in proportion (white key about 3.6 times as long as wide).
+
+Her call (do not change until she answers)
+- [ ] Book 3 week 7 grand staves are close (3 spaces): treble A3 and bass C4 sit at the same height. Widen?
+- [ ] Staggered name boxes under dense tune lines: OK for children?
+- [ ] Hot Cross Buns quavers beamed in pairs (by beat) or in fours?
+- [ ] Book 4: Ode to Joy in F appears in weeks 2 and 6; the naturals week tune (Hot Cross Buns in D) has no natural.
+
+### Note Writer Book 1 (Term 1, 65 pages), self-audit of 26 Nov (a fresh reviewer, every page)
+
+Fixed in this build (`_workspace/note-writer/`, not committed)
+- [x] Time signatures sat half a space low (old-style figures) and touched the bass clef's dots: lining figures, centred, moved clear.
+- [x] Notes ran into the clef in the step/skip and odd-one-out boxes; the treble clef stuck out of the box: clef and notes moved in, room above.
+- [x] Grand staff Write it: F and G could not be told apart (two of each): a small clef in the box, the answers mark the staff; no same letter side by side.
+- [x] Week 9 secret words had nothing left to do: BADGE added.
+- [x] No brace on the grand staves: added.
+- [x] Tune name boxes touched under dense bars: they take turns on two rows when a line is too tight for 10 mm boxes.
+- [x] Empty areas (grand-staff Day 4 and Day 5): twelve step/skip pairs; rows spread to the foot; nothing overflows (fit.py measures every page).
+- [x] "(C = 1, B" broke across lines: no-break spaces.
+- [x] Step/skip boxes on the grand staff were different heights and overlapped: one height for all.
+
+Her call (do not change until she answers)
+- [ ] Rests in the empty staff of the both-staves tunes (weeks 7 to 9)?
+- [ ] Games: odd one out in weeks 1, 3, 4, 6; secret words in weeks 2, 5, 7, 8, 9. Keep that balance?
+- [ ] Day 4 on the grand staff is steps and skips only (12 pairs); weeks 1 to 6 also have 20 names. OK?
+
+### Picture lesson, Pitch and Rhythm — self-audit of 27 Nov (72 pictures: first, middle and last frame; a fresh reviewer; sound not heard)
+
+Fixed (3c80b45)
+- [x] **LP-P6-1**: ledger lines were hidden behind the note; they now stick out both sides.
+- [x] **LR-T3-2**: the caption named a dotted quaver that was not drawn; it is drawn now (three quarters of a beat).
+- [x] Pale-key letters (LP-O1-0, P1-2, P2-2, P4-0, P9-0, P10-1, P10-3): navy on pale keys.
+- [x] **LP-P7-1**: Clara is pink; the other children coral and navy. **LP-P9-1**: bottom captions larger and off the edge. **LR-T4-2**: beat numbers larger and clear of the sparks.
+- [x] Colours: Pitch and Rhythm now follow navy and coral too (green and gold were used as category colours).
+
+Should fix (looks) — open, next build
+- [x] (a968203) **LP-P5-0**: the note A and its letter sit on the "treble G" label, which is written across the staff lines. Move the label clear.
+- [x] (a968203) **LP-P6-2**: "below the treble" / "above the bass" are written across the staff lines.
+- [x] (a968203) **LP-P7-0** (last): the bottom caption repeats the title and only one black key is lit. End with two neighbouring keys lit; drop one line.
+- [x] (a968203) **LP-P8-0** (first): "♭ = next key left" and "♯ = next key right" collide in the top-left corner.
+- [x] (a968203) **LR-T2-5** (last): the earlier staff and rest labels are still faintly visible behind the new picture.
+- [x] (a968203) **LR-T5-1**: the coral weight does not stay on the pendulum rod as it swings.
+- [ ] **D-crotchet, D-semibreve, D-semiquaver** (old demo page only): the word label is cut off by the first circle.
+
+Her call
+- [ ] **LP-P4-0**: "only Middle C sits between the two staves": B and D sit in that gap too. Safer: "Middle C sits on its own line between the two staves"?
+- [ ] **LR-T1-7**: "one beam: quavers" is paired with just "two beams". Add ": semiquavers"?
+- [ ] **LR-T12-1**: the caption says "the orange note"; elsewhere the colour is called coral.
+- [ ] **LR-T3-0 / T3-1** and **LR-T2-5 / T2-6**: each pair shows almost the same picture. Keep both?
+
 ### Picture lesson, Bars and time to Before you play — self-audit of 26 Nov (119 pictures: first, middle and last frame; a fresh reviewer; sound not heard)
 
 Fixed in this build
