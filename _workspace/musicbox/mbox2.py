@@ -95,7 +95,7 @@ song('Good King Wenceslas', 4, 'staff',
  'The boxes have turned into <b>five lines</b>. A note higher on the lines is a key further to the right. The letters are still inside, so you cannot get lost. And home has moved: this song lives on <b>G</b>.',
  'G chord: G B D (5 3 1). C chord: G C E (5 2 1), the bottom key stays. D chord: F♯ A D (5 3 1), finger 5 slips down to the black key.',
  'Two places for the hand. Low place: thumb on D, and finger 3 plays the black key F♯. High place: thumb on G. The numbers show each jump.',
- '<b>Play line 1 twice</b>, then go on. Watch the shape of the tune: up, down or the same line. The ♯ before a note means the black key just to its right. In this song every F is F♯.',
+ '<b>Play line 1 twice</b>, then go on. Watch the shape of the tune: up, down or the same line. The <b>♯ at the start of every line</b> sits on the F line: it is the key signature, and it means every F in this song is F♯, the black key just to the right. The two numbers beside it are the time signature: four beats in a bar.',
  'you can point to any note and say whether the next one goes up, down or stays.',
  ['f', 7, '. 5 x 3 x 1 x', {'0': ' '}], ['d', 8, '1 2 . 4 5 x x x', {'2': '3'}],
  [[B('G G G A', l=Gg, ch='G', f='4 - - 5'), B('G G D -', l=Gg, ch='G', f='4 - 1'), B('E D E F#', lp=f'{Cg} - - {Dg}', ch='C - - D', f='2 1 2 3'), B('G - G -', l=Gg, ch='G', f='4')],
@@ -270,6 +270,7 @@ for i, s in enumerate(S, 1):
     g.update(mb2=s['stage'], unit=s['unit'], job=s['job'], tool_cap=s['lcap'], r_cap=s['rcap'], song_how=s['how'], ready=s['ready'], lkb=s['lkb'], rkb=s['rkb'],
              song_grid=s['lines'], ways_txt=WAYS[i], ticks=s['ticks'], simple=1, grid=1, song_title=s['title'], src=s['src'])
     if last: g['ready_label'] = 'You have finished Music Box 2 when'
+    g['key'] = {6: 1, 8: 1, 9: 1}.get(i, 0)
     if s['counts']: g['counts'] = s['counts']
     else: g.pop('counts', None)
     json.dump(d, open(f'mc{i}.json', 'w'), ensure_ascii=False)

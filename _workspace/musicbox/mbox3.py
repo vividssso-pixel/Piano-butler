@@ -70,9 +70,9 @@ def table(used):
 MENU = '<ol class="stp"><li><b>Whole chord</b>, held for the bar (Music Box 2, Song 1).</li><li><b>Bottom key, then the top two</b> (Song 4 of this book, or the waltz).</li><li><b>The fan</b>: one key at a time, bottom, middle, top (Music Box 2, Song 7).</li><li><b>Two keys rocking</b>: bottom and top (Music Box 2, Song 12).</li><li><b>Just the bottom key</b>, like a bass player.</li></ol>'
 TICKS = ['Left hand alone', 'Right hand alone', 'Hands together', 'Three times through']; LT = ['Tune alone', 'Chords alone, named out loud', 'Together, my first way', 'Together, a second way']
 S = []
-def song(title, show, stage, args, job, how, ready, ways, unit='q', src='', composer='', note='', split=4, extra='table', ticks=None, beam=None):
+def song(title, show, stage, args, job, how, ready, ways, unit='q', src='', composer='', note='', split=4, extra='table', ticks=None, beam=None, key=0):
     lines, used = build(*args)
-    S.append(dict(title=show, stage=stage, beats=args[3], lines=lines, used=used, job=job, how=how, ready=ready, ways=ways, unit=unit, src=src, composer=composer, note=note, split=split, extra=extra, ticks=ticks or TICKS, beam=beam))
+    S.append(dict(title=show, stage=stage, beats=args[3], lines=lines, used=used, job=job, how=how, ready=ready, ways=ways, unit=unit, src=src, composer=composer, note=note, split=split, extra=extra, ticks=ticks or TICKS, beam=beam, key=key))
 song("She'll be Coming Round the Mountain", "She’ll Be Coming Round the Mountain", 'plain', ("She'll be Coming Round the Mountain", 'C', None, 4, 1, (0, 17), 'block'),
  'Welcome to Music Box 3. From this page on, <b>no letters in the notes</b>. You read them the way every pianist does: by where they sit on the five lines. The left hand stays in letters for a little longer.',
  'Find your first note, then read by <b>shape</b>: next line or space up is the next key up; a jump on the page is a jump on the keys. Two landmarks: the curl of the clef wraps round the <b>G</b> line, and the middle line is <b>B</b>. A curved line joining two notes of the same height is a <b>tie</b>: play once and hold for both.',
@@ -85,10 +85,10 @@ song('Grand Old Duke of York', 'The Grand Old Duke of York', 'plain', ('Grand Ol
  src='Nottingham Music Database, first part, moved from D to C', composer='Traditional, England')
 BB = [None, {0: 'G'}, {0: 'G', 2: 'D'}, {0: 'G', 2: 'D'}, {0: 'G'}, {0: 'G'}, {0: 'C', 2: 'G'}, {0: 'D'}, {0: 'G', 2: 'D'}, {0: 'G', 2: 'D'}]
 song('Blue Bells of Scotland', 'The Blue Bells of Scotland', 'plain', ('Blue Bells of Scotland', None, None, 4, 1, (0, 9), 'split', BB),
- 'Home is G, so one note wears a <b>♯</b>: F♯, the black key. The left hand splits each chord: <b>bottom key first, then the top two together</b>. Where a bar holds two chords, play each one whole.',
+ 'Home is G, so a <b>♯ sits at the start of every line</b>, on the F line: every F is F♯, the black key. The left hand splits each chord: <b>bottom key first, then the top two together</b>. Where a bar holds two chords, play each one whole.',
  'The tune starts high and falls. Before you play, trace line 1 with a finger and say <i>down, down, down, up</i>. Play lines 1 and 2, then line 1 again to finish.',
- 'you play every F♯ without having to think.', ['Left hand: the fan, one key on each beat.', 'Play the tune alone, very smoothly, as if it were sung.'],
- src='Nottingham Music Database; the chords are this book’s own', composer='Traditional, Scotland', note='After line 2, go back to bar 1 and play line 1 once more to finish.')
+ 'you play every F♯ without a sign in front of it to remind you.', ['Left hand: the fan, one key on each beat.', 'Play the tune alone, very smoothly, as if it were sung.'],
+ src='Nottingham Music Database; the chords are this book’s own', composer='Traditional, Scotland', key=1, note='After line 2, go back to bar 1 and play line 1 once more to finish.')
 song("It's a Long Way to Tipperary", 'It’s a Long Way to Tipperary', 'grand', ("It's a Long Way to Tipperary", 'C', None, 4, 1, (0, 33), 'block'),
  'The left hand gets <b>its own five lines</b>. The sign at the front is the bass clef, the King: its two dots sit either side of the <b>F</b> line. The chords you know are written there as three notes stacked up.',
  'You already know these chords by feel; now match each shape to its picture. Three notes stacked evenly, all on lines or all in spaces, are a chord in its plain shape, like C. A wider gap in the stack means the chord is turned round, the way you have always played F (C F A) and G (B D G). The coral name still tells you which chord it is.',
@@ -98,7 +98,7 @@ song('W3KOOA', 'We Three Kings', 'grand', ('W3KOOA', None, None, 6, Fr(1, 2), (0
  'A minor home, <b>E minor</b>, for the verse; then the chorus steps out into the bright G major. The left hand plays <b>two chords in a bar</b>, each lasting three quick counts.',
  'Six quick counts in a bar, felt as two swings: <b>1</b> 2 3 <b>4</b> 5 6. The left-hand chords land on 1 and on 4. Lines 1 and 2 are the verse; lines 3 and 4 are the chorus.',
  'you can feel the moment the music turns from dark to bright at line 3.', ['Left hand: bottom key on count 1, the top two on count 4.', 'Verse very quietly, chorus full and warm.'],
- unit='e', src='Nottingham Music Database', composer='John Henry Hopkins, 1857', split=3)
+ unit='e', src='Nottingham Music Database', composer='John Henry Hopkins, 1857', split=3, key=1)
 song("John Brown's Body", 'John Brown’s Body', 'grand', ("John Brown's Body", 'C', None, 6, Fr(1, 2), (0, 17), 'lowtop', None, 3),
  'The split chord, now written as notes: <b>one low note on the first swing, two notes together on the second</b>. Reading the left hand means reading two different shapes in every bar.',
  'This is the tune of <i>Glory, glory, hallelujah</i>. Line 1 is the verse rhythm, long-short, long-short. In the last two lines the notes get long: keep counting six.',
@@ -106,9 +106,9 @@ song("John Brown's Body", 'John Brown’s Body', 'grand', ("John Brown's Body", 
  unit='e', src='Nottingham Music Database, moved from D to C', composer='Traditional, United States, 1850s', split=3)
 song('Scotland the Brave', 'Scotland the Brave', 'lead', ('Scotland the Brave', 'F', -2, 4, 1, (0, 33), 'none'),
  '<b>No left hand at all</b>: only the tune and the names of the chords. This is a <b>lead sheet</b>, the way most songs are written down. The left hand is yours to invent.',
- 'Each coral name lasts until the next one. Find its three keys in the table; choose how to play them from the menu. Home is F, so B wears a ♭.',
+ 'Each coral name lasts until the next one. Find its three keys in the table; choose how to play them from the menu. Home is F: the ♭ at the start of every line means every B is B♭.',
  'you have played it two different ways and know which you prefer.', ['A bagpipe has a drone: hold F and C in the left hand through a whole line.', 'Change the way at line 5, where the tune climbs.'],
- src='Nottingham Music Database, moved from G to F', composer='Traditional, Scotland', extra='menu', ticks=LT)
+ src='Nottingham Music Database, moved from G to F', composer='Traditional, Scotland', extra='menu', ticks=LT, key=-1)
 song('Blaydon Races', 'Blaydon Races', 'lead', ('Blaydon Races', 'C', None, 6, Fr(1, 2), (0, 33), 'none'),
  'A second lead sheet, this time in swinging six. <b>Tune and chord names only.</b> The verse fills the first page, the chorus the second.',
  'In six, a chord pattern has two swings to fill. Try: bottom key on count 1, top two on count 4. In the chorus the chords change twice in a bar; a whole chord on each swing is enough.',
@@ -132,6 +132,7 @@ for i, s in enumerate(S, 1):
     st = ['Play the tune alone until you can hum it.', 'Find each chord in the table. Play them as <b>whole chords</b>, one for each name, saying the names out loud.', 'Tune and whole chords together, slowly.', 'Choose a way from the menu and play the song through.', 'Choose a second way. Which one fits this song?'] if s['stage'] == 'lead' else ['<b>Clap the rhythm</b> of line 1 while you count out loud.', 'Name the first note of each line. Read the rest by shape.', '<b>Left hand alone</b>, saying the chord names.', '<b>Right hand alone</b>. Pencil in a finger number wherever your hand has to move.', '<b>Hands together</b>, one line at a time, so slowly that you never have to stop.']
     g.update(mb2=s['stage'], unit=s['unit'], job=s['job'], song_how=s['how'], ready=s['ready'], song_grid=s['lines'], ways_txt=s['ways'], ticks=s['ticks'], steps=st, simple=1, grid=1, nokb=1, split=s['split'], extra=ex, src=s['src'], song_note=s['note'])
     if s['beam']: g['beam'] = s['beam']
+    g['key'] = s.get('key', 0)
     if last: g['ready_label'] = 'You have finished the Music Box when'
     d['page0'] = P0; P0 += 1 + -(-len(s['lines']) // s['split'])
     json.dump(d, open(f'md{i}.json', 'w'), ensure_ascii=False)
