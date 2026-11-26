@@ -254,6 +254,7 @@ for i, s in enumerate(S, 1):
     for k in ('shapes', 'ways', 'ways2', 'lkb_from'): g.pop(k, None)
     g.update(mb2=s['stage'], unit=s['unit'], job=s['job'], tool_cap=s['lcap'], r_cap=s['rcap'], song_how=s['how'], ready=s['ready'], lkb=s['lkb'], rkb=s['rkb'],
              song_grid=s['lines'], ways_txt=WAYS[i], ticks=s['ticks'], simple=1, grid=1, song_title=s['title'], src=s['src'])
+    if last: g['ready_label'] = 'You have finished Music Box 2 when'
     if s['counts']: g['counts'] = s['counts']
     else: g.pop('counts', None)
     json.dump(d, open(f'mc{i}.json', 'w'), ensure_ascii=False)

@@ -517,6 +517,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
                 if on: out += f'<text x="{(i + 1) * w}" y="{H * 0.6 - 8}" text-anchor="middle" font-family="AH" font-weight="700" font-size="15" fill="#fff">{sharp[str(i)]}</text>'
         Wd = n * w; wd = width or min(300, 30 * n)
         return f'<svg viewBox="-2 -2 {Wd + 4} {H + 38}" style="width:{wd}px;max-width:100%;display:block">{out}</svg>'
+    FCLEF = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fclef.json')))['d']
     LIDX = {'C': 0, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5, 'B': 6}
     def ptok(t):   # 'F#' / "C'" / 'B,' / '<G' -> (letter, accidental, step from E4, left-hand flag)
         m = re.match(r"^(<)?([A-G])([#b]?)([',]*)$", t)
@@ -525,9 +526,9 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
     ACC = {'#': '♯', 'b': '♭', '': ''}
     def GRID2(bars, meter, cls, maxnb, first_done):
         G_ = SONG['gig']; stage = G_['mb2']; unit = G_.get('unit', 'q'); cw = 633 / maxnb; cur = [bars[0]]
-        idx = lambda b: list(range(meter - b['pick'], meter)) if b.get('pick') else list(range(meter))   # a pick-up bar shows only its last boxes
+        idx = lambda b: list(range(meter - b['pick'], meter)) if b.get('pick') else list(range(b['head'])) if b.get('head') else list(range(meter))   # a pick-up bar shows only its last boxes
         nb = sum(len(idx(b)) for b in bars); insong = any(bars is ln for ln in G_['song_grid'])
-        staff = stage in ('staff', 'bare'); S, T, H = (14, 30, 122) if staff else (0, 0, 60)
+        staff = stage in ('staff', 'bare', 'plain', 'grand', 'lead'); S, T, H = (14, 30, 122) if staff else (0, 0, 60)
         if staff:   # the staff is as tall as this song's highest and lowest notes need
             sts = [ptok(x.lstrip('~'))[2] for ln in G_['song_grid'] for b in ln for t in b.get('r', '').split() for x in t.split('.') if ptok(x.lstrip('~')) and not ptok(x.lstrip('~'))[3]]
             T = max(8, max(sts) * 7 - 42); H = max(T + 72, T + 56 - min(sts) * 7 + 13)
@@ -575,7 +576,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
             for b in bars:
                 R = toks(b.get('r', '')); beams = {}; R0 = R; R = [x.lstrip('~') for x in R]; cur[0] = b
                 if unit in ('e', 's') and staff:   # beam runs of single boxes inside each beat group
-                    gsz = 3 if unit == 'e' else meter
+                    gsz = G_.get('beam') or (3 if unit == 'e' else meter)
                     for g0 in range(0, meter, gsz):
                         run = []
                         for i in list(range(g0, min(meter, g0 + gsz))) + [None]:
@@ -590,6 +591,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
                 for i in idx(b):
                     t = R0[i]; g = ''; cx = cw / 2
                     def show(p):
+                        if stage in ('plain', 'grand', 'lead'): return False
                         if stage != 'bare': return True
                         s = (not first_done[0]) or (p[0] + p[1]) in (b.get('show') or '').split(); first_done[0] = True
                         return s
@@ -597,8 +599,13 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
                     if t in ('', '-'): g = '' if staff or t == '' else f'<path d="M{cw * .2} 40H{cw * .8}" stroke="rgba(38,41,107,.3)" stroke-width="2"/>'
                     elif t == 'r': g = rest(cx) if (unit == 'q' or i == 0 or R[i - 1] != 'r') else ''
                     elif '.' in t:
-                        a, z = t.split('.')[:2]; pa, pz = ptok(a), ptok(z); xa, xz = cw * .27, cw * .73; k = .86 if staff else .62
-                        if pa and pz:
+                        a, z = t.split('.')[:2]; pa, pz = ptok(a), ptok(z); xa, xz = cw * .27, cw * .73; k = min(.86, (cw * .27 - 1.6) / 9.5) if staff else .62
+                        if pa and pz and i + 1 < meter and R[i + 1] == '-':
+                            n2 = 1; j = i + 1
+                            while j < meter and R[j] == '-': n2 += 1; j += 1
+                            f2, stem2, fl2, d2 = shape(n2 - 1, True) if n2 > 1 else (1, 1, 1, 0)
+                            g = note(xa, pa, 1, 1, 1 if unit == 'q' else 2, 0, None, None, show(pa), k) + note(xz, pz, f2, stem2, fl2, d2, None, None, show(pz), k)
+                        elif pa and pz:
                             up = ((pa[2] + pz[2]) / 2 < 4) if staff else True; by = max(4, min(yof(pa[2]), yof(pz[2])) - (34 if staff else 28)) if up else min(H - 4, max(yof(pa[2]), yof(pz[2])) + (34 if staff else 28))
                             g = note(xa, pa, 1, 1, 0, 0, up, by, show(pa), k) + note(xz, pz, 1, 1, 0, 0, up, by, show(pz), k)
                             rx = ((9.5 if staff else 13.5) * k - 0.9) * (1 if up else -1)
@@ -629,9 +636,10 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
         def chn(b, i):
             t = toks(b.get('ch', ''))[i].replace('-', '')
             if not t or t == lastc[0]: return ''
-            lastc[0] = t; return t
+            lastc[0] = t; return re.sub('([A-G])b', '\\1♭', t).replace('#', '♯')
         def lcell(b, i):
-            chord = lambda l: (f'<span class="ch2 {"two" if l.count("+") == 1 else "three"}">{"<br>".join(reversed(l.replace("#", "♯").split("+")))}</span>' if '+' in l else f'<span class="ch2">{l}</span>')
+            b = dict(b, lp=re.sub("[',]", '', b['lp'])) if b.get('lp') else b
+            chord = lambda l: (f'<span class="ch2 {"two" if l.count("+") == 1 else "three"}">{"<br>".join(reversed(re.sub("([A-G])b", "\\1♭", l).replace("#", "♯").split("+")))}</span>' if '+' in l else f'<span class="ch2">{l}</span>')
             if b.get('lp'):
                 t = toks(b['lp'])[i]
                 if t == '-': return '<i class="hold"></i>'
@@ -643,15 +651,40 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
                 return f'<b class="hk2">{t}</b>' if t else ''
             return (chord(b['l']) if b.get('l') else '') if i == 0 else ('<i class="hold"></i>' if b.get('l') else '')
         if any(b.get('ch') for b in bars): r += '<tr class="chn"><th></th>' + row(lambda b, i: f'<td class="cnm{b0(i)}">{chn(b, i)}</td>') + '</tr>'
-        r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{b0(i)}">{lcell(b, i)}</td>') + '</tr>'
+        if stage == 'grand':
+            lps = [t for ln in G_['song_grid'] for b in ln for t in b.get('lp', '').split()]
+            bst = lambda x: ptok(x)[2] + 5   # a left-hand letter sits an octave below the right hand's; the bass staff's bottom line is G
+            ls = [bst(x) for t in lps for x in t.split('+') if ptok(x)]; T2 = max(8, max(ls) * 7 - 42); H2 = max(T2 + 72, T2 + 56 - min(ls) * 7 + 13); yb = lambda st: T2 + 4 * S - st * S / 2
+            pos2 = f'background-position:0 {T2}px,0 {T2 + S}px,0 {T2 + 2 * S}px,0 {T2 + 3 * S}px,0 {T2 + 4 * S}px'
+            def lcell2(b, i):
+                L = toks(b.get('lp', '')); t = L[i]; g = ''; cx = cw / 2
+                if t == 'r': g = f'<path d="M{cx - 3} {yb(4) - 12}l6 7l-5 6q7 -1 5 7q-7 -4 -5 5" fill="none" stroke="{N}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' if unit == 'q' else f'<circle cx="{cx - 3}" cy="{yb(4) - 5}" r="2.4" fill="{N}"/><path d="M{cx - 2} {yb(4) - 4}q5 0 6 -3l-5 14" fill="none" stroke="{N}" stroke-width="1.8" stroke-linecap="round"/>'
+                elif t not in ('', '-'):
+                    pa2 = sorted((bst(x), ptok(x)[1]) for x in t.split('+') if ptok(x)); ps = [p[0] for p in pa2]; n, dot = dur(L, i); na = 0; f, stem, fl, d = shape(n, dot); up = sum(ps) / len(ps) < 4; rx = 9.5 * (1 if stem else 1.12)
+                    for st, ac in pa2:
+                        y = yb(st)
+                        if ac: g += f'<text x="{cx - rx - 5 - 9 * (na % 2)}" y="{y + 5}" text-anchor="middle" font-size="15" font-weight="700" font-family="AH,Inter,sans-serif" fill="{N}">{ACC[ac]}</text>'; na += 1
+                        for s2 in list(range(-2, st - 1, -2)) + list(range(10, st + 1, 2)): g += f'<path d="M{cx - 14.5} {yb(s2)}H{cx + 14.5}" stroke="{N}" stroke-width="1.2"/>'
+                        g += f'<ellipse cx="{cx}" cy="{y}" rx="{rx}" ry="6.9" transform="rotate({-18 if stem else 0} {cx} {y})" fill="{N if f else "#fff"}" stroke="{N}" stroke-width="1.7"/>'
+                        if d: g += f'<circle cx="{cx + rx + 5}" cy="{y - (S / 2 if st % 2 == 0 else 0)}" r="2.2" fill="{N}"/>'
+                        if yb(st) - 7 < 1 or yb(st) + 7 > H2 - 1: print('LH NOTE OUT OF BOX', SONG['title'], t, file=sys.stderr)
+                    if stem:
+                        sx = cx + (rx - 0.9) * (1 if up else -1); y0, y1 = (yb(ps[0]), yb(ps[-1]) - 39) if up else (yb(ps[-1]), yb(ps[0]) + 39); y1 = max(3, min(H2 - 3, y1))
+                        g += f'<path d="M{sx} {y0}V{y1}" stroke="{N}" stroke-width="1.7"/>'
+                        for q in range(fl): yy = y1 + (7 * q if up else -7 * q); g += f'<path d="M{sx} {yy}c2 {8 if up else -8} 12 {9 if up else -9} 8 {21 if up else -21}" fill="none" stroke="{N}" stroke-width="2.4" stroke-linecap="round"/>'
+                return f'<td class="rl n2 stf{b0(i)}" style="{pos2}"><svg viewBox="0 0 {cw:.2f} {H2}" preserveAspectRatio="none" style="height:{H2}px">{g}</svg></td>'
+            fclef = f'<svg class="clef" viewBox="0 0 38 {H2}" style="height:{H2}px;width:38px"><g transform="translate(4 {T2 + S}) scale({S * 4 / 1000})"><path transform="scale(1,-1)" d="{FCLEF}" fill="{N}"/></g></svg>'
+            r += f'<tr class="rh lhs"><th class="stf" style="{pos2}">{fclef}</th>' + row(lcell2) + '</tr>'
+        elif stage != 'lead': r += '<tr class="lh"><th>L.H.</th>' + row(lambda b, i: f'<td class="ll{b0(i)}">{lcell(b, i)}</td>') + '</tr>'
         if not any('+' in (b.get('l', '') + b.get('lp', '')) for ln in G_['song_grid'] for b in ln): cls += ' slim'
+        if stage == 'lead': cls += ' lead'
         return f'<table class="bgt g2 {cls}" style="width:calc(44px + (100% - 44px) * {nb / maxnb:.4f})">{r}</table>'
     def GRID(lines, meter, words=True, rh=True, cls=''):   # her 10 Nov 22:19: both hands as letters in beat boxes, so the count is visible
         out = ''; meter_now[0] = meter
         for li, bars in enumerate(lines):
             if SONG['gig'].get('mb2'):
                 if li == 0: fd2 = [False]
-                out += GRID2(bars, meter, cls, max(sum(b.get('pick', meter) for b in x) for x in lines), fd2); continue
+                out += GRID2(bars, meter, cls, max(sum(b.get('pick') or b.get('head') or meter for b in x) for x in lines), fd2); continue
             row = lambda f: ''.join(''.join(f(b, i) for i in range(meter)) for b in bars)
             tok = lambda s, i: (s.split() + ['-'] * meter)[i] if s else ''
             c = lambda b, i: ' b0' if i == 0 else ''
@@ -711,13 +744,15 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
         steps = G.get('steps') or ['Point at each note of line 1 and <b>say its letter</b> in time.', '<b>Left hand alone</b>, counting out loud.', '<b>Right hand alone</b>, with the finger numbers.', '<b>Hands together</b>, one line at a time, so slowly that you never have to stop.', 'All the way through. A wrong note is fine. Stopping is not.']
         P1 = page(f"""<div class="kick">{SONG['label']}</div><h1>{SONG['title']}</h1><p class="byl">{SONG['composer']['name']}</p>
 <div class="mb-intro"><p>{G['job']}</p></div>
-<div class="mb-hands"><div><div class="ah">Left hand</div>{kb2(*G['lkb'])}<p class="cap2">{G['tool_cap']}</p></div><div><div class="ah">Right hand</div>{kb2(*G['rkb'])}<p class="cap2">{G['r_cap']}</p></div></div>
-<div class="sp"></div><div class="say"><div class="ah">How to read it</div><p>{G['song_how']}</p></div>
+{'' if G.get('nokb') else f'<div class="mb-hands"><div><div class="ah">Left hand</div>{kb2(*G["lkb"])}<p class="cap2">{G["tool_cap"]}</p></div><div><div class="ah">Right hand</div>{kb2(*G["rkb"])}<p class="cap2">{G["r_cap"]}</p></div></div>'}
+<div class="sp"></div><div class="say"><div class="ah">How to read it</div><p>{G['song_how']}</p></div>{('<div class="sp"></div><div class="say"><div class="ah">' + G['extra'][0] + '</div>' + G['extra'][1] + '</div>') if G.get('extra') else ''}
 <div class="sp"></div><div class="say"><div class="ah">Practise in this order</div><ol class="stp">{''.join(f'<li>{x}</li>' for x in steps)}</ol></div>
 <div class="sp"></div><div class="say"><div class="ah">When you can play it, try it another way</div><ol class="stp alt">{''.join(f'<li>{x}</li>' for x in G['ways_txt'])}</ol></div>""", LESSON)
-        P1 += page(f"""<div class="kick kb">{SONG['label']} · {SONG['title']}</div>
-<div class="mb-song">{GRID(G['song_grid'], SONG['beats'], cls='big')}</div>
-<div class="sp"></div><div class="end"><p class="rdy"><b>Ready for the next song when</b> {G['ready']}</p>{ticks(G['ticks'], True)}</div>""", LESSON)
+        sg = G['song_grid']; k = G.get('split', 99); chunks = [sg[i:i + k] for i in range(0, len(sg), k)]
+        for ci, ch in enumerate(chunks):   # a long song runs on to a second song page
+            inner = f'<div class="kick kb">{SONG["label"]} · {SONG["title"]}{", page " + str(ci + 1) if ci else ""}</div>' + (f'<p class="how" style="margin:0 0 8px">{G["song_note"]}</p>' if G.get('song_note') and not ci else '') + f'<div class="mb-song">{GRID(ch, SONG["beats"], cls="big")}</div>'
+            if ci == len(chunks) - 1: inner += f'<div class="sp"></div><div class="end"><p class="rdy"><b>{G.get("ready_label", "Ready for the next song when")}</b> {G["ready"]}</p>{ticks(G["ticks"], True)}</div>'
+            P1 += page(inner, LESSON)
     elif G.get('simple'):   # her 10 Nov 22:29: the Music Box opens here -- no numbers, no extra songs, the whole song big: 'oh, I can do this'
         P1 = page(f"""<div class="kick">{SONG['label']}</div><h1>{SONG['title']}</h1>
 <div class="mb-intro"><p>{G['job']}</p><div class="jobq">{qr(URL, 48)}<span>Hear it first</span></div></div>
@@ -745,7 +780,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
 .bgt.g2 .stf{background-image:linear-gradient(#26296b,#26296b),linear-gradient(#26296b,#26296b),linear-gradient(#26296b,#26296b),linear-gradient(#26296b,#26296b),linear-gradient(#26296b,#26296b);background-repeat:no-repeat;background-size:100% 1.2px;background-position:0 30px,0 44px,0 58px,0 72px,0 86px}
 .bgt.g2 .rl{border-top:1px solid rgba(38,41,107,.14)} .bgt.g2 .ll{height:50px!important} .bgt.g2 .ch2.three{font-size:12.5px!important;line-height:.95!important;padding:2px 6px!important} .bgt.g2 .hk2{font-size:19px!important} .bgt.g2 .mbfn{height:16px!important} .bgt.g2 .w{height:16px!important}
 .bgt.g2+.bgt.g2{margin-top:12px!important} .bgt.g2.wy2 .mbfr{display:none} .bgt.g2.wy2 tr.rh{display:none} .bgt.g2.wy2 th{display:none}
-.bgt .cnm{font:700 12.5px 'AH';color:#e4572e;height:17px;text-align:left;padding-left:5px;vertical-align:bottom;border:0!important} .bgt.g2 .ll{height:56px!important} .bgt.g2.slim .ll{height:36px!important} .bgt.g2 .ch2.three{font-size:11.5px!important;line-height:.95!important;padding:1px 5px!important} .bgt.g2+.bgt.g2{margin-top:9px!important} .bgt.g2 .ch2.two{font-size:14px!important;line-height:1!important;padding:2px 5px!important} .bgt.g2 .ll .hbx .hk2{font-size:15px!important} .kick.kb{margin-bottom:10px} table.ftb{width:100%;border-collapse:collapse;font-size:13px;line-height:1.3} table.ftb th{font:700 10.5px 'AH';letter-spacing:.12em;text-transform:uppercase;color:#e4572e;text-align:left;padding:5px 8px 5px 0;border-bottom:1.5px solid #26296b} table.ftb td{padding:5px 8px 5px 0;border-bottom:1px solid rgba(38,41,107,.14);vertical-align:top} table.ftb td.n{font-weight:700;width:22px} table.ftb tr.u td{font:700 11px 'AH';letter-spacing:.12em;text-transform:uppercase;padding-top:11px;border-bottom:1px solid rgba(38,41,107,.4)} table.ftb.sm{font-size:11.5px;line-height:1.3} table.ftb.sm td{padding:3.5px 8px 3.5px 0} .pg:has(.fl) .say p{font-size:15px} .pg:has(.fl) ol.stp{font-size:14.5px;gap:3px} .pg:has(.fl) .fl{font-size:13.5px;gap:4px 28px} .fl{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;font-size:14.5px;line-height:1.4;margin:0;padding:0;list-style:none} .fl b{color:#26296b} .fp{font-size:15.5px;line-height:1.5;margin:0 0 8px} .byl{margin:-6px 0 8px;font-size:13.5px;color:#6d6f9c} .h1b{font-size:30px!important;margin-bottom:10px!important} ol.stp{margin:4px 0 0;padding-left:22px;display:grid;gap:5px;font-size:15.5px;line-height:1.4} ol.stp li::marker{color:#e4572e;font-weight:700} ol.stp.alt{list-style:lower-alpha} .rdy{font-size:14.5px;margin:0 0 8px} .pg:has(.g2) .mb-hands svg{max-height:104px;width:auto!important} .pg:has(.g2) .mb-hands>div{gap:5px} .pg:has(.g2) .mb-hands .cap2{font-size:13.5px} .pg:has(.g2) .mb-intro p{font-size:16.5px} .pg:has(.g2) .mb-intro{padding:5px 0!important} .pg:has(.g2) .sp{min-height:4px!important} .pg:has(.g2) .mb-song{gap:5px}
+.bgt .cnm{font:700 12.5px 'AH';color:#e4572e;height:17px;text-align:left;padding-left:5px;vertical-align:bottom;border:0!important} .bgt.g2 .ll{height:56px!important} .bgt.g2.slim .ll{height:36px!important} .bgt.g2 .ch2.three{font-size:11.5px!important;line-height:.95!important;padding:1px 3px!important;letter-spacing:0!important} .bgt.g2+.bgt.g2{margin-top:9px!important} .bgt.g2 .ch2.two{font-size:14px!important;line-height:1!important;padding:2px 5px!important} .bgt.g2 .ll .hbx .hk2{font-size:15px!important} .kick.kb{margin-bottom:10px} .bgt.g2 tr.lhs .rl{border-top:0} .bgt.g2 .rl.n2 svg{overflow:visible} .bgt.g2.lead .cnm{font-size:17px;height:24px} table.ftb{width:100%;border-collapse:collapse;font-size:13px;line-height:1.3} table.ftb th{font:700 10.5px 'AH';letter-spacing:.12em;text-transform:uppercase;color:#e4572e;text-align:left;padding:5px 8px 5px 0;border-bottom:1.5px solid #26296b} table.ftb td{padding:5px 8px 5px 0;border-bottom:1px solid rgba(38,41,107,.14);vertical-align:top} table.ftb td.n{font-weight:700;width:22px} table.ftb tr.u td{font:700 11px 'AH';letter-spacing:.12em;text-transform:uppercase;padding-top:11px;border-bottom:1px solid rgba(38,41,107,.4)} table.ftb.sm{font-size:11.5px;line-height:1.3} table.ftb.sm td{padding:3.5px 8px 3.5px 0} .pg:has(.fl) .say p{font-size:15px} .pg:has(.fl) ol.stp{font-size:14.5px;gap:3px} .pg:has(.fl) .fl{font-size:13.5px;gap:4px 28px} .fl{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px;font-size:14.5px;line-height:1.4;margin:0;padding:0;list-style:none} .fl b{color:#26296b} .fp{font-size:15.5px;line-height:1.5;margin:0 0 8px} .byl{margin:-6px 0 8px;font-size:13.5px;color:#6d6f9c} .h1b{font-size:30px!important;margin-bottom:10px!important} ol.stp{margin:4px 0 0;padding-left:22px;display:grid;gap:5px;font-size:15.5px;line-height:1.4} ol.stp li::marker{color:#e4572e;font-weight:700} ol.stp.alt{list-style:lower-alpha} .rdy{font-size:14.5px;margin:0 0 8px} .pg:has(.g2) .mb-hands svg{max-height:104px;width:auto!important} .pg:has(.g2) .mb-hands>div{gap:5px} .pg:has(.g2) .mb-hands .cap2{font-size:13.5px} .pg:has(.g2) .mb-intro p{font-size:16.5px} .pg:has(.g2) .mb-intro{padding:5px 0!important} .pg:has(.g2) .sp{min-height:4px!important} .pg:has(.g2) .mb-song{gap:5px}
 """
     css += f""".job{{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;border:1.5px solid {C};border-radius:12px;padding:10px 16px}} .jobt{{font-size:17px;margin:4px 0 0}} .jobq{{display:flex;flex-direction:column;align-items:center;gap:4px;white-space:nowrap;font-size:11.5px;color:{MUTE}}}
 .ah{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{C}}}
