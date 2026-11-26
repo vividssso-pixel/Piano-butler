@@ -527,7 +527,9 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
     def GRID2(bars, meter, cls, maxnb, first_done):
         G_ = SONG['gig']; stage = G_['mb2']; unit = G_.get('unit', 'q'); cw = 633 / maxnb; cur = [bars[0]]
         idx = lambda b: list(range(meter - b['pick'], meter)) if b.get('pick') else list(range(b['head'])) if b.get('head') else list(range(meter))   # a pick-up bar shows only its last boxes
-        nb = sum(len(idx(b)) for b in bars); insong = any(bars is ln for ln in G_['song_grid'])
+        nb = sum(len(idx(b)) for b in bars)
+        if nb >= .7 * maxnb: maxnb = nb; cw = 633 / nb   # her 26 Nov 17:21: every line runs to the right edge; only a much shorter last line stays short
+        insong = any(bars is ln for ln in G_['song_grid'])
         staff = stage in ('staff', 'bare', 'plain', 'grand', 'lead'); S, T, H = (14, 30, 122) if staff else (0, 0, 60)
         if staff:   # the staff is as tall as this song's highest and lowest notes need
             sts = [ptok(x.lstrip('~'))[2] for ln in G_['song_grid'] for b in ln for t in b.get('r', '').split() for x in t.split('.') if ptok(x.lstrip('~')) and not ptok(x.lstrip('~'))[3]]
@@ -559,7 +561,7 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
             if show: g += f'<text x="{cx}" y="{y + (3.9 if staff else 5.6) * k}" text-anchor="middle" font-size="{(11 if staff else 16) * k}" font-weight="800" font-family="AH,Inter,sans-serif" fill="{"#fff" if filled else N}">{L}</text>'
             if not staff and (st >= 5 or st <= -3): g += f'<text x="{cx - rx - 1}" y="{y - ry + 3}" text-anchor="middle" font-size="{13 * max(k, .8)}" font-weight="800" font-family="AH,Inter,sans-serif" fill="{C}">{"↑" if st >= 5 else "↓"}</text>'   # no staff yet: an arrow tells the high C from the low one
             if acc: g += f'<text x="{cx - (rx + 5 if staff else 24)}" y="{y + 5}" text-anchor="middle" font-size="{15 if staff else 19}" font-weight="700" font-family="AH,Inter,sans-serif" fill="{N}">{ACC[acc]}</text>'
-            ln = 39 if staff else 34; fk = 1 if staff else min(1, k + .1)
+            ln = 39 if staff else 34; fk = 1 if staff else min(1, k + .1) if k > .6 else .42
             if stem:
                 sx = cx + (rx - 0.9) * (1 if up else -1); y1 = beam_y if beam_y is not None else (y - ln if up else y + ln)
                 g += f'<path d="M{sx} {y - 1.5 if up else y + 1.5}V{y1}" stroke="{N}" stroke-width="1.7"/>'
@@ -612,7 +614,8 @@ if SONG.get('v4'):   # her 10 Nov: the accompaniment book as a book of jobs -- a
                             rx = ((9.5 if staff else 13.5) * k - 0.9) * (1 if up else -1)
                             for q in range(1 if unit == 'q' else 2): g += f'<path d="M{xa + rx} {by + (5.5 * q if up else -5.5 * q)}H{xz + rx}" stroke="{N}" stroke-width="3.6"/>'
                         elif pz and not staff:   # the short note after a dotted one: the dotted note's line runs on into this box, so its one and a half boxes show; the tail stays inside the box
-                            xq = min(xz, cw - 13.5 * k - 12 * (k + .1) - 2); g = f'<path d="M0 40H{max(4, xq - 13.5 * k - 3)}" stroke="rgba(38,41,107,.45)" stroke-width="2.4"/>' + note(xq, pz, 1, 1, 1 if unit == 'q' else 2, 0, None, None, show(pz), k)
+                            kq = min(.6, (cw / 2 - 3.6) / 27); xq = max(cw / 2 + 13.5 * kq - 1.5, min(cw * .75, cw - 5.6 - 13.5 * kq))   # the box is split in two: wait for the first half, play in the second (her 26 Nov 17:22)
+                            g = f'<path d="M{cw / 2} 2V{H - 2}" stroke="rgba(38,41,107,.4)" stroke-width="1.2" stroke-dasharray="3 3"/><path d="M0 40H{cw / 2 - 4}" stroke="rgba(38,41,107,.45)" stroke-width="2.4"/>' + note(xq, pz, 1, 1, 1 if unit == 'q' else 2, 0, None, None, show(pz), kq)
                         elif pz: g = note(xz, pz, 1, 1, 1 if unit == 'q' else 2, 0, None, None, show(pz), k)
                         elif pa: g = note(xa, pa, 1, 1, 1 if unit == 'q' else 2, 0, None, None, show(pa), k)
                     else:
