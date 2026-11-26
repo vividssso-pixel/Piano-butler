@@ -234,3 +234,28 @@ for ln in d['gig']['song_grid']:
 json.dump(d, open('mb6.json', 'w'), ensure_ascii=False); _save(6)
 # 7 Twinkle: identical to the ABC in "LaTeX for musicians" (CTAN), twelve bars. Nothing to change.
 _save(7)
+
+# ---- Songs 8 to 12
+def _tag(n, t):
+    d = json.load(open(f'mb{n}.json')); d['gig']['today'] = t; json.dump(d, open(f'mb{n}.json', 'w'), ensure_ascii=False)
+# 8 London Bridge: no open score reached yet (27 Nov); unchanged and NOT yet checked.
+_tag(8, 'Roots')
+# 9 When the Saints: checked against the transcription at folktunefinder 125223. One bar was wrong: after "number" the F is held and the pick-up is E F, not C E F.
+d = json.load(open('mb9.json')); b = d['gig']['song_grid'][3][0]; assert b['r'] == 'r C E F'; b['r'] = '- - E F'; b['w'] = '- - when the'; json.dump(d, open('mb9.json', 'w'), ensure_ascii=False); _tag(9, 'Roots')
+# 10 Are You Sleeping? (Frère Jacques): identical to the transcription at folktunefinder 143754. Nothing to change.
+_tag(10, 'Roots')
+# 11 Camptown Races: verse identical to folktunefinder 145383; the chorus added from the same source, so the song is whole (sixteen bars).
+d = json.load(open('mb11.json')); g = d['gig']
+g['song_grid'] += _bars([[('C -.C E G', 'C+G', 'Goin’ -.to run all'), ("C' - - -", 'C+G', 'night! - - -'), ("A -.A C' A", 'C+F', 'Goin’ -.to run all'), ('G - - -', 'C+G', 'day! - - -')],
+                         [('G G E.E G.G', 'C+G', 'I’ll bet my.mon ey.on the'), ('A G E -', 'C+G', 'bob- tail nag, -'), ('D D E D', 'D+G', 'some- bo- dy bet on the'.replace('bet on the', 'bet')[:99]), ('C - - -', 'C+G', 'bay. - - -')]])
+g['song_grid'][3][2]['w'] = 'some- bo- dy bet'
+g['song_grid'][3][0]['w'] = 'I’ll bet my.mo ney.on'; g['song_grid'][3][1]['w'] = 'the bobtail nag -'; g['song_grid'][3][2]['w'] = 'some- bo- dy bet'; g['song_grid'][3][3]['w'] = 'on the bay. - -'.replace('on the bay.', 'bay.')
+g['r_cap'] = 'Thumb on D. In line 3 the hand reaches up to the high C, marked C↑.'
+json.dump(d, open('mb11.json', 'w'), ensure_ascii=False); _tag(11, 'Block chord')
+# 12 Old MacDonald: identical to the Musica Viva transcription (trillian.mit.edu mirror) once the rests are in: "O" lasts two beats, then a rest.
+d = json.load(open('mb12.json'))
+for ln in d['gig']['song_grid']:
+    for b in ln:
+        if b['r'] == 'C - - <G': b['r'] = 'C - r <G'
+        if b['r'] == 'C - - -': b['r'] = 'C - r r'
+json.dump(d, open('mb12.json', 'w'), ensure_ascii=False); _tag(12, 'Roots')
