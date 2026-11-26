@@ -200,3 +200,37 @@ json.dump(d, open('mb1.json', 'w'), ensure_ascii=False)
 # Song 2, Mary Had a Little Lamb: bars 1-3 and 5-8 agree note for note with the Musica Viva transcription (via folktunefinder 174581).
 # Bar 4 there is E E E (an English three-note version); this book keeps the usual E G G, the version with G that pianochord.org describes (notes C D E G, 8 bars).
 d = json.load(open('mb2.json')); d['gig']['today'] = 'Roots'; json.dump(d, open('mb2.json', 'w'), ensure_ascii=False)
+
+# ---- Songs 3 to 7, finished and checked as one batch (her 27 Nov 00:56: five at a time)
+def _bars(rows): return [[{'r': r, 'l': l, 'w': w} for r, l, w in ln] for ln in rows]
+def _save(n, **kw):
+    d = json.load(open(f'mb{n}.json')); g = d['gig']
+    for k, v in kw.items(): g[k] = v
+    g['today'] = 'Roots'; json.dump(d, open(f'mb{n}.json', 'w'), ensure_ascii=False)
+# 3 Au Clair de la Lune: the whole song, A A B A. Checked against the analysis at bethsnotesplus.com (metre 4, form AABA,
+# A uses do re mi only, B uses so, la, ti, do re; half and whole notes). In B the tune walks below middle C: the left hand takes those notes.
+A3 = lambda w: [('C C C D', 'C', w[0]), ('E - D -', 'G', w[1]), ('C E D D', 'C', w[2]), ('C - - -', 'C', w[3])]
+_save(3, song_grid=_bars([A3(['Au clair de la', 'lu- - ne - ', 'mon a- mi Pier-', 'rot - - -']), A3(['Prê- te- moi ta', 'plu- - me -', 'pour é- crire un', 'mot - - -']),
+    [('D D D D', '', 'Ma chan- delle est'), ('<A - <A -', '', 'mor- - te -'), ('D C <B <A', '', 'je n’ai plus de'), ('<G - - -', '', 'feu - - -')],
+    A3(['Ou- vre- moi ta', 'por- - te -', 'pour l’a- mour de', 'Dieu - - -'])]))
+# 4 Lightly Row: all sixteen bars. Identical to the Essen collection's "Alles neu macht der Mai" (the same tune); bar 8 ends on E, the last bar on C.
+A4 = [('G E E -', 'C'), ('F D D -', 'G')]
+_save(4, song_grid=_bars([[(r, l, w) for (r, l), w in zip(A4 + [('C D E F', 'C'), ('G G G -', 'C')], ['Light- ly row -', 'light- ly row -', 'o’er the glass- y', 'waves we go -'])],
+    [(r, l, w) for (r, l), w in zip(A4 + [('C E G G', 'C'), ('E - r r', 'C')], ['Smooth- ly glide -', 'smooth- ly glide -', 'on the si- lent', 'tide - - -'])],
+    [('D D D D', 'G', 'Let the winds and'), ('D E F -', 'G', 'wa- ters be -'), ('E E E E', 'C', 'min- gled with our'), ('E F G -', 'C', 'mel- o- dy -')],
+    [(r, l, w) for (r, l), w in zip(A4 + [('C E G G', 'C'), ('C - r r', 'C')], ['Sing and float -', 'sing and float -', 'in our lit- tle', 'boat - - -'])]]))
+# 5 Ode to Joy: all sixteen bars, with the dotted rhythm at the end of each line. Identical to the Mutopia score (BeethovenLv/ode, hymn form), moved from G to C.
+# In bar 12 the tune dips to the G below middle C: the left hand plays it.
+_save(5, song_grid=_bars([[('E E F G', 'C', 'Joy- ful, joy- ful,'), ('G F E D', 'G', 'we a- dore thee,'), ('C C D E', 'C', 'God of glo- ry,'), ('E -.D D -', 'G', 'Lord -.of love; -')],
+    [('E E F G', 'C', 'hearts un- fold like'), ('G F E D', 'G', 'flowers be- fore thee,'), ('C C D E', 'C', 'o- pening to the'), ('D -.C C -', 'C', 'sun -.a- bove. -')],
+    [('D D E C', 'G', 'Melt the clouds of'), ('D E.F E C', 'G', 'sin and.- sad- ness;'), ('D E.F E D', 'G', 'drive the.- dark of'), ('C D <G -', 'C', 'doubt a- way; -')],
+    [('E E F G', 'C', 'Giv- er of im-'), ('G F E D', 'G', 'mor- tal glad- ness,'), ('C C D E', 'C', 'fill us with the'), ('D -.C C -', 'C', 'light -.of day! -')]]))
+# 6 Jingle Bells (the chorus): identical to the ABC transcription at pages.cpsc.ucalgary.ca once the two dotted notes are in (bars 3 and 5 of each half).
+d = json.load(open('mb6.json'))
+for ln in d['gig']['song_grid']:
+    for b in ln:
+        if b['r'] == 'E G C D': b['r'] = 'E G C -.D'; b['w'] = 'jin- gle all -.the'
+        if b['r'] == 'F F F F': b['r'] = 'F F F -.F'; b['w'] = 'oh what fun -.it'
+json.dump(d, open('mb6.json', 'w'), ensure_ascii=False); _save(6)
+# 7 Twinkle: identical to the ABC in "LaTeX for musicians" (CTAN), twelve bars. Nothing to change.
+_save(7)
