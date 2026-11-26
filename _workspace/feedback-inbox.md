@@ -59,12 +59,12 @@ Fixed (3c80b45)
 - [x] Colours: Pitch and Rhythm now follow navy and coral too (green and gold were used as category colours).
 
 Should fix (looks) — open, next build
-- [ ] **LP-P5-0**: the note A and its letter sit on the "treble G" label, which is written across the staff lines. Move the label clear.
-- [ ] **LP-P6-2**: "below the treble" / "above the bass" are written across the staff lines.
-- [ ] **LP-P7-0** (last): the bottom caption repeats the title and only one black key is lit. End with two neighbouring keys lit; drop one line.
-- [ ] **LP-P8-0** (first): "♭ = next key left" and "♯ = next key right" collide in the top-left corner.
-- [ ] **LR-T2-5** (last): the earlier staff and rest labels are still faintly visible behind the new picture.
-- [ ] **LR-T5-1**: the coral weight does not stay on the pendulum rod as it swings.
+- [x] (a968203) **LP-P5-0**: the note A and its letter sit on the "treble G" label, which is written across the staff lines. Move the label clear.
+- [x] (a968203) **LP-P6-2**: "below the treble" / "above the bass" are written across the staff lines.
+- [x] (a968203) **LP-P7-0** (last): the bottom caption repeats the title and only one black key is lit. End with two neighbouring keys lit; drop one line.
+- [x] (a968203) **LP-P8-0** (first): "♭ = next key left" and "♯ = next key right" collide in the top-left corner.
+- [x] (a968203) **LR-T2-5** (last): the earlier staff and rest labels are still faintly visible behind the new picture.
+- [x] (a968203) **LR-T5-1**: the coral weight does not stay on the pendulum rod as it swings.
 - [ ] **D-crotchet, D-semibreve, D-semiquaver** (old demo page only): the word label is cut off by the first circle.
 
 Her call
