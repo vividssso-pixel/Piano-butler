@@ -170,3 +170,18 @@ for i in range(10, 20):
     d = json.load(open(f'mb{i}.json')); d['gig']['shapes'] = 1
     if i == 10 and 'Look:' not in d['gig']['song_how']: d['gig']['song_how'] = d['gig']['song_how'].rstrip() + ' <b>Look:</b> behind each letter is a faint note. Its shape shows how long the note is.'
     json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
+
+# 26 Nov, her '마지막 두곡': The Blue Danube rewritten from the open score (Mutopia, Strauss Op. 314, first sixteen bars).
+# The two answering chords are written as their top note, an octave lower, and in their real rhythm: on beat 3, held into the next bar.
+d = json.load(open('mb18.json')); g = d['gig']
+def DB(r, c): return {'r': r, 'l': c, 'w': '- - -', **({'lp': {'C': 'C G G', 'G': 'G D D', 'Ce': 'C - -'}[c]} if c else {})}
+g['song_grid'] = [[DB('r r C', ''), DB('C E G', 'C'), DB('G - G', 'C'), DB('G - E', 'C')],
+                  [DB('E - C', 'C'), DB('C E G', 'C'), DB('G - G', 'C'), DB('G - F', 'G')],
+                  [DB('F - B,', 'G'), DB('B, D A', 'G'), DB('A - A', 'G'), DB('A - F', 'G')],
+                  [DB('F - B,', 'G'), DB('B, D A', 'G'), DB('A - A', 'G'), DB('A - E', 'C')],
+                  [dict(DB('E - -', 'Ce'), l='C')]]
+g['song_how'] = 'New: the waltz. The box names the chord: play it on ONE, then its other key twice. Oom-pah-pah. In the tune, a rising call is answered by two bell notes: each answer starts on beat 3 and rings on into the next bar.'
+g['r_cap'] = 'Thumb on middle C. B↓ is the key just below it: the thumb steps down. Finger 5 reaches up to A.'
+g['song_how'] = 'The waltz: the box names the chord. Play it on ONE, then its other key twice. In the tune, a rising call is answered by two bell notes that start on beat 3 and ring on.'
+flat = [b for ln in g['song_grid'] for b in ln]; g['song_grid'] = [flat[:5], flat[5:9], flat[9:13], flat[13:]]
+json.dump(d, open('mb18.json', 'w'), ensure_ascii=False)
