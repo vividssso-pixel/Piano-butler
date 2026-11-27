@@ -235,13 +235,18 @@ function swapStage(src, cap) {   // the new picture fades in over the old one, a
   preloadStage(); }
 function syncVid(force) { if (!lensEl) return; const v = lensEl.querySelector('.stagepic:last-child video'); if (!v || !(v.readyState >= 1)) return;
   const dur = v.duration || 0; if (v.dataset.cover && playing < 0) { if (Math.abs(v.currentTime - dur) > 0.05) v.currentTime = Math.max(0, dur - 0.01); v.pause(); return; }
-  v.dataset.cover = ''; const want = Math.min(Math.max(0, audio.currentTime - (+v.dataset.off || 0)), Math.max(0, dur - 0.01));
-  if (force || Math.abs(v.currentTime - want) > 0.25) v.currentTime = want;
+  v.dataset.cover = ''; const kc = playing >= 0 && CH[ci].clips ? CH[ci].clips[playing] : null; if (kc) v.dataset.off = kc.l[0].t0;   // the clip that is playing now sets the offset (the cover was made before play)
+  const want = Math.min(Math.max(0, audio.currentTime - (+v.dataset.off || 0)), Math.max(0, dur - 0.01));
+  const now = performance.now(), last = +v.dataset.sk || 0;
+  if ((force || (Math.abs(v.currentTime - want) > 0.4 && now - last > 1000)) && !v.dataset.noseek) { const before = v.currentTime; v.dataset.sk = now; v.currentTime = want;
+    if (want > 1 && Math.abs(want - before) > 1) setTimeout(() => { if (Math.abs(v.currentTime - want) > 1 && Math.abs(v.currentTime - before) < 0.3) v.dataset.noseek = '1'; }, 600); }   // a server that cannot seek: just play along
   v.playbackRate = audio.playbackRate || 1;
   if (audio.paused || want >= dur - 0.02) { if (!v.paused) v.pause(); } else if (v.paused) v.play().catch(() => {}); }
 ['pause', 'play', 'seeked', 'ratechange'].forEach(ev => audio.addEventListener(ev, () => syncVid(true)));
 function preloadStage() { if (playing < 0) return; const key = ci + ':' + playing; if (preloadStage.k === key) return; preloadStage.k = key;
   [playing, playing + 1].forEach(i => { const k = CH[ci].clips && CH[ci].clips[i]; if (k) k.l.forEach(x => { if (x.lens && x.lens.k === 'stage') { const vm = /pops\/(L[PRBECS]-[^?.]+)\.webp(\?v=\d+)?/.exec(x.lens.src); if (vm) { const v = document.createElement('video'); v.preload = 'auto'; v.muted = true; v.src = `pops/${vm[1]}.mp4${vm[2] || ''}`; } else { const m = new Image(); m.src = x.lens.src; } } }); }); }
+document.getElementById('zoom').addEventListener('click', e => { if (!document.body.classList.contains('pic')) return; e.preventDefault();   // her 27 Nov: a tap on the picture is play / pause, never a page
+  if (e.target.closest('.endcard, .trycard')) return; if (lensEl && lensEl.querySelector('.trycard')) { resumeTry(); return; } togglePlay(); });
 function showTry(ln) { if (!lensEl || lensEl.querySelector('.trycard')) return; const e = document.createElement('div'); e.className = 'trycard';
   e.innerHTML = '<button>I’ve got it ▶</button>'; lensEl.appendChild(e); lensEl.classList.add('trying');
   e.querySelector('button').onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); resumeTry(); }; }
