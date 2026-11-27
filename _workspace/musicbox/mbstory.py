@@ -40,45 +40,48 @@ def save(base, id_, title, label, pages, page0):
     d = copy.deepcopy(json.load(open(base))); d.update(id=id_, title=title, lesson=0, label=label, page0=page0)
     for k in ('nokb', 'extra', 'split', 'steps', 'song_note', 'cword'): d['gig'].pop(k, None)
     d['gig']['front'] = pages; json.dump(d, open(id_ + '.json', 'w'), ensure_ascii=False)
-# ---- Music Box 1: a first page (it had none), page numbers, the card
-PAT1 = {}
-S1 = [json.load(open(f'mb{i}.json')) for i in range(1, 20)]
-from pypdf import PdfReader
-P1 = 1   # pages before this song: the first page, then every song's own page count (some songs have a second page), read from the last build
-for i, d in enumerate(S1, 1):
-    d['page0'] = P1; json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
-    P1 += len(PdfReader(f'lesson-mb{i}.pdf').pages) if os.path.exists(f'lesson-mb{i}.pdf') else 1
-rows = ''.join(f'<tr><td class="n">{i if i < 19 else ""}</td><td><b>{d["title"]}</b></td><td>{d["gig"].get("today") or ""}</td></tr>' for i, d in enumerate(S1, 1))
-p1 = f'''<div class="kick">Start here</div><h1>Music Box 1</h1><p class="byl">Eighteen songs and one old friend</p>
-{LT}<table class="ftb"><tr><th style="width:5%"></th><th style="width:60%">Song</th><th style="width:35%">Left-hand pattern</th></tr>{rows}</table>'''
-save('mb1.json', 'mb0', 'Music Box 1', 'Start here', [p1], 0)
-c1 = card(1, INTRO, [('Roots', 'C - - -', 'One key: the letter in the chord’s name. Hold it.', 'Songs 1 to 10, 12 and 15'),
-                     ('Block chord', 'C+G - - -', 'The keys of the chord together. In this book, two: bottom and top. Hold them.', 'Song 11'),
-                     ('Zigzag', 'C G C G', 'Bottom and top of the chord, rocking. No middle key.', 'Songs 16 and 17')])
-save('mb1.json', 'mb20', 'Pattern card', 'End of Music Box 1', [c1], P1)
-# ---- Music Box 2: the line on its first page, three chord words, the card
-d = json.load(open('mc0.json')); f = d['gig']['front']; a = '<div class="sp"></div><table class="ftb"><tr><th style="width:4%">'
-assert f[0].count(a) == 1 and 'class="lt"' not in f[0]; f[0] = f[0].replace(a, '<div class="sp"></div>' + LT + a.replace('<div class="sp"></div>', ''), 1); d['page0'] = 0; json.dump(d, open('mc0.json', 'w'), ensure_ascii=False)
-CW = {8: 'E minor is E, G and B. Turn the letters round and they spell <b>BEG</b>.',
-      10: 'A, C, E, from the bottom up: the A minor chord spells <b>ACE</b>.',
-      14: 'D minor is D, F and A. Turn the letters round and they spell <b>FAD</b>.'}
-for k, t in CW.items():
-    d = json.load(open(f'mc{k}.json')); d['gig']['cword'] = t; json.dump(d, open(f'mc{k}.json', 'w'), ensure_ascii=False)
-last = json.load(open('mc14.json')); end2 = last['page0'] + 1 + -(-len(last['gig']['song_grid']) // last['gig'].get('split', 99))
-c2 = card(2, INTRO, [('Roots', 'C - - -', 'One key: the letter in the chord’s name. Hold it.', 'Song 11, and the older way in Songs 1 to 4'),
-                     ('Block chord', 'C+E+G - - -', 'All three keys of the chord together. Hold them.', 'Songs 1 to 4, 6 and 10'),
-                     ('Waltz style', 'C E+G C E+G', 'Bottom key, then the top two together.', 'Song 5 and the last page'),
-                     ('Broken chord', 'C E G E', 'One key at a time: bottom, middle, top.', 'Songs 7, 8 and 13'),
-                     ('Zigzag', 'C G C G', 'Bottom and top of the chord, rocking. No middle key.', 'Song 12')])
-save('mc1.json', 'mc15', 'Pattern card', 'End of Music Box 2', [c2], end2)
-# ---- Music Box 3: the line on its first page, the card
-d = json.load(open('md0.json')); f = d['gig']['front']; a = '<div class="sp"></div><table class="ftb"><tr><th style="width:4%">'
-assert f[0].count(a) == 1 and 'class="lt"' not in f[0]; f[0] = f[0].replace(a, '<div class="sp"></div>' + LT + a.replace('<div class="sp"></div>', ''), 1); json.dump(d, open('md0.json', 'w'), ensure_ascii=False)
-last = json.load(open('md9.json')); end3 = last['page0'] + 1 + -(-len(last['gig']['song_grid']) // last['gig'].get('split', 99))
-c3 = card(3, INTRO, [('Roots', 'C - - -', 'One key: the letter in the chord’s name. Hold it.', 'On the menu, Songs 7 to 9'),
-                     ('Block chord', 'C+E+G - - -', 'All three keys of the chord together. Hold them.', 'Songs 1, 2, 4 and 5'),
-                     ('Waltz style', 'C E+G C E+G', 'Bottom key, then the top two together.', 'Songs 3 and 6'),
-                     ('Broken chord', 'C E G E', 'One key at a time: bottom, middle, top.', 'On the menu, Songs 7 to 9'),
-                     ('Zigzag', 'C G C G', 'Bottom and top of the chord, rocking. No middle key.', 'On the menu, Songs 7 to 9')])
-save('md1.json', 'md10', 'Pattern card', 'End of Music Box 3', [c3], end3)
-print('story ok: card pages', P1 + 1, end2 + 1, end3 + 1)
+def main():
+    # ---- Music Box 1: a first page (it had none), page numbers, the card
+    PAT1 = {}
+    S1 = [json.load(open(f'mb{i}.json')) for i in range(1, 20)]
+    from pypdf import PdfReader
+    P1 = 1   # pages before this song: the first page, then every song's own page count (some songs have a second page), read from the last build
+    for i, d in enumerate(S1, 1):
+        d['page0'] = P1; json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
+        P1 += len(PdfReader(f'lesson-mb{i}.pdf').pages) if os.path.exists(f'lesson-mb{i}.pdf') else 1
+    rows = ''.join(f'<tr><td class="n">{i if i < 19 else ""}</td><td><b>{d["title"]}</b></td><td>{d["gig"].get("today") or ""}</td></tr>' for i, d in enumerate(S1, 1))
+    p1 = f'''<div class="kick">Start here</div><h1>Music Box 1</h1><p class="byl">Eighteen songs and one old friend</p>
+    {LT}<table class="ftb"><tr><th style="width:5%"></th><th style="width:60%">Song</th><th style="width:35%">Left-hand pattern</th></tr>{rows}</table>'''
+    save('mb1.json', 'mb0', 'Music Box 1', 'Start here', [p1], 0)
+    c1 = card(1, INTRO, [('Roots', 'C - - -', 'One key: the letter in the chord’s name. Hold it.', 'Songs 1 to 10, 12 and 15'),
+                         ('Block chord', 'C+G - - -', 'The keys of the chord together. In this book, two: bottom and top. Hold them.', 'Song 11'),
+                         ('Zigzag', 'C G C G', 'Bottom and top of the chord, rocking. No middle key.', 'Songs 16 and 17')])
+    save('mb1.json', 'mb20', 'Pattern card', 'End of Music Box 1', [c1], P1)
+    # ---- Music Box 2: the line on its first page, three chord words, the card
+    d = json.load(open('mc0.json')); f = d['gig']['front']; a = '<div class="sp"></div><table class="ftb"><tr><th style="width:4%">'
+    assert f[0].count(a) == 1 and 'class="lt"' not in f[0]; f[0] = f[0].replace(a, '<div class="sp"></div>' + LT + a.replace('<div class="sp"></div>', ''), 1); d['page0'] = 0; json.dump(d, open('mc0.json', 'w'), ensure_ascii=False)
+    CW = {8: 'E minor is E, G and B. Turn the letters round and they spell <b>BEG</b>.',
+          10: 'A, C, E, from the bottom up: the A minor chord spells <b>ACE</b>.',
+          14: 'D minor is D, F and A. Turn the letters round and they spell <b>FAD</b>.'}
+    for k, t in CW.items():
+        d = json.load(open(f'mc{k}.json')); d['gig']['cword'] = t; json.dump(d, open(f'mc{k}.json', 'w'), ensure_ascii=False)
+    last = json.load(open('mc14.json')); end2 = last['page0'] + 1 + -(-len(last['gig']['song_grid']) // last['gig'].get('split', 99))
+    c2 = card(2, INTRO, [('Roots', 'C - - -', 'One key: the letter in the chord’s name. Hold it.', 'Song 11, and the older way in Songs 1 to 4'),
+                         ('Block chord', 'C+E+G - - -', 'All three keys of the chord together. Hold them.', 'Songs 1 to 4, 6 and 10'),
+                         ('Waltz style', 'C E+G C E+G', 'Bottom key, then the top two together.', 'Song 5 and the last page'),
+                         ('Broken chord', 'C E G E', 'One key at a time: bottom, middle, top.', 'Songs 7, 8 and 13'),
+                         ('Zigzag', 'C G C G', 'Bottom and top of the chord, rocking. No middle key.', 'Song 12')])
+    save('mc1.json', 'mc15', 'Pattern card', 'End of Music Box 2', [c2], end2)
+    # ---- Music Box 3: the line on its first page, the card
+    d = json.load(open('md0.json')); f = d['gig']['front']; a = '<div class="sp"></div><table class="ftb"><tr><th style="width:4%">'
+    assert f[0].count(a) == 1 and 'class="lt"' not in f[0]; f[0] = f[0].replace(a, '<div class="sp"></div>' + LT + a.replace('<div class="sp"></div>', ''), 1); json.dump(d, open('md0.json', 'w'), ensure_ascii=False)
+    last = json.load(open('md9.json')); end3 = last['page0'] + 1 + -(-len(last['gig']['song_grid']) // last['gig'].get('split', 99))
+    c3 = card(3, INTRO, [('Roots', 'C - - -', 'One key: the letter in the chord’s name. Hold it.', 'On the menu, Songs 7 to 9'),
+                         ('Block chord', 'C+E+G - - -', 'All three keys of the chord together. Hold them.', 'Songs 1, 2, 4 and 5'),
+                         ('Waltz style', 'C E+G C E+G', 'Bottom key, then the top two together.', 'Songs 3 and 6'),
+                         ('Broken chord', 'C E G E', 'One key at a time: bottom, middle, top.', 'On the menu, Songs 7 to 9'),
+                         ('Zigzag', 'C G C G', 'Bottom and top of the chord, rocking. No middle key.', 'On the menu, Songs 7 to 9')])
+    save('md1.json', 'md10', 'Pattern card', 'End of Music Box 3', [c3], end3)
+    print('story ok: card pages', P1 + 1, end2 + 1, end3 + 1)
+
+if __name__ == '__main__': main()

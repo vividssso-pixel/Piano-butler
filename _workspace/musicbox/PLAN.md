@@ -91,3 +91,14 @@ Happy Birthday, not tied to the letter. The unit-end variation tune (Canon or Tw
 
 ### Book 1, Song 16 Goin' Home
 Pitches match two transcriptions. The rhythm was even crotchets and is now long-short as in the Largo theme. Pattern tag: Zigzag (slow).
+
+### Book 1, re-paced: a second version to compare (her 27 Nov 15:03, 'build it by your own decisions and show me')
+music-box-1-repaced-draft.pdf, made by mbook1.py (ids me0..me20). The current book (mb*.json) is untouched until she chooses.
+Unit 1 Roots: Songs 1-11 (the old 1-10 and Old MacDonald). End of Unit 1: Canon, one root under every note.
+Unit 2 Block chord (two keys): Camptown Races, Go Tell Aunt Rhody, Long, Long Ago, Ode to Joy again.
+Unit 3 the left hand joins the tune: Yankee Doodle, Amazing Grace. Last song: Happy Birthday. Then the pattern card.
+Moved out for later books: Goin' Home and This Old Man (Book 3, Zigzag), The Blue Danube (Book 2, Waltz style), Twinkle, Now.
+28 pages. The target of 36-40 needs about four more songs.
+
+### Book 2, Song 11 Canon: bass corrected
+The bass ran at half speed. In the score the cello plays one note on every beat; now four bass notes a bar.
