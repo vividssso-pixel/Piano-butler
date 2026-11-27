@@ -310,4 +310,15 @@ def _lay(n, notes, cap, how):
 CAP = 'When it has no tune to play, it holds G (or A).'
 _lay(13, ['', '', '', '', 'G', 'G', '', 'G', 'G'], CAP, 'New: a song in three. The tune walks from hand to hand; L.H. means the left hand plays it. A boxed letter is a key the left hand holds under the tune.')
 _lay(14, ['G', 'G', 'G', 'G', 'G', 'A', '', 'G', 'A', 'A', 'G', 'G', 'A', 'A', 'G', 'G'], CAP, 'Both thumbs on middle C; the hands take turns. A boxed letter is a key the left hand holds under the tune. Lines 3 and 4 are the chorus, higher up: there B is the key above A.')
-_lay(15, ['', 'G', 'G', 'A', '', 'G', 'G', 'G', 'G', 'G', 'G', 'A', '', 'G', 'G', 'G'], CAP, 'Slow, in three. A line holds the note; it can carry on into the next bar. A boxed letter is a key the left hand holds under the tune.')
+# 15 Amazing Grace (her 27 Nov 14:05: a bass C with G and A, three keys): the left hand sits on low C, G and A. G and A are its tune notes, as before;
+# C is the bass on beat 1 under the C and F bars, G under the G bars. The song ends on the bass C.
+d = json.load(open('mb15.json')); g = d['gig']; flat = [b for ln in g['song_grid'] for b in ln]
+for b, x in zip(flat, ['', 'C', 'C', 'C', '', 'C', 'C', 'G', 'G', 'C', 'C', 'C', '', 'C', 'G', 'C']):
+    assert not (x and b['r'].split()[0].startswith('<')), b['r']
+    b['l'] = x
+assert len(flat) == 16
+g['fmap'] = {'c': 5, 'g': 2, 'a': 1}; g['today'] = 'Roots'
+g['tool_cap'] = 'Finger 5 on the low C, 2 on G, thumb on A. C is the bass; G and A join in the tune.'
+g['r_cap'] = 'Thumb on middle C, 5 on G. No F in this song.'
+g['song_how'] = 'Slow, in three. A line holds the note; it can carry on into the next bar. A boxed letter is the bass: play it on beat 1 and let it ring.'
+json.dump(d, open('mb15.json', 'w'), ensure_ascii=False)
