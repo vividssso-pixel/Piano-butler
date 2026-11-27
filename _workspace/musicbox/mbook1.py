@@ -76,8 +76,33 @@ def hbsong(block):
                  job='The song for every birthday, in three: ONE two three. The right hand plays the whole tune; the left hand plays one root a bar.',
                  song_how='New: a song in three. It starts on beat 3 with two quick notes. Hold each left-hand key for the whole bar.')
     return d
-ORDER = [old(1), old(2), old(3), old(4), old(5), old(6), old(7), old(8), old(9), old(10), old(12), canon, hbsong(False), old(11), rhody, longago, ode, old(14), old(15), hbsong(True)]
-UNIT = {1: 'Unit 1 · Roots: one key for every chord', 13: 'The end of Unit 1', 14: 'Unit 2 · Block chord: two keys together', 18: 'Unit 3 · The left hand joins the tune', 20: 'The last song: the same tune, a bigger left hand'}
+# ---- Two more Block chord songs (27 Nov 21:41): the same tunes as Music Box 2 Songs 1 and 2, already checked there
+# (Essen, Alle meine Entchen; Nottingham Music Database, Oh Susanna). Here in letters, with the two-key left hand.
+TWO = {'C': 'C+G', 'G': 'D+G', 'F': 'C+F'}
+def from2(n, fing):
+    rows = []
+    for ln in json.load(open(f'mc{n}.json'))['gig']['song_grid']:
+        row = []
+        for b in ln:
+            ch = (b.get('ch') or '').split()
+            if not ch: row.append(B(b['r'], '', b.get('f'))); continue
+            if len(ch) == 1: row.append(B(b['r'], TWO[ch[0]], b.get('f') or fing(b['r']), TWO[ch[0]] + ' - - -'))
+            else: row.append(B(b['r'], TWO[ch[0]], b.get('f') or fing(b['r']), ' '.join(TWO.get(x, x) for x in ch)))
+        rows.append(row)
+    return rows
+RF = {'C': 1, 'D': 2, 'E': 3, 'F': 4, 'G': 5, 'A': 5}
+ducks = new('mb11.json', 'All My Little Ducklings', 'German folk song',
+    'Little ducks swimming on the lake, heads in the water, tails up high. A short song to start Unit 2: two keys in the left hand, held for the whole bar.',
+    'The left hand changes only on beat 1. Press both keys together and hold them for the whole bar.',
+    from2(1, None), 'Block chord', {'c': 5, 'd': 4, 'f': 2, 'g': 1}, 'C chord: C and G (5, 1). G chord: D and G (4, 1). F chord: C and F (5, 2).',
+    'Thumb on middle C. A is one key past your little finger: reach for it, then come back.', rfing=RF, rmap={'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5, 'a': 5})
+susanna = new('mb11.json', 'Oh! Susanna', 'Stephen Foster, 1848',
+    'A song from 1848 about a long journey with a banjo on your knee. It starts before bar 1, with two quick notes on beat 4.',
+    'Count 1 2 3 out loud, then play C D on <i>four-and</i>. In two bars the chord changes on beat 3.',
+    from2(2, None), 'Block chord', {'c': 5, 'd': 4, 'f': 2, 'g': 1}, 'C chord: C and G (5, 1). G chord: D and G (4, 1). F chord: C and F (5, 2).',
+    'Thumb on middle C. Reach finger 5 to A, as in All My Little Ducklings.', rfing=RF, rmap={'c': 1, 'd': 2, 'e': 3, 'f': 4, 'g': 5, 'a': 5})
+ORDER = [old(1), old(2), old(3), old(4), old(5), old(6), old(7), old(8), old(9), old(10), old(12), canon, hbsong(False), ducks, old(11), rhody, susanna, longago, ode, old(14), old(15), hbsong(True)]
+UNIT = {1: 'Unit 1 · Roots: one key for every chord', 13: 'The end of Unit 1', 14: 'Unit 2 · Block chord: two keys together', 20: 'Unit 3 · The left hand joins the tune', 22: 'The last song: the same tune, a bigger left hand'}
 P = 1; n = len(ORDER)
 for i, d in enumerate(ORDER, 1):
     d.update(id=f'me{i}', lesson=i, label='End of Music Box 1' if i == n else f'Song {i}', page0=P)
@@ -87,8 +112,8 @@ rows = ''
 for i, d in enumerate(ORDER, 1):
     if i in UNIT: rows += f'<tr class="u"><td colspan="3">{UNIT[i]}</td></tr>'
     rows += f'<tr><td class="n">{i}</td><td><b>{d["title"]}</b></td><td>{d["gig"].get("today") or ""}</td></tr>'
-p1 = f'''<div class="kick">Start here</div><h1>Music Box 1</h1><p class="byl">Twenty songs, from one key to two</p>
-{ST.LT}<table class="ftb"><tr><th style="width:5%"></th><th style="width:60%">Song</th><th style="width:35%">Left-hand pattern</th></tr>{rows}</table>'''
+p1 = f'''<div class="kick">Start here</div><h1>Music Box 1</h1><p class="byl">Twenty-two songs, from one key to two</p>
+{ST.LT}<table class="ftb sm"><tr><th style="width:5%"></th><th style="width:60%">Song</th><th style="width:35%">Left-hand pattern</th></tr>{rows}</table>'''
 ST.save('me1.json', 'me0', 'Music Box 1', 'Start here', [p1], 0)
 def said(ns):   # [1,2,3,5,6] -> 'Songs 1 to 3, 5 and 6'
     runs = []

@@ -107,3 +107,7 @@ The bass ran at half speed. In the score the cello plays one note on every beat;
 Happy Birthday closes Unit 1 with Roots (Song 13) and closes the book with Block chord (Song 20, "Happy Birthday, Again").
 The whole tune is in the right hand (thumb on G); the old shared-hands version is not in the re-paced book. Canon stays as Song 12.
 20 songs, 29 pages.
+
+### Book 1 re-paced: two more Block chord songs (27 Nov 21:41)
+All My Little Ducklings (Song 14) and Oh! Susanna (Song 17), the same checked tunes as Music Box 2 Songs 1 and 2, now in letters
+with the two-key left hand. When Book 2 is re-paced, these two leave Book 2. 22 songs, 31 pages.
