@@ -270,7 +270,7 @@ json.dump(d, open('mb8.json', 'w'), ensure_ascii=False)
 # 12 Old MacDonald: the "moo moo here" middle added (pitches as at noobnotes.net: low so twice, then do; rhythm as it is sung), then the tune again: sixteen bars, the whole song.
 d = json.load(open('mb12.json')); g = d['gig']; A = [dict(b) for b in g['song_grid'][0]]
 g['song_grid'][1][3] = {'r': 'C - r <G.<G', 'l': 'C', 'w': 'O - - with.a'}
-g['song_grid'] += _bars([[('C C C <G.<G', 'C', 'moo moo here and.a'), ('C C C r', 'C', 'moo moo there, -'), ('C.C C C.C C', 'C', 'here.a moo, there.a moo,'), ('C.C C.C C C', 'C', 'ev.’ry where.a moo moo.')]])
+g['song_grid'] += _bars([[('C C C <G.<G', 'C', 'moo moo here and.a'), ('C C C r', 'C', 'moo moo there, -'), ('C.C C C.C C', 'C', 'here_a moo, there_a moo,'), ('C.C C.C C C', 'C', 'ev.’ry where_a moo moo.')]])
 A[0]['w'] = 'Old Mac- Don- ald'; A[1]['w'] = 'had a farm -'; A[3] = {'r': 'C - r r', 'l': 'C', 'w': 'O - - -'}; g['song_grid'].append(A)
 json.dump(d, open('mb12.json', 'w'), ensure_ascii=False)
 # 13 Happy Birthday: every pitch agrees with the ABC example at kareiku.github.io (an octave lower here, shared between the hands). Unchanged.
