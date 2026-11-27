@@ -14,6 +14,21 @@ public-domain melodies only. Report only clear problems: file, what is wrong, th
 
 ## Open
 
+### Note Writer Books 4 to 9 (keys spread over the series), self-audit of 26 Nov night (two fresh reviewers)
+
+Fixed in this build (`_workspace/note-writer/`, not committed)
+- [x] Key signatures ran into the clef and sharps interlocked: start further right (more after the bass clef), sharps 5.3 mm apart, flats 4.3 mm.
+- [x] Tune pages: a key signature's top sign and the stems hit the instruction above; stems touched the name boxes (one staff and grand staff): room computed from every stem and sign.
+- [x] Check-up tested only the last week's key: each row now in another key of the book.
+- [x] Steps-and-skips first note touched the key signature or the treble clef's curl; 4/4 touched the clefs on grand staves without a key signature.
+- [x] Book 8 week 8 REMEMBER ("twelve keys") came too early; Book 9 week 9 tune titled "in C"; Book 7 blurb and Book 6 week 6 REMEMBER corrected.
+- [x] Name boxes sat nearer the next staff than their own: room under each row of boxes.
+
+Her call (do not change until she answers)
+- [ ] Book 4 weeks 1 to 4: tunes titled "in D" (with accidentals) before D major is taught in Book 5.
+- [ ] Au clair de la lune is the "both staves" tune in many weeks (5 of 9 in Book 9). Vary it?
+- [ ] Hot Cross Buns quaver boxes: one row of 10 mm boxes with small gaps, or two staggered rows (both appear).
+
 ### Note Writer Books 2, 3, 4 (65 pages each), self-audit of 26 Nov (two fresh reviewers)
 
 Fixed in this build (`_workspace/note-writer/`, not committed)
@@ -68,10 +83,10 @@ Should fix (looks) — open, next build
 - [ ] **D-crotchet, D-semibreve, D-semiquaver** (old demo page only): the word label is cut off by the first circle.
 
 Her call
-- [ ] **LP-P4-0**: "only Middle C sits between the two staves": B and D sit in that gap too. Safer: "Middle C sits on its own line between the two staves"?
-- [ ] **LR-T1-7**: "one beam: quavers" is paired with just "two beams". Add ": semiquavers"?
-- [ ] **LR-T12-1**: the caption says "the orange note"; elsewhere the colour is called coral.
-- [ ] **LR-T3-0 / T3-1** and **LR-T2-5 / T2-6**: each pair shows almost the same picture. Keep both?
+- [x] (ab22689) **LP-P4-0**: "only Middle C sits between the two staves": B and D sit in that gap too. Safer: "Middle C sits on its own line between the two staves"? → Her 27 Nov: changed (picture and lesson audio).
+- [x] (ab22689) **LR-T1-7**: "one beam: quavers" is paired with just "two beams". Add ": semiquavers"? → Her 27 Nov: ": semiquavers" added.
+- [x] (ab22689) **LR-T12-1**: the caption says "the orange note"; elsewhere the colour is called coral. → Her 27 Nov: keep "orange".
+- [x] (ab22689) **LR-T3-0 / T3-1** and **LR-T2-5 / T2-6**: each pair shows almost the same picture. Keep both? → Her 27 Nov: keep both.
 
 ### Picture lesson, Bars and time to Before you play — self-audit of 26 Nov (119 pictures: first, middle and last frame; a fresh reviewer; sound not heard)
 

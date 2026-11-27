@@ -170,3 +170,155 @@ for i in range(10, 20):
     d = json.load(open(f'mb{i}.json')); d['gig']['shapes'] = 1
     if i == 10 and 'Look:' not in d['gig']['song_how']: d['gig']['song_how'] = d['gig']['song_how'].rstrip() + ' <b>Look:</b> behind each letter is a faint note. Its shape shows how long the note is.'
     json.dump(d, open(f'mb{i}.json', 'w'), ensure_ascii=False)
+
+# 26 Nov, her '마지막 두곡': The Blue Danube rewritten from the open score (Mutopia, Strauss Op. 314, first sixteen bars).
+# The two answering chords are written as their top note, an octave lower, and in their real rhythm: on beat 3, held into the next bar.
+d = json.load(open('mb18.json')); g = d['gig']
+def DB(r, c): return {'r': r, 'l': c, 'w': '- - -', **({'lp': {'C': 'C G G', 'G': 'G D D', 'Ce': 'C - -'}[c]} if c else {})}
+g['song_grid'] = [[DB('r r C', ''), DB('C E G', 'C'), DB('G - G', 'C'), DB('G - E', 'C')],
+                  [DB('E - C', 'C'), DB('C E G', 'C'), DB('G - G', 'C'), DB('G - F', 'G')],
+                  [DB('F - B,', 'G'), DB('B, D A', 'G'), DB('A - A', 'G'), DB('A - F', 'G')],
+                  [DB('F - B,', 'G'), DB('B, D A', 'G'), DB('A - A', 'G'), DB('A - E', 'C')],
+                  [dict(DB('E - -', 'Ce'), l='C')]]
+g['song_how'] = 'New: the waltz. The box names the chord: play it on ONE, then its other key twice. Oom-pah-pah. In the tune, a rising call is answered by two bell notes: each answer starts on beat 3 and rings on into the next bar.'
+g['r_cap'] = 'Thumb on middle C. B↓ is the key just below it: the thumb steps down. Finger 5 reaches up to A.'
+g['song_how'] = 'The waltz: the box names the chord. Play it on ONE, then its other key twice. In the tune, a rising call is answered by two bell notes that start on beat 3 and ring on.'
+flat = [b for ln in g['song_grid'] for b in ln]; g['song_grid'] = [flat[:5], flat[5:9], flat[9:13], flat[13:]]
+json.dump(d, open('mb18.json', 'w'), ensure_ascii=False)
+
+# ---- 27 Nov: one song at a time, each finished and checked (PLAN.md). Song 1.
+# Hot Cross Buns: checked against the Kodály Center song collection (song 845, from Heritage Songster, 1966):
+# tone set do re mi, form a a b a, motives "mi re do rest" and "do do re re" in quick pairs. So the fourth beat is a rest, not a held note.
+d = json.load(open('mb1.json')); g = d['gig']
+for ln in g['song_grid']:
+    for b in ln:
+        if b['r'] == 'E D C -': b['r'] = 'E D C r'
+g['today'] = 'Roots'
+g['song_how'] = 'Count out loud, 1 2 3 4. One letter, one box. A small circle is a rest: lift, and say the number without playing. A box split in two: two quick notes, “one-a, pen-ny”.'
+json.dump(d, open('mb1.json', 'w'), ensure_ascii=False)
+
+# Song 2, Mary Had a Little Lamb: bars 1-3 and 5-8 agree note for note with the Musica Viva transcription (via folktunefinder 174581).
+# Bar 4 there is E E E (an English three-note version); this book keeps the usual E G G, the version with G that pianochord.org describes (notes C D E G, 8 bars).
+d = json.load(open('mb2.json')); d['gig']['today'] = 'Roots'; json.dump(d, open('mb2.json', 'w'), ensure_ascii=False)
+
+# ---- Songs 3 to 7, finished and checked as one batch (her 27 Nov 00:56: five at a time)
+def _bars(rows): return [[{'r': r, 'l': l, 'w': w} for r, l, w in ln] for ln in rows]
+def _save(n, **kw):
+    d = json.load(open(f'mb{n}.json')); g = d['gig']
+    for k, v in kw.items(): g[k] = v
+    g['today'] = 'Roots'; json.dump(d, open(f'mb{n}.json', 'w'), ensure_ascii=False)
+# 3 Au Clair de la Lune: the whole song, A A B A. Checked against the analysis at bethsnotesplus.com (metre 4, form AABA,
+# A uses do re mi only, B uses so, la, ti, do re; half and whole notes). In B the tune walks below middle C: the left hand takes those notes.
+A3 = lambda w: [('C C C D', 'C', w[0]), ('E - D -', 'G', w[1]), ('C E D D', 'C', w[2]), ('C - - -', 'C', w[3])]
+_save(3, song_grid=_bars([A3(['Au clair de la', 'lu- - ne - ', 'mon a- mi Pier-', 'rot - - -']), A3(['Prê- te- moi ta', 'plu- - me -', 'pour é- crire un', 'mot - - -']),
+    [('D D D D', '', 'Ma chan- delle est'), ('<A - <A -', '', 'mor- - te -'), ('D C <B <A', '', 'je n’ai plus de'), ('<G - - -', '', 'feu - - -')],
+    A3(['Ou- vre- moi ta', 'por- - te -', 'pour l’a- mour de', 'Dieu - - -'])]))
+# 4 Lightly Row: all sixteen bars. Identical to the Essen collection's "Alles neu macht der Mai" (the same tune); bar 8 ends on E, the last bar on C.
+A4 = [('G E E -', 'C'), ('F D D -', 'G')]
+_save(4, song_grid=_bars([[(r, l, w) for (r, l), w in zip(A4 + [('C D E F', 'C'), ('G G G -', 'C')], ['Light- ly row -', 'light- ly row -', 'o’er the glass- y', 'waves we go -'])],
+    [(r, l, w) for (r, l), w in zip(A4 + [('C E G G', 'C'), ('E - r r', 'C')], ['Smooth- ly glide -', 'smooth- ly glide -', 'on the si- lent', 'tide - - -'])],
+    [('D D D D', 'G', 'Let the winds and'), ('D E F -', 'G', 'wa- ters be -'), ('E E E E', 'C', 'min- gled with our'), ('E F G -', 'C', 'mel- o- dy -')],
+    [(r, l, w) for (r, l), w in zip(A4 + [('C E G G', 'C'), ('C - r r', 'C')], ['Sing and float -', 'sing and float -', 'in our lit- tle', 'boat - - -'])]]))
+# 5 Ode to Joy: all sixteen bars, with the dotted rhythm at the end of each line. Identical to the Mutopia score (BeethovenLv/ode, hymn form), moved from G to C.
+# In bar 12 the tune dips to the G below middle C: the left hand plays it.
+_save(5, song_grid=_bars([[('E E F G', 'C', 'Joy- ful, joy- ful,'), ('G F E D', 'G', 'we a- dore thee,'), ('C C D E', 'C', 'God of glo- ry,'), ('E -.D D -', 'G', 'Lord -.of love; -')],
+    [('E E F G', 'C', 'hearts un- fold like'), ('G F E D', 'G', 'flowers be- fore thee,'), ('C C D E', 'C', 'o- pening to the'), ('D -.C C -', 'C', 'sun -.a- bove. -')],
+    [('D D E C', 'G', 'Melt the clouds of'), ('D E.F E C', 'G', 'sin and.- sad- ness;'), ('D E.F E D', 'G', 'drive the.- dark of'), ('C D <G -', 'C', 'doubt a- way; -')],
+    [('E E F G', 'C', 'Giv- er of im-'), ('G F E D', 'G', 'mor- tal glad- ness,'), ('C C D E', 'C', 'fill us with the'), ('D -.C C -', 'C', 'light -.of day! -')]]))
+# 6 Jingle Bells (the chorus): identical to the ABC transcription at pages.cpsc.ucalgary.ca once the two dotted notes are in (bars 3 and 5 of each half).
+d = json.load(open('mb6.json'))
+for ln in d['gig']['song_grid']:
+    for b in ln:
+        if b['r'] == 'E G C D': b['r'] = 'E G C -.D'; b['w'] = 'jin- gle all -.the'
+        if b['r'] == 'F F F F': b['r'] = 'F F F -.F'; b['w'] = 'oh what fun -.it'
+json.dump(d, open('mb6.json', 'w'), ensure_ascii=False); _save(6)
+# 7 Twinkle: identical to the ABC in "LaTeX for musicians" (CTAN), twelve bars. Nothing to change.
+_save(7)
+
+# ---- Songs 8 to 12
+def _tag(n, t):
+    d = json.load(open(f'mb{n}.json')); d['gig']['today'] = t; json.dump(d, open(f'mb{n}.json', 'w'), ensure_ascii=False)
+# 8 London Bridge: no open score reached yet (27 Nov); unchanged and NOT yet checked.
+_tag(8, 'Roots')
+# 9 When the Saints: checked against the transcription at folktunefinder 125223. One bar was wrong: after "number" the F is held and the pick-up is E F, not C E F.
+d = json.load(open('mb9.json')); b = d['gig']['song_grid'][3][0]; assert b['r'] == 'r C E F'; b['r'] = '- - E F'; b['w'] = '- - when the'; json.dump(d, open('mb9.json', 'w'), ensure_ascii=False); _tag(9, 'Roots')
+# 10 Are You Sleeping? (Frère Jacques): identical to the transcription at folktunefinder 143754. Nothing to change.
+_tag(10, 'Roots')
+# 11 Camptown Races: verse identical to folktunefinder 145383; the chorus added from the same source, so the song is whole (sixteen bars).
+d = json.load(open('mb11.json')); g = d['gig']
+g['song_grid'] += _bars([[('C -.C E G', 'C+G', 'Goin’ -.to run all'), ("C' - - -", 'C+G', 'night! - - -'), ("A -.A C' A", 'C+F', 'Goin’ -.to run all'), ('G - - -', 'C+G', 'day! - - -')],
+                         [('G G E.E G.G', 'C+G', 'I’ll bet my.mon ey.on the'), ('A G E -', 'C+G', 'bob- tail nag, -'), ('D D E D', 'D+G', 'some- bo- dy bet on the'.replace('bet on the', 'bet')[:99]), ('C - - -', 'C+G', 'bay. - - -')]])
+g['song_grid'][3][2]['w'] = 'some- bo- dy bet'
+g['song_grid'][3][0]['w'] = 'I’ll bet my.mo ney.on'; g['song_grid'][3][1]['w'] = 'the bobtail nag -'; g['song_grid'][3][2]['w'] = 'some- bo- dy bet'; g['song_grid'][3][3]['w'] = 'on the bay. - -'.replace('on the bay.', 'bay.')
+g['r_cap'] = 'Thumb on D. In line 3 the hand reaches up to the high C, marked C↑.'
+json.dump(d, open('mb11.json', 'w'), ensure_ascii=False); _tag(11, 'Block chord')
+# 12 Old MacDonald: identical to the Musica Viva transcription (trillian.mit.edu mirror) once the rests are in: "O" lasts two beats, then a rest.
+d = json.load(open('mb12.json'))
+for ln in d['gig']['song_grid']:
+    for b in ln:
+        if b['r'] == 'C - - <G': b['r'] = 'C - r <G'
+        if b['r'] == 'C - - -': b['r'] = 'C - r r'
+json.dump(d, open('mb12.json', 'w'), ensure_ascii=False); _tag(12, 'Roots')
+
+# ---- 27 Nov, second sitting: Song 8 checked, Song 12 made whole, Songs 13 to 17
+# 8 London Bridge: every pitch agrees with the letter notes at noobnotes.net; "Lon-don" is a long note and a short one, so bars 1 and 5 get their dot.
+d = json.load(open('mb8.json'))
+for ln in d['gig']['song_grid']:
+    for b in ln:
+        if b['r'] == 'G A G F': b['r'] = 'G -.A G F'; b['w'] = 'Lon- -.don bridge is'
+json.dump(d, open('mb8.json', 'w'), ensure_ascii=False)
+# 12 Old MacDonald: the "moo moo here" middle added (pitches as at noobnotes.net: low so twice, then do; rhythm as it is sung), then the tune again: sixteen bars, the whole song.
+d = json.load(open('mb12.json')); g = d['gig']; A = [dict(b) for b in g['song_grid'][0]]
+g['song_grid'][1][3] = {'r': 'C - r <G.<G', 'l': 'C', 'w': 'O - - with.a'}
+g['song_grid'] += _bars([[('C C C <G.<G', 'C', 'moo moo here and.a'), ('C C C r', 'C', 'moo moo there, -'), ('C.C C C.C C', 'C', 'here.a moo, there.a moo,'), ('C.C C.C C C', 'C', 'ev.’ry where.a moo moo.')]])
+A[0]['w'] = 'Old Mac- Don- ald'; A[1]['w'] = 'had a farm -'; A[3] = {'r': 'C - r r', 'l': 'C', 'w': 'O - - -'}; g['song_grid'].append(A)
+json.dump(d, open('mb12.json', 'w'), ensure_ascii=False)
+# 13 Happy Birthday: every pitch agrees with the ABC example at kareiku.github.io (an octave lower here, shared between the hands). Unchanged.
+# 14 Yankee Doodle: verse identical to folktunefinder 35660 (Chris Falt's transcription); the chorus added from the same source: sixteen bars.
+d = json.load(open('mb14.json')); g = d['gig']
+g['song_grid'] += _bars([[('A -.B A G', '', 'Yan- -.kee Doo- dle'), ("A B C' A", '', 'keep it up, -'), ('G -.A G F', '', 'Yan- -.kee Doo- dle'), ('E - G -', '', 'dan- - dy, -')],
+                         [('A -.B A G', '', 'mind -.the mu- sic'), ("A B C' A", '', 'and the step and'), ("G C' B D'", '', 'with the girls be'), ("C' - C' -", '', 'han- - dy. -')]])
+json.dump(d, open('mb14.json', 'w'), ensure_ascii=False)
+# 15 Amazing Grace: pitches agree with the Mutopia score (a pipe setting, so its rhythm is freer). Unchanged.
+# 16 Goin' Home: no open score found; unchanged and NOT yet checked.
+# 17 This Old Man: rewritten from folktunefinder 3787. The "with a" pick-up belongs at the end of bar 4, and the last bar has three notes, not four.
+d = json.load(open('mb17.json')); g = d['gig']
+T = [[('G E G -', 'C', 'C G C G', 'This old man, -'), ('G E G -', 'C', 'C G C G', 'he played one, -')],
+     [('A G F E', 'F', 'F C F C', 'he played knick- knack'), ('D E F E.F', 'G', 'G D G D', 'on my thumb; with.a')],
+     [('G C C.C C', 'C', 'C G C G', 'knick- knack pad.dy whack,'), ('C.D E.F G -', 'C', 'C G C G', 'give.a dog.a bone, -')],
+     [('G D D F', 'G', 'G D G D', 'this old man came'), ('E D C -', 'C', 'C - - -', 'roll- ing home. -')]]
+g['song_grid'] = [[{'r': r, 'l': l, 'lp': lp, 'w': w} for r, l, lp, w in ln] for ln in T]
+json.dump(d, open('mb17.json', 'w'), ensure_ascii=False)
+for n, t in ((16, 'Roots'), (17, 'Zigzag')): _tag(n, t)
+# Yankee Doodle chorus: the right hand moves up, so these bars carry their own fingers
+d = json.load(open('mb14.json')); g = d['gig']
+for b, f in zip(g['song_grid'][2] + g['song_grid'][3], ['2 -.3 2 1', '2 3 4 2', '3 -.4 3 2', '1 - 3 -', '2 -.3 2 1', '2 3 4 2', '1 4 3 5', '4 - 4 -']): b['f'] = f
+g['r_cap'] = 'Thumb on middle C: both thumbs share it. For lines 3 and 4 the right hand moves up, thumb on G; a small arrow ↑ marks the high C and D.'
+g['song_how'] = 'Both thumbs on middle C. Count 1 2 3 4 and keep marching: the hands take turns. Lines 3 and 4 are the chorus, all in the right hand, higher up: there B is the key above A.'
+json.dump(d, open('mb14.json', 'w'), ensure_ascii=False)
+
+# ---- 27 Nov 12:31-12:39, her '왼손에 치던거에 반주만 얹으면 되는거 아니었나' and '1': Songs 13 to 15 keep their layout (the tune shared between the hands,
+# both thumbs on middle C). Only this is added: in a bar where the left hand has no tune on beat 1, it holds one key from its own hand position,
+# G under a C or G chord, A under an F chord. (The version with the whole tune in the right hand is kept in mbox-rh-only-13-15.py for a later book.)
+def _lay(n, notes, cap, how):
+    d = json.load(open(f'mb{n}.json')); g = d['gig']; flat = [b for ln in g['song_grid'] for b in ln]; assert len(flat) == len(notes), (n, len(flat), len(notes))
+    for b, x in zip(flat, notes):
+        assert not (x and b['r'].split()[0].startswith('<')), (n, b['r'])
+        b['l'] = x
+    g['tool_cap'] = g['tool_cap'].rstrip() + ' ' + cap; g['song_how'] = how; g.pop('today', None)
+    json.dump(d, open(f'mb{n}.json', 'w'), ensure_ascii=False)
+CAP = 'When it has no tune to play, it holds G (or A).'
+_lay(13, ['', '', '', '', 'G', 'G', '', 'G', 'G'], CAP, 'New: a song in three. The tune walks from hand to hand; L.H. means the left hand plays it. A boxed letter is a key the left hand holds under the tune.')
+_lay(14, ['G', 'G', 'G', 'G', 'G', 'A', '', 'G', 'A', 'A', 'G', 'G', 'A', 'A', 'G', 'G'], CAP, 'Both thumbs on middle C; the hands take turns. A boxed letter is a key the left hand holds under the tune. Lines 3 and 4 are the chorus, higher up: there B is the key above A.')
+# 15 Amazing Grace (her 27 Nov 14:05: a bass C with G and A, three keys): the left hand sits on low C, G and A. G and A are its tune notes, as before;
+# C is the bass on beat 1 under the C and F bars, G under the G bars. The song ends on the bass C.
+d = json.load(open('mb15.json')); g = d['gig']; flat = [b for ln in g['song_grid'] for b in ln]
+for b, x in zip(flat, ['', 'C', 'C', 'C', '', 'C', 'C', 'G', 'G', 'C', 'C', 'C', '', 'C', 'G', 'C']):
+    assert not (x and b['r'].split()[0].startswith('<')), b['r']
+    b['l'] = x
+assert len(flat) == 16
+g['fmap'] = {'c': 5, 'g': 2, 'a': 1}; g['today'] = 'Roots'
+g['tool_cap'] = 'Finger 5 on the low C, 2 on G, thumb on A. C is the bass; G and A join in the tune.'
+g['r_cap'] = 'Thumb on middle C, 5 on G. No F in this song.'
+g['song_how'] = 'Slow, in three. A line holds the note; it can carry on into the next bar. A boxed letter is the bass: play it on beat 1 and let it ring.'
+json.dump(d, open('mb15.json', 'w'), ensure_ascii=False)

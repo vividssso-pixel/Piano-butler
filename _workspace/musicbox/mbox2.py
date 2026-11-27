@@ -34,7 +34,7 @@ song('All My Little Ducklings', 4, 'heads',
 P4 = B('r r r C.D', f='- - - 1.2', pick=1)
 song('Oh! Susanna', 4, 'heads',
  'One new chord: <b>G</b>. And the song starts <b>before</b> bar 1, with two quick notes on beat 4. Count 1 2 3 out loud, then play C D on <i>four-and</i>.',
- 'New: the G chord, B D G (5 3 1). From the C chord, the two lower fingers each step down one key. The thumb stays on G.',
+ 'New: the G chord, B D G (5 3 1). From the C chord, the two lower fingers step down one key each; the thumb stays.',
  'Thumb on middle C. Reach finger 5 to A, as in Song 1.',
  'Two notes joined by a beam share one box: say <i>four-and</i>. A dot after a note makes it longer: hold it into the next box, and the small note after it comes on <i>and</i>.',
  'you can change from C to G and back without looking down.',
@@ -145,9 +145,9 @@ song('Daisy Bell', 3, 'staff',
 # 9
 song('Minuet in G', 3, 'staff',
  'Until now the left hand played chords. Today it plays <b>a tune of its own</b>, one long note in a bar, while the right hand dances on top. Two tunes at once: this is how Bach wrote.',
- 'Fingers 5 4 3 2 1 on G A B C D. Bar 1: the G chord for two beats, then A. Now and then the little finger reaches below G: for F♯, and for a low D or G. An arrow ↓ marks the low one.',
+ 'Fingers 5 4 3 2 1 on G A B C D. Bar 1: the G chord, then A. Now and then finger 5 reaches below G; an arrow ↓ marks a low key.',
  'Start with finger 5 on high D, thumb on G. In bar 3 the thumb moves up to C; in bar 4 it reaches back down to G.',
- 'Beamed notes are quick: two in one beat. Learn the right hand two bars at a time. Bars 1 and 2 ask a question; bars 3 and 4 answer it one step higher. Lines 3 and 4 are lines 1 and 2 again with a new ending. The second page is the second half: it travels away from G and comes home. Choose your own fingers there and pencil them in.',
+ 'Beamed notes are quick: two in one beat. Learn the right hand two bars at a time. Bars 1 and 2 ask a question; bars 3 and 4 answer it one step higher. Lines 3 and 4 are lines 1 and 2 with a new ending. The second half travels away from G and comes home; pencil in your own fingers there.',
  'you can play the left hand of lines 1 and 2 without looking at the page.',
  ['d', 8, 'x . . 5 4 3 2 1', {'2': ' '}], ['f', 9, '. 1 2 3 4 5 x . x', {'0': ' ', '7': ' '}],
  [[B("D' G.A B.C'", lp='G+B+D - A', ch='G', f='5 1.2 3.4'), B("D' G G", lp='B - -', f='5 1 1'), B("E' C'.D' E'.F#'", lp='C - -', ch='C', f='3 1.2 3.4'), B("G' G G", lp='B - -', ch='G', f='5 1 1')],
@@ -265,6 +265,37 @@ WAYS = {
 }
 GROUP = {12: [2, 2, 2, 2, 2, 2], 7: [6, 6, 6, 6], 10: [3, 3, 3, 3, 3, 2], 11: [4, 4, 1], 13: [3, 3, 3, 3, 3, 3, 3, 2]}
 SPLIT = {8: 4, 9: 3, 10: 3, 12: 4, 13: 3}; P0 = 3
+# ---- patterns: every song is also played in a pattern learnt earlier, and each new pattern goes back onto an older song
+VO = {'C': {'C': 'C E G', 'F': 'C F A', 'G': 'B D G', 'Am': 'C E A', 'Dm': 'D F A', 'Em': 'B E G', 'E': 'B E G#'},
+      'G': {'G': 'G B D', 'C': 'G C E', 'D': 'F# A D', 'Em': 'G B E'},
+      'Am': {'Am': 'A C E', 'C': 'G C E', 'G': 'G B D', 'F': 'A C F', 'E': 'G# B E'}}
+HOME = {6: 'G', 8: 'G', 9: 'G', 10: 'Am', 12: 'Am', 13: 'Am'}
+def pat(name, chord, m, home):
+    v = VO[home][chord].split(); root = chord[0]; fifth = 'CDEFGAB'[('CDEFGAB'.index(root) + 4) % 7]
+    return {'Roots': {3: f'{root} - -', 4: f'{root} - - -', 6: f'{root} - - - - -'},
+            'Block chord': {3: f'{"+".join(v)} - -', 4: f'{"+".join(v)} - - -', 6: f'{"+".join(v)} - - - - -'},
+            'Waltz style': {3: f'{v[0]} {v[1]}+{v[2]} {v[1]}+{v[2]}', 4: f'{v[0]} {v[1]}+{v[2]} {v[0]} {v[1]}+{v[2]}', 6: f'{v[0]} - - {v[1]}+{v[2]} - -'},
+            'Broken chord': {3: f'{v[0]} {v[1]} {v[2]}', 4: f'{v[0]} {v[1]} {v[2]} {v[1]}', 6: f'{v[0]} {v[1]} {v[2]} {v[0]} {v[1]} {v[2]}'},
+            'Zigzag': {3: f'{root} {fifth} {fifth}', 4: f'{root} {fifth} {root} {fifth}', 6: f'{root} - - {fifth} - -'}}[name][m]
+TODAY = {1: 'Block chord', 2: 'Block chord', 3: 'Block chord', 4: 'Block chord', 5: 'Waltz style', 6: 'Block chord', 7: 'Broken chord', 8: 'Broken chord', 9: 'A bass line', 10: 'Block chord', 11: 'Roots', 12: 'Zigzag', 13: 'Broken chord', 14: 'Waltz style'}
+OLDWAY = {1: 'Roots', 2: 'Roots', 3: 'Roots', 4: 'Roots', 5: 'Block chord', 6: 'Waltz style', 7: 'Block chord', 8: 'Waltz style', 9: 'Block chord', 10: 'Broken chord', 11: 'Block chord', 12: 'Block chord', 13: 'Block chord', 14: 'Broken chord'}
+BACK = {2: (1, 'Block chord'), 3: (1, 'Block chord'), 4: (2, 'Block chord'), 5: (3, 'Waltz style'), 6: (5, 'Block chord'), 7: (5, 'Broken chord'), 8: (6, 'Broken chord'), 9: (7, 'Waltz style'), 10: (7, 'Block chord'), 11: (8, 'Roots'), 12: (10, 'Zigzag'), 13: (11, 'Broken chord'), 14: (12, 'Waltz style')}
+HOWP = {'Roots': 'One key: the letter in the chord’s name. Hold it.', 'Block chord': 'All three keys of the chord together. Hold them.', 'Waltz style': 'Bottom key, then the top two together.', 'Broken chord': 'One key at a time: bottom, middle, top.', 'Zigzag': 'Bottom and top of the chord, rocking. No middle key.'}
+def exbar(k, name):   # the first whole bar of song k that carries a chord this pattern can use, with its left hand rewritten
+    s = S[k - 1]; home = HOME.get(k, 'C')
+    for strict in (True, False):
+      for ln in s['lines']:
+        for b in ln:
+            c = (b.get('ch') or '').split()
+            if b.get('pick') or not c or c[0] not in VO[home] or (strict and any(x != '-' for x in c[1:])): continue
+            nb = {'r': b['r'], 'w': '', 'ch': c[0], 'lp': pat(name, c[0], s['beats'], home)}
+            return {'bar': nb, 'stage': s['stage'], 'unit': s['unit'], 'beats': s['beats'], 'key': {6: 1, 8: 1, 9: 1}.get(k, 0), 'pat': name, 'how': HOWP[name]}
+    raise KeyError((k, name))
+for i, s in enumerate(S, 1):
+    ex = [dict(exbar(i, OLDWAY[i]), what='this song, bar ' + 'by an older way')]
+    if i in BACK: k, nm = BACK[i]; ex.append(dict(exbar(k, nm), what=f'Song {k}, {S[k - 1]["title"]}'))
+    ex[0]['what'] = 'this song, an older way'
+    s['ex'] = ex
 for i, s in enumerate(S, 1):
     if i in GROUP:
         flat = [b for ln in s['lines'] for b in ln]; s['lines'] = []
@@ -276,7 +307,7 @@ for i, s in enumerate(S, 1):
     g['split'] = SPLIT.get(i, 99); d['page0'] = P0; P0 += 1 + -(-len(s['lines']) // SPLIT.get(i, 99))
     for k in ('shapes', 'ways', 'ways2', 'lkb_from'): g.pop(k, None)
     g.update(mb2=s['stage'], unit=s['unit'], job=s['job'], tool_cap=s['lcap'], r_cap=s['rcap'], song_how=s['how'], ready=s['ready'], lkb=s['lkb'], rkb=s['rkb'],
-             song_grid=s['lines'], ways_txt=WAYS[i], ticks=s['ticks'], simple=1, grid=1, song_title=s['title'], src=s['src'])
+             song_grid=s['lines'], ways_txt=WAYS[i], ways_ex=s['ex'], today=TODAY[i], ticks=s['ticks'], simple=1, grid=1, song_title=s['title'], src=s['src'])
     if last: g['ready_label'] = 'You have finished Music Box 2 when'
     g['key'] = {6: 1, 8: 1, 9: 1}.get(i, 0)
     if s['counts']: g['counts'] = s['counts']
