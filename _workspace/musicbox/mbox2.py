@@ -182,17 +182,19 @@ song('Greensleeves', 6, 'bare',
  unit='e', src='Mutopia Project (Greensleeves, soprano), verse and chorus, moved from E minor to A minor', composer='Traditional, England, 1500s')
 
 # 11
+# 27 Nov: the bass ran at half speed (two notes a bar). In the score the cello plays a crotchet on every beat, d a b fis | g d g a,
+# one bass note under each note of the violin's first phrase. Fixed: four bass notes a bar.
 song('Canon', 4, 'bare',
  'Eight bass notes that go <b>round and round</b>: C G A E, F C F G. The whole piece is built on them. Now only the first note of each line has a letter.',
- 'One key at a time, two beats each. Say the eight letters until you know them by heart; then your eyes are free for the right hand.',
+ 'One key on every beat. Say the eight letters until you know them by heart; then your eyes are free for the right hand.',
  'Line 1: finger 5 on high E, walking down. The numbers show where the hand moves. Line 2 is the same bass with quick notes on top: choose your own fingers there, and pencil them in.',
  'The coral names show the chord each bass note belongs to. Am and Em are <b>minor</b> chords: the darker cousins of C and G. You will use them in the last song.',
  'the left hand can go round the eight notes while you talk.',
  ['c', 6, '5 . 3 2 1 x'], ['c', 10, 'x x x x x x x x x x', None, 280],
- [[B("E' D' C' B", lp='C - G -', ch='C - G -', f='5 4 3 2'), B('A G A B', lp='A - E -', ch='Am - Em -', f='2 1 2 3')],
-  [B("C' B A G", lp='F - C -', ch='F - C -', f='4 3 2 1', show='C'), B('F E F D', lp='F - G -', ch='F - G -', f='3 2 3 1')],
-  [B('C.E G.F E.C E.D', lp='C - G -', ch='C - G -', f='1.3 5.4 3.1 3.2', show='C'), B('C.A, C.G F.A G.F', lp='A - E -', ch='Am - Em -')],
-  [B("E.C D.B C'.E' G'.G", lp='F - C -', ch='F - C -', show='E'), B("A.F G.E C.C' C'", lp='F - G -', ch='F - G -')],
+ [[B("E' D' C' B", lp='C G A E', ch='C G Am Em', f='5 4 3 2'), B('A G A B', lp='F C F G', ch='F C F G', f='2 1 2 3')],
+  [B("C' B A G", lp='C G A E', ch='C G Am Em', f='4 3 2 1', show='C'), B('F E F D', lp='F C F G', ch='F C F G', f='3 2 3 1')],
+  [B('C.E G.F E.C E.D', lp='C G A E', ch='C G Am Em', f='1.3 5.4 3.1 3.2', show='C'), B('C.A, C.G F.A G.F', lp='F C F G', ch='F C F G')],
+  [B("E.C D.B C'.E' G'.G", lp='C G A E', ch='C G Am Em', show='E'), B("A.F G.E C.C' C'", lp='F C F G', ch='F C F G')],
   [B('C - - -', l=Cc, ch='C', f='1', show='C')]],
  src='Mutopia Project (Canon per 3 violini e basso), bars 3 to 10, moved from D to C', composer='Johann Pachelbel, late 1600s')
 

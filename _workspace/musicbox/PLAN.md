@@ -68,3 +68,37 @@ A ladder from a complete beginner to (a) playing real classical pieces from norm
 lesson.py (renderer; GRID2 is Music Box 2+), mbox.py (Book 1 data), mbox2.py + mbfront2.py (Book 2),
 conv.py + mbox3.py + mbfront3.py (Book 3), verify2.py / verify3.py (+ reports), layout.js, align.js, build.sh.
 Build: `bash build.sh mcN` (Book 2), `mdN` (Book 3); every page must give overflow 0, clash 0, alignment 0, layout 0.
+
+## Decisions of 27 Nov (afternoon)
+
+### The story thread (her 27 Nov 14:40). All three are DRAFT until she confirms the wording.
+1. First page of each book: one line and a torn piece of the letter. The lower staff is empty. The notes on the upper staff are
+   placeholders, never the letter's real notes.
+2. Last page of each book: the pattern card, "Returned: Roots." and so on, as a revision table.
+3. Chord words where a minor chord is met. ACE only where A, C, E lie in that order (Book 2, Greensleeves). BEG and FAD always
+   with "turn the letters round" (Book 2, Daisy Bell and Twinkle, Now). FACE and CAGE only in the seventh-chord book (Book 4).
+Not used: a caption on Song 1; the "Not yet, Miss Clara" lines (on hold until the Pitch trial); "the tune steps down into the
+King's rooms"; the letter's score or words anywhere, also not as a last song; a birthday concert; the pawn-to-queen plot.
+The student is always "you". Clara is a character the student meets.
+All of it lives in one file, mbstory.py, so a wording change or a removal is one edit. Run mball.sh to regenerate everything.
+
+### Reserved place for the letter's left hand
+When the letter is confirmed, its two-note shapes on G, C and D go into Book 2, where G first becomes home
+(now Song 6, Good King Wenceslas: G, C and D chords). Nothing is printed there yet.
+
+### Last song of every book
+Happy Birthday, not tied to the letter. The unit-end variation tune (Canon or Twinkle) is still open.
+
+### Book 1, Song 16 Goin' Home
+Pitches match two transcriptions. The rhythm was even crotchets and is now long-short as in the Largo theme. Pattern tag: Zigzag (slow).
+
+### Book 1, re-paced: a second version to compare (her 27 Nov 15:03, 'build it by your own decisions and show me')
+music-box-1-repaced-draft.pdf, made by mbook1.py (ids me0..me20). The current book (mb*.json) is untouched until she chooses.
+Unit 1 Roots: Songs 1-11 (the old 1-10 and Old MacDonald). End of Unit 1: Canon, one root under every note.
+Unit 2 Block chord (two keys): Camptown Races, Go Tell Aunt Rhody, Long, Long Ago, Ode to Joy again.
+Unit 3 the left hand joins the tune: Yankee Doodle, Amazing Grace. Last song: Happy Birthday. Then the pattern card.
+Moved out for later books: Goin' Home and This Old Man (Book 3, Zigzag), The Blue Danube (Book 2, Waltz style), Twinkle, Now.
+28 pages. The target of 36-40 needs about four more songs.
+
+### Book 2, Song 11 Canon: bass corrected
+The bass ran at half speed. In the score the cello plays one note on every beat; now four bass notes a bar.
