@@ -259,3 +259,40 @@ for ln in d['gig']['song_grid']:
         if b['r'] == 'C - - <G': b['r'] = 'C - r <G'
         if b['r'] == 'C - - -': b['r'] = 'C - r r'
 json.dump(d, open('mb12.json', 'w'), ensure_ascii=False); _tag(12, 'Roots')
+
+# ---- 27 Nov, second sitting: Song 8 checked, Song 12 made whole, Songs 13 to 17
+# 8 London Bridge: every pitch agrees with the letter notes at noobnotes.net; "Lon-don" is a long note and a short one, so bars 1 and 5 get their dot.
+d = json.load(open('mb8.json'))
+for ln in d['gig']['song_grid']:
+    for b in ln:
+        if b['r'] == 'G A G F': b['r'] = 'G -.A G F'; b['w'] = 'Lon- -.don bridge is'
+json.dump(d, open('mb8.json', 'w'), ensure_ascii=False)
+# 12 Old MacDonald: the "moo moo here" middle added (pitches as at noobnotes.net: low so twice, then do; rhythm as it is sung), then the tune again: sixteen bars, the whole song.
+d = json.load(open('mb12.json')); g = d['gig']; A = [dict(b) for b in g['song_grid'][0]]
+g['song_grid'][1][3] = {'r': 'C - r <G.<G', 'l': 'C', 'w': 'O - - with.a'}
+g['song_grid'] += _bars([[('C C C <G.<G', 'C', 'moo moo here and.a'), ('C C C r', 'C', 'moo moo there, -'), ('C.C C C.C C', 'C', 'here.a moo, there.a moo,'), ('C.C C.C C C', 'C', 'ev.’ry where.a moo moo.')]])
+A[0]['w'] = 'Old Mac- Don- ald'; A[1]['w'] = 'had a farm -'; A[3] = {'r': 'C - r r', 'l': 'C', 'w': 'O - - -'}; g['song_grid'].append(A)
+json.dump(d, open('mb12.json', 'w'), ensure_ascii=False)
+# 13 Happy Birthday: every pitch agrees with the ABC example at kareiku.github.io (an octave lower here, shared between the hands). Unchanged.
+# 14 Yankee Doodle: verse identical to folktunefinder 35660 (Chris Falt's transcription); the chorus added from the same source: sixteen bars.
+d = json.load(open('mb14.json')); g = d['gig']
+g['song_grid'] += _bars([[('A -.B A G', '', 'Yan- -.kee Doo- dle'), ("A B C' A", '', 'keep it up, -'), ('G -.A G F', '', 'Yan- -.kee Doo- dle'), ('E - G -', '', 'dan- - dy, -')],
+                         [('A -.B A G', '', 'mind -.the mu- sic'), ("A B C' A", '', 'and the step and'), ("G C' B D'", '', 'with the girls be'), ("C' - C' -", '', 'han- - dy. -')]])
+json.dump(d, open('mb14.json', 'w'), ensure_ascii=False)
+# 15 Amazing Grace: pitches agree with the Mutopia score (a pipe setting, so its rhythm is freer). Unchanged.
+# 16 Goin' Home: no open score found; unchanged and NOT yet checked.
+# 17 This Old Man: rewritten from folktunefinder 3787. The "with a" pick-up belongs at the end of bar 4, and the last bar has three notes, not four.
+d = json.load(open('mb17.json')); g = d['gig']
+T = [[('G E G -', 'C', 'C G C G', 'This old man, -'), ('G E G -', 'C', 'C G C G', 'he played one, -')],
+     [('A G F E', 'F', 'F C F C', 'he played knick- knack'), ('D E F E.F', 'G', 'G D G D', 'on my thumb; with.a')],
+     [('G C C.C C', 'C', 'C G C G', 'knick- knack pad.dy whack,'), ('C.D E.F G -', 'C', 'C G C G', 'give.a dog.a bone, -')],
+     [('G D D F', 'G', 'G D G D', 'this old man came'), ('E D C -', 'C', 'C - - -', 'roll- ing home. -')]]
+g['song_grid'] = [[{'r': r, 'l': l, 'lp': lp, 'w': w} for r, l, lp, w in ln] for ln in T]
+json.dump(d, open('mb17.json', 'w'), ensure_ascii=False)
+for n, t in ((16, 'Roots'), (17, 'Zigzag')): _tag(n, t)
+# Yankee Doodle chorus: the right hand moves up, so these bars carry their own fingers
+d = json.load(open('mb14.json')); g = d['gig']
+for b, f in zip(g['song_grid'][2] + g['song_grid'][3], ['2 -.3 2 1', '2 3 4 2', '3 -.4 3 2', '1 - 3 -', '2 -.3 2 1', '2 3 4 2', '1 4 3 5', '4 - 4 -']): b['f'] = f
+g['r_cap'] = 'Thumb on middle C: both thumbs share it. For lines 3 and 4 the right hand moves up, thumb on G; a small arrow ↑ marks the high C and D.'
+g['song_how'] = 'Both thumbs on middle C. Count 1 2 3 4 and keep marching: the hands take turns. Lines 3 and 4 are the chorus, all in the right hand, higher up: there B is the key above A.'
+json.dump(d, open('mb14.json', 'w'), ensure_ascii=False)
