@@ -322,3 +322,14 @@ g['tool_cap'] = 'Finger 5 on the low C, 2 on G, thumb on A. C is the bass; G and
 g['r_cap'] = 'Thumb on middle C, 5 on G. No F in this song.'
 g['song_how'] = 'Slow, in three. A line holds the note; it can carry on into the next bar. A boxed letter is the bass: play it on beat 1 and let it ring.'
 json.dump(d, open('mb15.json', 'w'), ensure_ascii=False)
+# 16 Goin' Home (27 Nov): pitches identical to two transcriptions (flutetree.org songbook, ABC, Largo theme; carvedculture letter notes).
+# The rhythm was wrong: the book had four even notes where the theme is long-short (dotted crotchet, quaver). Fixed from the flutetree ABC:
+# c3 e e4 | c3 B A4 | B3 c e3 c | B8 || c3 e e4 | c3 B A4 | B2 c2 B3 A | A8, moved to C. The left hand rocks bottom, top: a slow Zigzag.
+d = json.load(open('mb16.json')); g = d['gig']
+new = [[('E -.G G -', 'Go- -.in’ home -'), ('E -.D C -', 'go- -.in’ home -'), ('D -.E G -.E', 'I’m -.a go- -.in’'), ('D - - -', 'home - - -')],
+       [('E -.G G -', 'Qui- -.et- like -'), ('E -.D C -', 'some -.still day -'), ('D E D -.C', 'I’m jes’ go- -.in’'), ('C - - -', 'home - - -')]]
+for ln, nl in zip(g['song_grid'], new):
+    assert len(ln) == len(nl)
+    for b, (r, w) in zip(ln, nl): b['r'] = r; b['w'] = w
+g['today'] = 'Zigzag'
+json.dump(d, open('mb16.json', 'w'), ensure_ascii=False)
