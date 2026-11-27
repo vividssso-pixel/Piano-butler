@@ -38,8 +38,8 @@ for key,nm in (('beginner','Beginner'),('prelim','Prelim'),('grade1','Grade 1'),
 films=sorted(glob.glob(B+'/5 Level books/*.mp4'))+sorted(glob.glob(B+'/5 Level books/films/*.mp4'))
 filmlinks=''.join(f'<a href="{E_(os.path.relpath(f,B))}" target="_blank">{E_(nice(os.path.basename(f)))} (film)</a>' for f in films)
 xx=[]
-for f,topic,title,note,tid in (('Whole books (later)/scales-and-chords-book-1-letter-version.pdf','Book','Scales and Chords, Book 1','Pieces 0 to 12: major scales, harmonic minors, thirds, major and minor chords, I IV V. Ends with the letter to play. Waiting for your check.','xx-scalesL1'),
-    ('Whole books (later)/scales-and-chords-book-2-letter-version.pdf','Book','Scales and Chords, Book 2','Pieces 13 to 22: natural and melodic minor, diminished, augmented, sevenths, words that are chords. Waiting for your check.','xx-scalesL2'),
+for f,topic,title,note,tid in (('Whole books (later)/scales-and-chords-book-1.pdf','Book','Scales and Chords, Book 1','Five fingers, all major scales, harmonic minors, thirds, chords, arpeggios. Right and left hand.','xx-sc1'),
+    ('Whole books (later)/scales-and-chords-book-2.pdf','Book','Scales and Chords, Book 2','Natural and melodic minors, diminished, augmented, sevenths, chords of the key.','xx-sc2'),
     ('Whole books (later)/the-letter-on-one-page.pdf','Story','The letter, on one page','The story thread in one page: what it is, what each part gives back, three rules.','xx-story'),
     ('Whole books (later)/claras-letter-draft.pdf','Story','Clara’s Letter (for your decision)','The letter after each part, with its one moment. 12 pages.','xx-letterpack'),
     ('Where do I start - the Handbook check.pdf','Free','Where do I start? The Handbook check','A short check that points to the right part of the Handbook.','xx-check')):
@@ -48,6 +48,8 @@ for f,topic,title,note,tid in (('Whole books (later)/scales-and-chords-book-1-le
 old=[]
 for f,topic,title,note,tid in (('Whole books (later)/scale-and-chord-book-draft.pdf','Replaced','Scales and Chords, Book 1 (Secret Files)','The first frame. Replaced by the letter version.','xx-scales'),
     ('Whole books (later)/scale-and-chord-book-2-draft.pdf','Replaced','Scales and Chords, Book 2 (Secret Files)','The first frame. Replaced by the letter version.','xx-scales2'),
+    ('Whole books (later)/scales-and-chords-book-1-letter-version.pdf','Replaced','Scales and Chords 1 (letter version)','The story frame. Replaced by the clean book.','xx-scalesL1'),
+    ('Whole books (later)/scales-and-chords-book-2-letter-version.pdf','Replaced','Scales and Chords 2 (letter version)','The story frame. Replaced by the clean book.','xx-scalesL2'),
     ('Whole books (later)/accompaniment-book-levels-1-3.pdf','Replaced','Accompaniment book, Levels 1 to 3','The Music Box grew out of this book.','xx-accomp'),
     ('Whole books (later)/music-box-songs-draft.pdf','Replaced','Music Box songs (first draft)','Before Music Box 1, 2 and 3.','old-mb0'),
     ('Whole books (later)/music-box-songs-1-12-draft.pdf','Replaced','Music Box songs 1 to 12 (draft)','Before Music Box 1, 2 and 3.','old-mb12'),
