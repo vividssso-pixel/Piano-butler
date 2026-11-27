@@ -94,7 +94,7 @@ song("It's a Long Way to Tipperary", 'It’s a Long Way to Tipperary', 'grand', 
  'You already know these chords by feel; now match each shape to its picture. Three notes stacked evenly, all on lines or all in spaces, are a chord in its plain shape, like C. A wider gap in the stack means the chord is turned round, the way you have always played F (C F A) and G (B D G). The coral name still tells you which chord it is.',
  'you can cover the coral names with a strip of paper and still play the left hand.', ['Left hand: play each chord twice in the bar, on beats 1 and 3.', 'Sing it. This song was made for marching and singing.'],
  src='Nottingham Music Database (chorus), moved from D to C', composer='Jack Judge and Harry Williams, 1912', split=3)
-song('W3KOOA', 'We Three Kings', 'grand', ('W3KOOA', None, None, 6, Fr(1, 2), (0, 16), 'half'),
+song('W3KOOA', 'We Three Kings', 'grand', ('W3KOOA', None, None, 6, Fr(1, 2), (0, 16), 'half', None, 3),   # 27 Nov: three bars a line, so a chord with a sharp has room in its box
  'A minor home, <b>E minor</b>, for the verse; then the chorus steps out into the bright G major. The left hand plays <b>two chords in a bar</b>, each lasting three quick counts.',
  'Six quick counts in a bar, felt as two swings: <b>1</b> 2 3 <b>4</b> 5 6. The left-hand chords land on 1 and on 4. Lines 1 and 2 are the verse; lines 3 and 4 are the chorus.',
  'you can feel the moment the music turns from dark to bright at line 3.', ['Left hand: bottom key on count 1, the top two on count 4.', 'Verse very quietly, chorus full and warm.'],

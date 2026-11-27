@@ -53,7 +53,7 @@ const { chromium } = require('playwright');
       for (const m of pg.querySelectorAll('.mus')) { if (!shown(m)) continue; const mr = R(m), q = R(m.parentElement); if (mr.width < q.width - 4 && !(['flex', 'grid'].includes(cs(m.parentElement).display) && cs(m.parentElement).flexDirection !== 'column' && m.parentElement.querySelectorAll(':scope > .mus').length > 1)) {   // lines side by side in a row are not centred one by one
         const dl = mr.left - q.left, dr = q.right - mr.right; if (Math.abs(dl - dr) > 2 && !m.parentElement.matches('.lpm, .trk, .lpat, .bas, .pos, .kbs, .nbk, .toolm')) out.push(`${P} centre: ${name(m)} ${dl.toFixed(0)}px left, ${dr.toFixed(0)}px right`); } }
       // a short last word alone on its line
-      for (const e of pg.querySelectorAll('p, .how, .lead, .cap2, .tog span, .lst span, .wow, .act')) { if (!shown(e) || e.children.length > 6) continue;
+      for (const e of pg.querySelectorAll('p, .how, .lead, .cap2, .tog span, .lst span, .wow, .act')) { if (!shown(e) || e.children.length > 6 || e.closest('.bgt')) continue;   // a music table with the class 'lead' is not a paragraph
         const rg = document.createRange(); rg.selectNodeContents(e); const lines = {}; for (const rc of rg.getClientRects()) { if (rc.width < 1) continue; const k = Math.round(rc.top); lines[k] = Math.max(lines[k] || 0, rc.right) - 0; }
         const rects = [...rg.getClientRects()].filter(q => q.width > 0.5); if (rects.length < 2) continue;
         const ys = [...new Set(rects.map(q => Math.round(q.top / 4)))]; if (ys.length < 2) continue;
@@ -70,6 +70,12 @@ const { chromium } = require('playwright');
           if (d > 1.2) { const side = d === q.left - er.left ? 'left' : d === er.right - q.right ? 'right' : d === q.top - er.top ? 'top' : 'bottom';
             const host = a.closest('.exb, .g2, .bgt, .mb-hands, .lt, figure') || a, k = name(host) + side + (svgRoot ? 's' : 'b');
             if (!seen[k]) { seen[k] = 1; out.push(`${P} cut: a ${e.tagName} in ${name(host)} '${text(host)}' is cut ${d.toFixed(1)}px at the ${side} by ${name(a)}`); } break; } } } });
+    document.querySelectorAll('.pg').forEach((pg, pi) => { const P = 'p' + (pi + 1);   // text in a table cell must stay inside its cell (words, counts, letters)
+      for (const td of pg.querySelectorAll('.bgt td')) { if (!shown(td) || !td.textContent.trim()) continue; const q = R(td);
+        if (td.matches('.cnm')) { const nb = [td.previousElementSibling, td.nextElementSibling]; if (nb.every(x => !x || !x.textContent.trim())) continue; }   // a chord name may reach into an empty neighbour in its borderless row
+        for (const t of [...td.querySelectorAll('*')].concat([td])) { for (const n of t.childNodes) { if (n.nodeType !== 3 || !n.textContent.trim()) continue;
+          const rg = document.createRange(); rg.selectNodeContents(n); const r = rg.getBoundingClientRect(); const h = t.closest('.hbx>span'), hq = h ? R(h) : q;   // in a split box, each half's text stays in its half
+          if (r.left < Math.max(q.left, hq.left) - 1.5 || r.right > Math.min(q.right, hq.right) + 1.5) out.push(`${P} spill: '${n.textContent.trim()}' runs out of its box by ${Math.max(q.left - r.left, r.right - q.right).toFixed(1)}px`); } } } });
     return [...new Set(out)];
   });
   r.forEach(x => console.log(x)); console.log(`${r.length} layout problems`); await b.close();

@@ -102,3 +102,8 @@ Moved out for later books: Goin' Home and This Old Man (Book 3, Zigzag), The Blu
 
 ### Book 2, Song 11 Canon: bass corrected
 The bass ran at half speed. In the score the cello plays one note on every beat; now four bass notes a bar.
+
+### Book 1 re-paced: Happy Birthday twice (her 27 Nov 17:34 and 18:22)
+Happy Birthday closes Unit 1 with Roots (Song 13) and closes the book with Block chord (Song 20, "Happy Birthday, Again").
+The whole tune is in the right hand (thumb on G); the old shared-hands version is not in the re-paced book. Canon stays as Song 12.
+20 songs, 29 pages.

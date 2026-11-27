@@ -55,8 +55,29 @@ ode['title'] = 'Ode to Joy, Again'
 g.update(job='You played this as Song 5, with one key a bar. Here it is with the left hand you have now. Same tune, bigger left hand.', today='Block chord',
          fmap={'c': 5, 'd': 4, 'g': 1}, tool_cap='C chord: C and G (5, 1). G chord: D and G (4, 1). In line 3 the thumb plays one tune note, G.',
          song_how='<b>Then</b> (Song 5): one key a bar. <b>Now</b>: two keys together, on beat 1, held to the end of the bar.')
-ORDER = [old(1), old(2), old(3), old(4), old(5), old(6), old(7), old(8), old(9), old(10), old(12), canon, old(11), rhody, longago, ode, old(14), old(15), old(13)]
-UNIT = {1: 'Unit 1 · Roots: one key for every chord', 12: 'The end of Unit 1 · one root under every note', 13: 'Unit 2 · Block chord: two keys together', 17: 'Unit 3 · The left hand joins the tune', 19: 'The last song'}
+# ---- Happy Birthday twice (her 27 Nov 17:34 and 18:22): it closes Unit 1 with Roots, and closes the book with Block chord.
+# The whole tune is in the right hand (thumb on G, up to the higher G), the rows kept in mbox-rh-only-13-15.py. Same tune, bigger left hand.
+HB = [[('r r G.G', '', '- - 1.1', '- - Hap.py'), ("A G C'", 'C', '2 1 4', 'birth- day to'), ('B - G.G', 'G', '3 - 1.1', 'you, - Hap.py'), ("A G D'", 'G', '2 1 5', 'birth- day to'), ("C' - G.G", 'C', '4 - 1.1', 'you, - Hap.py')],
+      [("G' E' C'", 'C', '5 3 1', 'birth- day dear'), ("B A F'.F'", 'F', '2 1 4.4', '(name), - Hap.py'), ("E' C' D'", 'C', '3 1 2', 'birth- day to'), ("C' - -", 'C', '1 - -', 'you! - -')]]
+def hbsong(block):
+    d = old(13); g = d['gig']
+    for k in ('ways', 'ways_job', 'ways_how', 'ways_title', 'note'): g.pop(k, None)
+    two = {'C': 'C+G', 'G': 'D+G', 'F': 'C+F'}
+    g['song_grid'] = [[{'r': r, 'l': (two.get(l, l) if block else l), 'f': f, 'w': w} for r, l, f, w in ln] for ln in HB]
+    g.update(rmap={'g': 1, 'a': 2, 'b': 3, 'c': 4, 'd': 5}, rfing={'G': 1, 'A': 2, 'B': 3, 'C': 4, 'D': 5}, rkb=['g', 8, '1 2 3 4 5 x x x'],
+             r_cap='Thumb on G. A small arrow ↑ marks the higher C, D, E, F and G. The numbers show where the hand moves.')
+    if block:
+        d['title'] = 'Happy Birthday, Again'
+        g.update(today='Block chord', fmap={'c': 5, 'd': 4, 'f': 2, 'g': 1}, lkb=['c', 5, '5 4 . 2 1'], tool_cap='C chord: C and G (5, 1). G chord: D and G (4, 1). F chord: C and F (5, 2).',
+                 job='You played this at the end of Unit 1 with one key a bar. Now the same tune with the left hand you have now. Play it at the next birthday.',
+                 song_how='<b>Then</b>: one key a bar. <b>Now</b>: two keys together on beat 1, held for the whole bar. It starts on beat 3 with two quick notes.')
+    else:
+        g.update(today='Roots', fmap={'c': 5, 'f': 2, 'g': 1}, lkb=['c', 5, '5 . . 2 1'], tool_cap='C with 5, F with 2, G with 1. One key on beat 1, held for the whole bar.',
+                 job='The song for every birthday, in three: ONE two three. The right hand plays the whole tune; the left hand plays one root a bar.',
+                 song_how='New: a song in three. It starts on beat 3 with two quick notes. Hold each left-hand key for the whole bar.')
+    return d
+ORDER = [old(1), old(2), old(3), old(4), old(5), old(6), old(7), old(8), old(9), old(10), old(12), canon, hbsong(False), old(11), rhody, longago, ode, old(14), old(15), hbsong(True)]
+UNIT = {1: 'Unit 1 · Roots: one key for every chord', 13: 'The end of Unit 1', 14: 'Unit 2 · Block chord: two keys together', 18: 'Unit 3 · The left hand joins the tune', 20: 'The last song: the same tune, a bigger left hand'}
 P = 1; n = len(ORDER)
 for i, d in enumerate(ORDER, 1):
     d.update(id=f'me{i}', lesson=i, label='End of Music Box 1' if i == n else f'Song {i}', page0=P)
@@ -66,11 +87,18 @@ rows = ''
 for i, d in enumerate(ORDER, 1):
     if i in UNIT: rows += f'<tr class="u"><td colspan="3">{UNIT[i]}</td></tr>'
     rows += f'<tr><td class="n">{i}</td><td><b>{d["title"]}</b></td><td>{d["gig"].get("today") or ""}</td></tr>'
-p1 = f'''<div class="kick">Start here</div><h1>Music Box 1</h1><p class="byl">Nineteen songs, from one key to two</p>
+p1 = f'''<div class="kick">Start here</div><h1>Music Box 1</h1><p class="byl">Twenty songs, from one key to two</p>
 {ST.LT}<table class="ftb"><tr><th style="width:5%"></th><th style="width:60%">Song</th><th style="width:35%">Left-hand pattern</th></tr>{rows}</table>'''
 ST.save('me1.json', 'me0', 'Music Box 1', 'Start here', [p1], 0)
+def said(ns):   # [1,2,3,5,6] -> 'Songs 1 to 3, 5 and 6'
+    runs = []
+    for n in ns:
+        if runs and n == runs[-1][1] + 1: runs[-1][1] = n
+        else: runs.append([n, n])
+    t = [f'{a}' if a == b else f'{a} and {b}' if b == a + 1 else f'{a} to {b}' for a, b in runs]
+    return 'Songs ' + (', '.join(t[:-1]) + ' and ' + t[-1] if len(t) > 1 else t[0])
 blk = [i for i, d in enumerate(ORDER, 1) if d['gig'].get('today') == 'Block chord']
-c1 = ST.card(1, ST.INTRO, [('Roots', 'C - - -', 'One key: the letter in the chord’s name. Hold it.', 'Songs 1 to 12 and 18'),
-                           ('Block chord', 'C+G - - -', 'The keys of the chord together. In this book, two: bottom and top. Hold them.', f'Songs {blk[0]} to {blk[-1]}')])
+c1 = ST.card(1, ST.INTRO, [('Roots', 'C - - -', 'One key: the letter in the chord’s name. Hold it.', said([i for i, d in enumerate(ORDER, 1) if d['gig'].get('today') == 'Roots'])),
+                           ('Block chord', 'C+G - - -', 'The keys of the chord together. In this book, two: bottom and top. Hold them.', said(blk))])
 ST.save('me1.json', f'me{n + 1}', 'Pattern card', 'End of Music Box 1', [c1], P)
 print('book 1 re-paced:', n, 'songs; card on page', P + 1)
