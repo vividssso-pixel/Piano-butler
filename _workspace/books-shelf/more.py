@@ -41,6 +41,7 @@ xx=[]
 for f,topic,title,note,tid in (('Whole books (later)/scales-and-chords-book-1-letter-version.pdf','Book','Scales and Chords, Book 1','Pieces 0 to 12: major scales, harmonic minors, thirds, major and minor chords, I IV V. Ends with the letter to play. Waiting for your check.','xx-scalesL1'),
     ('Whole books (later)/scales-and-chords-book-2-letter-version.pdf','Book','Scales and Chords, Book 2','Pieces 13 to 22: natural and melodic minor, diminished, augmented, sevenths, words that are chords. Waiting for your check.','xx-scalesL2'),
     ('Whole books (later)/the-letter-on-one-page.pdf','Story','The letter, on one page','The story thread in one page: what it is, what each part gives back, three rules.','xx-story'),
+    ('Whole books (later)/claras-letter-draft.pdf','Story','Clara’s Letter (for your decision)','The letter after each part, with its one moment. 12 pages.','xx-letterpack'),
     ('Where do I start - the Handbook check.pdf','Free','Where do I start? The Handbook check','A short check that points to the right part of the Handbook.','xx-check')):
     if os.path.exists(B+'/'+f): xx.append(card(f,topic,title,note,tid))
 # her 27 Nov: "안쓰고 있는거 따로 모아서": everything made and no longer in use, in one place; nothing is deleted
@@ -81,7 +82,7 @@ def top(sid,cls,kick,title,blurb,cap,sub,size=''):
             f'<span class="ti"{size}>{title}</span><span class="dv"></span><span class="bl">{blurb}</span>{BOW(ink)}</span></span><span class="cap"><b>{cap}</b><span>{sub}</span></span></button>')
 tops=('<!--more-tops:start-->'+top('pd','wb','Free','Diary','The lesson record: what to practise this week','The Practice Diary','free · tap to open')
       +top('ag','wb','Play','Games','Rhythm and pitch games, and the free sheets','Activities and games',f'{len(ag)} items · tap to open')
-      +top('xx','hb','Technique','Scales &amp; Chords','Books 1 and 2, the letter story on one page, the Handbook check','Scales and Chords, and more',f'{len(xx)} books · tap to open',' style="font-size:9cqw"')
+      +top('xx','hb','Technique','Scales &amp; Chords','Books 1 and 2, the letter story, the Handbook check','Scales and Chords, and more',f'{len(xx)} books · tap to open',' style="font-size:9cqw"')
       +top('sc','wb','On screen','Screen','The picture lesson, picture books, the house, the Music Box','On screen','4 doors · tap to open')
       +top('old','wb','Not in use','Older','Replaced versions and paused drafts, kept in one place','Older versions',f'{len(old)} items · tap to open').replace('class="book top"','class="book top isold"')+'<!--more-tops:end-->')
 p=B+'/index.html'; s=open(p).read(); (os.path.exists(p+'.bak-more') or shutil.copy2(p,p+'.bak-more'))
