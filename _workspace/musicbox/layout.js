@@ -8,6 +8,7 @@
 //  centre   a narrower line of music is not centred
 //  widow    a paragraph ends with one short word alone on its last line
 //  row      the items of one row do not start at the same height
+//  cut      a drawn shape (clef, note, stem, key) is cut by the edge of its picture or of a box that hides overflow (her 27 Nov 17:33)
 // Usage: node layout.js lesson.html
 const { chromium } = require('playwright');
 (async () => {
@@ -59,6 +60,16 @@ const { chromium } = require('playwright');
         const last = rects.filter(q => Math.round(q.top / 4) === Math.max(...ys)), w = Math.max(...last.map(q => q.right)) - Math.min(...last.map(q => q.left));
         if (w < Math.min(40, R(e).width * 0.1)) out.push(`${P} widow: '${text(e)}…' ends with ${w.toFixed(0)}px alone on its last line`); }
     });
+    document.querySelectorAll('.pg').forEach((pg, pi) => { const P = 'p' + (pi + 1), seen = {};
+      for (const e of pg.querySelectorAll('svg path, svg ellipse, svg circle, svg line, svg rect, svg text, svg polygon, svg polyline')) {
+        if (!shown(e) || e.closest('defs, clipPath') || e.closest('[clip-path]')) continue; const er = R(e); if (er.width < 0.5 && er.height < 0.5) continue;
+        for (let a = e.parentElement; a && a !== pg.parentElement; a = a.parentElement) { const st = cs(a); const svgRoot = a.tagName.toLowerCase() === 'svg';
+          const tbl = a.classList && a.classList.contains('bgt');   // a clef may reach outside its own picture, never outside its table
+          if (!(st.overflowX !== 'visible' || st.overflowY !== 'visible' || a === pg || tbl)) continue; if (a.classList && a.classList.contains('body')) continue;
+          const q = R(a), d = Math.max(q.left - er.left, er.right - q.right, q.top - er.top, er.bottom - q.bottom);
+          if (d > 1.2) { const side = d === q.left - er.left ? 'left' : d === er.right - q.right ? 'right' : d === q.top - er.top ? 'top' : 'bottom';
+            const host = a.closest('.exb, .g2, .bgt, .mb-hands, .lt, figure') || a, k = name(host) + side + (svgRoot ? 's' : 'b');
+            if (!seen[k]) { seen[k] = 1; out.push(`${P} cut: a ${e.tagName} in ${name(host)} '${text(host)}' is cut ${d.toFixed(1)}px at the ${side} by ${name(a)}`); } break; } } } });
     return [...new Set(out)];
   });
   r.forEach(x => console.log(x)); console.log(`${r.length} layout problems`); await b.close();
